@@ -87,6 +87,54 @@ than either (a) a generic ad-hoc webhook per business, or (b) putting MCP
 directly in the model's live tool-calling path. Not yet written as an ADR —
 holding off per the user's request to decide slowly.
 
+## Update 2026-09-14: concrete cost breakdown, direct tool-calling vs. MCP
+
+Follow-up research to answer "what does each actually cost" with numbers
+instead of general reasoning.
+
+**Direct/native tool-calling**: no added latency beyond the tool's own
+work (runs in-process, same request context); no added $ cost (no extra
+service); auth is free — the handler already runs inside the authenticated
+request, so tenant scoping is just using variables already in scope.
+
+**MCP — protocol overhead itself is small**: stdio/local transport is
+sub-millisecond; a REST proxy pattern adds ~1-2ms regardless of
+implementation language; for remote MCP, overhead is dominated by network
+RTT, not the protocol — modeled same-region HTTPS RTT is ~30ms p50, ~80ms
+p95, ~180ms p99. So "the protocol is slow" is not the real objection.
+
+**MCP — where the real cost is, at production scale**:
+1. **Token cost every turn.** An MCP server loads its entire tool catalog
+   (names, descriptions, parameter schemas, return types) into context on
+   every connection, whether those tools get used or not — real $ per
+   message, and it shrinks the effective context budget for everything
+   else. A native tool only carries what's actually relevant to that bot.
+2. **Cold-start risk.** MCP servers are commonly deployed as
+   scale-to-zero containers; a request arriving during a cold start can
+   wait up to ~30 seconds — unacceptable in a live chat where users expect
+   a response in a few seconds.
+3. **Auth/audit is not included by the protocol.** Per-user auth, token
+   management at scale, and audit trails are not something MCP gives you —
+   you build all of that yourself either way, same as without it.
+4. **Maintenance burden is real and commonly underestimated**: an audit of
+   ~1,850 public MCP servers found 52% abandoned, only 17% met a
+   reasonable production bar (median 6 commits over its lifetime, last
+   touched 142 days ago). Running a genuinely production-grade MCP server
+   is an ongoing engineering commitment, not a one-time setup.
+
+**Why MCP isn't the right fit for our live chat loop specifically**: MCP's
+core value is dynamic tool discovery shared across many different,
+possibly unknown-in-advance consuming agents/products. Our tool set is the
+opposite shape — small, fixed, known in advance (3-5 tools per bot),
+consumed by exactly one application (our own chat runtime). The benefit
+MCP is built for doesn't apply to that shape, but the costs above get paid
+regardless. This matches direct industry commentary that companies are
+moving away from using MCP in the hot path of production agent workflows,
+reserving it for cases where the tool set genuinely needs to be
+discoverable/reusable across systems — which is where the user's company's
+existing pattern (reaching many partner institutions' APIs, engineer-owned,
+off the live inference hot path) actually fits.
+
 ## Security/isolation findings worth designing against explicitly
 
 Relevant to CLAUDE.md guardrails #1 (tenant isolation) and #5 (no secrets
@@ -140,3 +188,9 @@ Sources:
 - https://nango.dev/blog/mcp-vs-tool-calls-for-ai-agents
 - https://fast.io/resources/function-calling-vs-mcp/
 - https://www.arcade.dev/blog/what-is-ai-agent-tool-calling/
+- https://quickchat.ai/post/mcp-vs-http
+- https://github.com/odedha-dr/mcp-vs-direct-benchmark
+- https://arxiv.org/pdf/2504.08999
+- https://decagon.ai/blog/getting-the-most-out-of-mcp
+- https://rapidclaw.dev/blog/mcp-servers-dead-what-it-means-2026
+- https://www.forbes.com/councils/forbesbusinesscouncil/2026/07/08/why-mcp-alone-isnt-enough-to-get-agents-into-production/
