@@ -40,5 +40,9 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
 
 - Billing/pricing model — explicitly deferred, not needed until there's a
   product to charge for.
-- Which vertical templates ship first beyond the implied three (ecommerce,
-  healthcare, automotive) — pick 2-3 for v1 rather than building N.
+
+## Resolved
+
+- ~~Which vertical templates ship first~~ — ecommerce ships first as the
+  only concrete v1 template; core stays generic throughout. See
+  `docs/product-spec.md` § Phasing.

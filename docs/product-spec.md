@@ -58,6 +58,24 @@ A business picks a template as a starting point and can diverge from it
 freely — the template is not a locked schema, and the core engine has no
 knowledge of "verticals" as a concept baked into its code.
 
+## Phasing: one vertical first, generic core always
+
+We build the core (knowledge base, bot engine, tool-calling framework,
+widget, dashboard) fully generic from the start — that's not deferred work,
+it's just not allowed to contain vertical-specific shortcuts (CLAUDE.md
+guardrail #2). On top of that generic core, **only one vertical template
+ships concretely for v1: ecommerce.** It's the proven playbook (see Zipchat
+reference below), has the clearest action-tool set, and we already have
+research on it.
+
+Healthcare, automotive, and any other vertical are template additions for
+later phases — they should require writing a new template (config/data),
+not modifying the engine. Before finalizing the KB schema and action-tool
+registry interface, we sketch (on paper, not in code) what a second
+template like healthcare or automotive would need from them, specifically
+to catch a schema that's secretly ecommerce-shaped — without actually
+building that second vertical before it's needed.
+
 ## Reference: what Zipchat AI actually does (ecommerce-specific inspiration)
 
 From research (Sept 2026) — see `docs/research/competitive-landscape.md` for
