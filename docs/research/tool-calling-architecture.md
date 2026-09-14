@@ -160,9 +160,48 @@ theorized:
   guardrail #1's "enforced at the data layer, not just the application
   layer" language already in `docs/architecture.md`.
 
+## Update 2026-09-14: platforms increasingly ship their own MCP servers —
+we're often an MCP *client*, not a builder
+
+Follow-up to the "does native tool-calling mean bespoke engineering per
+platform/business" question. Checked whether the two concrete verticals in
+scope (ecommerce/Shopify, healthcare/EMR) already have MCP servers we could
+connect to instead of building integrations ourselves.
+
+**Shopify**: ships three official MCP servers already — a **Storefront
+MCP** live on every store by default (no setup/auth needed), a **Customer
+Accounts MCP** for order lookup/account management (exactly the "check
+order status" tool), and a **Dev MCP** for API docs. A community-maintained
+server covers the full Admin API (31 tools). We do not need to hand-build
+Shopify order-lookup integration — our engine connects to Shopify's own
+server as an MCP client.
+
+**Healthcare**: most modern EMR/HIMS systems speak **FHIR**, the healthcare
+interoperability standard — and as of 2026 it's not optional: US CMS rules
+require FHIR-based APIs for payers, phasing in through Jan 2027. FHIR
+already has MCP servers: an open-source one (WSO2's `fhir-mcp-server`), an
+official one from AWS (HealthLake), and Anthropic itself launched **Claude
+for Healthcare** in January 2026 with HIPAA-ready product options and FHIR
+dev resources — directly relevant to guardrail #3 and worth investigating
+before building the healthcare template's compliance guardrails from
+scratch.
+
+**Revised implication**: the "connector/integration layer" described above
+is, in practice, mostly **us acting as an MCP client connecting to
+platform-provided MCP servers** (Shopify's, a FHIR server's) rather than us
+building and operating our own MCP server for every platform. The
+engineering cost is per-*platform*, and for the platforms that matter most
+in our first two verticals, major platforms already did that engineering
+for us. We only need to build our own MCP server for a platform that has
+no MCP server yet — done once per platform, reused by every business on
+it, never per-business. This directly answers the "do we need a separate
+engineer for every new business/platform" concern: no — new businesses on
+an already-supported platform need zero new engineering, and new platforms
+need one connector each, not one per customer.
+
 ## TODO — still open
 
-- Concrete transport choice for our MCP server if/when we build it
+- Concrete transport choice for our MCP server if/when we build our own
   (Streamable HTTP is the recommended transport for remote/multi-tenant
   use per this research; STDIO is for local/single-user only).
 - Whether to build one shared multi-tenant MCP server or per-vertical
@@ -170,6 +209,12 @@ theorized:
   existing console+MCP pattern handles this, asked but not yet answered.
 - Vector DB choice for multi-tenant RAG at scale (separate open question,
   tracked in `docs/open-questions.md`).
+- Investigate Claude for Healthcare (Jan 2026) directly — may inform or
+  replace parts of the planned healthcare vertical template's guardrails
+  and FHIR connectivity rather than building both from scratch.
+- Investigate whether other planned/likely verticals (automotive, etc.)
+  have similarly mature platform MCP servers already, or whether that
+  vertical would need more custom connector work.
 
 Sources:
 - https://www.braintrust.dev/articles/best-ai-customer-service-agents-2026
@@ -194,3 +239,8 @@ Sources:
 - https://decagon.ai/blog/getting-the-most-out-of-mcp
 - https://rapidclaw.dev/blog/mcp-servers-dead-what-it-means-2026
 - https://www.forbes.com/councils/forbesbusinesscouncil/2026/07/08/why-mcp-alone-isnt-enough-to-get-agents-into-production/
+- https://peliqan.io/blog/shopify-mcp/
+- https://wearepresta.com/shopify-mcp-server-the-standardized-interface-for-agentic-commerce-2026/
+- https://github.com/wso2/fhir-mcp-server
+- https://www.themomentum.ai/blog/introducing-fhir-mcp-server-natural-language-interface-for-healthcare-data
+- https://www.capminds.com/blog/fhir-mcp-server-explained-letting-claude-and-cursor-query-your-ehr-without-hallucinating-codes/
