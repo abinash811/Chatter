@@ -29,6 +29,28 @@ doc as ADRs land instead of letting decisions live only in chat history.
   CLAUDE.md — this is not optional).
 - Streamed responses back to the widget.
 
+**Design rule: interface vs. connector are separate layers, from day one.**
+What Claude sees — the tool name and JSON schema (`check_order_status`,
+etc.) — must stay stable regardless of what actually fulfills it. The
+fulfillment (a direct API call, a call to a platform's own MCP server
+like Shopify's or a FHIR server's, or a call to an MCP server we operate
+ourselves) is an internal, swappable implementation behind a thin handler,
+never hard-wired into the tool-call site itself. This is what makes
+"start with native/direct calls, add our own MCP server later for
+specific connectors" an additive change instead of a rewrite — see
+`docs/research/tool-calling-architecture.md` for the full reasoning. Skip
+this separation now and that option gets expensive to add back later.
+
+**Design rule: integrations are self-serve, not our team configuring per
+business.** Each vertical template declares a short menu of "Connect X"
+options (e.g. Connect Shopify, Connect WooCommerce, Connect your FHIR
+EMR, generic webhook as a fallback), each a standard OAuth-style flow
+(Shopify OAuth, SMART on FHIR for healthcare, etc.) the business owner
+completes themselves from the console — no developer, no engineering
+work on our side per business. New businesses on an already-supported
+platform cost us zero engineering; only a genuinely new platform needs a
+connector built once.
+
 ### 3. Vertical templates
 - A template = default persona/tone + suggested KB structure + curated
   subset of action tools + suggested guardrails/compliance notes.
