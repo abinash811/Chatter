@@ -51,6 +51,55 @@ Sources:
 - https://myaskai.com/blog/zipchat-complete-guide-2026
 - https://craftshift.com/zipchat-ai-review/
 
+## Update 2026-09-14: how Zipchat is actually built (ground truth, not marketing)
+
+Checked their own engineering job postings and Shopify App Store listing —
+more reliable than review sites for actual implementation details.
+
+**Stack (from job postings)**: Ruby on Rails backend + Hotwire/ViewComponent
+frontend; Python for "useful libraries" plus web scraping and data storage
+(almost certainly the site-crawl/ingestion pipeline behind their 5-10
+minute auto-indexing); a dedicated "AI RAG Engineer" role building RAG
+agents against OpenAI *or* Anthropic (not single-vendor), retrieval via
+embeddings + vector databases, and prompt engineering. Conventional, proven
+web stack — not novel infrastructure. No mention of MCP anywhere in their
+hiring needs, consistent with the earlier finding that production
+customer-facing agent loops stay off MCP.
+
+**Shopify integration mechanics (from their App Store listing)**: installed
+from the Shopify App Store requesting exactly two scopes — **read
+products** (builds the product knowledge base) and **read orders** (WISMO/
+order status/tracking/return-eligibility). Install → approve permissions →
+account auto-linked → products/policies/FAQ pages indexed within 5-10
+minutes, fully automatic. Order status resolved by calling Shopify's order
+API directly with the stored token. This is a direct real-world validation
+of the self-serve OAuth "Connect X" design already written into
+`docs/architecture.md` — minimal scopes, zero developer effort per
+merchant, automatic ingestion on connect.
+
+**Who built it**: founders with deep ecommerce operating backgrounds (one
+built a $20M ecom brand, another built CheckoutX, processing close to $1B
+in ecommerce GMV/year) rather than an AI-research background. No public
+engineering blog or architecture deep-dive exists. Reads as a competently
+executed, conventional stack rather than novel infrastructure — their
+differentiation is product/conversion instinct (persona tuned to sell,
+proactive discount codes, fast accurate answers), not architectural
+sophistication. Worth remembering when designing the ecommerce template's
+*behavior*, not just its plumbing.
+
+**Unverified loose thread**: their site also has content about AI search
+across Notion/Confluence/Slack/GitHub/Jira for engineering teams under the
+same domain — possibly a second product line, possibly a search artifact.
+Not confirmed, not chased further.
+
+Additional sources for this update:
+- https://apps.shopify.com/partners/fbh-technologies-pte-ltd
+- https://www.zipchat.ai/post/best-shopify-ai-app
+- https://jobs.weekday.works/zipchat-ai-rag-engineer,-ruby-on-rails-%7C-earn-equity
+- https://jobs.weekday.works/zipchat-remote-full-stack-ruby-on-rails-engineer-earn-equity
+- https://www.zipchat.ai/about
+- https://blog.leteyski.com/p/my-first-acquisition-zipchat-ai-the
+
 ## Claude Agent SDK / agent-building best practices (Sept 2026)
 
 - Start with a narrow workflow, clear tool boundaries, and a simple agent
