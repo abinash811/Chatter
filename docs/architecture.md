@@ -101,6 +101,39 @@ applied here to every future setting.
   bot context must be scoped to the owning business, enforced at the data
   layer, not just the application layer, once the DB is chosen.
 
+### 7. Design system
+- Baseline standard: **WCAG 2.2 Level AA** (W3C) — the actual
+  international accessibility standard, covering contrast ratios,
+  keyboard navigation, focus states, screen-reader support. This is also
+  what enterprise buyers (relevant for healthcare especially) audit for
+  during procurement.
+- Consistency mechanism: **design tokens**, not per-screen discipline —
+  colors, type scale, spacing, and radius defined once and referenced
+  everywhere, split into a fixed structural layer (component behavior/
+  layout) and a thin theme layer (the only thing that varies). Same
+  generic-core-plus-thin-configurable-layer pattern used elsewhere in this
+  architecture (vertical templates, tool interface/connector split),
+  applied to design instead of code.
+- Foundation, not built from scratch: current (2026) default pairing for
+  a Next.js + Tailwind stack is **shadcn/ui** (Radix-based, accessible by
+  default, ships with a token system) rather than a hand-rolled component
+  library. Not yet locked in — tech stack is still open — but the natural
+  fit if the Next.js/Tailwind direction from
+  `docs/research/tech-stack-trends-2026.md` is confirmed. Known gap to
+  plan for: an independent 2026 WCAG 2.2 AA audit of shadcn's 48
+  components found 34 pass out of the box, 9 need minor fixes, and 5 have
+  real gaps — **Combobox, Data Table, Context Menu, Chart, Input OTP** —
+  relevant to the analytics dashboard (Chart) and knowledge-base
+  management screens (Data Table) specifically.
+- Two surfaces, two consistency rules:
+  - **Admin console** (our product): one fixed brand/token set everywhere,
+    no per-screen exceptions.
+  - **Embeddable widget**: the business customizes color/logo/greeting
+    per guardrail-free branding needs, so it can't have one fixed brand —
+    what must stay consistent instead is the *system* (spacing rhythm,
+    interaction patterns), and accessible contrast is enforced even
+    against a business's chosen colors rather than left to chance.
+
 ## Data flow (conceptual)
 
 ```
