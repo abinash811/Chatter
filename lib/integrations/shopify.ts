@@ -19,9 +19,11 @@ function decodeState(state: string): { orgId: string; botId: string } {
 
 export const shopifyProvider: IntegrationProvider = {
   name: "shopify",
+  displayName: "Shopify",
+  connectFields: [
+    { name: "shopDomain", label: "Shop domain", placeholder: "my-store.myshopify.com" },
+  ],
 
-  // input: { shopDomain: "my-store.myshopify.com" } — collected by the
-  // console's connect form before redirecting here.
   getAuthorizeUrl(orgId, botId, input) {
     const redirectUri = `${process.env.APP_BASE_URL}/api/integrations/shopify/callback`;
     const params = new URLSearchParams({
@@ -33,12 +35,8 @@ export const shopifyProvider: IntegrationProvider = {
     return `https://${input.shopDomain}/admin/oauth/authorize?${params.toString()}`;
   },
 
-  async handleCallback(orgId, botId, params) {
-    const { orgId: stateOrgId, botId: stateBotId } = decodeState(params.get("state")!);
-    if (stateOrgId !== orgId || stateBotId !== botId) {
-      throw new Error("Shopify OAuth state mismatch — possible CSRF attempt.");
-    }
-
+  async handleCallback(params) {
+    const { orgId, botId } = decodeState(params.get("state")!);
     const shop = params.get("shop")!;
     const code = params.get("code")!;
 
@@ -61,6 +59,8 @@ export const shopifyProvider: IntegrationProvider = {
         update: { shopDomain: shop, accessToken: access_token },
       }),
     );
+
+    return { orgId, botId };
   },
 
   async disconnect(orgId, botId) {

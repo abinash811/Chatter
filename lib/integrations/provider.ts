@@ -5,8 +5,24 @@
 // template lists, never custom UI or logic per platform. Adding
 // WooCommerce/FHIR/etc. later is a new adapter here, nothing upstream.
 
+export interface IntegrationConnectField {
+  name: string;
+  label: string;
+  placeholder?: string;
+}
+
 export interface IntegrationProvider {
   readonly name: string; // e.g. "shopify" — matches Integration.provider
+  readonly displayName: string; // e.g. "Shopify" — shown on the connect button
+
+  /**
+   * What the generic console "Integrations" screen should collect from
+   * the business owner before redirecting to getAuthorizeUrl. This is
+   * what keeps that screen provider-agnostic — it renders these fields,
+   * not anything Shopify-specific, so a future adapter with a totally
+   * different input shape needs no UI changes.
+   */
+  readonly connectFields: IntegrationConnectField[];
 
   /**
    * Where to send the business owner to start the OAuth flow. `input` is
@@ -16,8 +32,16 @@ export interface IntegrationProvider {
    */
   getAuthorizeUrl(orgId: string, botId: string, input: Record<string, string>): string;
 
-  /** Exchanges the OAuth callback for a token and persists an Integration row. */
-  handleCallback(orgId: string, botId: string, params: URLSearchParams): Promise<void>;
+  /**
+   * Exchanges the OAuth callback for a token and persists an Integration
+   * row. Takes only the callback's query params — not orgId/botId — and
+   * returns them, because `state` (set in getAuthorizeUrl) is the only
+   * thing carrying that context through the redirect; requiring the
+   * caller to also supply orgId/botId would mean the caller has to
+   * decode state itself first, duplicating what this method already
+   * has to do.
+   */
+  handleCallback(params: URLSearchParams): Promise<{ orgId: string; botId: string }>;
 
   /** Revokes access where the provider supports it and removes the Integration row. */
   disconnect(orgId: string, botId: string): Promise<void>;

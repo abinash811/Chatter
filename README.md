@@ -40,10 +40,19 @@ product spec, architecture, and decisions (ADRs).
   JWT sessions, auto-provisions an org on first login. Needs
   `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `AUTH_SECRET`.
 
-Not yet built: the connect form and `/api/integrations/[provider]/
-callback` route the integration adapters assume, ingestion pipeline, a
-real onboarding flow (org naming, invites, multi-org switcher). Still
-blocked on the remaining items in `docs/open-questions.md`.
+- Shopify connect flow, end to end: `app/(console)/bots/[botId]/
+  integrations/page.tsx` (generic — renders whatever
+  `listIntegrationProviders()` and each provider's `connectFields`
+  describe, no Shopify-specific UI) and
+  `app/api/integrations/[provider]/callback/route.ts`. `state` (not the
+  console session) carries orgId/botId through the OAuth redirect —
+  `handleCallback` decodes and returns them, so the callback route never
+  needs its own auth context.
+
+Not yet built: ingestion pipeline, a real onboarding flow (org naming,
+invites, multi-org switcher), the bot detail page `bots/page.tsx`
+already links to. Still blocked on the remaining items in
+`docs/open-questions.md`.
 
 ## Local setup
 
