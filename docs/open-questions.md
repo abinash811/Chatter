@@ -24,6 +24,11 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
 5. **Site crawling in v1 ingestion**, or manual upload/Q&A only for v1 with
    crawling added later? Crawling is high-value but adds real scope
    (crawler, dedup, refresh scheduling, respecting robots.txt, etc.).
+6. **BYOA (bring-your-own API key/account).** Let a business use their own
+   Claude/provider key instead of our managed one. Cheap to add later
+   given the model gateway (ADR 0002); recommend defaulting to our
+   managed key for v1 and adding BYOA as a per-business config option
+   once the gateway exists — not v1-blocking.
 
 ## Not yet asked
 
