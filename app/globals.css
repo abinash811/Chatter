@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Design tokens (docs/architecture.md §7). One definition, referenced
+ * everywhere — never hardcode a color/radius in a component.
+ * Monochrome + one deliberate accent, per the Linear register chosen for
+ * the console's daily-driver screens.
+ *
+ * NOTE: these values are the standard shadcn/ui zinc-based defaults,
+ * chosen for their track record, not independently re-audited here.
+ * Running an actual WCAG 2.2 AA contrast check (axe-core/Lighthouse) is
+ * still a TODO before this ships — see docs/research/design-system-
+ * standards.md's shadcn component gaps.
+ */
+:root {
+  --background: 0 0% 100%;
+  --foreground: 240 10% 3.9%;
+  --muted: 240 4.8% 95.9%;
+  --muted-foreground: 240 3.8% 46.1%;
+  --border: 240 5.9% 90%;
+  --accent: 262 83% 58%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 84% 60%;
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --border: 240 3.7% 15.9%;
+  --accent: 262 83% 66%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 62.8% 30.6%;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}

@@ -31,9 +31,17 @@ product spec, architecture, and decisions (ADRs).
   server-side `{orgId, botId}` resolution, never client-supplied IDs —
   `BotPublicKey`) and every tool call is logged (`ToolCallLog`).
 
-Not yet built: console UI (including the connect form and the
-`/api/integrations/[provider]/callback` route the integration adapters
-assume), ingestion pipeline. Still blocked on the remaining items in
+- Console app shell: `app/layout.tsx`, `app/globals.css` (design tokens
+  per `docs/architecture.md` §7 — WCAG-AA-track shadcn zinc defaults, not
+  yet independently contrast-audited), `tailwind.config.ts`,
+  `components/ui/` (Button, Badge). First real screen:
+  `app/(console)/bots/page.tsx`, a Linear-register dense bot list.
+  **Won't load** until auth exists — `lib/auth.ts`'s `getCurrentSession`
+  is a deliberate stub; see `docs/open-questions.md` 1c.
+
+Not yet built: the connect form and `/api/integrations/[provider]/
+callback` route the integration adapters assume, ingestion pipeline,
+real auth. Still blocked on the remaining items in
 `docs/open-questions.md`.
 
 ## Local setup

@@ -8,6 +8,11 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
 
 1. **Hosted SaaS vs. also self-hostable?** Changes how much multi-tenancy
    and billing infra is needed from day one.
+1c. **Console auth provider.** Magic link, Google OAuth, or credentials?
+   `lib/auth.ts`'s `getCurrentSession` is a deliberate stub (throws) so
+   console pages have one real integration point rather than each
+   re-inventing a client-supplied orgId — the same bug already fixed for
+   the widget. Blocks any console page actually loading data.
 
 ## Product/scope questions
 
