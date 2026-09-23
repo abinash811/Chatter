@@ -24,6 +24,13 @@ doc as ADRs land instead of letting decisions live only in chat history.
   guardrails.
 - RAG retrieval exposed as a **tool call**, not a hardcoded context prepend
   — lets the model decide when it actually needs to look something up.
+- **Prompt caching**: the assembled system prompt (persona + template +
+  guardrails) is marked with `cache_control` and placed first in the
+  request, since it's identical across every message to that bot until
+  republished — the published-version design (§5) makes cache
+  invalidation automatic and correct. RAG results and conversation
+  history go after, uncached. Cuts per-message cost ~90% on the cached
+  portion.
 - Vertical action tools: a small per-template registry (e.g.
   `check_order_status`, `book_appointment`, `check_vehicle_availability`).
   Each tool either calls a business-configured webhook/integration, or
