@@ -49,10 +49,18 @@ product spec, architecture, and decisions (ADRs).
   `handleCallback` decodes and returns them, so the callback route never
   needs its own auth context.
 
+- Bot detail/edit page: `app/(console)/bots/[botId]/page.tsx` — the
+  draft/publish loop from `docs/architecture.md` §5, implemented in
+  `lib/ai/botConfig.ts`. Editing persona/guardrails/tools always
+  updates the one current draft row in place; publishing flips it to
+  `published` and never touches that row again — the next edit creates a
+  new draft seeded from what was just published. Bot creation is wired
+  from `bots/page.tsx`'s "New bot" form.
+
 Not yet built: ingestion pipeline, a real onboarding flow (org naming,
-invites, multi-org switcher), the bot detail page `bots/page.tsx`
-already links to. Still blocked on the remaining items in
-`docs/open-questions.md`.
+invites, multi-org switcher), the appearance/theming editor (persona +
+guardrails + tools only for now). Still blocked on the remaining items
+in `docs/open-questions.md`.
 
 ## Local setup
 

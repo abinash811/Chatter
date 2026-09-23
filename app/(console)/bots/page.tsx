@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { getCurrentSession } from "@/lib/auth";
 import { withOrgContext } from "@/lib/db";
 import { Badge } from "@/components/ui/badge";
@@ -18,11 +19,31 @@ export default async function BotsPage() {
     }),
   );
 
+  async function createBotAction(formData: FormData) {
+    "use server";
+    const session = await getCurrentSession();
+    const name = String(formData.get("name") ?? "").trim() || "Untitled bot";
+    const bot = await withOrgContext(session.orgId, (tx) =>
+      tx.bot.create({ data: { orgId: session.orgId, name } }),
+    );
+    redirect(`/bots/${bot.id}`);
+  }
+
   return (
     <div>
       <div className="flex h-row items-center justify-between">
         <h1 className="text-lg font-semibold">Bots</h1>
-        <Button size="sm">New bot</Button>
+        <form action={createBotAction} className="flex items-center gap-2">
+          <input
+            name="name"
+            placeholder="Bot name"
+            required
+            className="h-row-sm rounded border border-border bg-transparent px-2 text-sm"
+          />
+          <Button size="sm" type="submit">
+            New bot
+          </Button>
+        </form>
       </div>
 
       <div className="mt-4 divide-y divide-border border-y border-border">

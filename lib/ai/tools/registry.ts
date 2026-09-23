@@ -25,6 +25,12 @@ export function getToolsForNames(names: string[]): Tool[] {
   });
 }
 
+// For the console's bot-config editor to render "which tools can this
+// bot use" as checkboxes — see app/(console)/bots/[botId]/page.tsx.
+export function listAllTools(): Tool[] {
+  return [...registry.values()];
+}
+
 export async function runTool(
   name: string,
   orgId: string,
