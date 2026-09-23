@@ -12,10 +12,16 @@ product spec, architecture, and decisions (ADRs).
   (`db/migrations/0002_pgvector.sql`).
 - Model gateway (ADR 0002) — `lib/ai/gateway.ts` — and the system-prompt
   assembler with prompt caching — `lib/ai/systemPrompt.ts`.
+- Tool layer: `lib/ai/tools/registry.ts` (interface/connector split),
+  `searchKnowledgeBase.ts` (generic RAG retrieval), `checkOrderStatus.ts`
+  (first ecommerce action tool, Shopify Admin API, with the mandatory
+  handoff fallback when no integration is connected). `Integration` model
+  stores per-business OAuth connections.
 
-Not yet built: console UI, RAG retrieval/action tools wired into the
-gateway, ingestion pipeline. Still blocked on the remaining items in
-`docs/open-questions.md`.
+Not yet built: console UI, the OAuth "Connect Shopify" flow that
+populates `Integration`, ingestion pipeline, the chat loop that ties
+gateway+tools+systemPrompt together end to end. Still blocked on the
+remaining items in `docs/open-questions.md`.
 
 ## Local setup
 

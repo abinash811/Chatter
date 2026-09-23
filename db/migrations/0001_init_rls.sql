@@ -13,6 +13,7 @@ alter table bots enable row level security;
 alter table bot_config_versions enable row level security;
 alter table knowledge_sources enable row level security;
 alter table knowledge_chunks enable row level security;
+alter table integrations enable row level security;
 
 -- orgs: a session may only see the org it's currently scoped to.
 create policy org_isolation on orgs
@@ -35,6 +36,9 @@ create policy knowledge_source_isolation on knowledge_sources
 create policy knowledge_chunk_isolation on knowledge_chunks
   using ("orgId" = current_setting('app.org_id', true)::uuid);
 
+create policy integration_isolation on integrations
+  using ("orgId" = current_setting('app.org_id', true)::uuid);
+
 -- Force RLS even for the table owner role (Prisma's connection user),
 -- so a misconfigured client can't bypass isolation by virtue of owning
 -- the schema.
@@ -44,3 +48,4 @@ alter table bots force row level security;
 alter table bot_config_versions force row level security;
 alter table knowledge_sources force row level security;
 alter table knowledge_chunks force row level security;
+alter table integrations force row level security;

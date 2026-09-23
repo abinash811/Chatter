@@ -61,11 +61,31 @@ model Bot {
   name      String
   createdAt DateTime @default(now())
 
-  org      Org             @relation(fields: [orgId], references: [id])
-  versions BotConfigVersion[]
-  sources  KnowledgeSource[]
+  org          Org                @relation(fields: [orgId], references: [id])
+  versions     BotConfigVersion[]
+  sources      KnowledgeSource[]
+  integrations Integration[]
 
   @@map("bots")
+}
+
+// A business's connected external platform (Shopify, etc.) — the
+// self-serve "Connect X" OAuth flow from docs/architecture.md §2 writes
+// here. Tool handlers (lib/ai/tools/) read this to know whether a real
+// integration exists or they must fall back to handoff (guardrail #4).
+model Integration {
+  id           String   @id @default(uuid())
+  orgId        String
+  botId        String
+  provider     String // "shopify" for v1; more as platforms are added
+  shopDomain   String?
+  accessToken  String // encrypted at rest — encryption mechanism TODO
+  connectedAt  DateTime @default(now())
+
+  bot Bot @relation(fields: [botId], references: [id])
+
+  @@unique([botId, provider])
+  @@map("integrations")
 }
 
 enum ConfigStatus {
