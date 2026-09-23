@@ -40,6 +40,14 @@ AI-native multi-tenant SaaS) rather than picked from first principles.
   the user's explicit ask for model choice; the gateway costs a small
   abstraction now to avoid a rewrite later.
 
+## Confirmed 2026-09-23
+
+`lib/ai/gateway.ts`'s `ModelGateway` interface carries no Claude-specific
+concepts (generic `messages`/`tools`/`text`/`stopReason`) — adding OpenAI
+or Gemini later is a new implementation class + a config switch, not a
+change to any caller. Prompt content may need re-tuning per model for
+quality; that's not application code.
+
 ## Consequences
 
 Unblocks scaffolding. The model gateway is the one deliberate extra layer
