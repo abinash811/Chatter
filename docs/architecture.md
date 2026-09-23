@@ -94,12 +94,15 @@ is "add a field + a console control," not "add a branch to the bot
 engine" — the same discipline guardrail #2 requires for verticals,
 applied here to every future setting.
 
-### 6. Multi-tenancy
-- Org/business → bot(s) → conversations, with role-based dashboard access.
-- Tenant isolation is the single most important non-functional property of
-  this system (guardrail #1) — every query path from widget → retrieval →
-  bot context must be scoped to the owning business, enforced at the data
-  layer, not just the application layer, once the DB is chosen.
+### 6. Multi-tenancy — implemented
+- Org/business → bot(s) → conversations, with role-based dashboard access
+  (`owner`/`admin`/`member` per org, via `Membership`).
+- Tenant isolation (guardrail #1) is enforced by **Postgres Row-Level
+  Security**, not application code alone — see ADR 0003. Every
+  tenant-scoped table carries `orgId` and an RLS policy; every request
+  sets `app.org_id` for its transaction via `lib/db.ts`'s
+  `withOrgContext`, which is the only sanctioned way to query tenant data.
+  Schema: `prisma/schema.prisma`. Policies: `db/migrations/0001_init_rls.sql`.
 
 ### 7. Design system
 - Baseline standard: **WCAG 2.2 Level AA** (W3C) — the actual

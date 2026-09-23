@@ -1,0 +1,70 @@
+// Chatter database schema.
+//
+// Tenant isolation is enforced by Postgres Row-Level Security (see
+// db/migrations/0001_init_rls.sql), not by application code alone — see
+// docs/adr/0003-auth-multi-tenancy.md. Every tenant-scoped model here
+// carries orgId; the migration adds the matching RLS policy for each.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MembershipRole {
+  owner
+  admin
+  member
+}
+
+model Org {
+  id          String       @id @default(uuid())
+  name        String
+  createdAt   DateTime     @default(now())
+  memberships Membership[]
+  bots        Bot[]
+
+  @@map("orgs")
+}
+
+model User {
+  id          String       @id @default(uuid())
+  email       String       @unique
+  createdAt   DateTime     @default(now())
+  memberships Membership[]
+
+  @@map("users")
+}
+
+// A user's role within one org. A user can belong to multiple orgs
+// (e.g. an agency managing several stores' bots).
+model Membership {
+  id        String         @id @default(uuid())
+  orgId     String
+  userId    String
+  role      MembershipRole @default(member)
+  createdAt DateTime       @default(now())
+
+  org  Org  @relation(fields: [orgId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([orgId, userId])
+  @@map("memberships")
+}
+
+// Placeholder shape for now — persona/tools/guardrails/appearance land
+// here as the bot engine and console get built (docs/architecture.md §2
+// and §5). Deliberately minimal until those designs are scaffolded.
+model Bot {
+  id        String   @id @default(uuid())
+  orgId     String
+  name      String
+  createdAt DateTime @default(now())
+
+  org Org @relation(fields: [orgId], references: [id])
+
+  @@map("bots")
+}

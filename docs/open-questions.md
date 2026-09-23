@@ -6,25 +6,21 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
 
 ## Blocking further scaffolding
 
-1. **Auth & multi-tenancy implementation.** How orgs/businesses/users/roles
-   are modeled and enforced (row-level security? App-layer scoping only?).
-   This directly implements guardrail #1 (tenant isolation) — needs to be
-   right, not fast.
+1. **Hosted SaaS vs. also self-hostable?** Changes how much multi-tenancy
+   and billing infra is needed from day one.
 
 ## Product/scope questions
 
-2. **Hosted SaaS vs. also self-hostable?** Changes how much multi-tenancy
-   and billing infra is needed from day one.
-3. **Human handoff channel for v1.** In-dashboard inbox only, or also push
+2. **Human handoff channel for v1.** In-dashboard inbox only, or also push
    to email/Slack? Recommend: dashboard inbox only for v1, add channels
    later.
-4. **Compliance posture for regulated verticals**, healthcare especially.
+3. **Compliance posture for regulated verticals**, healthcare especially.
    Do we need real PII/PHI handling rules now, or explicitly scope v1's
    healthcare template as "not for PHI, informational only" and revisit?
-5. **Site crawling in v1 ingestion**, or manual upload/Q&A only for v1 with
+4. **Site crawling in v1 ingestion**, or manual upload/Q&A only for v1 with
    crawling added later? Crawling is high-value but adds real scope
    (crawler, dedup, refresh scheduling, respecting robots.txt, etc.).
-6. **BYOA (bring-your-own API key/account).** Let a business use their own
+5. **BYOA (bring-your-own API key/account).** Let a business use their own
    Claude/provider key instead of our managed one. Cheap to add later
    given the model gateway (ADR 0002); recommend defaulting to our
    managed key for v1 and adding BYOA as a per-business config option
@@ -44,3 +40,6 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
   shadcn/ui, Claude behind a model gateway. See ADR 0002.
 - ~~How action tools reach a business's real systems~~ — native tool-calls
   now, our own MCP server later for connectors. Folded into ADR 0002.
+- ~~Auth & multi-tenancy implementation~~ — Postgres Row-Level Security,
+  enforced at the DB layer. See ADR 0003; scaffolded in `prisma/schema.
+  prisma`, `db/migrations/0001_init_rls.sql`, `lib/db.ts`.
