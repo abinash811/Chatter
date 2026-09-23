@@ -8,6 +8,16 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
 
 1. **Hosted SaaS vs. also self-hostable?** Changes how much multi-tenancy
    and billing infra is needed from day one.
+1a. **Widget auth — how a request proves which bot/org it belongs to.**
+   `app/api/chat/route.ts` currently trusts a client-supplied `orgId` —
+   this is a real guardrail #1 violation, not yet fixed. Needs a real
+   embed-token/API-key design before this route is anything but a local
+   test harness.
+1b. **Tool-call traceability logging.** Guardrail #6 requires every
+   answer traceable to what was retrieved/called; `lib/ai/chat.ts`
+   currently persists only the final user-visible text, not the
+   intermediate tool_use/tool_result turns. Needs a log table + design,
+   not yet built.
 
 ## Product/scope questions
 

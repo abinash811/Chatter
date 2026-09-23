@@ -1,0 +1,126 @@
+import { withOrgContext } from "@/lib/db";
+import { getModelGateway, type ModelMessage } from "@/lib/ai/gateway";
+import { buildSystemPrompt } from "@/lib/ai/systemPrompt";
+import { getToolsForNames, runTool } from "@/lib/ai/tools/registry";
+import "@/lib/ai/tools";
+
+// Per Claude Agent SDK guidance (docs/research/competitive-landscape.md):
+// implement max iteration guards on any agentic loop.
+const MAX_TOOL_ITERATIONS = 5;
+
+export interface SendMessageParams {
+  orgId: string;
+  botId: string;
+  /** Omit to start a new conversation. */
+  conversationId?: string;
+  userMessage: string;
+}
+
+export interface SendMessageResult {
+  conversationId: string;
+  reply: string;
+}
+
+// Stateless by design (README.md, docs/architecture.md's scaling note):
+// every call loads what it needs from Postgres and persists what
+// changed — nothing lives in server memory between requests, so any
+// instance can handle any request.
+export async function sendMessage(params: SendMessageParams): Promise<SendMessageResult> {
+  const { orgId, botId, userMessage } = params;
+
+  const publishedVersion = await withOrgContext(orgId, (tx) =>
+    tx.botConfigVersion.findFirst({
+      where: { botId, status: "published" },
+      orderBy: { version: "desc" },
+    }),
+  );
+  if (!publishedVersion) {
+    throw new Error(`Bot ${botId} has no published config — cannot serve this bot yet.`);
+  }
+
+  const conversation = params.conversationId
+    ? await withOrgContext(orgId, (tx) =>
+        tx.conversation.findUniqueOrThrow({
+          where: { id: params.conversationId! },
+          include: { messages: { orderBy: { createdAt: "asc" } } },
+        }),
+      )
+    : await withOrgContext(orgId, (tx) =>
+        tx.conversation.create({
+          data: { orgId, botId, configVersionId: publishedVersion.id },
+          include: { messages: true },
+        }),
+      );
+
+  // The system prompt always reflects this bot's current published
+  // version — not the conversation's pinned configVersionId. Pinning
+  // matters for *behavioral* continuity within a turn's tool loop, not
+  // for which persona greets a returning visitor; revisit if that
+  // distinction ever needs to be stricter.
+  const systemPrompt = await buildSystemPrompt(orgId, botId);
+  const tools = getToolsForNames(publishedVersion.tools as string[]);
+
+  const history: ModelMessage[] = conversation.messages.map((m) => ({
+    role: m.role,
+    content: [{ type: "text", text: m.content }],
+  }));
+  history.push({ role: "user", content: [{ type: "text", text: userMessage }] });
+
+  await withOrgContext(orgId, (tx) =>
+    tx.message.create({
+      data: { orgId, conversationId: conversation.id, role: "user", content: userMessage },
+    }),
+  );
+
+  const gateway = getModelGateway();
+  let finalText = "";
+
+  for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
+    const result = await gateway.generateReply({
+      cachedSystemPrompt: systemPrompt,
+      messages: history,
+      tools,
+    });
+
+    history.push({ role: "assistant", content: result.content });
+
+    const toolUseBlocks = result.content.filter((b) => b.type === "tool_use");
+    if (result.stopReason !== "tool_use" || toolUseBlocks.length === 0) {
+      const textBlock = result.content.find((b) => b.type === "text");
+      finalText = textBlock?.type === "text" ? textBlock.text : "";
+      break;
+    }
+
+    // Parallel tool calls: run them concurrently, return all results in
+    // one user message — required so the model isn't trained to stop
+    // making parallel calls (see the tool-use pattern note in the
+    // Claude API skill).
+    const toolResults = await Promise.all(
+      toolUseBlocks.map(async (block) => {
+        if (block.type !== "tool_use") throw new Error("unreachable");
+        const content = await runTool(block.name, orgId, botId, block.input);
+        return { type: "tool_result" as const, toolUseId: block.id, content };
+      }),
+    );
+    history.push({ role: "user", content: toolResults });
+  }
+
+  if (!finalText) {
+    finalText =
+      "Sorry, I wasn't able to finish that — I'll get a human to help you instead.";
+  }
+
+  // KNOWN GAP: intermediate tool_use/tool_result turns aren't persisted
+  // anywhere — only the user-visible user/assistant text lands in
+  // Message. Guardrail #6 (every answer traceable to what was
+  // retrieved/called) isn't satisfied yet; needs a tool-call log, not
+  // solved by stuffing it into Message.
+
+  await withOrgContext(orgId, (tx) =>
+    tx.message.create({
+      data: { orgId, conversationId: conversation.id, role: "assistant", content: finalText },
+    }),
+  );
+
+  return { conversationId: conversation.id, reply: finalText };
+}

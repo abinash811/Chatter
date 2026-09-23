@@ -61,10 +61,11 @@ model Bot {
   name      String
   createdAt DateTime @default(now())
 
-  org          Org                @relation(fields: [orgId], references: [id])
-  versions     BotConfigVersion[]
-  sources      KnowledgeSource[]
-  integrations Integration[]
+  org           Org                @relation(fields: [orgId], references: [id])
+  versions      BotConfigVersion[]
+  sources       KnowledgeSource[]
+  integrations  Integration[]
+  conversations Conversation[]
 
   @@map("bots")
 }
@@ -143,4 +144,42 @@ model KnowledgeChunk {
   source KnowledgeSource @relation(fields: [sourceId], references: [id])
 
   @@map("knowledge_chunks")
+}
+
+enum MessageRole {
+  user
+  assistant
+}
+
+// Conversation history lives here, not in server memory — the chat API
+// route (app/api/chat/route.ts) is stateless: every request loads what
+// it needs from the DB and persists what changed. That's what lets any
+// server instance handle any request, no sticky sessions, no in-memory
+// state to lose on restart or scale out.
+model Conversation {
+  id              String   @id @default(uuid())
+  orgId           String
+  botId           String
+  // Config version pinned at conversation start (docs/architecture.md §5
+  // — a publish mid-conversation must not shift an in-flight visitor).
+  configVersionId String
+  createdAt       DateTime @default(now())
+
+  bot      Bot       @relation(fields: [botId], references: [id])
+  messages Message[]
+
+  @@map("conversations")
+}
+
+model Message {
+  id             String      @id @default(uuid())
+  orgId          String
+  conversationId String
+  role           MessageRole
+  content        String
+  createdAt      DateTime    @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+
+  @@map("messages")
 }
