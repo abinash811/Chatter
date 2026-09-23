@@ -133,6 +133,16 @@ applied here to every future setting.
     what must stay consistent instead is the *system* (spacing rhythm,
     interaction patterns), and accessible contrast is enforced even
     against a business's chosen colors rather than left to chance.
+- Quality bar, on top of the accessible foundation above: **Linear/Stripe/
+  Notion-caliber UX**, not applied uniformly but matched per surface —
+  Linear's density/speed/keyboard-first register for the console's daily-
+  driver screens, Notion's calm/progressive-disclosure register for its
+  configuration surfaces, Stripe's restrained/trustworthy register for
+  anything touching a business's real data or the healthcare vertical,
+  and Notion's approachable warmth for the widget's default look. Full
+  reasoning and concrete techniques (⌘K command palette, optimistic UI
+  updates, fixed spacing rhythm, progressive disclosure) in
+  `docs/research/design-system-standards.md`.
 
 ## Data flow (conceptual)
 
