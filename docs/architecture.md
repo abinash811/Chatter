@@ -18,8 +18,10 @@ doc as ADRs land instead of letting decisions live only in chat history.
   not yet designed.
 
 ### 2. Bot engine (Claude-powered)
-- System prompt assembled per-bot at request time: base persona + vertical
-  template defaults + business-level overrides + guardrails.
+- System prompt assembled per-bot at request time from that bot's current
+  **published config version** (see design rule in section 5) — base
+  persona + vertical template defaults + business-level overrides +
+  guardrails.
 - RAG retrieval exposed as a **tool call**, not a hardcoded context prepend
   — lets the model decide when it actually needs to look something up.
 - Vertical action tools: a small per-template registry (e.g.
@@ -69,6 +71,28 @@ connector built once.
 - Knowledge base management: add/edit/remove sources, see what's indexed.
 - Live conversation inbox for human handoff.
 - Analytics: volume, resolution rate, handoff rate, topics.
+
+**Design rule: bot config is versioned data with a draft/publish split,
+never a direct live edit.** A business editing persona, guardrails,
+enabled tools, or appearance is always editing a **draft** — the live bot
+keeps serving the last **published** version until they explicitly
+publish. The console gives a test-chat preview against the draft so
+changes can be tried before any real visitor sees them. Every publish
+creates a new immutable version rather than overwriting the last one,
+which buys: one-click rollback when a change goes wrong; a full history
+of who changed what and when (relevant once a business has multiple
+teammates with dashboard access); and, combined with guardrail #6, every
+conversation recording exactly which config version produced it, so
+debugging a bad answer is never guesswork. A conversation already
+underway keeps the version it started with — a publish mid-conversation
+never shifts persona or guardrails mid-thread for that visitor. Because
+config is read on every incoming chat message, it sits on the hot path
+and needs a caching story where publish reliably invalidates/propagates
+the new version — not something assumed to "just work." And because
+config is structured data rather than code, adding a new tunable later
+is "add a field + a console control," not "add a branch to the bot
+engine" — the same discipline guardrail #2 requires for verticals,
+applied here to every future setting.
 
 ### 6. Multi-tenancy
 - Org/business → bot(s) → conversations, with role-based dashboard access.
