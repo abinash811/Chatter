@@ -66,6 +66,7 @@ model Bot {
   sources       KnowledgeSource[]
   integrations  Integration[]
   conversations Conversation[]
+  publicKey     BotPublicKey?
 
   @@map("bots")
 }
@@ -182,4 +183,39 @@ model Message {
   conversation Conversation @relation(fields: [conversationId], references: [id])
 
   @@map("messages")
+}
+
+// Deliberately NOT covered by Row-Level Security (see
+// db/migrations/0001_init_rls.sql's comment on this table). This table's
+// only job is resolving an opaque public key — the one embedded in a
+// business's widget script tag — to {orgId, botId} server-side, so
+// app/api/chat/route.ts never trusts a client-supplied orgId (closes the
+// gap flagged in docs/open-questions.md 1a). It holds no tenant data,
+// only an opaque-key-to-ID mapping, same trust model as a Stripe
+// publishable key: public by design, grants nothing beyond "talk to this
+// one bot as an anonymous visitor."
+model BotPublicKey {
+  publicKey String   @id @default(cuid())
+  botId     String   @unique
+  orgId     String
+  createdAt DateTime @default(now())
+
+  bot Bot @relation(fields: [botId], references: [id])
+
+  @@map("bot_public_keys")
+}
+
+// Guardrail #6 (traceability): every tool call made during a chat turn
+// is logged here, independent of whether its result made it into the
+// final answer. Closes docs/open-questions.md 1b.
+model ToolCallLog {
+  id             String   @id @default(uuid())
+  orgId          String
+  conversationId String
+  toolName       String
+  input          Json
+  output         String
+  createdAt      DateTime @default(now())
+
+  @@map("tool_call_logs")
 }

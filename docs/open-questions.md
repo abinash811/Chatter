@@ -8,16 +8,6 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
 
 1. **Hosted SaaS vs. also self-hostable?** Changes how much multi-tenancy
    and billing infra is needed from day one.
-1a. **Widget auth — how a request proves which bot/org it belongs to.**
-   `app/api/chat/route.ts` currently trusts a client-supplied `orgId` —
-   this is a real guardrail #1 violation, not yet fixed. Needs a real
-   embed-token/API-key design before this route is anything but a local
-   test harness.
-1b. **Tool-call traceability logging.** Guardrail #6 requires every
-   answer traceable to what was retrieved/called; `lib/ai/chat.ts`
-   currently persists only the final user-visible text, not the
-   intermediate tool_use/tool_result turns. Needs a log table + design,
-   not yet built.
 
 ## Product/scope questions
 
@@ -53,3 +43,10 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
 - ~~Auth & multi-tenancy implementation~~ — Postgres Row-Level Security,
   enforced at the DB layer. See ADR 0003; scaffolded in `prisma/schema.
   prisma`, `db/migrations/0001_init_rls.sql`, `lib/db.ts`.
+- ~~Widget auth~~ — public `botKey` (Stripe-publishable-key model)
+  resolved server-side via `BotPublicKey`, a table deliberately exempt
+  from RLS since it holds only an opaque-key-to-ID mapping. See
+  `lib/db.ts`'s `resolveBotPublicKey` and `app/api/chat/route.ts`.
+- ~~Tool-call traceability logging~~ — every tool call is now logged to
+  `ToolCallLog`, independent of whether its result shaped the final
+  answer. See `lib/ai/chat.ts`.

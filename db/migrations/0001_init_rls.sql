@@ -16,6 +16,13 @@ alter table knowledge_chunks enable row level security;
 alter table integrations enable row level security;
 alter table conversations enable row level security;
 alter table messages enable row level security;
+alter table tool_call_logs enable row level security;
+
+-- bot_public_keys is INTENTIONALLY NOT covered by RLS — see its comment
+-- in prisma/schema.prisma. It exists specifically to be queryable before
+-- orgId is known (resolving a widget's public key IS how orgId gets
+-- known), and holds no tenant data. Do not add RLS here without also
+-- redesigning how app/api/chat/route.ts resolves its org context.
 
 -- orgs: a session may only see the org it's currently scoped to.
 create policy org_isolation on orgs
@@ -47,6 +54,9 @@ create policy conversation_isolation on conversations
 create policy message_isolation on messages
   using ("orgId" = current_setting('app.org_id', true)::uuid);
 
+create policy tool_call_log_isolation on tool_call_logs
+  using ("orgId" = current_setting('app.org_id', true)::uuid);
+
 -- Force RLS even for the table owner role (Prisma's connection user),
 -- so a misconfigured client can't bypass isolation by virtue of owning
 -- the schema.
@@ -59,3 +69,4 @@ alter table knowledge_chunks force row level security;
 alter table integrations force row level security;
 alter table conversations force row level security;
 alter table messages force row level security;
+alter table tool_call_logs force row level security;

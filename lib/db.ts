@@ -18,3 +18,16 @@ export async function withOrgContext<T>(
     return fn(tx as PrismaClient);
   });
 }
+
+// The one sanctioned way to query bot_public_keys — the single table
+// deliberately exempt from RLS (see its comment in prisma/schema.prisma).
+// Never use this to read anything else; every other table must go
+// through withOrgContext.
+export async function resolveBotPublicKey(
+  publicKey: string,
+): Promise<{ orgId: string; botId: string } | null> {
+  return prisma.botPublicKey.findUnique({
+    where: { publicKey },
+    select: { orgId: true, botId: true },
+  });
+}

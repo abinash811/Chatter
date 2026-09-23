@@ -38,13 +38,21 @@ export async function sendMessage(params: SendMessageParams): Promise<SendMessag
     throw new Error(`Bot ${botId} has no published config — cannot serve this bot yet.`);
   }
 
+  // RLS already prevents reading another org's conversation; this extra
+  // check closes the narrower case of a visitor holding one bot's botKey
+  // supplying a conversationId that belongs to a *different* bot in the
+  // same org.
   const conversation = params.conversationId
-    ? await withOrgContext(orgId, (tx) =>
-        tx.conversation.findUniqueOrThrow({
+    ? await withOrgContext(orgId, async (tx) => {
+        const found = await tx.conversation.findUniqueOrThrow({
           where: { id: params.conversationId! },
           include: { messages: { orderBy: { createdAt: "asc" } } },
-        }),
-      )
+        });
+        if (found.botId !== botId) {
+          throw new Error("conversationId does not belong to this bot");
+        }
+        return found;
+      })
     : await withOrgContext(orgId, (tx) =>
         tx.conversation.create({
           data: { orgId, botId, configVersionId: publishedVersion.id },
@@ -94,11 +102,23 @@ export async function sendMessage(params: SendMessageParams): Promise<SendMessag
     // Parallel tool calls: run them concurrently, return all results in
     // one user message — required so the model isn't trained to stop
     // making parallel calls (see the tool-use pattern note in the
-    // Claude API skill).
+    // Claude API skill). Every call is logged regardless of whether its
+    // result ends up shaping the final answer — guardrail #6.
     const toolResults = await Promise.all(
       toolUseBlocks.map(async (block) => {
         if (block.type !== "tool_use") throw new Error("unreachable");
         const content = await runTool(block.name, orgId, botId, block.input);
+        await withOrgContext(orgId, (tx) =>
+          tx.toolCallLog.create({
+            data: {
+              orgId,
+              conversationId: conversation.id,
+              toolName: block.name,
+              input: block.input,
+              output: content,
+            },
+          }),
+        );
         return { type: "tool_result" as const, toolUseId: block.id, content };
       }),
     );
@@ -109,12 +129,6 @@ export async function sendMessage(params: SendMessageParams): Promise<SendMessag
     finalText =
       "Sorry, I wasn't able to finish that — I'll get a human to help you instead.";
   }
-
-  // KNOWN GAP: intermediate tool_use/tool_result turns aren't persisted
-  // anywhere — only the user-visible user/assistant text lands in
-  // Message. Guardrail #6 (every answer traceable to what was
-  // retrieved/called) isn't satisfied yet; needs a tool-call log, not
-  // solved by stuffing it into Message.
 
   await withOrgContext(orgId, (tx) =>
     tx.message.create({

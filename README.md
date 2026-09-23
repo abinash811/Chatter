@@ -27,9 +27,9 @@ product spec, architecture, and decisions (ADRs).
 - Chat loop: `lib/ai/chat.ts` — stateless (`app/api/chat/route.ts` loads/
   persists everything from Postgres, no server-memory state), the tool
   loop with parallel tool-call handling and a max-iteration guard, pinned
-  to the bot's published config. **Not production-safe yet** — see
-  `docs/open-questions.md` items 1a (widget auth is faked) and 1b
-  (tool-call traceability isn't logged).
+  to the bot's published config. Widget auth is real (opaque `botKey` →
+  server-side `{orgId, botId}` resolution, never client-supplied IDs —
+  `BotPublicKey`) and every tool call is logged (`ToolCallLog`).
 
 Not yet built: console UI (including the connect form and the
 `/api/integrations/[provider]/callback` route the integration adapters

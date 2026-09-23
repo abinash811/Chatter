@@ -1,30 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendMessage } from "@/lib/ai/chat";
+import { resolveBotPublicKey } from "@/lib/db";
 
-// Stateless route handler — see lib/ai/chat.ts. Auth/bot-key resolution
-// (which orgId a widget request belongs to) isn't built yet; that's
-// console/auth work, tracked as a gap here rather than faked.
+// Stateless route handler — see lib/ai/chat.ts.
+//
+// orgId is never accepted from the client (that was the gap flagged in
+// docs/open-questions.md 1a). The widget's embed snippet carries only a
+// public botKey (see BotPublicKey in prisma/schema.prisma) — an opaque
+// token, same trust model as a Stripe publishable key. We resolve it to
+// {orgId, botId} server-side before touching anything tenant-scoped.
 export async function POST(req: NextRequest) {
   const body = (await req.json()) as {
-    orgId: string;
-    botId: string;
+    botKey: string;
     conversationId?: string;
     message: string;
   };
 
-  if (!body.orgId || !body.botId || !body.message) {
+  if (!body.botKey || !body.message) {
     return NextResponse.json(
-      { error: "orgId, botId, and message are required" },
+      { error: "botKey and message are required" },
       { status: 400 },
     );
   }
 
-  // TODO: orgId must come from a verified widget auth token, never a
-  // client-supplied field — placeholder until the widget embed auth
-  // design (docs/open-questions.md territory) is settled.
+  const resolved = await resolveBotPublicKey(body.botKey);
+  if (!resolved) {
+    return NextResponse.json({ error: "Invalid botKey" }, { status: 401 });
+  }
+
   const result = await sendMessage({
-    orgId: body.orgId,
-    botId: body.botId,
+    orgId: resolved.orgId,
+    botId: resolved.botId,
     conversationId: body.conversationId,
     userMessage: body.message,
   });
