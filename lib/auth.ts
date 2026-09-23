@@ -1,21 +1,85 @@
-// STUB — auth provider choice (magic link vs Google OAuth vs
-// credentials) hasn't been decided; see docs/open-questions.md. This
-// exists so console pages have one place to get the current user's org
-// context from, and so that place is obviously not real yet, rather than
-// a body-supplied orgId quietly reintroducing the exact bug fixed in
-// app/api/chat/route.ts for the widget.
+import NextAuth from "next-auth";
+import Google from "next-auth/providers/google";
+import { randomUUID } from "crypto";
+import { PrismaClient } from "@prisma/client";
+import { withOrgContext } from "@/lib/db";
+
+// ADR 0004: Google OAuth via Auth.js (next-auth v5), JWT sessions.
 //
-// Whatever auth is chosen, it must resolve org context from a verified
-// server-side session — never trust a client-supplied orgId, same
-// principle as BotPublicKey resolution for the widget.
+// No Prisma adapter — our own User/Membership shape isn't Auth.js's
+// expected schema, so identity resolution happens in the jwt callback
+// against our own tables instead.
+//
+// User has no orgId column and isn't RLS-protected (it's not tenant
+// data — the same email can belong to several orgs). "Which org does
+// this user belong to" is resolved via UserOrgAccess, an index table
+// deliberately exempt from RLS for the same reason BotPublicKey is
+// (see prisma/schema.prisma) — you can't require org context to
+// discover org context.
+
+const rawClient = new PrismaClient();
+
+const { handlers, auth: nextAuth, signIn, signOut } = NextAuth({
+  providers: [
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
+  ],
+  session: { strategy: "jwt" },
+  callbacks: {
+    async jwt({ token, account }) {
+      if (!account || !token.email) return token;
+
+      const user = await rawClient.user.upsert({
+        where: { email: token.email },
+        create: { email: token.email },
+        update: {},
+      });
+      token.userId = user.id;
+
+      const access = await rawClient.userOrgAccess.findFirst({ where: { userId: user.id } });
+      if (access) {
+        token.orgId = access.orgId;
+        return token;
+      }
+
+      // First login for this user, no org yet — auto-provision one so
+      // the console is usable immediately. TODO: replace with a real
+      // onboarding flow (org name, invite teammates) — see
+      // docs/open-questions.md. Multi-org-per-user (an agency managing
+      // several stores) isn't reachable from login yet either; this
+      // always takes the first org found.
+      const orgId = randomUUID();
+      await withOrgContext(orgId, async (tx) => {
+        await tx.org.create({ data: { id: orgId, name: `${token.email}'s workspace` } });
+        await tx.membership.create({ data: { orgId, userId: user.id, role: "owner" } });
+      });
+      await rawClient.userOrgAccess.create({ data: { userId: user.id, orgId } });
+
+      token.orgId = orgId;
+      return token;
+    },
+    async session({ session, token }) {
+      return { ...session, userId: token.userId, orgId: token.orgId } as typeof session & {
+        userId: string;
+        orgId: string;
+      };
+    },
+  },
+});
+
+export { handlers, signIn, signOut };
+
 export interface Session {
   userId: string;
   orgId: string;
 }
 
 export async function getCurrentSession(): Promise<Session> {
-  throw new Error(
-    "Auth not implemented yet — see docs/open-questions.md. Console pages " +
-      "cannot resolve a real user/org until this is built.",
-  );
+  const session = await nextAuth();
+  if (!session || !("orgId" in session) || !("userId" in session)) {
+    throw new Error("Not authenticated");
+  }
+  return { userId: session.userId as string, orgId: session.orgId as string };
 }

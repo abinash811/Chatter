@@ -8,11 +8,6 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
 
 1. **Hosted SaaS vs. also self-hostable?** Changes how much multi-tenancy
    and billing infra is needed from day one.
-1c. **Console auth provider.** Magic link, Google OAuth, or credentials?
-   `lib/auth.ts`'s `getCurrentSession` is a deliberate stub (throws) so
-   console pages have one real integration point rather than each
-   re-inventing a client-supplied orgId — the same bug already fixed for
-   the widget. Blocks any console page actually loading data.
 
 ## Product/scope questions
 
@@ -55,3 +50,5 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
 - ~~Tool-call traceability logging~~ — every tool call is now logged to
   `ToolCallLog`, independent of whether its result shaped the final
   answer. See `lib/ai/chat.ts`.
+- ~~Console auth provider~~ — Google OAuth via Auth.js, JWT sessions.
+  See ADR 0004.

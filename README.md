@@ -36,13 +36,14 @@ product spec, architecture, and decisions (ADRs).
   yet independently contrast-audited), `tailwind.config.ts`,
   `components/ui/` (Button, Badge). First real screen:
   `app/(console)/bots/page.tsx`, a Linear-register dense bot list.
-  **Won't load** until auth exists — `lib/auth.ts`'s `getCurrentSession`
-  is a deliberate stub; see `docs/open-questions.md` 1c.
+- Console auth (ADR 0004): Google OAuth via Auth.js (`lib/auth.ts`),
+  JWT sessions, auto-provisions an org on first login. Needs
+  `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `AUTH_SECRET`.
 
 Not yet built: the connect form and `/api/integrations/[provider]/
-callback` route the integration adapters assume, ingestion pipeline,
-real auth. Still blocked on the remaining items in
-`docs/open-questions.md`.
+callback` route the integration adapters assume, ingestion pipeline, a
+real onboarding flow (org naming, invites, multi-org switcher). Still
+blocked on the remaining items in `docs/open-questions.md`.
 
 ## Local setup
 
@@ -55,6 +56,9 @@ real auth. Still blocked on the remaining items in
    manages directly. Re-run 0001's policies after any `db:migrate` that
    adds a new tenant-scoped table.
 5. Set `ANTHROPIC_API_KEY` for `lib/ai/gateway.ts`.
+6. Set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (from a Google Cloud
+   Console OAuth app), and `AUTH_SECRET` (any random string —
+   `npx auth secret` generates one) for console login.
 
 ## Tenant isolation
 

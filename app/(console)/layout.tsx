@@ -1,6 +1,16 @@
+import { redirect } from "next/navigation";
+import { getCurrentSession } from "@/lib/auth";
+
 // Console shell — Linear register (docs/architecture.md §7): dense,
-// minimal chrome, one fixed nav, no per-screen layout variation.
-export default function ConsoleLayout({ children }: { children: React.ReactNode }) {
+// minimal chrome, one fixed nav, no per-screen layout variation. Auth
+// check lives here once, not duplicated per page.
+export default async function ConsoleLayout({ children }: { children: React.ReactNode }) {
+  try {
+    await getCurrentSession();
+  } catch {
+    redirect("/login");
+  }
+
   return (
     <div className="flex min-h-screen">
       <nav className="w-56 shrink-0 border-r border-border px-3 py-4">

@@ -18,11 +18,12 @@ alter table conversations enable row level security;
 alter table messages enable row level security;
 alter table tool_call_logs enable row level security;
 
--- bot_public_keys is INTENTIONALLY NOT covered by RLS — see its comment
--- in prisma/schema.prisma. It exists specifically to be queryable before
--- orgId is known (resolving a widget's public key IS how orgId gets
--- known), and holds no tenant data. Do not add RLS here without also
--- redesigning how app/api/chat/route.ts resolves its org context.
+-- bot_public_keys and user_org_access are INTENTIONALLY NOT covered by
+-- RLS — see their comments in prisma/schema.prisma. Both exist
+-- specifically to be queryable before orgId is known (resolving them IS
+-- how orgId gets known), and hold no tenant data beyond id pairings. Do
+-- not add RLS to either without also redesigning how
+-- app/api/chat/route.ts and lib/auth.ts resolve org context.
 
 -- orgs: a session may only see the org it's currently scoped to.
 create policy org_isolation on orgs

@@ -55,6 +55,21 @@ model Membership {
   @@map("memberships")
 }
 
+// Deliberately NOT covered by RLS — same reasoning as BotPublicKey.
+// Resolving "which org(s) can this user reach" at login time has to run
+// before app.org_id is known, so it can't go through Membership (RLS-
+// protected, correctly). Holds nothing but an id pairing, kept in sync
+// whenever a Membership is created — see lib/auth.ts. If Membership
+// deletion (removing a teammate) is ever built, it must delete the
+// matching row here too, or a removed member keeps login access.
+model UserOrgAccess {
+  userId String
+  orgId  String
+
+  @@id([userId, orgId])
+  @@map("user_org_access")
+}
+
 model Bot {
   id        String   @id @default(uuid())
   orgId     String
