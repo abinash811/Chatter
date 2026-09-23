@@ -18,10 +18,17 @@ product spec, architecture, and decisions (ADRs).
   handoff fallback when no integration is connected). `Integration` model
   stores per-business OAuth connections.
 
-Not yet built: console UI, the OAuth "Connect Shopify" flow that
-populates `Integration`, ingestion pipeline, the chat loop that ties
-gateway+tools+systemPrompt together end to end. Still blocked on the
-remaining items in `docs/open-questions.md`.
+- Generic connect/disconnect: `lib/integrations/provider.ts`
+  (`IntegrationProvider` interface, one console flow for every platform)
+  with `shopify.ts` as the first adapter — OAuth authorize URL, callback
+  token exchange, disconnect. Needs `SHOPIFY_CLIENT_ID`,
+  `SHOPIFY_CLIENT_SECRET`, `APP_BASE_URL`.
+
+Not yet built: console UI (including the connect form and the
+`/api/integrations/[provider]/callback` route these adapters assume),
+ingestion pipeline, the chat loop that ties gateway+tools+systemPrompt
+together end to end. Still blocked on the remaining items in
+`docs/open-questions.md`.
 
 ## Local setup
 
