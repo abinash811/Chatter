@@ -75,7 +75,12 @@ class ClaudeGateway implements ModelGateway {
       tools: params.tools?.map((t) => ({
         name: t.name,
         description: t.description,
-        input_schema: t.inputSchema,
+        // Cast at this exact boundary, not upstream: our ModelTool stays
+        // a generic JSON-schema shape for cross-provider portability;
+        // the SDK's stricter InputSchema type (requires a literal
+        // `type: "object"`) is an Anthropic-specific detail this file
+        // exists to isolate.
+        input_schema: t.inputSchema as unknown as { type: "object" },
         strict: true,
       })),
     });
@@ -110,11 +115,16 @@ function fromAnthropicBlock(block: {
   text?: string;
   id?: string;
   name?: string;
-  input?: Record<string, unknown>;
+  input?: unknown;
 }): ModelContentBlock {
   if (block.type === "text") return { type: "text", text: block.text ?? "" };
   if (block.type === "tool_use") {
-    return { type: "tool_use", id: block.id!, name: block.name!, input: block.input ?? {} };
+    return {
+      type: "tool_use",
+      id: block.id!,
+      name: block.name!,
+      input: (block.input as Record<string, unknown>) ?? {},
+    };
   }
   throw new Error(`Unexpected content block type from Claude: ${block.type}`);
 }

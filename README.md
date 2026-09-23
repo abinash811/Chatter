@@ -64,18 +64,66 @@ in `docs/open-questions.md`.
 
 ## Local setup
 
+Verified end to end on 2026-09-23 (see "Verified by a real run" below).
+
 1. `npm install`
-2. Copy `.env.example` to `.env` and point `DATABASE_URL` at a Postgres
-   instance.
-3. `npm run db:migrate` — creates the base tables from `prisma/schema.prisma`.
-4. Apply `db/migrations/0001_init_rls.sql`, then `0002_pgvector.sql`,
-   against the same database — RLS and pgvector aren't things Prisma
-   manages directly. Re-run 0001's policies after any `db:migrate` that
-   adds a new tenant-scoped table.
-5. Set `ANTHROPIC_API_KEY` for `lib/ai/gateway.ts`.
-6. Set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (from a Google Cloud
+2. Postgres 16, with the `pgvector` extension package installed
+   (`apt-get install postgresql-16-pgvector` on Debian/Ubuntu, or
+   equivalent) — a plain, **non-superuser** app role, since a superuser
+   silently bypasses Row-Level Security regardless of `FORCE ROW LEVEL
+   SECURITY`, which would defeat the entire point of testing against it.
+   `CREATEDB` is needed on that role only for `prisma migrate dev`'s
+   shadow database.
+3. Copy `.env.example` to `.env` and point `DATABASE_URL` at that role/DB.
+4. `npm run db:migrate` — creates the base tables from `prisma/schema.prisma`.
+5. As a superuser (once per database): `CREATE EXTENSION vector;` — the
+   app role can't do this itself, even with `CREATEDB`.
+6. Apply `db/migrations/0001_init_rls.sql`, then `0002_pgvector.sql`, as
+   the app role — RLS and pgvector aren't things Prisma manages
+   directly. Re-run 0001's policies after any `db:migrate` that adds a
+   new tenant-scoped table.
+7. Set `ANTHROPIC_API_KEY` for `lib/ai/gateway.ts`.
+8. Set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (from a Google Cloud
    Console OAuth app), and `AUTH_SECRET` (any random string —
    `npx auth secret` generates one) for console login.
+
+## Verified by a real run (2026-09-23)
+
+Actually running this surfaced and fixed three real bugs no amount of
+reading would have caught:
+
+- **Every RLS policy was silently never created.** Prisma's
+  `String @default(uuid())` maps to Postgres `text`, not the native
+  `uuid` type, so every policy's `current_setting(...)::uuid` cast
+  failed at `CREATE POLICY` time. With RLS *enabled* but zero policies,
+  Postgres fails closed (denies all access) rather than failing open —
+  so the bug wasn't a leak, but it did mean every query would have
+  returned nothing. Fixed by dropping the `::uuid` casts in
+  `db/migrations/0001_init_rls.sql` — plain text comparison, matching
+  the actual column type.
+- **The pinned `@anthropic-ai/sdk` version predated GA prompt caching**
+  on the stable endpoint — `cache_control` only existed on that
+  version's beta namespace, which `lib/ai/gateway.ts` wasn't using.
+  Bumped to the current release.
+- **Several TypeScript boundary mismatches** between our
+  provider-agnostic `ModelTool`/`ModelContentBlock` types and the
+  Anthropic SDK's stricter types (`input_schema` needs a literal
+  `type: "object"`; `ToolUseBlock.input` is `unknown`, not
+  `Record<string, unknown>`) and between tool call input and Prisma's
+  `Json` field type. Fixed with targeted casts exactly at those
+  boundaries — see `lib/ai/gateway.ts` and `lib/ai/chat.ts`.
+
+What was then verified as actually working: the login page renders and
+redirects correctly (unauthenticated → `/login`); a direct RLS script
+confirmed cross-tenant isolation holds (Org B cannot see Org A's bot by
+listing, by exact ID, or with no org context set at all — all three
+fail closed); and a full request through `/api/chat` — botKey
+resolution, session/message persistence, system-prompt assembly, tool
+registry — reached Anthropic's real API and failed only on the
+placeholder API key (a genuine 401 from Anthropic's servers), meaning
+everything before that boundary is confirmed correct. Not yet verified:
+an actual Claude reply (needs a real `ANTHROPIC_API_KEY`) and the
+Google OAuth login flow itself (needs a real Google Cloud Console app).
 
 ## Tenant isolation
 

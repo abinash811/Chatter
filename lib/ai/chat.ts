@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { withOrgContext } from "@/lib/db";
 import { getModelGateway, type ModelMessage } from "@/lib/ai/gateway";
 import { buildSystemPrompt } from "@/lib/ai/systemPrompt";
@@ -114,7 +115,7 @@ export async function sendMessage(params: SendMessageParams): Promise<SendMessag
               orgId,
               conversationId: conversation.id,
               toolName: block.name,
-              input: block.input,
+              input: block.input as Prisma.InputJsonValue,
               output: content,
             },
           }),

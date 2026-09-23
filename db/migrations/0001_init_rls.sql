@@ -27,36 +27,36 @@ alter table tool_call_logs enable row level security;
 
 -- orgs: a session may only see the org it's currently scoped to.
 create policy org_isolation on orgs
-  using (id = current_setting('app.org_id', true)::uuid);
+  using (id = current_setting('app.org_id', true));
 
 -- memberships: scoped to the current org.
 create policy membership_isolation on memberships
-  using ("orgId" = current_setting('app.org_id', true)::uuid);
+  using ("orgId" = current_setting('app.org_id', true));
 
 -- bots: scoped to the current org.
 create policy bot_isolation on bots
-  using ("orgId" = current_setting('app.org_id', true)::uuid);
+  using ("orgId" = current_setting('app.org_id', true));
 
 create policy bot_config_version_isolation on bot_config_versions
-  using ("orgId" = current_setting('app.org_id', true)::uuid);
+  using ("orgId" = current_setting('app.org_id', true));
 
 create policy knowledge_source_isolation on knowledge_sources
-  using ("orgId" = current_setting('app.org_id', true)::uuid);
+  using ("orgId" = current_setting('app.org_id', true));
 
 create policy knowledge_chunk_isolation on knowledge_chunks
-  using ("orgId" = current_setting('app.org_id', true)::uuid);
+  using ("orgId" = current_setting('app.org_id', true));
 
 create policy integration_isolation on integrations
-  using ("orgId" = current_setting('app.org_id', true)::uuid);
+  using ("orgId" = current_setting('app.org_id', true));
 
 create policy conversation_isolation on conversations
-  using ("orgId" = current_setting('app.org_id', true)::uuid);
+  using ("orgId" = current_setting('app.org_id', true));
 
 create policy message_isolation on messages
-  using ("orgId" = current_setting('app.org_id', true)::uuid);
+  using ("orgId" = current_setting('app.org_id', true));
 
 create policy tool_call_log_isolation on tool_call_logs
-  using ("orgId" = current_setting('app.org_id', true)::uuid);
+  using ("orgId" = current_setting('app.org_id', true));
 
 -- Force RLS even for the table owner role (Prisma's connection user),
 -- so a misconfigured client can't bypass isolation by virtue of owning
