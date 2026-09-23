@@ -5,9 +5,16 @@ product spec, architecture, and decisions (ADRs).
 
 ## What's scaffolded so far
 
-Just the tenant-isolation foundation (ADR 0003) — schema, RLS policies,
-and the query helper that enforces them. No app UI or bot engine yet;
-those are next, blocked on the remaining items in
+- Tenant-isolation foundation (ADR 0003) — schema, RLS policies, query
+  helper.
+- Bot config versioning (draft/publish) and knowledge base tables
+  (`prisma/schema.prisma`), with pgvector for embeddings
+  (`db/migrations/0002_pgvector.sql`).
+- Model gateway (ADR 0002) — `lib/ai/gateway.ts` — and the system-prompt
+  assembler with prompt caching — `lib/ai/systemPrompt.ts`.
+
+Not yet built: console UI, RAG retrieval/action tools wired into the
+gateway, ingestion pipeline. Still blocked on the remaining items in
 `docs/open-questions.md`.
 
 ## Local setup
@@ -16,10 +23,11 @@ those are next, blocked on the remaining items in
 2. Copy `.env.example` to `.env` and point `DATABASE_URL` at a Postgres
    instance.
 3. `npm run db:migrate` — creates the base tables from `prisma/schema.prisma`.
-4. Apply `db/migrations/0001_init_rls.sql` against the same database —
-   this adds the Row-Level Security policies Prisma doesn't manage
-   directly. Run it after every `db:migrate` that touches a tenant-scoped
-   table.
+4. Apply `db/migrations/0001_init_rls.sql`, then `0002_pgvector.sql`,
+   against the same database — RLS and pgvector aren't things Prisma
+   manages directly. Re-run 0001's policies after any `db:migrate` that
+   adds a new tenant-scoped table.
+5. Set `ANTHROPIC_API_KEY` for `lib/ai/gateway.ts`.
 
 ## Tenant isolation
 

@@ -55,16 +55,72 @@ model Membership {
   @@map("memberships")
 }
 
-// Placeholder shape for now — persona/tools/guardrails/appearance land
-// here as the bot engine and console get built (docs/architecture.md §2
-// and §5). Deliberately minimal until those designs are scaffolded.
 model Bot {
   id        String   @id @default(uuid())
   orgId     String
   name      String
   createdAt DateTime @default(now())
 
-  org Org @relation(fields: [orgId], references: [id])
+  org      Org             @relation(fields: [orgId], references: [id])
+  versions BotConfigVersion[]
+  sources  KnowledgeSource[]
 
   @@map("bots")
+}
+
+enum ConfigStatus {
+  draft
+  published
+}
+
+// Draft/publish versioning per docs/architecture.md §5. Editing a bot
+// always creates or updates the current `draft` row; publishing snapshots
+// it into a new immutable `published` row. The bot engine only ever reads
+// the latest `published` version — see lib/ai/systemPrompt.ts.
+model BotConfigVersion {
+  id          String       @id @default(uuid())
+  orgId       String
+  botId       String
+  version     Int
+  status      ConfigStatus @default(draft)
+  persona     String
+  guardrails  String
+  tools       Json         @default("[]")
+  appearance  Json         @default("{}")
+  publishedAt DateTime?
+  createdAt   DateTime     @default(now())
+
+  bot Bot @relation(fields: [botId], references: [id])
+
+  @@unique([botId, version])
+  @@map("bot_config_versions")
+}
+
+// Knowledge base source (docs/architecture.md §1). Chunked + embedded
+// into KnowledgeChunk for RAG retrieval; the pgvector column is added in
+// db/migrations/0002_pgvector.sql since Prisma can't declare `vector`
+// natively.
+model KnowledgeSource {
+  id        String   @id @default(uuid())
+  orgId     String
+  botId     String
+  kind      String // "file" | "qa" | "url" — open per docs/open-questions.md #4 (crawling)
+  title     String
+  createdAt DateTime @default(now())
+
+  bot    Bot              @relation(fields: [botId], references: [id])
+  chunks KnowledgeChunk[]
+
+  @@map("knowledge_sources")
+}
+
+model KnowledgeChunk {
+  id       String @id @default(uuid())
+  orgId    String
+  sourceId String
+  content  String
+
+  source KnowledgeSource @relation(fields: [sourceId], references: [id])
+
+  @@map("knowledge_chunks")
 }
