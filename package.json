@@ -7,6 +7,7 @@
     "start": "next start",
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
+    "postinstall": "prisma generate",
     "check:isolation": "node scripts/check-tenant-isolation.mjs",
     "check:vertical": "node scripts/check-no-vertical-logic.mjs",
     "check:secrets": "node scripts/check-no-client-secrets.mjs",
