@@ -12,7 +12,8 @@
     "check:vertical": "node scripts/check-no-vertical-logic.mjs",
     "check:secrets": "node scripts/check-no-client-secrets.mjs",
     "check:tokens": "node scripts/check-design-tokens.mjs",
-    "check:all": "npm run check:isolation && npm run check:vertical && npm run check:secrets && npm run check:tokens",
+    "check:buttons": "node scripts/check-no-raw-buttons.mjs",
+    "check:all": "npm run check:isolation && npm run check:vertical && npm run check:secrets && npm run check:tokens && npm run check:buttons",
     "canary": "node scripts/canary.mjs"
   },
   "dependencies": {

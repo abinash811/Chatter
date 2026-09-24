@@ -24,6 +24,12 @@
   --accent-foreground: 0 0% 100%;
   --destructive: 0 84% 60%;
   --radius: 0.5rem;
+  /* Fixed-dark brand surface (the auth split-layout panel,
+     docs/design/preview/auth.html) — same value as .dark's --background,
+     but deliberately its own token: this panel stays dark regardless of
+     light/dark mode, it's not a theme-following background. */
+  --panel: 240 10% 3.9%;
+  --panel-foreground: 0 0% 100%;
 }
 
 .dark {

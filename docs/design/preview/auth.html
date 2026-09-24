@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<style>
+/* Values hardcoded here for a throwaway static preview — the real
+   tokens live in app/globals.css and are what components/auth/AuthShell.tsx
+   actually references. Keep these in sync by hand when tokens change. */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: #e5e7eb;
+}
+
+.page-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+  padding: 8px 16px; background: #fff; border-bottom: 1px solid #e5e5e5; color: #7c3aed;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.bp-tag { font-size: 9px; padding: 2px 8px; border-radius: 9999px; font-weight: 600; color: #7c3aed; background: #f3e8ff; }
+.sep { height: 1px; background: #d1d5db; }
+
+/* ── Shared ─────────────────────────────────────────── */
+.brand-icon-box {
+  width: 26px; height: 26px; background: #7c3aed; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.field-label { font-size: 12px; font-weight: 500; color: #374151; display: block; margin-bottom: 5px; }
+.field-input {
+  width: 100%; height: 40px; border: 1px solid #e5e5e5; border-radius: 6px;
+  padding: 0 12px; font-size: 13px; background: #fff; color: #0a0a0c; outline: none;
+}
+.field-group { margin-bottom: 14px; }
+.btn-primary {
+  width: 100%; height: 40px; background: #7c3aed; color: #fff; border: none;
+  border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer;
+}
+.form-foot { font-size: 12px; color: #737373; text-align: center; margin-top: 16px; }
+.form-foot span { color: #7c3aed; cursor: pointer; }
+
+/* ── Desktop split layout ──────────────────────────────── */
+.desktop-scene { display: flex; height: 420px; }
+
+.left-panel {
+  width: 42%; background: #0a0a0c;
+  display: flex; flex-direction: column; padding: 32px 28px;
+  position: relative; overflow: hidden;
+}
+.left-panel::before {
+  content: ''; position: absolute; bottom: -80px; right: -80px;
+  width: 240px; height: 240px; border: 40px solid rgba(124,58,237,0.10); border-radius: 50%;
+}
+.left-panel::after {
+  content: ''; position: absolute; top: -40px; left: -40px;
+  width: 160px; height: 160px; border: 28px solid rgba(124,58,237,0.08); border-radius: 50%;
+}
+.brand-row { display: flex; align-items: center; gap: 8px; margin-bottom: auto; position: relative; z-index: 1; }
+.brand-name { font-size: 14px; font-weight: 600; color: #fff; }
+.left-hero { margin-bottom: 28px; position: relative; z-index: 1; }
+.left-hero h2 { font-size: 19px; font-weight: 700; color: #fff; line-height: 1.35; margin-bottom: 8px; }
+.left-hero p { font-size: 11px; color: rgba(255,255,255,0.45); line-height: 1.6; }
+.trust-list { display: flex; flex-direction: column; gap: 8px; position: relative; z-index: 1; }
+.trust-item { display: flex; align-items: center; gap: 8px; font-size: 11px; color: rgba(255,255,255,0.55); }
+.trust-dot { width: 18px; height: 18px; border-radius: 5px; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+.right-panel { flex: 1; background: #fff; display: flex; align-items: center; justify-content: center; padding: 24px; }
+.form-card { width: 100%; max-width: 320px; padding: 28px; border: 1px solid #e5e5e5; border-radius: 8px; }
+.form-eyebrow { font-size: 10px; font-weight: 700; color: #7c3aed; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+.form-title { font-size: 18px; font-weight: 600; color: #0a0a0c; margin-bottom: 3px; }
+.form-sub { font-size: 12px; color: #737373; margin-bottom: 22px; }
+
+/* ── Mobile — panel hidden, card centered on white ─────── */
+.mobile-scene {
+  width: 375px; margin: 0 auto; background: #fff;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px; height: 480px;
+}
+.mobile-card { width: 100%; padding: 24px 4px; }
+</style>
+</head><body>
+
+<div class="page-label"><span>Desktop <span style="color:#6b7280;font-weight:400;font-size:9px;text-transform:none;">&nbsp;≥ 768px · md breakpoint</span></span><span class="bp-tag">Split layout</span></div>
+<div class="desktop-scene">
+
+  <div class="left-panel">
+    <div class="brand-row">
+      <div class="brand-icon-box">
+        <svg width="14" height="14" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8-1.17 0-2.29-.2-3.31-.56L3 21l1.56-4.69C3.57 15.06 3 13.58 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+      </div>
+      <div class="brand-name">Chatter</div>
+    </div>
+    <div class="left-hero">
+      <h2>One chat engine.<br>Every business.</h2>
+      <p>Ecommerce, healthcare, automotive — the same<br>Claude-powered core, your own guardrails.</p>
+    </div>
+    <div class="trust-list">
+      <div class="trust-item"><div class="trust-dot"><svg width="10" height="10" fill="none" stroke="rgba(255,255,255,0.65)" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>Draft, test, publish — in minutes</div>
+      <div class="trust-item"><div class="trust-dot"><svg width="10" height="10" fill="none" stroke="rgba(255,255,255,0.65)" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>Every reply traceable, every tool logged</div>
+      <div class="trust-item"><div class="trust-dot"><svg width="10" height="10" fill="none" stroke="rgba(255,255,255,0.65)" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>Your data never crosses tenants</div>
+    </div>
+  </div>
+
+  <div class="right-panel">
+    <div class="form-card">
+      <div class="form-eyebrow">Sign in</div>
+      <div class="form-title">Welcome back</div>
+      <div class="form-sub">Log in to manage your bots</div>
+      <div class="field-group"><label class="field-label">Email</label><input class="field-input" value="you@business.com" readonly/></div>
+      <div class="field-group"><label class="field-label">Password</label><input class="field-input" type="password" placeholder="••••••••"/></div>
+      <button class="btn-primary">Log in</button>
+      <div class="form-foot">No account? <span>Sign up</span></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="sep"></div>
+
+<div class="page-label"><span>Mobile <span style="color:#6b7280;font-weight:400;font-size:9px;text-transform:none;">&nbsp;&lt; 768px · panel hidden</span></span><span class="bp-tag" style="color:#15803d;background:#f0fdf4;">Card only</span></div>
+<div class="mobile-scene">
+  <div class="mobile-card">
+    <div class="form-eyebrow">Sign up</div>
+    <div class="form-title">Create your account</div>
+    <div class="form-sub">Start building a bot for your business</div>
+    <div class="field-group"><label class="field-label">Email</label><input class="field-input" placeholder="you@business.com"/></div>
+    <div class="field-group"><label class="field-label">Password</label><input class="field-input" type="password" placeholder="At least 8 characters"/></div>
+    <div class="field-group"><label class="field-label">Confirm password</label><input class="field-input" type="password" placeholder="••••••••"/></div>
+    <button class="btn-primary">Sign up</button>
+    <div class="form-foot">Already have an account? <span>Log in</span></div>
+  </div>
+</div>
+
+</body></html>

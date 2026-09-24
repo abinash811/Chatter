@@ -9,9 +9,7 @@ export function LoginForm() {
   const [error, formAction, isPending] = useActionState(loginAction, null);
 
   return (
-    <form action={formAction} className="w-72 space-y-3">
-      <h1 className="text-lg font-semibold">Log in</h1>
-
+    <form action={formAction} className="space-y-3">
       {error && <p className="text-sm text-destructive">{error}</p>}
 
       <Input name="email" type="email" placeholder="Email" required autoFocus />
@@ -20,7 +18,7 @@ export function LoginForm() {
         {isPending ? "Logging in..." : "Log in"}
       </Button>
 
-      <p className="text-sm text-muted-foreground">
+      <p className="text-center text-sm text-muted-foreground">
         No account?{" "}
         <a href="/signup" className="text-accent hover:underline">
           Sign up

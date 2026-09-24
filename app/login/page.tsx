@@ -1,9 +1,10 @@
+import { AuthShell } from "@/components/auth/AuthShell";
 import { LoginForm } from "./LoginForm";
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center">
+    <AuthShell eyebrow="Sign in" title="Welcome back" subtitle="Log in to manage your bots">
       <LoginForm />
-    </div>
+    </AuthShell>
   );
 }

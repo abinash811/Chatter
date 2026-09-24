@@ -17,6 +17,8 @@ export default {
         accent: "hsl(var(--accent))",
         "accent-foreground": "hsl(var(--accent-foreground))",
         destructive: "hsl(var(--destructive))",
+        panel: "hsl(var(--panel))",
+        "panel-foreground": "hsl(var(--panel-foreground))",
       },
       borderRadius: {
         DEFAULT: "var(--radius)",

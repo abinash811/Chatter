@@ -24,6 +24,13 @@ implicitly obvious) before writing code, don't guess silently.
   hard-to-reverse decision. Template at `docs/adr/template.md`.
 - `docs/research/` — competitive and technical research notes
 - `docs/open-questions.md` — decisions not yet made; owner is the user
+- `docs/design/preview/` — static HTML mockups, the visual ground truth
+  for a page before it's built in code. **Before writing any new page or
+  UI pattern, check this folder first.** If a preview exists, match it
+  exactly. If none exists, follow the token/component rules in
+  `docs/architecture.md` §7 and `app/globals.css`, then add a preview
+  here after shipping — don't skip the visual pass just because no
+  preview exists yet. See `docs/design/README.md`.
 
 ## Non-negotiable guardrails
 

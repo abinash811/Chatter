@@ -9,9 +9,7 @@ export function SignupForm() {
   const [error, formAction, isPending] = useActionState(signupAction, null);
 
   return (
-    <form action={formAction} className="w-72 space-y-3">
-      <h1 className="text-lg font-semibold">Sign up</h1>
-
+    <form action={formAction} className="space-y-3">
       {error && <p className="text-sm text-destructive">{error}</p>}
 
       <Input name="email" type="email" placeholder="Email" required autoFocus />
@@ -27,7 +25,7 @@ export function SignupForm() {
         {isPending ? "Signing up..." : "Sign up"}
       </Button>
 
-      <p className="text-sm text-muted-foreground">
+      <p className="text-center text-sm text-muted-foreground">
         Already have an account?{" "}
         <a href="/login" className="text-accent hover:underline">
           Log in
