@@ -31,3 +31,18 @@ export async function resolveBotPublicKey(
     select: { orgId: true, botId: true },
   });
 }
+
+// Every bot needs exactly one public key to ever be embeddable. Called
+// at bot-creation time; also safe to call lazily (upsert) for a bot
+// that predates this, or if creation partially failed.
+export async function getOrCreateBotPublicKey(
+  orgId: string,
+  botId: string,
+): Promise<string> {
+  const key = await prisma.botPublicKey.upsert({
+    where: { botId },
+    create: { orgId, botId },
+    update: {},
+  });
+  return key.publicKey;
+}

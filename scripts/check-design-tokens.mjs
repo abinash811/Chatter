@@ -24,6 +24,12 @@ for (const file of files) {
   const content = readFileSync(file, "utf8");
   const lines = content.split("\n");
   lines.forEach((line, i) => {
+    // Explicit, narrow escape hatch — for business-configurable widget
+    // color defaults (docs/architecture.md §7: the widget can't have
+    // one fixed brand), not a way to sneak in console UI styling. Every
+    // use of this must be a genuine per-business default value, not our
+    // own product's chrome.
+    if (line.includes("allow-raw-color")) return;
     if (HEX_COLOR.test(line) || ARBITRARY_TAILWIND_COLOR.test(line)) {
       console.error(`FAIL: ${file}:${i + 1} uses a raw color instead of a design token:\n  ${line.trim()}`);
       failed = true;

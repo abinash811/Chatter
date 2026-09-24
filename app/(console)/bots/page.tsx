@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentSession } from "@/lib/auth";
-import { withOrgContext } from "@/lib/db";
+import { withOrgContext, getOrCreateBotPublicKey } from "@/lib/db";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -26,6 +26,7 @@ export default async function BotsPage() {
     const bot = await withOrgContext(session.orgId, (tx) =>
       tx.bot.create({ data: { orgId: session.orgId, name } }),
     );
+    await getOrCreateBotPublicKey(session.orgId, bot.id);
     redirect(`/bots/${bot.id}`);
   }
 

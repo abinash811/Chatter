@@ -1,7 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { getCurrentSession } from "@/lib/auth";
-import { withOrgContext } from "@/lib/db";
-import { getOrCreateDraft, saveDraft, publishDraft } from "@/lib/ai/botConfig";
+import { withOrgContext, getOrCreateBotPublicKey } from "@/lib/db";
+import { getOrCreateDraft, saveDraft, publishDraft, parseAppearance } from "@/lib/ai/botConfig";
 import { listAllTools } from "@/lib/ai/tools/registry";
 import "@/lib/ai/tools";
 import { Button } from "@/components/ui/button";
@@ -24,8 +24,10 @@ export default async function BotPage({ params }: { params: Promise<{ botId: str
       orderBy: { version: "desc" },
     }),
   );
+  const publicKey = await getOrCreateBotPublicKey(session.orgId, botId);
 
   const enabledTools = new Set(draft.tools as string[]);
+  const appearance = parseAppearance(draft.appearance);
 
   async function saveDraftAction(formData: FormData) {
     "use server";
@@ -36,6 +38,10 @@ export default async function BotPage({ params }: { params: Promise<{ botId: str
       tools: listAllTools()
         .map((t) => t.name)
         .filter((name) => formData.get(`tool_${name}`) === "on"),
+      appearance: {
+        greeting: String(formData.get("greeting") ?? ""),
+        accentColor: String(formData.get("accentColor") ?? "#7c3aed"), // allow-raw-color — form fallback, not console UI
+      },
     });
     revalidatePath(`/bots/${botId}`);
   }
@@ -46,6 +52,8 @@ export default async function BotPage({ params }: { params: Promise<{ botId: str
     await publishDraft(session.orgId, botId);
     revalidatePath(`/bots/${botId}`);
   }
+
+  const embedSnippet = `<script src="${process.env.APP_BASE_URL}/widget.js" data-bot-key="${publicKey}"></script>`;
 
   return (
     <div className="max-w-xl">
@@ -114,6 +122,30 @@ export default async function BotPage({ params }: { params: Promise<{ botId: str
           </div>
         </div>
 
+        <div className="space-y-2">
+          <span className="text-sm font-medium">Widget appearance</span>
+          <p className="text-sm text-muted-foreground">
+            What visitors see before they've sent a message, and the widget's accent color.
+          </p>
+          <label className="block text-sm">
+            Greeting
+            <input
+              name="greeting"
+              defaultValue={appearance.greeting}
+              className="mt-1 w-full rounded border border-border bg-transparent p-2 text-sm"
+            />
+          </label>
+          <label className="block text-sm">
+            Accent color
+            <input
+              type="color"
+              name="accentColor"
+              defaultValue={appearance.accentColor}
+              className="mt-1 block h-row-sm w-16 rounded border border-border bg-transparent"
+            />
+          </label>
+        </div>
+
         <div className="flex gap-2">
           <Button type="submit" variant="outline">
             Save draft
@@ -128,6 +160,14 @@ export default async function BotPage({ params }: { params: Promise<{ botId: str
           progress finish on the version they started with.
         </p>
       </form>
+
+      <div className="mt-8 space-y-2 border-t border-border pt-6">
+        <span className="text-sm font-medium">Embed on your site</span>
+        <p className="text-sm text-muted-foreground">
+          Paste this before the closing <code>&lt;/body&gt;</code> tag on any page.
+        </p>
+        <pre className="overflow-x-auto rounded bg-muted p-3 text-xs">{embedSnippet}</pre>
+      </div>
     </div>
   );
 }

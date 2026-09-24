@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendMessage } from "@/lib/ai/chat";
 import { resolveBotPublicKey } from "@/lib/db";
+import { withWidgetCors, widgetCorsPreflight, handleWidgetRoute } from "@/lib/widgetCors";
 
 // Stateless route handler — see lib/ai/chat.ts.
 //
@@ -9,31 +10,39 @@ import { resolveBotPublicKey } from "@/lib/db";
 // public botKey (see BotPublicKey in prisma/schema.prisma) — an opaque
 // token, same trust model as a Stripe publishable key. We resolve it to
 // {orgId, botId} server-side before touching anything tenant-scoped.
+//
+// Cross-origin by design — the widget runs on a business's own site,
+// not ours. See lib/widgetCors.ts for why "*" is the right call here.
+export async function OPTIONS() {
+  return widgetCorsPreflight();
+}
+
 export async function POST(req: NextRequest) {
-  const body = (await req.json()) as {
-    botKey: string;
-    conversationId?: string;
-    message: string;
-  };
+  return handleWidgetRoute(async () => {
+    const body = (await req.json()) as {
+      botKey: string;
+      conversationId?: string;
+      message: string;
+    };
 
-  if (!body.botKey || !body.message) {
-    return NextResponse.json(
-      { error: "botKey and message are required" },
-      { status: 400 },
-    );
-  }
+    if (!body.botKey || !body.message) {
+      return withWidgetCors(
+        NextResponse.json({ error: "botKey and message are required" }, { status: 400 }),
+      );
+    }
 
-  const resolved = await resolveBotPublicKey(body.botKey);
-  if (!resolved) {
-    return NextResponse.json({ error: "Invalid botKey" }, { status: 401 });
-  }
+    const resolved = await resolveBotPublicKey(body.botKey);
+    if (!resolved) {
+      return withWidgetCors(NextResponse.json({ error: "Invalid botKey" }, { status: 401 }));
+    }
 
-  const result = await sendMessage({
-    orgId: resolved.orgId,
-    botId: resolved.botId,
-    conversationId: body.conversationId,
-    userMessage: body.message,
+    const result = await sendMessage({
+      orgId: resolved.orgId,
+      botId: resolved.botId,
+      conversationId: body.conversationId,
+      userMessage: body.message,
+    });
+
+    return withWidgetCors(NextResponse.json(result));
   });
-
-  return NextResponse.json(result);
 }
