@@ -50,5 +50,5 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
 - ~~Tool-call traceability logging~~ — every tool call is now logged to
   `ToolCallLog`, independent of whether its result shaped the final
   answer. See `lib/ai/chat.ts`.
-- ~~Console auth provider~~ — Google OAuth via Auth.js, JWT sessions.
-  See ADR 0004.
+- ~~Console auth provider~~ — email + password via Auth.js Credentials,
+  JWT sessions. See ADR 0006 (superseding ADR 0004's Google OAuth).

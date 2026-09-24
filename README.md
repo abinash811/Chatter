@@ -14,13 +14,9 @@ product spec, architecture, and decisions (ADRs).
    (`https://<name>.onrender.com`).
 3. In the Render dashboard, fill in the env vars `render.yaml` leaves
    blank (`sync: false`): `APP_BASE_URL` (the URL from step 2),
-   `ANTHROPIC_API_KEY`, `VOYAGE_API_KEY`, `GOOGLE_CLIENT_ID`/
-   `GOOGLE_CLIENT_SECRET`, `SHOPIFY_CLIENT_ID`/`SHOPIFY_CLIENT_SECRET`.
-4. In Google Cloud Console, add
-   `https://<name>.onrender.com/api/auth/callback/google` as an
-   authorized redirect URI on the OAuth app — it can't be added before
-   step 2 gives you the real URL.
-5. Redeploy (or Render auto-redeploys on env var changes) once those
+   `ANTHROPIC_API_KEY`, `VOYAGE_API_KEY`, `SHOPIFY_CLIENT_ID`/
+   `SHOPIFY_CLIENT_SECRET`.
+4. Redeploy (or Render auto-redeploys on env var changes) once those
    are set.
 
 ## What's scaffolded so far
@@ -56,9 +52,11 @@ product spec, architecture, and decisions (ADRs).
   yet independently contrast-audited), `tailwind.config.ts`,
   `components/ui/` (Button, Badge). First real screen:
   `app/(console)/bots/page.tsx`, a Linear-register dense bot list.
-- Console auth (ADR 0004): Google OAuth via Auth.js (`lib/auth.ts`),
-  JWT sessions, auto-provisions an org on first login. Needs
-  `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `AUTH_SECRET`.
+- Console auth (ADR 0006, superseding ADR 0004): email + password via
+  Auth.js Credentials provider (`lib/auth.ts`, `lib/password.ts`), JWT
+  sessions, auto-provisions an org on first login. Needs `AUTH_SECRET`.
+  `app/login/page.tsx` and `app/signup/page.tsx` are the real entry
+  points.
 
 - Shopify connect flow, end to end: `app/(console)/bots/[botId]/
   integrations/page.tsx` (generic — renders whatever
@@ -105,9 +103,9 @@ Verified end to end on 2026-09-23 (see "Verified by a real run" below).
    re-running it after any `db:migrate` that adds a new tenant-scoped
    table is always safe.
 7. Set `ANTHROPIC_API_KEY` for `lib/ai/gateway.ts`.
-8. Set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (from a Google Cloud
-   Console OAuth app), and `AUTH_SECRET` (any random string —
-   `npx auth secret` generates one) for console login.
+8. Set `AUTH_SECRET` (any random string — `npx auth secret` generates
+   one) for console login. No external app registration needed — visit
+   `/signup` to create an account directly.
 
 ## Verified by a real run (2026-09-23)
 
@@ -150,8 +148,52 @@ resolution, session/message persistence, system-prompt assembly, tool
 registry — reached Anthropic's real API and failed only on the
 placeholder API key (a genuine 401 from Anthropic's servers), meaning
 everything before that boundary is confirmed correct. Not yet verified:
-an actual Claude reply (needs a real `ANTHROPIC_API_KEY`) and the
-Google OAuth login flow itself (needs a real Google Cloud Console app).
+an actual Claude reply (needs a real `ANTHROPIC_API_KEY`).
+
+## Verified by a real run (2026-09-24) — email + password auth (ADR 0006)
+
+Switching from Google OAuth to email + password (`lib/auth.ts`, `lib/
+password.ts`, `app/login/`, `app/signup/`) surfaced two more real bugs,
+neither catchable by reading the code or by `tsc`:
+
+- **Auth.js rejected `localhost` as an untrusted host.** `signIn()`
+  silently failed with `UntrustedHost` on every attempt — Auth.js won't
+  trust the request's `Host` header (needed behind Render's proxy and
+  for any non-Vercel deployment, dev included) unless told to. This had
+  been true since ADR 0004 too; it just was never caught because the
+  Google OAuth flow was never actually driven end to end (see the
+  2026-09-23 entry above — "not yet verified"). Fixed by adding
+  `trustHost: true` to the `NextAuth(...)` config.
+- **A login error round-tripped through a `?error=1` query param never
+  showed up without a manual page reload.** A server action redirecting
+  to the *same route* with only the search params changed doesn't
+  reliably make Next's client router refetch — the URL bar updates but
+  the rendered page can still be the stale, cached one. Only caught by
+  driving the actual failed-login case in a browser and checking the
+  DOM, not just the response status. Fixed by switching `/login` and
+  `/signup` to client components using React 19's `useActionState`
+  (`app/login/LoginForm.tsx`, `app/signup/SignupForm.tsx`) — the error
+  message comes back as action state, no query param or extra
+  navigation involved.
+- Also fixed in passing: the local `node_modules/@prisma/client` install
+  was missing `default.js` (present in the real npm tarball, confirmed
+  by downloading and inspecting it directly) — `main`/`exports` in its
+  `package.json` pointed at a file that didn't exist, so `next build`
+  failed with `Module not found: Can't resolve '@prisma/client'`. Not a
+  Prisma bug, a corrupted local install; fixed by reinstalling the
+  package.
+
+What was verified end to end, driving a real headless browser against a
+real `next build && next start` server, not just reading the response
+status: sign up creates a session and lands on `/bots`; clearing cookies
+and hitting `/bots` redirects to `/login`; logging back in with the same
+credentials lands on `/bots`; a wrong password shows "Invalid email or
+password" inline, immediately, no reload; signing up with an
+already-registered email shows "already exists" inline; mismatched
+password/confirm-password shows "Passwords don't match" inline; zero
+browser console errors throughout. `scripts/canary.mjs` was updated to
+check for the new login form instead of the old Google button and
+re-verified against the same running server.
 
 ## Guardrail automation
 

@@ -33,12 +33,12 @@ async function main() {
     console.error(`FAIL: /login returned ${loginResponse?.status()}`);
     failed = true;
   }
-  const signInButton = await page.getByText("Sign in with Google").count();
-  if (signInButton === 0) {
-    console.error("FAIL: /login did not render the sign-in button");
+  const loginButton = await page.getByRole("button", { name: "Log in" }).count();
+  if (loginButton === 0) {
+    console.error("FAIL: /login did not render the login form");
     failed = true;
   } else {
-    console.log("ok: /login renders and shows the sign-in button");
+    console.log("ok: /login renders and shows the login form");
   }
 
   // /bots: unauthenticated should redirect to /login, not 500.

@@ -1,14 +1,16 @@
 import NextAuth from "next-auth";
-import Google from "next-auth/providers/google";
+import Credentials from "next-auth/providers/credentials";
 import { randomUUID } from "crypto";
 import { PrismaClient } from "@prisma/client";
 import { withOrgContext } from "@/lib/db";
+import { hashPassword, verifyPassword } from "@/lib/password";
 
-// ADR 0004: Google OAuth via Auth.js (next-auth v5), JWT sessions.
-//
-// No Prisma adapter — our own User/Membership shape isn't Auth.js's
-// expected schema, so identity resolution happens in the jwt callback
-// against our own tables instead.
+// ADR 0006: email + password, superseding Google OAuth (ADR 0004) —
+// OAuth requires an external app registered with the provider before
+// anything works even locally, which was pure friction during setup.
+// JWT sessions, no Prisma adapter — same reasoning as before: our own
+// User/Membership shape isn't Auth.js's expected schema, so identity
+// resolution happens in the jwt callback against our own tables.
 //
 // User has no orgId column and isn't RLS-protected (it's not tenant
 // data — the same email can belong to several orgs). "Which org does
@@ -20,22 +22,41 @@ import { withOrgContext } from "@/lib/db";
 const rawClient = new PrismaClient();
 
 const { handlers, auth: nextAuth, signIn, signOut } = NextAuth({
+  // Auth.js refuses to trust a Host header it hasn't verified (Host
+  // header injection protection) unless told to — needed for any
+  // deployment behind a reverse proxy (Render) and for localhost dev,
+  // neither of which Auth.js trusts automatically. Caught by actually
+  // running the login/signup flow: signIn() silently failed with
+  // UntrustedHost until this was added.
+  trustHost: true,
   providers: [
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    Credentials({
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        const email = String(credentials?.email ?? "")
+          .toLowerCase()
+          .trim();
+        const password = String(credentials?.password ?? "");
+        if (!email || !password) return null;
+
+        const user = await rawClient.user.findUnique({ where: { email } });
+        if (!user || !verifyPassword(password, user.passwordHash)) return null;
+
+        return { id: user.id, email: user.email };
+      },
     }),
   ],
   session: { strategy: "jwt" },
+  pages: { signIn: "/login" },
   callbacks: {
-    async jwt({ token, account }) {
-      if (!account || !token.email) return token;
-
-      const user = await rawClient.user.upsert({
-        where: { email: token.email },
-        create: { email: token.email },
-        update: {},
-      });
+    async jwt({ token, user }) {
+      // `user` is only populated on the sign-in request itself (from
+      // authorize's return value above) — token refreshes on later
+      // requests pass the existing token through unchanged.
+      if (!user?.id) return token;
       token.userId = user.id;
 
       const access = await rawClient.userOrgAccess.findFirst({ where: { userId: user.id } });
@@ -52,8 +73,8 @@ const { handlers, auth: nextAuth, signIn, signOut } = NextAuth({
       // always takes the first org found.
       const orgId = randomUUID();
       await withOrgContext(orgId, async (tx) => {
-        await tx.org.create({ data: { id: orgId, name: `${token.email}'s workspace` } });
-        await tx.membership.create({ data: { orgId, userId: user.id, role: "owner" } });
+        await tx.org.create({ data: { id: orgId, name: `${user.email}'s workspace` } });
+        await tx.membership.create({ data: { orgId, userId: user.id!, role: "owner" } });
       });
       await rawClient.userOrgAccess.create({ data: { userId: user.id, orgId } });
 
@@ -70,6 +91,22 @@ const { handlers, auth: nextAuth, signIn, signOut } = NextAuth({
 });
 
 export { handlers, signIn, signOut };
+
+// Not part of Auth.js — Credentials only verifies existing users, it
+// has no concept of registration. Called by app/signup/page.tsx's
+// server action, which then calls signIn("credentials", ...) itself to
+// establish a session immediately after.
+export async function createUser(email: string, password: string): Promise<{ id: string }> {
+  const normalizedEmail = email.toLowerCase().trim();
+  const existing = await rawClient.user.findUnique({ where: { email: normalizedEmail } });
+  if (existing) {
+    throw new Error("An account with this email already exists.");
+  }
+  const user = await rawClient.user.create({
+    data: { email: normalizedEmail, passwordHash: hashPassword(password) },
+  });
+  return { id: user.id };
+}
 
 export interface Session {
   userId: string;

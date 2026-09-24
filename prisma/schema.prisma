@@ -31,10 +31,13 @@ model Org {
 }
 
 model User {
-  id          String       @id @default(uuid())
-  email       String       @unique
-  createdAt   DateTime     @default(now())
-  memberships Membership[]
+  id           String       @id @default(uuid())
+  email        String       @unique
+  // "salt:hash" (scrypt) — see lib/password.ts. ADR 0006: email+password
+  // replaced Google OAuth (ADR 0004) for local-dev friction reasons.
+  passwordHash String
+  createdAt    DateTime     @default(now())
+  memberships  Membership[]
 
   @@map("users")
 }

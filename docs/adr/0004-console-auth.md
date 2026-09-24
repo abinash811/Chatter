@@ -1,6 +1,6 @@
 # ADR 0004: Console auth — Google OAuth via Auth.js, JWT sessions
 
-Status: accepted
+Status: superseded by ADR 0006
 
 Date: 2026-09-23
 
