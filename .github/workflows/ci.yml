@@ -68,11 +68,11 @@ jobs:
       - name: Apply base schema (Prisma)
         run: npx prisma migrate deploy
 
-      - name: Apply RLS policies
-        run: psql "$DATABASE_URL" -f db/migrations/0001_init_rls.sql
-
-      - name: Apply pgvector column/index
-        run: psql "$DATABASE_URL" -f db/migrations/0002_pgvector.sql
+      - name: Apply RLS + pgvector migrations
+        # Same command Render's preDeployCommand runs (render.yaml,
+        # ADR 0005) — CI exercises the identical deploy path, not a
+        # separate psql-based approximation of it.
+        run: node scripts/apply-sql-migrations.mjs
 
       - name: Verify tenant isolation (guardrail #1)
         run: node scripts/verify-rls.mjs

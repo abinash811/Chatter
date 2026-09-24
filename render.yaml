@@ -1,0 +1,46 @@
+# Render Blueprint — see docs/adr/0005-deployment-render.md for why
+# Render and how this maps to local setup (README.md's "Local Setup").
+#
+# preDeployCommand runs after a successful build, before the new
+# instance receives traffic — the right place for migrations. It runs
+# `prisma migrate deploy` (base schema) then apply-sql-migrations.mjs
+# (RLS + pgvector), both confirmed idempotent, so this is safe on every
+# deploy, not just the first.
+
+databases:
+  - name: chatter-db
+    databaseName: chatter
+    plan: starter
+    postgresMajorVersion: "16"
+
+services:
+  - type: web
+    name: chatter
+    runtime: node
+    plan: starter
+    buildCommand: npm ci && npx prisma generate && npm run build
+    preDeployCommand: npx prisma migrate deploy && node scripts/apply-sql-migrations.mjs
+    startCommand: npm run start
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: chatter-db
+          property: connectionString
+      - key: AUTH_SECRET
+        generateValue: true
+      # Everything below has no safe default — filled in via the
+      # Render dashboard after the first deploy. See README.md.
+      - key: APP_BASE_URL
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: VOYAGE_API_KEY
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: SHOPIFY_CLIENT_ID
+        sync: false
+      - key: SHOPIFY_CLIENT_SECRET
+        sync: false

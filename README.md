@@ -3,6 +3,26 @@
 Vertical-agnostic AI chat platform. See `CLAUDE.md` and `docs/` for
 product spec, architecture, and decisions (ADRs).
 
+## Deploying to Render (ADR 0005)
+
+1. In the Render dashboard: **New → Blueprint**, connect this repo.
+   Render reads `render.yaml` and provisions the web service + Postgres
+   automatically, including running the idempotent migrations
+   (`prisma migrate deploy` + `scripts/apply-sql-migrations.mjs`) before
+   each deploy goes live.
+2. After the first deploy, note the assigned URL
+   (`https://<name>.onrender.com`).
+3. In the Render dashboard, fill in the env vars `render.yaml` leaves
+   blank (`sync: false`): `APP_BASE_URL` (the URL from step 2),
+   `ANTHROPIC_API_KEY`, `VOYAGE_API_KEY`, `GOOGLE_CLIENT_ID`/
+   `GOOGLE_CLIENT_SECRET`, `SHOPIFY_CLIENT_ID`/`SHOPIFY_CLIENT_SECRET`.
+4. In Google Cloud Console, add
+   `https://<name>.onrender.com/api/auth/callback/google` as an
+   authorized redirect URI on the OAuth app — it can't be added before
+   step 2 gives you the real URL.
+5. Redeploy (or Render auto-redeploys on env var changes) once those
+   are set.
+
 ## What's scaffolded so far
 
 - Tenant-isolation foundation (ADR 0003) — schema, RLS policies, query
@@ -78,10 +98,12 @@ Verified end to end on 2026-09-23 (see "Verified by a real run" below).
 4. `npm run db:migrate` — creates the base tables from `prisma/schema.prisma`.
 5. As a superuser (once per database): `CREATE EXTENSION vector;` — the
    app role can't do this itself, even with `CREATEDB`.
-6. Apply `db/migrations/0001_init_rls.sql`, then `0002_pgvector.sql`, as
-   the app role — RLS and pgvector aren't things Prisma manages
-   directly. Re-run 0001's policies after any `db:migrate` that adds a
-   new tenant-scoped table.
+6. `node scripts/apply-sql-migrations.mjs` — applies
+   `db/migrations/0001_init_rls.sql` then `0002_pgvector.sql` (RLS and
+   pgvector aren't things Prisma manages directly). The same script
+   Render's `preDeployCommand` and CI run — confirmed idempotent, so
+   re-running it after any `db:migrate` that adds a new tenant-scoped
+   table is always safe.
 7. Set `ANTHROPIC_API_KEY` for `lib/ai/gateway.ts`.
 8. Set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (from a Google Cloud
    Console OAuth app), and `AUTH_SECRET` (any random string —
