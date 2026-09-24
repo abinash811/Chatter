@@ -51,6 +51,10 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npx playwright install chromium --with-deps
+
+      - name: Guardrail checks (tenant isolation, no vertical logic, no client secrets, design tokens)
+        run: npm run check:all
 
       - name: Type check
         run: npx tsc --noEmit
@@ -75,3 +79,10 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Start server and run browser canary
+        run: |
+          npm run start &
+          for i in $(seq 1 30); do curl -sf "$APP_BASE_URL/login" -o /dev/null && break; sleep 1; done
+          npm run canary
+          kill %1

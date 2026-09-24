@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Runs the deterministic guardrail checks + typecheck before every
+# commit, regardless of whether the commit comes from a Claude Code
+# session or a human. This is the local half of the defense-in-depth
+# pair with .github/workflows/ci.yml — catching a violation here is
+# free; catching it in CI costs a push-and-wait cycle.
+#
+# Enable once per clone: git config core.hooksPath .githooks
+set -eo pipefail
+
+cd "$(git rev-parse --show-toplevel)"
+
+echo "[pre-commit] Guardrail checks..."
+npm run check:all
+
+echo "[pre-commit] Type check..."
+npx tsc --noEmit
+
+echo "[pre-commit] All checks passed."

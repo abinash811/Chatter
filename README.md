@@ -131,6 +131,33 @@ everything before that boundary is confirmed correct. Not yet verified:
 an actual Claude reply (needs a real `ANTHROPIC_API_KEY`) and the
 Google OAuth login flow itself (needs a real Google Cloud Console app).
 
+## Guardrail automation
+
+Deterministic checks + a browser canary, run at three points so a
+violation is caught as early and as cheaply as possible — reading code
+alone doesn't catch any of these (see "Verified by a real run" above):
+
+- **`.claude/skills/`** (`bot-engine-build`, `console-frontend-build`,
+  `ship-checklist`) — read by Claude Code before touching the relevant
+  layer, so the patterns are followed on the way in, not just checked on
+  the way out.
+- **`.githooks/pre-commit`** — `npm run check:all` + typecheck, before a
+  commit is even made. One-time setup per clone:
+  `git config core.hooksPath .githooks`.
+- **`.github/workflows/ci.yml`** — the same checks plus the RLS
+  verification and browser canary, against a real Postgres+pgvector
+  service, on every push — the backstop for anything that reaches GitHub
+  without going through the hook (a different clone, a tool that skips
+  hooks).
+
+The checks (`npm run check:all`, or individually `check:isolation` /
+`check:vertical` / `check:secrets` / `check:tokens`) are static and fast.
+`scripts/canary.mjs` is a real Playwright browser hitting a running
+server — it needs the app already started (`npm run build && npm run
+start`, or `npm run dev`) at `APP_BASE_URL`. `.mcp.json` also configures
+a Playwright MCP server for driving the browser interactively during a
+session, independent of the scripted canary.
+
 ## Tenant isolation
 
 Every tenant-scoped query must go through `withOrgContext` in `lib/db.ts`,

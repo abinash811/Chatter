@@ -1,0 +1,38 @@
+// docs/architecture.md §7: consistency comes from design tokens, not
+// ad hoc styling. Flags raw hex colors and Tailwind's arbitrary color
+// palette classes (bg-red-500, text-blue-600, etc.) outside the token
+// definitions themselves (app/globals.css, tailwind.config.ts) — every
+// other file should reference a token (bg-accent, text-muted-foreground)
+// instead.
+
+import { readFileSync } from "fs";
+import { execSync } from "child_process";
+
+const ALLOWLIST = new Set(["app/globals.css", "tailwind.config.ts"]);
+const HEX_COLOR = /#[0-9a-fA-F]{3,8}\b/;
+const ARBITRARY_TAILWIND_COLOR = /\b(?:bg|text|border|ring)-(?:red|blue|green|yellow|purple|pink|indigo|orange|teal|cyan|lime|amber|emerald|violet|fuchsia|rose|sky)-\d{2,3}\b/;
+
+const files = execSync("git ls-files '*.ts' '*.tsx' '*.css'", { encoding: "utf8" })
+  .trim()
+  .split("\n")
+  .filter(Boolean);
+
+let failed = false;
+
+for (const file of files) {
+  if (ALLOWLIST.has(file)) continue;
+  const content = readFileSync(file, "utf8");
+  const lines = content.split("\n");
+  lines.forEach((line, i) => {
+    if (HEX_COLOR.test(line) || ARBITRARY_TAILWIND_COLOR.test(line)) {
+      console.error(`FAIL: ${file}:${i + 1} uses a raw color instead of a design token:\n  ${line.trim()}`);
+      failed = true;
+    }
+  });
+}
+
+if (failed) {
+  console.error("\nUse a token from app/globals.css (bg-accent, text-muted-foreground, etc.) instead.");
+  process.exit(1);
+}
+console.log("ok: no raw colors outside the design-token definitions");
