@@ -113,6 +113,12 @@ reading would have caught:
   `Json` field type. Fixed with targeted casts exactly at those
   boundaries — see `lib/ai/gateway.ts` and `lib/ai/chat.ts`.
 
+`.github/workflows/ci.yml` now runs this same sequence (typecheck,
+migrate, RLS + pgvector SQL, `scripts/verify-rls.mjs`, build) on every
+push, against a real Postgres+pgvector service — with a non-superuser
+app role created explicitly in the workflow, not the service's default
+user, which is a superuser and would make the RLS check pass vacuously.
+
 What was then verified as actually working: the login page renders and
 redirects correctly (unauthenticated → `/login`); a direct RLS script
 confirmed cross-tenant isolation holds (Org B cannot see Org A's bot by

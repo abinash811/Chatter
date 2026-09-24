@@ -7,14 +7,14 @@ in the spirit of Zipchat AI, but not restricted to ecommerce. The same core
 engine should serve ecommerce, healthcare, automotive, and any other
 industry, powered by Claude.
 
-## Status: pre-build / planning phase
+## Status: active build
 
-Tech stack and several architecture questions are still open. **Do not
-scaffold application code (frontend, backend, DB schema, etc.) until the
-relevant open question is resolved** — check docs/open-questions.md first.
-If you're asked to build something whose design is still open, resolve the
-question with the user (or write the ADR if it's implicitly obvious) before
-writing code, don't guess silently.
+Tech stack is chosen (ADR 0002) and real code exists — see README.md for
+what's scaffolded. A few architecture questions are still open; check
+`docs/open-questions.md` before scaffolding a component whose design is
+listed there. If you're asked to build something whose design is still
+open, resolve the question with the user (or write the ADR if it's
+implicitly obvious) before writing code, don't guess silently.
 
 ## Where things live
 
@@ -69,12 +69,19 @@ These hold regardless of what stack or framework we end up on.
   in full (no speculative abstraction, no unnecessary error handling,
   minimal comments, etc.) — this file adds project-specific rules on top,
   it does not replace those.
-
-## Once the stack is chosen
-
-This file, `.claude/settings.json`, and `.claude/skills/` should be extended
-with stack-specific tooling: lint/typecheck/test commands wired into a
-SessionStart hook (see the `session-start-hook` skill), a database MCP for
-schema inspection once a DB is chosen, and skills for recurring scaffolding
-tasks (new vertical template, new action tool). Not done yet — see
-`docs/open-questions.md` for what's blocking it.
+- **Never commit code that hasn't actually been run.** `npx tsc --noEmit`
+  catches TypeScript boundary mismatches; it does not catch a broken SQL
+  migration, a stale dependency version, or whether RLS policies even got
+  created — none of those are visible from reading code. This isn't
+  theoretical: a real test run (README.md's "Verified by a real run")
+  found three such bugs in already-committed code, including every RLS
+  policy silently failing to create. `.github/workflows/ci.yml` now runs
+  `scripts/verify-rls.mjs` and a full build against a real Postgres+
+  pgvector instance on every push — but CI catching it after the fact is
+  the backstop, not the plan. When touching a migration, the gateway, or
+  anything RLS-adjacent, actually run it (or `scripts/verify-rls.mjs`)
+  before committing, in the same pass, not as a separate later step.
+- **Check real version numbers, don't recall them.** A dependency version
+  pinned from training-data memory can be a full major version stale (this
+  happened with `@anthropic-ai/sdk`, silently missing a GA feature already
+  in use). Run `npm view <package> version` before pinning anything new.

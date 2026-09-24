@@ -1,0 +1,77 @@
+name: CI
+
+# Exists specifically because none of the bugs fixed in the "real test
+# run" (see README.md) were catchable by reading code or by TypeScript
+# alone — every RLS policy silently failing to create, a stale SDK
+# version, boundary type mismatches. All of them only surfaced by
+# actually running the app against a real database. This workflow makes
+# that automatic on every push instead of dependent on someone asking
+# for a manual test run.
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        # POSTGRES_USER becomes a SUPERUSER on this image, and a
+        # superuser bypasses RLS unconditionally, regardless of FORCE
+        # ROW LEVEL SECURITY — using it directly here would make
+        # verify-rls.mjs pass vacuously even if every policy were
+        # broken, exactly the bug this workflow exists to catch. Keep
+        # this as the admin connection only; the app steps below use a
+        # separately created non-superuser role, same as local setup.
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: chatter
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      ADMIN_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/chatter
+      DATABASE_URL: postgresql://chatter:chatter@localhost:5432/chatter
+      ANTHROPIC_API_KEY: test-placeholder-key
+      GOOGLE_CLIENT_ID: test-placeholder
+      GOOGLE_CLIENT_SECRET: test-placeholder
+      AUTH_SECRET: test-placeholder-secret-value-not-real
+      APP_BASE_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Create non-superuser app role and hand it the database
+        run: |
+          psql "$ADMIN_DATABASE_URL" -c "CREATE ROLE chatter LOGIN PASSWORD 'chatter' CREATEDB;"
+          psql "$ADMIN_DATABASE_URL" -c "ALTER DATABASE chatter OWNER TO chatter;"
+          psql "$ADMIN_DATABASE_URL" -c "CREATE EXTENSION IF NOT EXISTS vector;"
+
+      - name: Apply base schema (Prisma)
+        run: npx prisma migrate deploy
+
+      - name: Apply RLS policies
+        run: psql "$DATABASE_URL" -f db/migrations/0001_init_rls.sql
+
+      - name: Apply pgvector column/index
+        run: psql "$DATABASE_URL" -f db/migrations/0002_pgvector.sql
+
+      - name: Verify tenant isolation (guardrail #1)
+        run: node scripts/verify-rls.mjs
+
+      - name: Build
+        run: npm run build
