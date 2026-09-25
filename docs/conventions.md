@@ -62,6 +62,37 @@ See `docs/design/README.md` and CLAUDE.md's "Where things live" — check
   model, multi-tenancy strategy) gets an ADR (`docs/adr/`, `new-adr`
   skill) in the same PR as the code, not after.
 
+## Building a new feature
+
+Order, not a suggestion — skipping a step is how a filter bug, a missed
+guardrail, or a redesign-after-the-fact happens. Applies whether the
+request came with a full spec or was just "build X" — only step 1's
+"ask" is conditional, everything else runs regardless of how the
+request was phrased.
+
+1. **Understand the requirement.** What's the actual goal, who's it
+   for, what does "done" look like? Ambiguous, or a real design/
+   architecture decision hiding in it? Ask — don't guess silently
+   (`docs/open-questions.md`'s rule).
+2. **Check design.** Does a `docs/design/preview/` mockup exist? If
+   this is user-facing and none exists, add one — see `docs/design/
+   principles.md` for the bar to build against.
+3. **Check data/security implications.** A new table or column? It's
+   tenant-scoped unless there's a specific reason it isn't (`orgId` +
+   an RLS policy + an index — `docs/security.md`). Touches secrets,
+   auth, or the public widget surface? Same doc.
+4. **Check current practice.** A new library or pattern? Check
+   `docs/research/current-practices.md` first. A real choice with
+   tradeoffs? Explain why/how others do it before asking — don't
+   silently pick one (CLAUDE.md's process rules).
+5. **Build**, following this file's naming/import/file-size rules and
+   the design tokens.
+6. **Verify for real.** Actually run it — a migration against a real
+   database, a real browser flow — not just `tsc`. CLAUDE.md's "never
+   commit code that hasn't actually been run."
+7. **Ship checklist.** Run the `ship-checklist` skill before calling it
+   done.
+
 ## Review checklist
 
 Before calling a page or feature done — whether reviewing your own work

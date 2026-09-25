@@ -1,11 +1,14 @@
 import { redirect } from "next/navigation";
+import { ChevronRight, Bot as BotIcon } from "lucide-react";
 import { getCurrentSession } from "@/lib/auth";
 import { withOrgContext, getOrCreateBotPublicKey } from "@/lib/db";
-import { Badge, Button } from "@/components/ui";
+import { Badge, Button, Input } from "@/components/ui";
+import { relativeTime } from "@/lib/utils";
 
 // First real console screen. Linear register: dense list, one row
 // height (docs/architecture.md §7), no decoration beyond what's needed
-// to scan a list of bots fast.
+// to scan a list of bots fast — but still a real shadow/hover state per
+// docs/design/principles.md #5, not a bare bordered box.
 export default async function BotsPage() {
   const session = await getCurrentSession();
 
@@ -32,39 +35,47 @@ export default async function BotsPage() {
   return (
     <div>
       <div className="flex h-row items-center justify-between">
-        <h1 className="text-lg font-semibold">Bots</h1>
+        <h1 className="flex items-center gap-2 text-lg font-semibold">
+          Bots
+          {bots.length > 0 && <span className="text-sm font-normal text-muted-foreground">{bots.length}</span>}
+        </h1>
         <form action={createBotAction} className="flex items-center gap-2">
-          <input
-            name="name"
-            placeholder="Bot name"
-            required
-            className="h-row-sm rounded border border-border bg-transparent px-2 text-sm"
-          />
+          <Input name="name" placeholder="Bot name" required className="h-row-sm w-40" />
           <Button size="sm" type="submit">
             New bot
           </Button>
         </form>
       </div>
 
-      <div className="mt-4 divide-y divide-border border-y border-border">
-        {bots.length === 0 && (
-          <p className="py-8 text-sm text-muted-foreground">
-            No bots yet — create one to get started.
-          </p>
-        )}
-        {bots.map((bot) => (
-          <a
-            key={bot.id}
-            href={`/bots/${bot.id}`}
-            className="flex h-row items-center justify-between px-2 text-sm hover:bg-muted"
-          >
-            <span className="font-medium">{bot.name}</span>
-            <Badge variant={bot.versions.length > 0 ? "default" : "muted"}>
-              {bot.versions.length > 0 ? "Published" : "Draft only"}
-            </Badge>
-          </a>
-        ))}
-      </div>
+      {bots.length === 0 ? (
+        <div className="mt-4 flex flex-col items-center gap-2 rounded-lg border border-border py-14 shadow-sm">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+            <BotIcon className="h-5 w-5 text-muted-foreground" />
+          </div>
+          <p className="text-sm font-medium">No bots yet</p>
+          <p className="text-sm text-muted-foreground">Create one above to get started.</p>
+        </div>
+      ) : (
+        <div className="mt-4 divide-y divide-border rounded-lg border border-border shadow-sm">
+          {bots.map((bot) => (
+            <a
+              key={bot.id}
+              href={`/bots/${bot.id}`}
+              className="group flex h-row items-center gap-3 px-3 text-sm transition-colors hover:bg-muted"
+            >
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-accent/10 text-xs font-semibold text-accent">
+                {bot.name.slice(0, 2).toUpperCase()}
+              </div>
+              <span className="flex-1 font-medium">{bot.name}</span>
+              <span className="text-xs text-muted-foreground">Created {relativeTime(bot.createdAt)}</span>
+              <Badge variant={bot.versions.length > 0 ? "default" : "muted"}>
+                {bot.versions.length > 0 ? "Published" : "Draft only"}
+              </Badge>
+              <ChevronRight className="h-4 w-4 text-border transition-colors group-hover:text-muted-foreground" />
+            </a>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

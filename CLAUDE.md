@@ -31,11 +31,17 @@ make a meaningful change, update this before ending your turn.
 - Console auth: email + password (ADR 0006, superseding ADR 0004's
   Google OAuth) — `/login` and `/signup` have a real design pass
   (`docs/design/preview/auth.html`, `components/auth/AuthShell.tsx`).
-- Design-system practice: `docs/design/preview/`, a shared-component
+- Design-system practice: `docs/design/preview/`, `docs/design/
+  principles.md` (the sharp, opinionated bar — component reuse, tokens,
+  depth/polish, plain language, register mapping), a shared-component
   barrel (`components/ui/index.ts`), naming/import/review conventions
-  (`docs/conventions.md`). Draft previews for `/bots` and the bot editor
-  exist (`docs/design/preview/bots-list.html`, `bot-editor.html`) —
-  sent to the user for feedback, not yet approved or implemented.
+  (`docs/conventions.md`, now including a "Building a new feature"
+  intake process: requirement → design → data/security → current-
+  practice check → build → verify → ship checklist). `/bots` and the
+  bot editor implemented and approved (`docs/design/preview/
+  bots-list.html`, `bot-editor.html`) — icon avatars, relative
+  timestamps, real hover/shadow depth (Card now ships `shadow-sm` by
+  default, Button has a tactile active-press state), sidebar nav icons.
 - Render deployment prep (ADR 0005).
 - Product management docs: `docs/roadmap.md` (Now/Next/Later),
   `docs/features.md` (built vs. planned catalog), `docs/security.md`,
@@ -73,8 +79,6 @@ make a meaningful change, update this before ending your turn.
   not added speculatively.
 
 **Known gaps:**
-- 🟡 `/bots` and `/bots/[botId]` haven't had a design pass implemented
-  yet — draft previews exist and are awaiting user feedback (see above).
 - 🟡 No real end-to-end verified Claude reply yet — blocked on a real
   `ANTHROPIC_API_KEY` (everything up to that boundary is confirmed
   correct, see README's "Verified by a real run").
@@ -106,6 +110,10 @@ make a meaningful change, update this before ending your turn.
 - `docs/open-questions.md` — decisions not yet made; owner is the user
 - `docs/conventions.md` — naming, shared-component import rule, file-size
   guidance, git workflow, and the review checklist.
+- `docs/design/principles.md` — the sharp, opinionated design bar every
+  screen is checked against (component reuse, tokens, depth/polish,
+  plain language, the Linear/Notion/Stripe register mapping). Read this
+  before `docs/design/preview/`.
 - `docs/design/preview/` — static HTML mockups, the visual ground truth
   for a page before it's built in code. **Before writing any new page or
   UI pattern, check this folder first.** If a preview exists, match it

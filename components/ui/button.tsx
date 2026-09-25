@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 // goes through this — no one-off <button> styling per screen, per the
 // consistency rule in docs/architecture.md §7.
 const buttonVariants = cva(
-  "inline-flex items-center justify-center rounded text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center rounded text-sm font-medium transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {

@@ -19,5 +19,10 @@ in sync with `app/globals.css` by hand when tokens change.
 
 ```
 preview/
-  auth.html    ✅ Approved — /login and /signup split layout (components/auth/AuthShell.tsx)
+  auth.html        ✅ Approved — /login and /signup split layout (components/auth/AuthShell.tsx)
+  bots-list.html   ✅ Approved — /bots (app/(console)/bots/page.tsx)
+  bot-editor.html  ✅ Approved — bot editor Card layout (BotEditorForm.tsx); topbar/embed-section restyle not yet implemented
 ```
+
+See `docs/design/principles.md` for the bar these previews (and their
+implementations) are checked against.
