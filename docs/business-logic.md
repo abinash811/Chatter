@@ -75,6 +75,49 @@ connected the real integration a tool needs (e.g. Shopify for
 `check_order_status`), the tool falls back to "collect info, hand off
 to a human" — never a fabricated answer.
 
+## Knowledge base ingestion
+
+`docs/product-spec.md`'s MVP scope: "file upload and/or manual Q&A at
+minimum for v1." Manual Q&A is what's built (`lib/ai/knowledgeBase.ts`,
+`/bots/[botId]/knowledge`) — file/URL ingestion is separate, larger
+scope (chunking strategy, dedup) `KnowledgeSource.kind` already leaves
+room for (`"file"`/`"url"`, see `docs/open-questions.md` #4 on
+crawling) but isn't built yet.
+
+One `KnowledgeSource` (`kind: "qa"`, `title` = the question) + one
+`KnowledgeChunk` (`content` = the answer) per Q&A pair — no multi-chunk
+splitting needed, a Q&A pair is already the right retrieval unit. The
+embedding is computed from the question *and* answer together (not just
+the question) so a visitor query phrased closer to either still
+matches. `KnowledgeChunk.embedding` (pgvector,
+`db/migrations/0002_pgvector.sql`) isn't in the Prisma schema — Prisma
+can't declare a `vector` column natively — so it's written via a raw
+SQL update after the Prisma-typed `create`, same pattern
+`searchKnowledgeBaseTool` already uses on the read side (pgvector
+cosine-distance `ORDER BY`).
+
+`searchKnowledgeBaseTool` restates the question alongside the answer
+for a `kind: "qa"` chunk (`Q: ...\nA: ...`) rather than returning the
+bare answer — reads better to the model than an answer with no
+context for what it's answering.
+
+**Verification note**: this environment's `VOYAGE_API_KEY` is a
+placeholder (same class of gap as the documented missing
+`ANTHROPIC_API_KEY`), so the actual embeddings call has never been
+exercised against the real Voyage API here. Everything up to that
+boundary — the raw SQL vector write/read, the RLS isolation specific to
+`knowledge_sources`/`knowledge_chunks`, the console UI's list/add/
+delete flow — was verified for real against a real Postgres+pgvector
+instance and a real browser (a directly-seeded entry, since creating
+one through the UI needs the embeddings call). `tests/e2e/
+knowledge.spec.ts` covers what's reachable without a real key: the
+empty state, the dialog, and — a real bug this caught — that a failed
+save doesn't silently wipe the question/answer fields a business owner
+just typed (`useActionState`'s `<form>` resets uncontrolled fields on
+any action completion, success or failure, unless the action's
+returned state re-seeds them via `defaultValue`; same fix already
+shipped for `/login`'s email field).
+
 ## Tenant isolation in practice
 
 Every tenant-scoped database query must go through `withOrgContext`

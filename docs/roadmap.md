@@ -16,8 +16,9 @@ The generic core plus one concrete vertical template — see
 - Embeddable chat widget (shadow-DOM isolated, per-business theming)
 - Admin console: bot list, bot editor (persona/guardrails/tools/
   appearance, draft/publish), Shopify connect flow
-- Knowledge ingestion: file upload / manual Q&A (site crawling is
-  `docs/open-questions.md` #4, not yet decided)
+- Knowledge ingestion: manual Q&A done (`docs/features.md`); file
+  upload still open (site crawling is `docs/open-questions.md` #4, not
+  yet decided)
 - RAG retrieval as a tool call, not a hardcoded prompt prepend
 - Two action tools: `search_knowledge_base`, `check_order_status`
   (both read-only — see Next)
@@ -40,8 +41,12 @@ Validated by competitor research, not yet built:
   resolve before building, not a UI task).
 - **Image input** — a visitor sends a photo (damaged item, wrong item).
   Validated by both Gorgias and Intercom Fin shipping it.
-- **Design pass on `/bots` and `/bots/[botId]`** — see CLAUDE.md's
-  Current State; the auth pages got a real design pass, these haven't.
+- **Design pass on `/bots/[botId]/integrations`** — bot list and bot
+  editor got theirs (`docs/design/preview/bots-list.html`,
+  `bot-editor.html`); integrations is the one console page left.
+- **File/URL knowledge ingestion** — manual Q&A shipped
+  (`docs/features.md`); file upload/URL is the remaining MVP scope from
+  `docs/product-spec.md`'s "file upload and/or manual Q&A at minimum."
 - **Site crawling for ingestion** — `docs/open-questions.md` #4.
   Tidio's positioning (the closest match to our own SMB/self-serve
   target, per the research) treats this as table stakes for a fast

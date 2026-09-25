@@ -23,6 +23,7 @@ preview/
   bots-list.html      ✅ Approved — /bots (app/(console)/bots/page.tsx), rebuilt on the real CARE Table (components/console/BotsTable.tsx, ADR 0008) — column headers, whole-row click
   bot-editor.html     ✅ Approved — bot editor rebuilt on principles.md #10's page-composition pattern (BotEditorForm.tsx): persistent top bar, real Tabs (not stacked Cards), Dialog confirmation before Publish; embed snippet now lives inside the Appearance tab. Notion-register depth/polish pass (principles.md #4/#5/#9, working from real Linear/Notion/Stripe knowledge, not CARE reference — see ADR 0011): Card is a soft-tinted recessed panel (not a plain white box with a border) with white fields popping inside it, bigger CardTitle for real section hierarchy, more generous padding; Input/Textarea/Checkbox given real shadow+hover states to match Button's existing polish
   console-shell.html  ✅ Shipped — the sidebar nav shell shared by every console page (app/(console)/layout.tsx, components/console/AppSidebar.tsx) — real CARE Sidebar, icon-collapsible, ADR 0008/0009
+  knowledge.html      ✅ Shipped — /bots/[botId]/knowledge (KnowledgeForm.tsx): manual Q&A ingestion, a real CARE Table list (Linear register) + an Add Q&A Dialog (Notion register, ADR 0011) — same list/compose split as bots-list.html/bot-editor.html
 ```
 
 See `docs/design/principles.md` for the bar these previews (and their

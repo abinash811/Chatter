@@ -27,8 +27,8 @@ export const searchKnowledgeBaseTool: Tool = {
     // scopes this query to orgId — the botId filter narrows further to
     // this specific bot's sources within that org.
     const chunks = await withOrgContext(orgId, (tx) =>
-      tx.$queryRaw<{ content: string }[]>(Prisma.sql`
-        select kc.content
+      tx.$queryRaw<{ content: string; kind: string; title: string }[]>(Prisma.sql`
+        select kc.content, ks.kind, ks.title
         from knowledge_chunks kc
         join knowledge_sources ks on ks.id = kc."sourceId"
         where ks."botId" = ${botId}
@@ -40,7 +40,12 @@ export const searchKnowledgeBaseTool: Tool = {
     if (chunks.length === 0) {
       return "No relevant information found in the knowledge base.";
     }
-    return chunks.map((c) => c.content).join("\n\n---\n\n");
+    // A manually-entered Q&A pair (lib/ai/knowledgeBase.ts) reads better
+    // to the model with its question restated alongside the answer, not
+    // just the bare answer text.
+    return chunks
+      .map((c) => (c.kind === "qa" ? `Q: ${c.title}\nA: ${c.content}` : c.content))
+      .join("\n\n---\n\n");
   },
 };
 

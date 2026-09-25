@@ -38,9 +38,11 @@ A bot is only allowed to use the subset enabled in its published config.
 information before answering, instead of the model guessing from what
 it was trained on. `search_knowledge_base` is Chatter's RAG tool.
 
-**Knowledge base / knowledge chunk** — a business's uploaded documents
-(knowledge base), split into small pieces (chunks) so the RAG tool can
-search and retrieve just the relevant parts.
+**Knowledge base / knowledge chunk** — what a business feeds a bot to
+answer from: manually-entered question-and-answer pairs today (each
+one its own chunk), file/URL uploads later. Split into small pieces
+(chunks) so the RAG tool can search and retrieve just the relevant
+parts.
 
 **Handoff** — when the bot can't help, it says so and captures the
 conversation for a human — never a guess dressed up as an answer

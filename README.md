@@ -75,7 +75,12 @@ product spec, architecture, and decisions (ADRs).
   new draft seeded from what was just published. Bot creation is wired
   from `bots/page.tsx`'s "New bot" form.
 
-Not yet built: ingestion pipeline, a real onboarding flow (org naming,
+- Knowledge base ingestion (manual Q&A): `lib/ai/knowledgeBase.ts` and
+  `app/(console)/bots/[botId]/knowledge/` — the piece that was missing
+  before now, `searchKnowledgeBaseTool` had real retrieval but nothing
+  ever wrote a row to search. File/URL ingestion is still open.
+
+Not yet built: file/URL ingestion, a real onboarding flow (org naming,
 invites, multi-org switcher), the appearance/theming editor (persona +
 guardrails + tools only for now). Still blocked on the remaining items
 in `docs/open-questions.md`.

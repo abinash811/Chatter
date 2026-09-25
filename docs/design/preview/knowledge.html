@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: #e5e7eb; }
+.page-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; padding: 8px 16px; background: #fff; border-bottom: 1px solid #e5e5e5; color: #065f46; }
+
+.shell { display: flex; background: #fff; }
+.sidebar { width: 224px; flex-shrink: 0; border-right: 1px solid #e5e5e5; padding: 16px 12px; }
+.brand-row { display: flex; align-items: center; gap: 8px; padding: 8px; margin-bottom: 8px; }
+.brand-icon { width: 22px; height: 22px; background: #065f46; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.brand-name { font-size: 13px; font-weight: 600; color: #0a0a0c; }
+.nav-item { height: 32px; display: flex; align-items: center; padding: 0 8px; border-radius: 6px; font-size: 13px; color: #0a0a0c; background: #f5f5f5; font-weight: 500; }
+
+.main { flex: 1; padding: 24px 32px 48px; max-width: 900px; }
+.main-header { display: flex; align-items: center; justify-content: space-between; height: 40px; margin-bottom: 4px; }
+.page-title { font-size: 18px; font-weight: 600; color: #0a0a0c; }
+.entry-count { font-size: 12px; color: #737373; margin-left: 8px; font-weight: 400; }
+.btn-primary { height: 32px; padding: 0 14px; background: #065f46; color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 500; }
+.btn-outline { height: 32px; padding: 0 14px; border: 1px solid #e5e5e5; background: #fff; border-radius: 6px; font-size: 13px; font-weight: 500; color: #0a0a0c; }
+
+/* Real CARE Table (components/ui/table.tsx, ADR 0008) via
+   KnowledgeForm.tsx — same list pattern as bots-list.html's real
+   BotsTable, per docs/research/design-system-standards.md's own
+   Linear-list / Notion-compose split (ADR 0011). */
+.list { margin-top: 12px; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; }
+.thead-row { display: flex; align-items: center; height: 40px; padding: 0 16px; background: #fafafa; border-bottom: 1px solid #e5e5e5; font-size: 13px; font-weight: 500; color: #0a0a0c; }
+.th-question { flex: 1; }
+.th-answer { flex: 1; }
+.row { display: flex; align-items: center; height: 40px; padding: 0 16px; border-bottom: 1px solid #e5e5e5; font-size: 13px; }
+.row:last-child { border-bottom: none; }
+.row-question { font-weight: 500; color: #0a0a0c; flex: 1; padding-right: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row-answer { color: #737373; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row-delete { width: 28px; color: #a3a3a3; }
+
+.empty { padding: 56px 0; text-align: center; margin-top: 12px; border: 1px solid #e5e5e5; border-radius: 8px; }
+.empty-title { font-size: 13px; font-weight: 500; color: #0a0a0c; margin-bottom: 2px; }
+.empty-sub { font-size: 12px; color: #737373; }
+
+/* Dialog scene — same visual language as bot-editor.html's publish
+   dialog, reused for a compose surface here (Notion register: calm,
+   generous, per principles.md #4 and ADR 0011). */
+.dialog-overlay { position: relative; background: #fff; }
+.dialog-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; }
+.dialog { width: 420px; background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+.dialog-title { font-size: 15px; font-weight: 600; color: #0a0a0c; margin-bottom: 6px; }
+.dialog-desc { font-size: 13px; color: #737373; line-height: 1.5; margin-bottom: 16px; }
+.field-label-sm { font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 5px; display: block; }
+.field-input { width: 100%; border: 1px solid #e5e5e5; border-radius: 6px; padding: 0 12px; height: 36px; font-size: 13px; margin-bottom: 12px; }
+.field-textarea { width: 100%; border: 1px solid #e5e5e5; border-radius: 6px; padding: 10px 12px; font-size: 13px; font-family: inherit; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 1px solid #e5e5e5; }
+</style>
+</head><body>
+
+<div class="page-label">Knowledge base — /bots/[botId]/knowledge (KnowledgeForm.tsx), reachable from the bot editor's top bar</div>
+<div class="shell">
+  <div class="sidebar">
+    <div class="brand-row">
+      <div class="brand-icon"><svg width="12" height="12" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12c0 4.418-4.03 8-9 8-1.17 0-2.29-.2-3.31-.56L3 21l1.56-4.69C3.57 15.06 3 13.58 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></div>
+      <div class="brand-name">Chatter</div>
+    </div>
+    <div class="nav-item">Bots</div>
+  </div>
+  <div class="main">
+    <div class="main-header">
+      <div class="page-title">Knowledge base<span class="entry-count">2</span></div>
+      <button class="btn-primary">Add Q&amp;A</button>
+    </div>
+    <div class="list">
+      <div class="thead-row">
+        <div class="th-question">Question</div>
+        <div class="th-answer">Answer</div>
+        <div style="width:28px;"></div>
+      </div>
+      <div class="row">
+        <div class="row-question">What is your return policy?</div>
+        <div class="row-answer">You can return any item within 30 days of delivery.</div>
+        <div class="row-delete">🗑</div>
+      </div>
+      <div class="row">
+        <div class="row-question">Do you ship internationally?</div>
+        <div class="row-answer">Yes, to most countries — rates shown at checkout.</div>
+        <div class="row-delete">🗑</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page-label">Empty state</div>
+<div class="shell" style="height:320px;">
+  <div class="sidebar">
+    <div class="brand-row">
+      <div class="brand-icon"><svg width="12" height="12" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12c0 4.418-4.03 8-9 8-1.17 0-2.29-.2-3.31-.56L3 21l1.56-4.69C3.57 15.06 3 13.58 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></div>
+      <div class="brand-name">Chatter</div>
+    </div>
+    <div class="nav-item">Bots</div>
+  </div>
+  <div class="main">
+    <div class="main-header">
+      <div class="page-title">Knowledge base</div>
+      <button class="btn-primary">Add Q&amp;A</button>
+    </div>
+    <div class="empty">
+      <div class="empty-title">No knowledge yet</div>
+      <div class="empty-sub">Add a question and answer above to get started.</div>
+    </div>
+  </div>
+</div>
+
+<div class="page-label">Add Q&amp;A dialog — Notion-calm compose surface (ADR 0011), reused from the persistent-top-bar + Dialog pattern (principles.md #10)</div>
+<div class="shell" style="height:440px;">
+  <div class="dialog-overlay" style="flex:1;">
+    <div class="dialog-backdrop">
+      <div class="dialog">
+        <div class="dialog-title">Add a question and answer</div>
+        <div class="dialog-desc">Write it like you'd explain it to a customer — the bot searches this whenever it needs a fact it doesn't already have.</div>
+        <label class="field-label-sm">Question</label>
+        <input class="field-input" placeholder="What's your return policy?" readonly/>
+        <label class="field-label-sm">Answer</label>
+        <textarea class="field-textarea" rows="4" readonly placeholder="You can return any item within 30 days of delivery..."></textarea>
+        <div class="dialog-actions">
+          <button class="btn-outline">Cancel</button>
+          <button class="btn-primary">Add</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body></html>

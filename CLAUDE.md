@@ -263,6 +263,45 @@ make a meaningful change, update this before ending your turn.
   (only `bot-editor.png` actually changed — confirms the Input/Textarea
   `bg-background` change was a correct no-op on white-background
   screens — stable across two re-runs).
+- **Knowledge base ingestion (manual Q&A) — closes the biggest actual
+  product gap, not a design task.** `search_knowledge_base` already did
+  a real pgvector similarity search; nothing anywhere ever wrote a row
+  into `KnowledgeSource`/`KnowledgeChunk`, so a published bot had zero
+  knowledge to answer from. `lib/ai/knowledgeBase.ts` (list/create/
+  delete, one source+chunk per Q&A pair, embeds question+answer
+  together) and `/bots/[botId]/knowledge` (`KnowledgeForm.tsx` — a real
+  CARE `Table` list + an `Add Q&A` `Dialog`, an `AlertDialog` delete
+  confirmation, reachable from the bot editor's top bar next to
+  Integrations). `searchKnowledgeBaseTool` now restates the question
+  alongside the answer for a `qa`-kind chunk instead of returning a
+  bare answer. Two real bugs caught by actually running it, not
+  trusting types: (1) exporting a plain object (the idle `useActionState`
+  seed) from a `"use server"` file 500'd every page render — Next.js
+  only allows async function exports there; fixed by moving the
+  constant into the client component, same as `BotEditorForm.tsx`
+  already does. (2) The same "failed submit silently wipes the form"
+  bug already fixed once on `/login` — `useActionState`'s `<form>`
+  resets uncontrolled fields on any action completion regardless of
+  success/failure; fixed by echoing `question`/`answer` back in the
+  error state and re-seeding via `defaultValue`, confirmed via
+  `inputValue()` before/after a real failed submit, not a screenshot.
+  `VOYAGE_API_KEY` is a placeholder in this environment (same class of
+  gap as the documented missing `ANTHROPIC_API_KEY`), so the real
+  embeddings call itself has never been exercised here — everything up
+  to that boundary (the raw-SQL pgvector write/read, RLS isolation
+  specific to these two tables, the full list/add/delete UI flow) was
+  verified for real against a real Postgres+pgvector instance and a
+  real browser, with a directly-seeded entry standing in for a
+  successful embed. `tests/unit/lib/ai/knowledgeBase.test.ts` +
+  `tests/unit/lib/ai/tools/searchKnowledgeBase.test.ts` (9 new specs),
+  `tests/e2e/knowledge.spec.ts` (4 specs covering what's reachable
+  without a real key, including a regression test for bug (2)), a new
+  `tests/visual/` spec (empty state + Add Q&A dialog), and
+  `docs/design/preview/knowledge.html`. `docs/business-logic.md` has
+  the full "Knowledge base ingestion" writeup including the
+  verification note. File/URL ingestion is separate, larger,
+  deliberately not-built scope — `docs/roadmap.md`/`docs/features.md`
+  updated to reflect manual Q&A done, file upload still open.
 
 **Known gaps:**
 - 🔲 Design system tokens/infra and a real 18-component primitive layer
@@ -399,9 +438,9 @@ make a meaningful change, update this before ending your turn.
 - 🟡 No real end-to-end verified Claude reply yet — blocked on a real
   `ANTHROPIC_API_KEY` (everything up to that boundary is confirmed
   correct, see README's "Verified by a real run").
-- 🔲 Not yet built: password reset flow, knowledge-base ingestion
-  pipeline, onboarding flow (org naming/invites/multi-org switcher),
-  appearance/theming editor.
+- 🔲 Not yet built: password reset flow, file/URL knowledge ingestion
+  (manual Q&A is done — see the Done bullet above), onboarding flow
+  (org naming/invites/multi-org switcher), appearance/theming editor.
 - 🟡 `lib/ai/` and other pure/mockable logic now has real unit tests
   (`tests/unit/`); React component rendering tests do not yet, though
   `@testing-library/react`/`jsdom` are installed and `vitest.config.mts`

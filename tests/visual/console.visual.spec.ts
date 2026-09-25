@@ -81,6 +81,26 @@ test("bot editor — publish confirmation dialog (docs/design/principles.md #10)
   await expect(page).toHaveScreenshot("bot-editor-publish-dialog.png");
 });
 
+test("knowledge base — empty state and Add Q&A dialog", async ({ page }) => {
+  await page.goto("/signup");
+  await page.fill('input[name="email"]', uniqueEmail("visual-knowledge"));
+  await page.fill('input[name="password"]', PASSWORD);
+  await page.fill('input[name="confirmPassword"]', PASSWORD);
+  await page.click('button[type="submit"]');
+  await expect(page).toHaveURL(/\/bots$/);
+
+  await page.fill('input[name="name"]', "Support bot");
+  await Promise.all([page.waitForURL(/\/bots\/[^/]+$/), page.click('button:has-text("New bot")')]);
+
+  await page.click('a:has-text("Knowledge")');
+  await expect(page).toHaveURL(/\/knowledge$/);
+  await expect(page).toHaveScreenshot("knowledge-empty.png");
+
+  await page.click('button:has-text("Add Q&A")');
+  await expect(page.getByRole("heading", { name: "Add a question and answer" })).toBeVisible();
+  await expect(page).toHaveScreenshot("knowledge-add-dialog.png");
+});
+
 test("console sidebar — icon-collapsed", async ({ page }) => {
   await page.goto("/signup");
   await page.fill('input[name="email"]', uniqueEmail("visual-sidebar"));

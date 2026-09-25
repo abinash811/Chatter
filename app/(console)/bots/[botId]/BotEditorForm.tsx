@@ -88,6 +88,9 @@ export function BotEditorForm({
           <Badge variant="muted">{publishedVersion ? `Published v${publishedVersion}` : "Never published"}</Badge>
         </div>
         <div className="flex items-center gap-3">
+          <a href={`/bots/${botId}/knowledge`} className="text-sm text-muted-foreground hover:underline">
+            Knowledge
+          </a>
           <a href={`/bots/${botId}/integrations`} className="text-sm text-muted-foreground hover:underline">
             Integrations
           </a>
