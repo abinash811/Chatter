@@ -86,6 +86,7 @@ model Bot {
   conversations Conversation[]
   publicKey     BotPublicKey?
 
+  @@index([orgId])
   @@map("bots")
 }
 
@@ -105,6 +106,7 @@ model Integration {
   bot Bot @relation(fields: [botId], references: [id])
 
   @@unique([botId, provider])
+  @@index([orgId])
   @@map("integrations")
 }
 
@@ -133,6 +135,7 @@ model BotConfigVersion {
   bot Bot @relation(fields: [botId], references: [id])
 
   @@unique([botId, version])
+  @@index([orgId])
   @@map("bot_config_versions")
 }
 
@@ -151,6 +154,7 @@ model KnowledgeSource {
   bot    Bot              @relation(fields: [botId], references: [id])
   chunks KnowledgeChunk[]
 
+  @@index([orgId])
   @@map("knowledge_sources")
 }
 
@@ -162,6 +166,7 @@ model KnowledgeChunk {
 
   source KnowledgeSource @relation(fields: [sourceId], references: [id])
 
+  @@index([orgId])
   @@map("knowledge_chunks")
 }
 
@@ -187,6 +192,7 @@ model Conversation {
   bot      Bot       @relation(fields: [botId], references: [id])
   messages Message[]
 
+  @@index([orgId])
   @@map("conversations")
 }
 
@@ -200,6 +206,7 @@ model Message {
 
   conversation Conversation @relation(fields: [conversationId], references: [id])
 
+  @@index([orgId])
   @@map("messages")
 }
 
@@ -235,5 +242,6 @@ model ToolCallLog {
   output         String
   createdAt      DateTime @default(now())
 
+  @@index([orgId])
   @@map("tool_call_logs")
 }

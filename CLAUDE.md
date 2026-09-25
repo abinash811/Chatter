@@ -42,6 +42,18 @@ make a meaningful change, update this before ending your turn.
   `docs/accessibility.md` — informed by competitor research on Gorgias,
   Intercom Fin, and Drift/Tidio (`docs/research/competitive-
   landscape.md`), on top of the existing Zipchat research.
+- Design tokens finalized (ADR 0007): primary color, a six-step type
+  scale, verified contrast (caught and fixed one real dark-mode
+  contrast bug in the process).
+- `docs/research/current-practices.md` — a living reference checked
+  before adopting any new technical pattern, not a one-time snapshot.
+- Ongoing system hardening: `scripts/predev-check.mjs` (runs
+  automatically before `npm run dev`, on whoever's machine runs it —
+  catches a placeholder `DATABASE_URL`, Postgres not running, or a
+  corrupted Prisma client install before the dev server even starts),
+  `orgId` indexes added to every RLS-scoped table (was previously
+  unindexed on all of them), `ship-checklist` skill updated to match
+  the current 7 guardrail checks and the docs that now need checking.
 
 **Known gaps:**
 - 🟡 `/bots` and `/bots/[botId]` haven't had a design pass implemented
@@ -52,6 +64,15 @@ make a meaningful change, update this before ending your turn.
 - 🔲 Not yet built: password reset flow, knowledge-base ingestion
   pipeline, onboarding flow (org naming/invites/multi-org switcher),
   appearance/theming editor.
+- 🔲 No schema-validation library (zod or similar) for forms/API input —
+  currently raw `String(formData.get(...))` with manual inline checks.
+  Awaiting the user's go-ahead (a real decision, not a mechanical fix).
+- 🔲 No automated dependency-update tool (Dependabot/Renovate) wired up
+  yet — same, awaiting a choice between the two.
+- 🔲 No rate limiting on any API route, no toast/notification system, no
+  error boundary, no component-level tests — see the fuller gap list
+  from the 2026-09-25 product-building-process discussion (not yet its
+  own doc; ask the user if this should become one).
 
 ## Where things live
 
@@ -67,6 +88,10 @@ make a meaningful change, update this before ending your turn.
 - `docs/adr/` — Architecture Decision Records, one per significant,
   hard-to-reverse decision. Template at `docs/adr/template.md`.
 - `docs/research/` — competitive and technical research notes
+- `docs/research/current-practices.md` — a living reference, unlike the
+  other research notes: checked (or updated) before introducing any new
+  technical pattern, so a decision doesn't quietly rely on stale
+  training-data memory of "how this is usually done."
 - `docs/open-questions.md` — decisions not yet made; owner is the user
 - `docs/conventions.md` — naming, shared-component import rule, file-size
   guidance, git workflow, and the review checklist.
@@ -138,3 +163,12 @@ These hold regardless of what stack or framework we end up on.
   pinned from training-data memory can be a full major version stale (this
   happened with `@anthropic-ai/sdk`, silently missing a GA feature already
   in use). Run `npm view <package> version` before pinning anything new.
+- **Check current practice, don't recall it.** Same failure mode as
+  above, applied to patterns instead of version numbers — see
+  `docs/research/current-practices.md`.
+- **When a new technical pattern needs a real choice** (a library, a
+  tool, an approach with tradeoffs) — not something with one obviously
+  correct answer — explain it to the user before asking: what it is in
+  plain terms, why it's needed, and how other companies/projects
+  typically do it. Then ask. Don't silently pick one, and don't ask
+  without the explanation first.
