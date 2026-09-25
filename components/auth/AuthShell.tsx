@@ -24,8 +24,8 @@ export function AuthShell({
   return (
     <div className="flex min-h-screen">
       <div className="relative hidden w-[42%] flex-col overflow-hidden bg-panel p-8 md:flex">
-        <div className="absolute -bottom-20 -right-20 h-64 w-64 rounded-full border-[40px] border-accent/10" />
-        <div className="absolute -left-10 -top-10 h-40 w-40 rounded-full border-[28px] border-accent/[0.08]" />
+        <div className="animate-hero-float absolute -bottom-20 -right-20 h-64 w-64 rounded-full border-[40px] border-accent/10" />
+        <div className="animate-hero-drift absolute -left-10 -top-10 h-40 w-40 rounded-full border-[28px] border-accent/[0.08]" />
 
         <div className="relative z-10 flex items-center gap-2">
           <div className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-md bg-accent">

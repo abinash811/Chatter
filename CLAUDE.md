@@ -84,6 +84,16 @@ make a meaningful change, update this before ending your turn.
   canary. Closes the biggest gap from the 2026-09-25 "critique our
   setup" discussion — nothing previously re-checked these flows on a
   later change.
+- Design polish pass inspired by CARE (`ohcnetwork/care_fe`, reviewed
+  for UI/UX ideas, not cloned into the codebase): `warning`/`info`
+  semantic color tokens added alongside `accent`/`destructive`
+  (`app/globals.css`, `tailwind.config.ts` — not yet used by a
+  screen, reserved for the next surface that needs them), and a
+  subtle CSS-keyframe float/drift animation on the `/login`+`/signup`
+  hero panel's two decorative circles (`prefers-reduced-motion`
+  respected), mirrored in `docs/design/preview/auth.html`. Verified
+  with a real headless-browser run confirming the animation actually
+  computes and applies.
 
 **Known gaps:**
 - 🟡 No real end-to-end verified Claude reply yet — blocked on a real

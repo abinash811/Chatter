@@ -22,6 +22,10 @@
   --accent: 262 83% 58%;
   --accent-foreground: 0 0% 100%;
   --destructive: 0 84% 60%;
+  --warning: 38 92% 50%;
+  --warning-foreground: 0 0% 100%;
+  --info: 217 91% 60%;
+  --info-foreground: 0 0% 100%;
   --radius: 0.5rem;
   /* Fixed-dark brand surface (the auth split-layout panel,
      docs/design/preview/auth.html) — same value as .dark's --background,
@@ -45,6 +49,10 @@
   --accent: 262 83% 62%;
   --accent-foreground: 0 0% 100%;
   --destructive: 0 62.8% 30.6%;
+  --warning: 38 92% 56%;
+  --warning-foreground: 0 0% 100%;
+  --info: 217 91% 65%;
+  --info-foreground: 0 0% 100%;
 }
 
 * {
@@ -54,4 +62,28 @@
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
+}
+
+/* Auth hero panel motion (components/auth/AuthShell.tsx). Subtle —
+   the panel is a backdrop, not the focus. Off entirely for anyone who
+   asked their OS not to animate. */
+@keyframes hero-float {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-6px, -10px); }
+}
+@keyframes hero-drift {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(8px, 6px); }
+}
+.animate-hero-float {
+  animation: hero-float 9s ease-in-out infinite;
+}
+.animate-hero-drift {
+  animation: hero-drift 11s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-hero-float,
+  .animate-hero-drift {
+    animation: none;
+  }
 }
