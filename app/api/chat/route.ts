@@ -17,8 +17,10 @@ export async function OPTIONS() {
   return widgetCorsPreflight();
 }
 
+// 20 messages/minute per IP — calls the Claude API, real per-request
+// cost, so this gets the stricter of the widget's two limits.
 export async function POST(req: NextRequest) {
-  return handleWidgetRoute(async () => {
+  return handleWidgetRoute(req, { limit: 20, windowMs: 60_000 }, async () => {
     const body = (await req.json()) as {
       botKey: string;
       conversationId?: string;

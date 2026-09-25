@@ -14,8 +14,10 @@ export async function OPTIONS() {
   return widgetCorsPreflight();
 }
 
+// 60 requests/minute per IP — a cosmetic config read, no per-request
+// cost, so this gets the more generous of the widget's two limits.
 export async function GET(req: NextRequest) {
-  return handleWidgetRoute(async () => {
+  return handleWidgetRoute(req, { limit: 60, windowMs: 60_000 }, async () => {
     const botKey = req.nextUrl.searchParams.get("botKey");
     if (!botKey) {
       return withWidgetCors(NextResponse.json({ error: "botKey is required" }, { status: 400 }));

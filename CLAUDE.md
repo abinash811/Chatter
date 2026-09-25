@@ -57,7 +57,10 @@ make a meaningful change, update this before ending your turn.
   Zod validation on `/login` and `/signup` (`lib/schemas/auth.ts` —
   surfaced and fixed a real bug in the process: failed form submits were
   clearing the email field too, not just the password), Dependabot
-  (`.github/dependabot.yml`, weekly npm + Actions updates).
+  (`.github/dependabot.yml`, weekly npm + Actions updates), rate
+  limiting on both public widget routes (`lib/rateLimit.ts`, in-memory —
+  correct for Render's single-instance deployment, see `docs/
+  security.md` for the multi-instance caveat).
 
 **Known gaps:**
 - 🟡 `/bots` and `/bots/[botId]` haven't had a design pass implemented
@@ -68,10 +71,10 @@ make a meaningful change, update this before ending your turn.
 - 🔲 Not yet built: password reset flow, knowledge-base ingestion
   pipeline, onboarding flow (org naming/invites/multi-org switcher),
   appearance/theming editor.
-- 🔲 No rate limiting on any API route, no toast/notification system, no
-  error boundary, no component-level tests — see the fuller gap list
-  from the 2026-09-25 product-building-process discussion (not yet its
-  own doc; ask the user if this should become one).
+- 🔲 No toast/notification system, no error boundary, no component-level
+  tests — see the fuller gap list from the 2026-09-25 product-building-
+  process discussion (not yet its own doc; ask the user if this should
+  become one).
 
 ## Where things live
 

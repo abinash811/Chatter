@@ -70,11 +70,24 @@ before pinning (`npm view <package> version`), not recalled from
 training data — this caught a stale `@anthropic-ai/sdk` pin missing a
 GA feature already in use (see README's "Verified by a real run").
 
+## Rate limiting
+
+Per-IP, in-memory (`lib/rateLimit.ts`), applied to both public widget
+routes via `handleWidgetRoute` (`lib/widgetCors.ts`): `/api/chat` at
+20 requests/minute (calls the Claude API — real per-request cost),
+`/api/widget/config` at 60/minute (a cosmetic read). Verified against a
+running server: exactly the limit's worth of requests succeed, the next
+one gets a 429 with CORS headers still attached (the CORS-masking bug
+this codebase already hit once, checked again here).
+
+In-memory is correct for Chatter's actual deployment (Render, one
+long-running process) — not the serverless/edge case where in-memory
+state doesn't persist across invocations. **If this ever scales to
+multiple instances, it needs to move to a shared store (Redis)** — a
+single instance's map can't see another instance's count.
+
 ## What's not covered yet
 
-- Rate limiting on any API route (widget chat endpoint included) —
-  `docs/roadmap.md` doesn't list this either; flagging as a real gap for
-  before any real traffic.
 - A documented incident-response process (who does what if tenant
   isolation is ever found broken in production).
 - Encryption at rest for `Integration.accessToken` — the schema comment

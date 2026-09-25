@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 // The widget embeds on an arbitrary business's site — a different
 // origin than ours — so its public endpoints (/api/chat,
@@ -36,9 +37,22 @@ export function widgetCorsPreflight(): NextResponse {
 // is visible for what it is instead of looking like a CORS
 // misconfiguration. Never leak the actual error message to this public,
 // unauthenticated endpoint — log it server-side, return a generic one.
+// Per-IP, since visitors are anonymous (no session/API key to key on) —
+// see lib/rateLimit.ts. `limit`/`windowMs` are per-route: the chat route
+// calls the Claude API (real cost) and gets a stricter limit than the
+// cosmetic config-fetch route.
 export async function handleWidgetRoute(
+  req: Request,
+  { limit, windowMs }: { limit: number; windowMs: number },
   fn: () => Promise<NextResponse>,
 ): Promise<NextResponse> {
+  const key = `${req.url}:${getClientIp(req)}`;
+  if (!checkRateLimit(key, limit, windowMs)) {
+    return withWidgetCors(
+      NextResponse.json({ error: "Too many requests. Please slow down." }, { status: 429 }),
+    );
+  }
+
   try {
     return await fn();
   } catch (err) {

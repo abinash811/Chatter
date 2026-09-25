@@ -35,10 +35,12 @@ update it in place rather than leaving it to rot.
   used for a form's client-side validation is typically reused
   server-side for the API route handling that submission — one schema,
   not two hand-maintained copies. *Checked 2026-09-25.*
-- **Rate limiting**: token-bucket or sliding-window, applied at the edge
-  (middleware) for public-facing routes especially. Chatter has none yet
-  — flagged in `docs/security.md`. *Not yet researched for a specific
-  library choice.*
+- **Rate limiting**: in-memory works for a single-instance deployment
+  (Render, Chatter's case); serverless/edge (Vercel) needs a shared
+  store (Redis/Upstash) since each invocation is isolated. Adopted
+  2026-09-25: in-memory sliding-window (`lib/rateLimit.ts`), applied to
+  both public widget routes. Revisit if Chatter ever moves to multiple
+  instances or a serverless host. *Checked 2026-09-25.*
 
 ## Database
 
