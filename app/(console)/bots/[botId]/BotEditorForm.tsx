@@ -3,7 +3,18 @@
 import { useActionState, useEffect } from "react";
 import { toast } from "sonner";
 import { saveDraftAction, publishAction, type SaveDraftState } from "./actions";
-import { Button } from "@/components/ui";
+import {
+  Button,
+  Input,
+  Textarea,
+  Label,
+  Checkbox,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui";
 
 const idleState: SaveDraftState = { status: "idle", message: null };
 
@@ -43,76 +54,78 @@ export function BotEditorForm({
 
   return (
     <>
-      <form action={saveFormAction} className="mt-6 space-y-6">
-        <div className="space-y-2">
-          <label className="text-sm font-medium" htmlFor="persona">
-            Persona
-          </label>
-          <p className="text-sm text-muted-foreground">
-            How should your bot introduce itself and talk to visitors? Write it in your own words.
-          </p>
-          <textarea
-            id="persona"
-            name="persona"
-            defaultValue={persona}
-            rows={5}
-            className="w-full rounded border border-border bg-transparent p-3 text-sm"
-          />
-        </div>
+      <form action={saveFormAction} className="mt-6 space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Persona</CardTitle>
+            <CardDescription>
+              How should your bot introduce itself and talk to visitors? Write it in your own words.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Label htmlFor="persona" className="sr-only">
+              Persona
+            </Label>
+            <Textarea id="persona" name="persona" defaultValue={persona} rows={5} />
+          </CardContent>
+        </Card>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium" htmlFor="guardrails">
-            Guardrails
-          </label>
-          <p className="text-sm text-muted-foreground">
-            Anything your bot should never do or say — e.g. never quote a final price, never give
-            medical advice.
-          </p>
-          <textarea
-            id="guardrails"
-            name="guardrails"
-            defaultValue={guardrails}
-            rows={4}
-            className="w-full rounded border border-border bg-transparent p-3 text-sm"
-          />
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Guardrails</CardTitle>
+            <CardDescription>
+              Anything your bot should never do or say — e.g. never quote a final price, never
+              give medical advice.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Label htmlFor="guardrails" className="sr-only">
+              Guardrails
+            </Label>
+            <Textarea id="guardrails" name="guardrails" defaultValue={guardrails} rows={4} />
+          </CardContent>
+        </Card>
 
-        <div className="space-y-2">
-          <span className="text-sm font-medium">Tools</span>
-          <div className="space-y-1">
+        <Card>
+          <CardHeader>
+            <CardTitle>Tools</CardTitle>
+            <CardDescription>What your bot can look up or do while chatting.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
             {tools.map((tool) => (
-              <label key={tool.name} className="flex items-center gap-2 text-sm">
-                <input type="checkbox" name={`tool_${tool.name}`} defaultChecked={tool.enabled} />
+              <Label key={tool.name} className="flex items-center gap-2 font-normal">
+                <Checkbox name={`tool_${tool.name}`} defaultChecked={tool.enabled} />
                 {tool.name}
                 <span className="text-muted-foreground">— {tool.description}</span>
-              </label>
+              </Label>
             ))}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="space-y-2">
-          <span className="text-sm font-medium">Widget appearance</span>
-          <p className="text-sm text-muted-foreground">
-            What visitors see before they've sent a message, and the widget's accent color.
-          </p>
-          <label className="block text-sm">
-            Greeting
-            <input
-              name="greeting"
-              defaultValue={greeting}
-              className="mt-1 w-full rounded border border-border bg-transparent p-2 text-sm"
-            />
-          </label>
-          <label className="block text-sm">
-            Accent color
-            <input
-              type="color"
-              name="accentColor"
-              defaultValue={accentColor}
-              className="mt-1 block h-row-sm w-16 rounded border border-border bg-transparent"
-            />
-          </label>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Widget appearance</CardTitle>
+            <CardDescription>
+              What visitors see before they've sent a message, and the widget's accent color.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div>
+              <Label htmlFor="greeting">Greeting</Label>
+              <Input id="greeting" name="greeting" defaultValue={greeting} className="mt-1" />
+            </div>
+            <div>
+              <Label htmlFor="accentColor">Accent color</Label>
+              <input
+                id="accentColor"
+                type="color"
+                name="accentColor"
+                defaultValue={accentColor}
+                className="mt-1 block h-row-sm w-16 rounded border border-border bg-transparent"
+              />
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="flex gap-2">
           <Button type="submit" variant="outline" disabled={isSaving}>

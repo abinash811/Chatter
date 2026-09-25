@@ -65,7 +65,12 @@ make a meaningful change, update this before ending your turn.
   bot editor's save/publish (previously silent either way — surfaced
   and fixed a real server/client serialization bug in the process), and
   error boundaries (`app/error.tsx`, `app/global-error.tsx`) with
-  plain-language messages, verified against a real thrown error.
+  plain-language messages, verified against a real thrown error, and a
+  component library beyond Button/Input/Badge — `Textarea`, `Label`,
+  `Checkbox`, `Card`/`CardHeader`/`CardTitle`/`CardDescription`/
+  `CardContent` — wired into a real screen (the bot editor now uses
+  Card-per-section, matching `docs/design/preview/bot-editor.html`),
+  not added speculatively.
 
 **Known gaps:**
 - 🟡 `/bots` and `/bots/[botId]` haven't had a design pass implemented
@@ -76,10 +81,9 @@ make a meaningful change, update this before ending your turn.
 - 🔲 Not yet built: password reset flow, knowledge-base ingestion
   pipeline, onboarding flow (org naming/invites/multi-org switcher),
   appearance/theming editor.
-- 🔲 No component-level tests, no component library beyond Button/
-  Input/Badge/Toaster — see the fuller gap list from the 2026-09-25
-  product-building-process discussion (not yet its own doc; ask the
-  user if this should become one).
+- 🔲 No component-level tests — see the fuller gap list from the
+  2026-09-25 product-building-process discussion (not yet its own doc;
+  ask the user if this should become one).
 
 ## Where things live
 

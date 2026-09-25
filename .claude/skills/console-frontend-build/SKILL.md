@@ -14,10 +14,14 @@ Before writing a console screen or component:
    this at commit time. If the token you need doesn't exist, add it to
    `globals.css`, don't reach for a raw value.
 
-2. **Reuse `components/ui/` primitives** (`Button`, `Badge`, and
-   whatever's added since) instead of a one-off styled element. If a new
-   primitive is genuinely needed, add it there following the existing
-   `cva` + `cn()` pattern, not inline in the page.
+2. **Reuse `components/ui/` primitives** (`Button`, `Input`, `Textarea`,
+   `Label`, `Checkbox`, `Badge`, `Card`/`CardHeader`/`CardTitle`/
+   `CardDescription`/`CardContent`, `Toaster`, and whatever's added
+   since — import from the barrel, `@/components/ui`, not a specific
+   file) instead of a one-off styled element. If a new primitive is
+   genuinely needed, add it there following the existing `cn()`
+   pattern (`cva` too, if it has real variants), not inline in the
+   page — see `docs/conventions.md`.
 
 3. **Match the register to the surface**, per docs/architecture.md §7:
    - Daily-driver screens (bot list, conversation inbox, analytics) →
@@ -36,9 +40,9 @@ Before writing a console screen or component:
    session values (`orgId`), which is expected and fine.
 
 5. **No client-side secrets, ever.** `scripts/check-no-client-secrets.mjs`
-   flags any `"use client"` file referencing a secret-looking env var.
-   This project has no client components yet — if you're adding the
-   first one, this is exactly the guardrail it exists for.
+   flags any `"use client"` file referencing a secret-looking env var —
+   several client components exist now (auth forms, `BotEditorForm`,
+   `Toaster`), so this is a live, checked rule, not a hypothetical one.
 
 6. **Run the canary before committing anything that changes a route or
    layout**: `npm run build && npm run start &` then `npm run canary` —

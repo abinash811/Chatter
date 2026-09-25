@@ -4,5 +4,9 @@
 // inside it. See docs/conventions.md.
 export { Button, type ButtonProps } from "./button";
 export { Input } from "./input";
+export { Textarea } from "./textarea";
+export { Label } from "./label";
+export { Checkbox } from "./checkbox";
 export { Badge } from "./badge";
 export { Toaster } from "./toaster";
+export { Card, CardHeader, CardTitle, CardDescription, CardContent } from "./card";
