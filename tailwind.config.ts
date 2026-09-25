@@ -51,6 +51,24 @@ export default {
         "sidebar-ring": "hsl(var(--sidebar-ring))",
         panel: "hsl(var(--panel))",
         "panel-foreground": "hsl(var(--panel-foreground))",
+        // Full numbered scale (CARE's exact emerald values, via
+        // tailwindcss/colors — not our semantic --accent pair). CARE's
+        // own registry components reference `primary-100`,
+        // `primary-900`, etc. directly; without this, anything pulled
+        // via scripts/pull-care-component.mjs breaks on those classes.
+        primary: {
+          50: "#ecfdf5",
+          100: "#d1fae5",
+          200: "#a7f3d0",
+          300: "#6ee7b7",
+          400: "#34d399",
+          500: "#10b981",
+          600: "#059669",
+          700: "#047857",
+          800: "#065f46",
+          900: "#064e3b",
+          950: "#022c22",
+        },
       },
       fontFamily: {
         sans: ["var(--font-figtree)", "sans-serif"],

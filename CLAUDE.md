@@ -101,11 +101,34 @@ make a meaningful change, update this before ending your turn.
   `/login`+`/signup` hero panel's two decorative circles
   (`prefers-reduced-motion` respected).
 
+- Pulling real CARE components is now a one-line command, not a manual
+  research pass each time: `scripts/pull-care-component.mjs` (verified
+  against a real component, `badge`, reverted after — proved the JSON
+  format and our token gaps, not kept). `components.json` registers
+  the `careui` registry too, but the shadcn CLI itself can't actually
+  fetch from it — its `{name}` URL-substitution only replaces the
+  first occurrence (verified in the CLI's own bundle), and CARE serves
+  each item at a path needing the name twice
+  (`registry/care-ui/<name>/<name>.json`). Our script reads the same
+  JSON directly instead, sidestepping that CLI limitation — and also
+  the fact that this cloud session's egress policy blocks
+  `careui.ohc.network` outright (`--from <local-checkout>` covers
+  that case; live `fetch()` is the path for any environment with real
+  network access — a contributor's machine, CI, etc.). Full numbered
+  `primary-*` emerald scale added to `tailwind.config.ts` since CARE's
+  own components reference it directly (`bg-primary-100`, not just our
+  semantic `accent` token) — pulling `badge` surfaced this gap.
+  `docs/conventions.md`'s "Building a new feature" step 2 now points
+  here before anyone hand-builds a primitive we don't have.
+
 **Known gaps:**
-- 🔲 Design system tokens/infra are done (ADR 0008); actually pulling
-  real components from the `careui` shadcn registry and rebuilding
-  each screen's layout/density against real CARE screens (not just
+- 🔲 Design system tokens/infra + the pull mechanism are done (ADR
+  0008); actually pulling real components for each screen and
+  rebuilding layout/density against real CARE screens (not just
   recoloring our existing ones) is still open — the agreed next step.
+  Expect each pulled component to need some adaptation (e.g. `badge`
+  pulls in `@base-ui/react`, a dependency we don't have yet — check
+  real versions with `npm view` before installing, per CLAUDE.md).
 - 🟡 No real end-to-end verified Claude reply yet — blocked on a real
   `ANTHROPIC_API_KEY` (everything up to that boundary is confirmed
   correct, see README's "Verified by a real run").

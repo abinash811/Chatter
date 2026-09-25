@@ -76,7 +76,14 @@ request was phrased.
    (`docs/open-questions.md`'s rule).
 2. **Check design.** Does a `docs/design/preview/` mockup exist? If
    this is user-facing and none exists, add one — see `docs/design/
-   principles.md` for the bar to build against.
+   principles.md` for the bar to build against. Need a UI primitive
+   we don't have yet (Dialog, Table, Sidebar, Tabs, etc.)? Pull CARE's
+   exact version first — `node scripts/pull-care-component.mjs <name>`
+   (ADR 0008) — before hand-building one. It writes straight into
+   `components/ui/`; still needs its dependencies checked with `npm
+   view` (CLAUDE.md's rule), an export added to `components/ui/
+   index.ts`, and a pass over its classNames for anything that isn't
+   yet a token in `tailwind.config.ts`.
 3. **Check data/security implications.** A new table or column? It's
    tenant-scoped unless there's a specific reason it isn't (`orgId` +
    an RLS policy + an index — `docs/security.md`). Touches secrets,
