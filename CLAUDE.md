@@ -53,7 +53,11 @@ make a meaningful change, update this before ending your turn.
   corrupted Prisma client install before the dev server even starts),
   `orgId` indexes added to every RLS-scoped table (was previously
   unindexed on all of them), `ship-checklist` skill updated to match
-  the current 7 guardrail checks and the docs that now need checking.
+  the current 7 guardrail checks and the docs that now need checking,
+  Zod validation on `/login` and `/signup` (`lib/schemas/auth.ts` —
+  surfaced and fixed a real bug in the process: failed form submits were
+  clearing the email field too, not just the password), Dependabot
+  (`.github/dependabot.yml`, weekly npm + Actions updates).
 
 **Known gaps:**
 - 🟡 `/bots` and `/bots/[botId]` haven't had a design pass implemented
@@ -64,11 +68,6 @@ make a meaningful change, update this before ending your turn.
 - 🔲 Not yet built: password reset flow, knowledge-base ingestion
   pipeline, onboarding flow (org naming/invites/multi-org switcher),
   appearance/theming editor.
-- 🔲 No schema-validation library (zod or similar) for forms/API input —
-  currently raw `String(formData.get(...))` with manual inline checks.
-  Awaiting the user's go-ahead (a real decision, not a mechanical fix).
-- 🔲 No automated dependency-update tool (Dependabot/Renovate) wired up
-  yet — same, awaiting a choice between the two.
 - 🔲 No rate limiting on any API route, no toast/notification system, no
   error boundary, no component-level tests — see the fuller gap list
   from the 2026-09-25 product-building-process discussion (not yet its

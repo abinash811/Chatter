@@ -1,17 +1,19 @@
 "use client";
 
 import { useActionState } from "react";
-import { loginAction } from "./actions";
+import { loginAction, type LoginState } from "./actions";
 import { Button, Input } from "@/components/ui";
 
+const initialState: LoginState = { error: null, email: "" };
+
 export function LoginForm() {
-  const [error, formAction, isPending] = useActionState(loginAction, null);
+  const [state, formAction, isPending] = useActionState(loginAction, initialState);
 
   return (
     <form action={formAction} className="space-y-3">
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {state.error && <p className="text-sm text-destructive">{state.error}</p>}
 
-      <Input name="email" type="email" placeholder="Email" required autoFocus />
+      <Input name="email" type="email" placeholder="Email" defaultValue={state.email} required autoFocus />
       <Input name="password" type="password" placeholder="Password" required />
       <Button type="submit" className="w-full" disabled={isPending}>
         {isPending ? "Logging in..." : "Log in"}

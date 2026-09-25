@@ -1,17 +1,19 @@
 "use client";
 
 import { useActionState } from "react";
-import { signupAction } from "./actions";
+import { signupAction, type SignupState } from "./actions";
 import { Button, Input } from "@/components/ui";
 
+const initialState: SignupState = { error: null, email: "" };
+
 export function SignupForm() {
-  const [error, formAction, isPending] = useActionState(signupAction, null);
+  const [state, formAction, isPending] = useActionState(signupAction, initialState);
 
   return (
     <form action={formAction} className="space-y-3">
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {state.error && <p className="text-sm text-destructive">{state.error}</p>}
 
-      <Input name="email" type="email" placeholder="Email" required autoFocus />
+      <Input name="email" type="email" placeholder="Email" defaultValue={state.email} required autoFocus />
       <Input name="password" type="password" placeholder="Password" required minLength={8} />
       <Input
         name="confirmPassword"

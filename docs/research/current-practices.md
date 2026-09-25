@@ -16,11 +16,14 @@ update it in place rather than leaving it to rot.
 
 ## Frontend
 
-- **Form validation**: Zod + a form-state library (react-hook-form is
-  the common pairing) is the standard approach for a form beyond
+- **Form validation**: Zod is the standard approach for a form beyond
   trivial — schema-defined validation, typed on both client and server.
-  Chatter currently does raw `String(formData.get(...))` with manual
-  inline checks. *Checked 2026-09-25.*
+  Adopted 2026-09-25: `lib/schemas/auth.ts`, used by both `/login` and
+  `/signup`'s server actions. Not paired with react-hook-form yet —
+  Chatter's forms are plain server actions via `useActionState`, which
+  doesn't need a separate form-state library at this scale; revisit if
+  a form gets complex enough to need one (many fields, dynamic
+  add/remove rows).
 - **Component primitives**: shadcn/ui (Radix-based, copy-into-your-repo
   rather than an installed package) remains the default pairing for a
   Next.js + Tailwind admin UI. Already the direction Chatter took.
@@ -47,10 +50,10 @@ update it in place rather than leaving it to rot.
 ## Dependency hygiene
 
 - **Automated dependency updates**: Dependabot (built into GitHub, zero
-  setup cost) or Renovate (more configurable — grouping, scheduling,
-  auto-merge rules — but needs its own config file) are the two standard
-  choices. Dependabot is the default unless there's a specific need
-  Renovate's extra config buys. *Checked 2026-09-25.*
+  setup cost) or Renovate (more configurable but needs its own config)
+  are the two standard choices. Adopted 2026-09-25: Dependabot
+  (`.github/dependabot.yml`, weekly, npm + GitHub Actions) — Chatter's
+  size doesn't need Renovate's extra configurability yet.
 
 ## Testing
 
