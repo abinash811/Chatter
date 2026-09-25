@@ -144,11 +144,28 @@ make a meaningful change, update this before ending your turn.
 **Known gaps:**
 - 🔲 Design system tokens/infra, the pull mechanism, and a real
   18-component primitive layer are all done (ADR 0008). Still open:
-  rebuilding each *screen's* layout/density against real CARE screens
-  — bots list, bot editor, integrations, the sidebar nav shell — using
-  these primitives (Table for lists, Dialog for confirmations, Sidebar
-  for nav, etc.), not just recoloring what already existed. That's the
-  agreed next step.
+  rebuilding each remaining *screen's* layout/density against real CARE
+  screens — bots list, bot editor, integrations — using these
+  primitives (Table for lists, Dialog for confirmations, etc.), not
+  just recoloring what already existed. That's the agreed next step.
+- The console sidebar nav shell is done: `app/(console)/layout.tsx` +
+  `components/console/AppSidebar.tsx` now use the real CARE `Sidebar`
+  (icon-collapsible, cookie-persisted state, active-route highlighting,
+  a `logoutAction` server action wired to the footer) — replacing the
+  hand-rolled `<nav>`. **Tailwind upgraded to v4.3.3 (ADR 0009)** to
+  build it: the pulled `Sidebar`'s CARE-authored v4 syntax
+  (`w-(--sidebar-width)`) silently compiled to nothing under our old
+  v3.4.19, breaking layout invisibly to `tsc`/the build — only caught
+  by an actual screenshot. Migrated via the official codemod
+  (`@tailwindcss/upgrade`), not a hand patch — `tailwind.config.ts` is
+  gone, every token now lives in `app/globals.css`'s `@theme` block.
+  Verified: full guardrail suite, a real headless-browser check that
+  the sidebar's width/offset math is now correct with zero console
+  errors, and all 11 `tests/e2e/` specs passing unchanged. All 15
+  interactive pulled primitives also got `"use client"` added — CARE's
+  source has no such concept (Vite SPA), Next.js App Router requires
+  it; this was already true before the v4 upgrade, just never listed
+  here explicitly until now.
 - 🟡 No real end-to-end verified Claude reply yet — blocked on a real
   `ANTHROPIC_API_KEY` (everything up to that boundary is confirmed
   correct, see README's "Verified by a real run").

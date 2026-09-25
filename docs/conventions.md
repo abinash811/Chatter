@@ -91,7 +91,13 @@ request was phrased.
 4. **Check current practice.** A new library or pattern? Check
    `docs/research/current-practices.md` first. A real choice with
    tradeoffs? Explain why/how others do it before asking — don't
-   silently pick one (CLAUDE.md's process rules).
+   silently pick one (CLAUDE.md's process rules). Adopting an upstream
+   project's design system or component source (ADR 0008)? Also check
+   *its own* tooling major versions (build tool, CSS framework, etc.)
+   against ours — a silent mismatch there won't show up in `tsc` or a
+   build, only in the real page (ADR 0009). And check for an open
+   Dependabot PR touching the same dependency before starting — it may
+   have already flagged exactly this.
 5. **Build**, following this file's naming/import/file-size rules and
    the design tokens.
 6. **Verify for real.** Actually run it — a migration against a real

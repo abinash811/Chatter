@@ -11,8 +11,8 @@ export function Toaster() {
       closeButton
       toastOptions={{
         classNames: {
-          toast: "!bg-background !text-foreground !border-border",
-          error: "!text-destructive",
+          toast: "bg-background! text-foreground! border-border!",
+          error: "text-destructive!",
         },
       }}
     />

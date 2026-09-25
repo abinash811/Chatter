@@ -7,7 +7,7 @@ import { relativeTime } from "@/lib/utils";
 
 // First real console screen. Linear register: dense list, one row
 // height (docs/architecture.md §7), no decoration beyond what's needed
-// to scan a list of bots fast — but still a real shadow/hover state per
+// to scan a list of bots fast — but still a real shadow state per
 // docs/design/principles.md #5, not a bare bordered box.
 export default async function BotsPage() {
   const session = await getCurrentSession();
@@ -48,7 +48,7 @@ export default async function BotsPage() {
       </div>
 
       {bots.length === 0 ? (
-        <div className="mt-4 flex flex-col items-center gap-2 rounded-lg border border-border py-14 shadow-sm">
+        <div className="mt-4 flex flex-col items-center gap-2 rounded-lg border border-border py-14 shadow-xs">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
             <BotIcon className="h-5 w-5 text-muted-foreground" />
           </div>
@@ -56,7 +56,7 @@ export default async function BotsPage() {
           <p className="text-sm text-muted-foreground">Create one above to get started.</p>
         </div>
       ) : (
-        <div className="mt-4 divide-y divide-border rounded-lg border border-border shadow-sm">
+        <div className="mt-4 divide-y divide-border rounded-lg border border-border shadow-xs">
           {bots.map((bot) => (
             <a
               key={bot.id}

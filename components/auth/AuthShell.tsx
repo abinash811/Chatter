@@ -24,8 +24,8 @@ export function AuthShell({
   return (
     <div className="flex min-h-screen">
       <div className="relative hidden w-[42%] flex-col overflow-hidden bg-panel p-8 md:flex">
-        <div className="animate-hero-float absolute -bottom-20 -right-20 h-64 w-64 rounded-full border-[40px] border-accent/10" />
-        <div className="animate-hero-drift absolute -left-10 -top-10 h-40 w-40 rounded-full border-[28px] border-accent/[0.08]" />
+        <div className="animate-hero-float absolute -bottom-20 -right-20 h-64 w-64 rounded-full border-40 border-accent/10" />
+        <div className="animate-hero-drift absolute -left-10 -top-10 h-40 w-40 rounded-full border-28 border-accent/8" />
 
         <div className="relative z-10 flex items-center gap-2">
           <div className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-md bg-accent">
@@ -51,7 +51,7 @@ export function AuthShell({
           <div className="flex flex-col gap-2">
             {TRUST_ITEMS.map((item) => (
               <div key={item} className="flex items-center gap-2 text-xs text-panel-foreground/55">
-                <div className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] bg-panel-foreground/[0.08]">
+                <div className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] bg-panel-foreground/8">
                   <Check className="h-2.5 w-2.5 text-panel-foreground/65" strokeWidth={2.5} />
                 </div>
                 {item}

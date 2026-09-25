@@ -159,10 +159,10 @@ function SheetOverlay({ className, ...props }: SheetPrimitive.Backdrop.Props) {
 }
 
 const sheetSizeClasses = {
-  sm: "data-[side=left]:sm:max-w-sm data-[side=right]:sm:max-w-sm",
-  md: "data-[side=left]:sm:max-w-lg data-[side=right]:sm:max-w-lg",
-  lg: "data-[side=left]:sm:max-w-2xl data-[side=right]:sm:max-w-2xl",
-  xl: "data-[side=left]:sm:max-w-4xl data-[side=right]:sm:max-w-4xl",
+  sm: "sm:data-[side=left]:max-w-sm sm:data-[side=right]:max-w-sm",
+  md: "sm:data-[side=left]:max-w-lg sm:data-[side=right]:max-w-lg",
+  lg: "sm:data-[side=left]:max-w-2xl sm:data-[side=right]:max-w-2xl",
+  xl: "sm:data-[side=left]:max-w-4xl sm:data-[side=right]:max-w-4xl",
   full: "data-[side=left]:max-w-none data-[side=right]:max-w-none",
   screen:
     "data-[side=left]:w-screen data-[side=left]:h-screen data-[side=right]:w-screen data-[side=right]:h-screen",
@@ -370,7 +370,7 @@ function SheetBody({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="sheet-body"
       className={cn(
-        "min-h-0 flex-1 overflow-y-auto overscroll-contain py-4 [scrollbar-gutter:stable]",
+        "min-h-0 flex-1 overflow-y-auto overscroll-contain py-4 scrollbar-gutter-stable",
         className
       )}
       onScroll={(e) =>

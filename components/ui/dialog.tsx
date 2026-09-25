@@ -121,7 +121,7 @@ function DialogContent({
         ref={contentRef}
         data-slot="dialog-content"
         className={cn(
-          "bg-foreground/10 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 fixed top-1/2 left-1/2 z-50 w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-xl p-1.5 shadow-xl duration-100 outline-none sm:max-w-md",
+          "bg-foreground/10 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 fixed top-1/2 left-1/2 z-50 w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-xl p-1.5 shadow-xl duration-100 outline-hidden sm:max-w-md",
           className
         )}
         initialFocus={
@@ -227,7 +227,7 @@ function DialogDescription({
     <DialogPrimitive.Description
       data-slot="dialog-description"
       className={cn(
-        "text-soft-foreground *:[a]:hover:text-foreground text-sm *:[a]:underline *:[a]:underline-offset-3",
+        "text-soft-foreground hover:[a]:*:text-foreground text-sm [a]:*:underline [a]:*:underline-offset-3",
         className
       )}
       {...props}

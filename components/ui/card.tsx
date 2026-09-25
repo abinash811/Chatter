@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 // wall of fields in a single form.
 export const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div className={cn("rounded-lg border border-border p-5 shadow-sm", className)} ref={ref} {...props} />
+    <div className={cn("rounded-lg border border-border p-5 shadow-xs", className)} ref={ref} {...props} />
   ),
 );
 Card.displayName = "Card";
