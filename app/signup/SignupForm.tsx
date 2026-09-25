@@ -2,8 +2,7 @@
 
 import { useActionState } from "react";
 import { signupAction } from "./actions";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button, Input } from "@/components/ui";
 
 export function SignupForm() {
   const [error, formAction, isPending] = useActionState(signupAction, null);

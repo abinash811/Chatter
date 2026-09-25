@@ -16,6 +16,37 @@ listed there. If you're asked to build something whose design is still
 open, resolve the question with the user (or write the ADR if it's
 implicitly obvious) before writing code, don't guess silently.
 
+## Current state — read this first every session
+
+Updated at the end of each session so a new session (or a new
+contributor) has zero ambiguity about what's real vs. planned. If you
+make a meaningful change, update this before ending your turn.
+
+**Done:**
+- Guardrail automation: 7 static checks (`npm run check:all`), a
+  browser canary, pre-commit hook, CI against real Postgres+pgvector.
+- Tenant isolation (RLS, ADR 0003), model gateway + tool registry + chat
+  loop, widget CORS + botKey resolution, Shopify connect flow.
+- Console: bot list, bot detail/edit (draft/publish), integrations page.
+- Console auth: email + password (ADR 0006, superseding ADR 0004's
+  Google OAuth) — `/login` and `/signup` have a real design pass
+  (`docs/design/preview/auth.html`, `components/auth/AuthShell.tsx`).
+- Design-system practice: `docs/design/preview/`, a shared-component
+  barrel (`components/ui/index.ts`), naming/import/review conventions
+  (`docs/conventions.md`).
+- Render deployment prep (ADR 0005).
+
+**Known gaps:**
+- 🟡 `/bots` and `/bots/[botId]` haven't had a design pass yet — still
+  original bare styling, same gap the auth pages had before this was
+  fixed. Next in line whenever picked up.
+- 🟡 No real end-to-end verified Claude reply yet — blocked on a real
+  `ANTHROPIC_API_KEY` (everything up to that boundary is confirmed
+  correct, see README's "Verified by a real run").
+- 🔲 Not yet built: password reset flow, knowledge-base ingestion
+  pipeline, onboarding flow (org naming/invites/multi-org switcher),
+  appearance/theming editor.
+
 ## Where things live
 
 - `docs/product-spec.md` — MVP scope and product decisions made so far
@@ -24,6 +55,8 @@ implicitly obvious) before writing code, don't guess silently.
   hard-to-reverse decision. Template at `docs/adr/template.md`.
 - `docs/research/` — competitive and technical research notes
 - `docs/open-questions.md` — decisions not yet made; owner is the user
+- `docs/conventions.md` — naming, shared-component import rule, file-size
+  guidance, git workflow, and the review checklist.
 - `docs/design/preview/` — static HTML mockups, the visual ground truth
   for a page before it's built in code. **Before writing any new page or
   UI pattern, check this folder first.** If a preview exists, match it

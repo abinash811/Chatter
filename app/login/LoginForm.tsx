@@ -2,8 +2,7 @@
 
 import { useActionState } from "react";
 import { loginAction } from "./actions";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button, Input } from "@/components/ui";
 
 export function LoginForm() {
   const [error, formAction, isPending] = useActionState(loginAction, null);

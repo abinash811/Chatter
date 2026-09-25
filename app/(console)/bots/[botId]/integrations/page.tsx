@@ -3,8 +3,7 @@ import { getCurrentSession } from "@/lib/auth";
 import { withOrgContext } from "@/lib/db";
 import { listIntegrationProviders, getIntegrationProvider } from "@/lib/integrations/provider";
 import "@/lib/integrations";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Button, Badge } from "@/components/ui";
 
 // Generic across every platform (Shopify today, WooCommerce/FHIR/etc.
 // later) — this screen renders whatever listIntegrationProviders()

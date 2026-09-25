@@ -4,8 +4,7 @@ import { withOrgContext, getOrCreateBotPublicKey } from "@/lib/db";
 import { getOrCreateDraft, saveDraft, publishDraft, parseAppearance } from "@/lib/ai/botConfig";
 import { listAllTools } from "@/lib/ai/tools/registry";
 import "@/lib/ai/tools";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Button, Badge } from "@/components/ui";
 
 // Notion register (docs/architecture.md §7): calm, generous spacing —
 // this is where a non-technical business owner writes their bot's

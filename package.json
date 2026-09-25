@@ -13,7 +13,9 @@
     "check:secrets": "node scripts/check-no-client-secrets.mjs",
     "check:tokens": "node scripts/check-design-tokens.mjs",
     "check:buttons": "node scripts/check-no-raw-buttons.mjs",
-    "check:all": "npm run check:isolation && npm run check:vertical && npm run check:secrets && npm run check:tokens && npm run check:buttons",
+    "check:imports": "node scripts/check-component-imports.mjs",
+    "check:filelength": "node scripts/check-file-length.mjs",
+    "check:all": "npm run check:isolation && npm run check:vertical && npm run check:secrets && npm run check:tokens && npm run check:buttons && npm run check:imports && npm run check:filelength",
     "canary": "node scripts/canary.mjs"
   },
   "dependencies": {

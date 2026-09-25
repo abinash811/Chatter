@@ -1,8 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentSession } from "@/lib/auth";
 import { withOrgContext, getOrCreateBotPublicKey } from "@/lib/db";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge, Button } from "@/components/ui";
 
 // First real console screen. Linear register: dense list, one row
 // height (docs/architecture.md §7), no decoration beyond what's needed
