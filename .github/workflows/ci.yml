@@ -43,7 +43,7 @@ jobs:
       AUTH_SECRET: test-placeholder-secret-value-not-real
       APP_BASE_URL: http://localhost:3000
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: 22
