@@ -76,14 +76,22 @@ request was phrased.
    (`docs/open-questions.md`'s rule).
 2. **Check design.** Does a `docs/design/preview/` mockup exist? If
    this is user-facing and none exists, add one — see `docs/design/
-   principles.md` for the bar to build against. Need a UI primitive
-   we don't have yet (Dialog, Table, Sidebar, Tabs, etc.)? Pull CARE's
-   exact version first — `node scripts/pull-care-component.mjs <name>`
-   (ADR 0008) — before hand-building one. It writes straight into
-   `components/ui/`; still needs its dependencies checked with `npm
-   view` (CLAUDE.md's rule), an export added to `components/ui/
-   index.ts`, and a pass over its classNames for anything that isn't
-   yet a token in `tailwind.config.ts`.
+   principles.md` for the bar to build against, and Principle #10 if
+   it's a record-editing screen. Need a UI primitive we don't have yet
+   (Dialog, Table, Sidebar, Tabs, etc.)? Use CARE (`ohcnetwork/care_fe`/
+   `careui`) as a **visual and behavioral reference only** — look at
+   what it does, then hand-author it ourselves against `@base-ui/react`
+   (for behavior: focus trap, keyboard nav, ARIA) and our own tokens in
+   `app/globals.css` (ADR 0010). Do **not** pull CARE's component source
+   verbatim (`scripts/pull-care-component.mjs` is no longer the default
+   path, per ADR 0010 — it can still be handy for `--from
+   <local-checkout>` reference-reading while hand-authoring, nothing
+   more): the 18 primitives pulled that way before this ADR produced
+   three separate silent bugs (dead classes assuming a version/attribute
+   we didn't actually have), none caught by `tsc` or the build, all
+   caught only by a real screenshot. Add the export to `components/ui/
+   index.ts` and verify with a real screenshot before considering it
+   done, same as any other new UI pattern.
 3. **Check data/security implications.** A new table or column? It's
    tenant-scoped unless there's a specific reason it isn't (`orgId` +
    an RLS policy + an index — `docs/security.md`). Touches secrets,

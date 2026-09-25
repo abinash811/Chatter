@@ -173,15 +173,38 @@ make a meaningful change, update this before ending your turn.
   bot-editor.html` rebuilt to match (Persona/Tools/Appearance tab scenes
   plus the publish-dialog scene, embed snippet now inside the Appearance
   tab instead of a separate section).
+- **CARE component policy reversed (ADR 0010): reference only, no more
+  verbatim source pulls.** The 3 silent bugs above (Sidebar's dead v4
+  class, Button's missing DEFAULT token, Tabs' dead `data-horizontal:`)
+  share one root cause: Tailwind classes/CSS vars/`data-*` selectors are
+  invisible to `tsc`/the build/every guardrail — a class that never
+  matches anything just silently no-ops, so verbatim-copying CARE's
+  source meant silently inheriting every assumption its authors made
+  about *their* exact Base UI/Tailwind versions, unchecked by anything
+  automated. User's explicit decision: use CARE's real screens as a
+  visual/behavioral reference only from here on — hand-author the JSX/
+  Tailwind against our own already-verified tokens (`app/globals.css`)
+  and `@base-ui/react`'s real primitives for behavior, don't copy its
+  className strings verbatim. `scripts/pull-care-component.mjs` stays in
+  the repo (still useful for `--from <local-checkout>` reference-reading)
+  but is no longer the default path — `docs/conventions.md`'s "Building
+  a new feature" step 2 updated accordingly. Does **not** reverse ADR
+  0008 — CARE is still the exact visual target, tokens/colors/radius/
+  font unchanged; only the *mechanism* for matching new UI to it changes.
+  Whether to retroactively rewrite the 18 already-pulled primitives is
+  a separate, undecided question — see `docs/open-questions.md` #6.
 
 **Known gaps:**
-- 🔲 Design system tokens/infra, the pull mechanism, and a real
-  18-component primitive layer are all done (ADR 0008). Bots list (real
-  CARE `Table`) and the bot editor (persistent top bar + `Tabs` +
+- 🔲 Design system tokens/infra and a real 18-component primitive layer
+  are done (ADR 0008), pulled under the mechanism ADR 0010 has since
+  moved away from for new work (see the Done bullet above). Bots list
+  (real CARE `Table`) and the bot editor (persistent top bar + `Tabs` +
   `Dialog`, principles.md #10) are now rebuilt on these primitives —
   not just recolored. Still open: the integrations page, using the same
-  primitives (and, going forward, principles.md #10's shape wherever it
-  applies). That's the agreed next step.
+  already-pulled primitives where they fit (and, going forward,
+  principles.md #10's shape wherever it applies); any new primitive it
+  needs beyond those 18 follows ADR 0010 — reference CARE, hand-author,
+  don't pull. That's the agreed next step.
 - The console sidebar nav shell is done: `app/(console)/layout.tsx` +
   `components/console/AppSidebar.tsx` now use the real CARE `Sidebar`
   (icon-collapsible, cookie-persisted state, active-route highlighting,

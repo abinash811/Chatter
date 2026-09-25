@@ -25,6 +25,17 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
    given the model gateway (ADR 0002); recommend defaulting to our
    managed key for v1 and adding BYOA as a per-business config option
    once the gateway exists — not v1-blocking.
+6. **Retroactively rewrite the 18 already-pulled CARE primitives?** ADR
+   0010 stops pulling CARE component source verbatim going forward
+   (reference-only, hand-authored against our own tokens instead), but
+   doesn't decide whether the 18 primitives already pulled under the old
+   mechanism (Dialog, Sidebar, Tabs, Table, etc. — see CLAUDE.md's "Done"
+   list) get rewritten now or stay as-is. They're already patched for
+   the three known bugs and covered by the existing test suites.
+   Recommend: leave them as-is unless/until a specific one causes another
+   issue — rewriting 18 already-working, already-verified components
+   speculatively isn't worth the churn; apply the new policy to new
+   primitives and screen rebuilds instead.
 
 ## Not yet asked
 
