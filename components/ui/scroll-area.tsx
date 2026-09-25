@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * @name scroll-area
  * @description Augments native scroll functionality for custom, cross-browser styling.

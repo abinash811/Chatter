@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * @name dropdown-menu
  * @description A dropdown menu displays a list of options that can be selected.

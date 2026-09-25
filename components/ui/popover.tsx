@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * @name popover
  * @description Displays rich content in a portal, triggered by a button.

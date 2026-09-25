@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * @name avatar
  * @description An image element with a fallback for representing the user.

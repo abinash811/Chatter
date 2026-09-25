@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * @name dialog
  * @description A window overlaid on either the primary window or another dialog window.

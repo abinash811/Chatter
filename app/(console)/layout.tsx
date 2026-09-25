@@ -1,10 +1,15 @@
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { MessageCircle, Bot as BotIcon } from "lucide-react";
 import { getCurrentSession } from "@/lib/auth";
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui";
+import { AppSidebar } from "@/components/console/AppSidebar";
 
 // Console shell — Linear register (docs/architecture.md §7): dense,
-// minimal chrome, one fixed nav, no per-screen layout variation. Auth
-// check lives here once, not duplicated per page.
+// minimal chrome, no per-screen layout variation. Auth check lives here
+// once, not duplicated per page. Real CARE Sidebar (ADR 0008) replaces
+// the hand-rolled <nav> — same collapse-state cookie CARE's own
+// component reads/writes, so the expanded/collapsed choice survives a
+// reload without a client-side flash.
 export default async function ConsoleLayout({ children }: { children: React.ReactNode }) {
   try {
     await getCurrentSession();
@@ -12,28 +17,18 @@ export default async function ConsoleLayout({ children }: { children: React.Reac
     redirect("/login");
   }
 
+  const cookieStore = await cookies();
+  const defaultOpen = cookieStore.get("sidebar_state")?.value !== "false";
+
   return (
-    <div className="flex min-h-screen">
-      <nav className="w-56 shrink-0 border-r border-border px-3 py-4">
-        <div className="flex items-center gap-2 px-2 py-2">
-          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-accent">
-            <MessageCircle className="h-3.5 w-3.5 text-accent-foreground" />
-          </div>
-          <span className="text-sm font-semibold">Chatter</span>
+    <SidebarProvider defaultOpen={defaultOpen}>
+      <AppSidebar />
+      <SidebarInset>
+        <div className="flex h-row items-center border-b border-border px-4">
+          <SidebarTrigger />
         </div>
-        <ul className="mt-2 space-y-0.5">
-          <li>
-            <a
-              href="/bots"
-              className="flex h-row-sm items-center gap-2 rounded px-2 text-sm text-foreground transition-colors hover:bg-muted"
-            >
-              <BotIcon className="h-4 w-4 text-muted-foreground" />
-              Bots
-            </a>
-          </li>
-        </ul>
-      </nav>
-      <main className="flex-1 px-8 py-6">{children}</main>
-    </div>
+        <main className="px-8 py-6">{children}</main>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * @name separator
  * @description Visually or semantically separates content.

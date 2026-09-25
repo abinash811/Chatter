@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * @name sidebar
  * @description A composable, themeable sidebar component with collapsible navigation.
