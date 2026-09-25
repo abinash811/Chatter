@@ -33,13 +33,19 @@ make a meaningful change, update this before ending your turn.
   (`docs/design/preview/auth.html`, `components/auth/AuthShell.tsx`).
 - Design-system practice: `docs/design/preview/`, a shared-component
   barrel (`components/ui/index.ts`), naming/import/review conventions
-  (`docs/conventions.md`).
+  (`docs/conventions.md`). Draft previews for `/bots` and the bot editor
+  exist (`docs/design/preview/bots-list.html`, `bot-editor.html`) —
+  sent to the user for feedback, not yet approved or implemented.
 - Render deployment prep (ADR 0005).
+- Product management docs: `docs/roadmap.md` (Now/Next/Later),
+  `docs/features.md` (built vs. planned catalog), `docs/security.md`,
+  `docs/accessibility.md` — informed by competitor research on Gorgias,
+  Intercom Fin, and Drift/Tidio (`docs/research/competitive-
+  landscape.md`), on top of the existing Zipchat research.
 
 **Known gaps:**
-- 🟡 `/bots` and `/bots/[botId]` haven't had a design pass yet — still
-  original bare styling, same gap the auth pages had before this was
-  fixed. Next in line whenever picked up.
+- 🟡 `/bots` and `/bots/[botId]` haven't had a design pass implemented
+  yet — draft previews exist and are awaiting user feedback (see above).
 - 🟡 No real end-to-end verified Claude reply yet — blocked on a real
   `ANTHROPIC_API_KEY` (everything up to that boundary is confirmed
   correct, see README's "Verified by a real run").
@@ -51,6 +57,13 @@ make a meaningful change, update this before ending your turn.
 
 - `docs/product-spec.md` — MVP scope and product decisions made so far
 - `docs/architecture.md` — system design, living doc, updated as decisions land
+- `docs/roadmap.md` — Now/Next/Later feature priorities
+- `docs/features.md` — every feature, one place, built vs. planned;
+  update in the same PR as the code that ships or changes one
+- `docs/security.md` — tenant isolation, auth, secrets, traceability,
+  known gaps, in one reference instead of scattered across guardrails/ADRs
+- `docs/accessibility.md` — the concrete WCAG 2.2 AA rules (the "why" is
+  in `docs/research/design-system-standards.md`)
 - `docs/adr/` — Architecture Decision Records, one per significant,
   hard-to-reverse decision. Template at `docs/adr/template.md`.
 - `docs/research/` — competitive and technical research notes

@@ -77,3 +77,7 @@ or someone else's:
       checks catch the letter of the rule, not always the spirit)
 - [ ] Tenant-scoped queries go through `withOrgContext` (guardrail #1)
 - [ ] No vertical-specific branching in core engine code (guardrail #2)
+- [ ] Keyboard-only pass: reach and operate every interactive element
+      without a mouse
+- [ ] Any new color usage (including widget-appearance defaults) meets
+      WCAG AA contrast — see `docs/accessibility.md`

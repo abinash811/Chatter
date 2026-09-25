@@ -120,14 +120,79 @@ don't build the multi-agent version on day one.
 
 Source: https://bertomill.medium.com/claude-agents-sdk-best-practices-from-the-team-that-built-it-63580d1a0c3b
 
+## Update 2026-09-25: Gorgias, Intercom Fin, Drift vs. Tidio
+
+Researched to inform `docs/roadmap.md` and `docs/features.md` — what
+comparable products actually ship, not just Zipchat.
+
+### Gorgias (ecommerce helpdesk + AI agent)
+
+Two-mode agent split by funnel stage: a **Shopping Assistant** pre-purchase
+(product recommendations, sizing/material questions, discount codes) and a
+**Support Agent** post-purchase (WISMO, returns, shipping-address changes).
+The support side does real **write actions inside the conversation** —
+starts a return in Shopify admin, issues a refund, edits a subscription,
+updates a shipping address — not just lookups. Also takes **image input**
+(customer sends a photo of a damaged/wrong item). Reports ~60% of
+repetitive tickets automated, 62% higher conversion. Deliberately
+Shopify-only — no BigCommerce/Magento/WooCommerce — depth over breadth.
+
+**Implication for us**: our two shipped tools (`search_knowledge_base`,
+`check_order_status`) are both read-only. Gorgias validates that
+**write-capable action tools** (issue refund, update shipping address,
+edit/cancel a booking) are the natural next tier of value, not just more
+read tools — and that they should execute inside the conversation, not
+redirect the visitor elsewhere. Image input is a real, validated feature
+gap, not a nice-to-have guess.
+
+### Intercom Fin (enterprise support AI agent)
+
+Resolution rate is the product's headline metric, publicly reported and
+risen from ~25% at launch to 65-76% depending on source/cohort. Pricing is
+**outcome-based**: $0.99 per resolved conversation (not per-seat), with a
+minimum monthly outcome count. Supports voice and image input, and pulls
+real-time data via connectors (Shopify, Salesforce, Stripe, Jira).
+
+**Implication for us**: "resolution rate" (resolved without human handoff,
+as a % of conversations) is the metric to build into analytics — we don't
+track anything like it yet (see `docs/open-questions.md`'s analytics gap).
+Outcome-based pricing is a real, proven model in this exact category —
+worth a note for whenever the (currently deferred) pricing/billing
+decision gets made, not something to decide now.
+
+### Drift vs. Tidio (positioning contrast)
+
+The two occupy opposite ends of the same market: **Tidio** targets SMB/
+ecommerce, <5-minute setup with a script tag, no developer needed, crawls
+the site/help-center automatically, and its AI (Lyro) auto-answers ~67% of
+queries. **Drift** targets enterprise B2B sales — 60-90 day setup with CRM/
+calendar integration, meeting-booking and lead-qualification playbooks,
+enterprise-only pricing (~$2,500+/mo).
+
+**Implication for us**: Tidio's positioning is the one that matches our
+actual target (vertical-agnostic, but the pattern is SMB self-serve, not
+enterprise sales-assisted). This is a real data point *for* v1 site
+crawling (open question #4) — Tidio treats automatic crawl-based ingestion
+as table stakes for a fast setup, not a deferred nice-to-have. Drift's
+meeting-booking/lead-qualification niche is not a pattern to chase; it
+belongs to a different buyer than ours.
+
+Sources:
+- https://www.eesel.ai/blog/gorgias-ai-agent
+- https://www.ringly.io/blog/gorgias-ai-agent-ecommerce
+- https://www.getmacha.com/blog/gorgias-ai-agent-explained
+- https://www.gorgias.com/
+- https://www.intercom.com/learning-center/ai-customer-service-agent-pricing-comparison
+- https://enterprisedna.co/resources/ai-pulse/ai-pulse-2026-08-02-intercom-s-fin-ai-agent-is-nearing-100m-arr-roughly-half-of/
+- https://www.getmacha.com/blog/intercom-fin-ai-agent-complete-guide
+- https://crisp.chat/en/comparisons/drift-vs-tidio/
+- https://www.eesel.ai/blog/drift-vs-tidio
+- https://www.happyfox.com/compare/tidio-vs-drift/
+
 ## TODO — still need to research
 
 - **Chatbase** — generic (non-ecommerce) AI chatbot builder; likely closest
   analog to our "generic base" half of the product.
-- **Intercom Fin** — enterprise support AI agent; relevant for handoff/
-  analytics UX patterns and how they handle "I don't know, escalating."
-- **Tidio / Crisp** — SMB live-chat-plus-AI tools; relevant for widget UX
-  and ease of setup expectations.
 - **Voiceflow / Botpress** — conversation-design tooling; relevant if we
   ever expose a visual flow builder beyond pure RAG+tools.
 - RAG architecture best practices for multi-tenant SaaS specifically

@@ -1,0 +1,58 @@
+# Accessibility
+
+Baseline standard: **WCAG 2.2 Level AA** — see `docs/research/
+design-system-standards.md` for why this specific bar (the globally
+recognized standard, and what enterprise buyers audit against during
+procurement, relevant for the healthcare vertical specifically).
+
+This doc is the concrete rules; the research doc is the reasoning.
+
+## Rules
+
+- **Contrast**: text and interactive elements meet WCAG AA minimum
+  contrast ratios (4.5:1 normal text, 3:1 large text/UI components)
+  against their actual background — including a business's chosen
+  widget colors, not just the console's fixed token set. Not yet
+  independently audited (axe-core/Lighthouse) — flagged as a known TODO
+  in `app/globals.css`'s token comment, still true.
+- **Keyboard navigation**: every interactive element (buttons, form
+  fields, links) reachable and operable via keyboard alone, in a
+  sensible tab order. No custom interaction that only works with a
+  mouse.
+- **Focus states**: every focusable element has a visible focus
+  indicator — `components/ui/button.tsx` and `input.tsx` use `focus-
+  visible:ring-2 ring-accent`, a token, not a one-off style. Any new
+  interactive component follows the same pattern.
+- **Screen readers**: semantic HTML first (real `<button>`, `<label>`,
+  heading levels in order) before reaching for ARIA attributes. Form
+  fields have an associated `<label>`, not just a placeholder.
+- **Color is never the only signal** — status (published/draft, error/
+  success) pairs a color with text or an icon, not color alone.
+
+## Known component gaps
+
+An independent audit found 5 of shadcn/ui's 48 components have real
+WCAG 2.2 AA gaps: **Combobox, Data Table, Context Menu, Chart (Recharts-
+based), Input OTP**. Two are directly relevant to this product's planned
+surfaces — analytics (Chart) and knowledge-base management (Data
+Table) — and need explicit accessibility review when built, not an
+assumption that "shadcn is generally solid" covers them. See `docs/
+research/design-system-standards.md` for the source audit.
+
+## Where this applies
+
+- **Admin console**: one fixed token set, so a contrast fix or focus-
+  state fix made once (in `components/ui/`) fixes every screen — no
+  per-page accessibility debt to track separately.
+- **Embeddable widget**: a business can pick their own colors
+  (guardrail-free branding), so contrast must be validated against
+  *their* chosen colors, not assumed fine because our default palette
+  passes. Not yet built — flag when the appearance editor (`docs/
+  roadmap.md`) is implemented.
+
+## Review checklist addition
+
+Add to `docs/conventions.md`'s review checklist when reviewing a new
+page: keyboard-only pass (can you reach and operate everything without
+a mouse?), and a contrast check on any new color usage — including
+widget-appearance defaults, not just console UI.
