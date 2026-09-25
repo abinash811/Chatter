@@ -10,6 +10,11 @@ import {
   Label,
   Checkbox,
   Badge,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
   Tabs,
   TabsList,
   TabsTrigger,
@@ -76,7 +81,7 @@ export function BotEditorForm({
   }, [publishState]);
 
   return (
-    <div className="max-w-2xl">
+    <div className="mx-auto max-w-2xl">
       <div className="flex h-row items-center justify-between">
         <div className="flex items-center gap-2">
           <h1 className="text-lg font-semibold">{botName}</h1>
@@ -127,68 +132,99 @@ export function BotEditorForm({
             <TabsTrigger value="appearance">Appearance</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="persona" keepMounted className="mt-4 space-y-3">
-            <p className="text-sm text-muted-foreground">
-              How should your bot introduce itself and talk to visitors? Write it in your own words.
-            </p>
-            <Label htmlFor="persona" className="sr-only">
-              Persona
-            </Label>
-            <Textarea id="persona" name="persona" defaultValue={persona} rows={6} />
-          </TabsContent>
-
-          <TabsContent value="guardrails" keepMounted className="mt-4 space-y-3">
-            <p className="text-sm text-muted-foreground">
-              Anything your bot should never do or say — e.g. never quote a final price, never give
-              medical advice.
-            </p>
-            <Label htmlFor="guardrails" className="sr-only">
-              Guardrails
-            </Label>
-            <Textarea id="guardrails" name="guardrails" defaultValue={guardrails} rows={5} />
-          </TabsContent>
-
-          <TabsContent value="tools" keepMounted className="mt-4 space-y-3">
-            <p className="text-sm text-muted-foreground">What your bot can look up or do while chatting.</p>
-            <div className="space-y-2">
-              {tools.map((tool) => (
-                <Label key={tool.name} className="flex items-center gap-2 font-normal">
-                  <Checkbox name={`tool_${tool.name}`} defaultChecked={tool.enabled} />
-                  {tool.name}
-                  <span className="text-muted-foreground">— {tool.description}</span>
+          <TabsContent value="persona" keepMounted className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Persona</CardTitle>
+                <CardDescription>
+                  How should your bot introduce itself and talk to visitors? Write it in your own words.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Label htmlFor="persona" className="sr-only">
+                  Persona
                 </Label>
-              ))}
-            </div>
+                <Textarea id="persona" name="persona" defaultValue={persona} rows={6} />
+              </CardContent>
+            </Card>
           </TabsContent>
 
-          <TabsContent value="appearance" keepMounted className="mt-4 space-y-5">
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                What visitors see before they've sent a message, and the widget's accent color.
-              </p>
-              <div>
-                <Label htmlFor="greeting">Greeting</Label>
-                <Input id="greeting" name="greeting" defaultValue={greeting} className="mt-1" />
-              </div>
-              <div>
-                <Label htmlFor="accentColor">Accent color</Label>
-                <input
-                  id="accentColor"
-                  type="color"
-                  name="accentColor"
-                  defaultValue={accentColor}
-                  className="mt-1 block h-row-sm w-16 rounded border border-border bg-transparent"
-                />
-              </div>
-            </div>
+          <TabsContent value="guardrails" keepMounted className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Guardrails</CardTitle>
+                <CardDescription>
+                  Anything your bot should never do or say — e.g. never quote a final price, never give
+                  medical advice.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Label htmlFor="guardrails" className="sr-only">
+                  Guardrails
+                </Label>
+                <Textarea id="guardrails" name="guardrails" defaultValue={guardrails} rows={5} />
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-            <div className="space-y-2 border-t border-border pt-4">
-              <span className="text-sm font-medium">Embed on your site</span>
-              <p className="text-sm text-muted-foreground">
-                Paste this before the closing <code>&lt;/body&gt;</code> tag on any page.
-              </p>
-              <pre className="overflow-x-auto rounded bg-muted p-3 text-xs">{embedSnippet}</pre>
-            </div>
+          <TabsContent value="tools" keepMounted className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Tools</CardTitle>
+                <CardDescription>What your bot can look up or do while chatting.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {tools.map((tool) => (
+                  <Label
+                    key={tool.name}
+                    className="flex items-center gap-2 rounded px-1 py-1.5 font-normal transition-colors hover:bg-muted"
+                  >
+                    <Checkbox name={`tool_${tool.name}`} defaultChecked={tool.enabled} />
+                    {tool.name}
+                    <span className="text-muted-foreground">— {tool.description}</span>
+                  </Label>
+                ))}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="appearance" keepMounted className="mt-4 space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Appearance</CardTitle>
+                <CardDescription>
+                  What visitors see before they've sent a message, and the widget's accent color.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <Label htmlFor="greeting">Greeting</Label>
+                  <Input id="greeting" name="greeting" defaultValue={greeting} className="mt-1" />
+                </div>
+                <div>
+                  <Label htmlFor="accentColor">Accent color</Label>
+                  <input
+                    id="accentColor"
+                    type="color"
+                    name="accentColor"
+                    defaultValue={accentColor}
+                    className="mt-1 block h-row-sm w-16 rounded border border-border bg-transparent shadow-xs transition-colors hover:border-strong-border"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Embed on your site</CardTitle>
+                <CardDescription>
+                  Paste this before the closing <code>&lt;/body&gt;</code> tag on any page.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <pre className="overflow-x-auto rounded bg-muted p-3 text-xs">{embedSnippet}</pre>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </form>

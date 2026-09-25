@@ -21,7 +21,7 @@ in sync with `app/globals.css` by hand when tokens change.
 preview/
   auth.html           ✅ Approved — /login and /signup split layout (components/auth/AuthShell.tsx)
   bots-list.html      ✅ Approved — /bots (app/(console)/bots/page.tsx), rebuilt on the real CARE Table (components/console/BotsTable.tsx, ADR 0008) — column headers, whole-row click
-  bot-editor.html     ✅ Approved — bot editor rebuilt on principles.md #10's page-composition pattern (BotEditorForm.tsx): persistent top bar, real Tabs (not stacked Cards), Dialog confirmation before Publish; embed snippet now lives inside the Appearance tab
+  bot-editor.html     ✅ Approved — bot editor rebuilt on principles.md #10's page-composition pattern (BotEditorForm.tsx): persistent top bar, real Tabs (not stacked Cards), Dialog confirmation before Publish; embed snippet now lives inside the Appearance tab. Depth/polish pass (principles.md #5/#9): each tab's content wrapped in a real bordered/shadowed Card with its own heading, centered column instead of pinned-left with dead whitespace, Input/Textarea/Checkbox given real shadow+hover states to match Button's existing polish
   console-shell.html  ✅ Shipped — the sidebar nav shell shared by every console page (app/(console)/layout.tsx, components/console/AppSidebar.tsx) — real CARE Sidebar, icon-collapsible, ADR 0008/0009
 ```
 

@@ -32,8 +32,18 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
 .tab { height: 32px; padding: 0 14px; border-radius: 6px; font-size: 13px; font-weight: 500; color: #737373; display: flex; align-items: center; }
 .tab.active { background: #fff; color: #065f46; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
 .section-sub { font-size: 12px; color: #737373; line-height: 1.5; margin-bottom: 12px; }
-.field-textarea { width: 100%; border: 1px solid #e5e5e5; border-radius: 6px; padding: 10px 12px; font-size: 13px; color: #0a0a0c; font-family: inherit; }
-.field-input { width: 100%; border: 1px solid #e5e5e5; border-radius: 6px; padding: 0 12px; height: 36px; font-size: 13px; }
+.field-textarea { width: 100%; border: 1px solid #e5e5e5; border-radius: 6px; padding: 10px 12px; font-size: 13px; color: #0a0a0c; font-family: inherit; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+.field-input { width: 100%; border: 1px solid #e5e5e5; border-radius: 6px; padding: 0 12px; height: 36px; font-size: 13px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+
+/* Depth/polish pass (docs/design/principles.md #5/#9): a bare form
+   floating on the page background is a wireframe, not a finished
+   screen. Every tab's content now sits inside a real bordered+shadowed
+   Card with its own heading — not just relying on the tab label for
+   hierarchy — and the whole column is centered in the available canvas
+   rather than pinned to the left edge with dead space to the right. */
+.card { border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+.card + .card { margin-top: 16px; }
+.card-title { font-size: 14px; font-weight: 600; color: #0a0a0c; margin-bottom: 3px; }
 
 /* Dialog scene */
 .dialog-overlay { position: relative; background: #fff; }
@@ -55,15 +65,11 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
 .field-col { flex: 1; }
 .field-label-sm { font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 5px; display: block; }
 
-/* Embed snippet — distinct utility section, not a "danger zone" but the
-   same visual-separation principle: it's a different KIND of action
-   (copy code) from the form above it. */
-.embed-section { border: 1px dashed #d4d4d4; border-radius: 8px; padding: 20px; margin-top: 24px; }
 .code-block { background: #0a0a0c; color: #d4d4d4; border-radius: 6px; padding: 12px 14px; font-family: ui-monospace, monospace; font-size: 11px; margin-top: 10px; overflow-x: auto; white-space: nowrap; }
 </style>
 </head><body>
 
-<div class="page-label">Bot editor — Notion register, but the page shape follows docs/design/principles.md #10 (persistent top bar + Tabs + confirm dialog)</div>
+<div class="page-label">Bot editor — Notion register; page shape follows principles.md #10 (top bar + Tabs + confirm dialog) and each tab's content is a real bordered/shadowed Card with its own heading (principles.md #5/#9 depth-and-polish pass), not bare text floating on the page background</div>
 <div class="shell">
   <div class="sidebar">
     <div class="brand-row">
@@ -90,8 +96,11 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
       <div class="tab">Appearance</div>
     </div>
 
-    <div class="section-sub">How should your bot introduce itself and talk to visitors? Write it in your own words.</div>
-    <textarea class="field-textarea" rows="6" readonly>You're a friendly, concise assistant for a small ecommerce shop. Keep replies short.</textarea>
+    <div class="card">
+      <div class="card-title">Persona</div>
+      <div class="section-sub">How should your bot introduce itself and talk to visitors? Write it in your own words.</div>
+      <textarea class="field-textarea" rows="6" readonly>You're a friendly, concise assistant for a small ecommerce shop. Keep replies short.</textarea>
+    </div>
   </div>
 </div>
 
@@ -121,14 +130,17 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
       <div class="tab active">Tools</div>
       <div class="tab">Appearance</div>
     </div>
-    <div class="section-sub">What your bot can look up or do while chatting.</div>
-    <div class="tool-row">
-      <div class="checkbox checked"></div>
-      <div><div class="tool-name">search_knowledge_base</div><div class="tool-desc">Search this business's docs/FAQs for relevant answers.</div></div>
-    </div>
-    <div class="tool-row">
-      <div class="checkbox"></div>
-      <div><div class="tool-name">check_order_status</div><div class="tool-desc">Look up a customer's order by order number.</div></div>
+    <div class="card">
+      <div class="card-title">Tools</div>
+      <div class="section-sub">What your bot can look up or do while chatting.</div>
+      <div class="tool-row">
+        <div class="checkbox checked"></div>
+        <div><div class="tool-name">search_knowledge_base</div><div class="tool-desc">Search this business's docs/FAQs for relevant answers.</div></div>
+      </div>
+      <div class="tool-row">
+        <div class="checkbox"></div>
+        <div><div class="tool-name">check_order_status</div><div class="tool-desc">Look up a customer's order by order number.</div></div>
+      </div>
     </div>
   </div>
 </div>
@@ -159,19 +171,22 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
       <div class="tab">Tools</div>
       <div class="tab active">Appearance</div>
     </div>
-    <div class="section-sub">What visitors see before they've sent a message, and the widget's accent color.</div>
-    <div class="field-row">
-      <div class="field-col" style="flex:3;">
-        <label class="field-label-sm">Greeting</label>
-        <input class="field-input" value="Hi! How can we help today?" readonly/>
-      </div>
-      <div class="field-col" style="flex:0 0 auto;">
-        <label class="field-label-sm">Accent</label>
-        <div class="color-swatch"></div>
+    <div class="card">
+      <div class="card-title">Appearance</div>
+      <div class="section-sub">What visitors see before they've sent a message, and the widget's accent color.</div>
+      <div class="field-row">
+        <div class="field-col" style="flex:3;">
+          <label class="field-label-sm">Greeting</label>
+          <input class="field-input" value="Hi! How can we help today?" readonly/>
+        </div>
+        <div class="field-col" style="flex:0 0 auto;">
+          <label class="field-label-sm">Accent</label>
+          <div class="color-swatch"></div>
+        </div>
       </div>
     </div>
-    <div class="embed-section">
-      <div class="section-title">Embed on your site</div>
+    <div class="card">
+      <div class="card-title">Embed on your site</div>
       <div class="section-sub">Paste this before the closing &lt;/body&gt; tag on any page.</div>
       <div class="code-block">&lt;script src="https://chatter.app/widget.js" data-bot-key="pk_a1b2c3..."&gt;&lt;/script&gt;</div>
     </div>

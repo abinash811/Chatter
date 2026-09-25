@@ -198,8 +198,22 @@
   --sidebar-ring: 234 89% 74%;
 }
 
-* {
-  border-color: hsl(var(--border));
+/* Must be @layer base, not a bare unlayered rule: Tailwind v4 puts every
+   utility class (including hover:/focus: variants) in @layer utilities,
+   which is always weaker than unlayered CSS regardless of specificity —
+   an unlayered `* { border-color }` here would silently win over any
+   `hover:border-*` class everywhere in the app. Confirmed for real: an
+   added `hover:border-strong-border` on Input/Textarea/Checkbox
+   compiled correctly and genuinely matched `:hover` in a headless
+   browser, but getComputedStyle's border-color never changed until this
+   was moved into the same layer as the official v4 border-color shim
+   above (line 84) — same failure mode as ADR 0010's CARE-pull bugs: a
+   real style rule silently inert, invisible to tsc/build, only caught
+   by checking a computed value for real. */
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
 }
 
 body {

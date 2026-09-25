@@ -193,6 +193,47 @@ make a meaningful change, update this before ending your turn.
   font unchanged; only the *mechanism* for matching new UI to it changes.
   Whether to retroactively rewrite the 18 already-pulled primitives is
   a separate, undecided question — see `docs/open-questions.md` #6.
+- **Bot editor depth/polish pass (principles.md #5/#9)** — user pushed
+  back that the design system was "very basic," not Linear/Notion/
+  Stripe-caliber, after comparing our actual bot editor screenshot
+  against a real CARE reference. Root cause: the token/primitive
+  *infrastructure* was done (ADR 0008), but no screen had actually
+  executed the *technique* layer `docs/research/design-system-
+  standards.md` already researched (deliberate depth/shadow, real
+  hover/active states, a considered layout instead of accidental
+  whitespace) — principle 9 already named this exact failure mode.
+  Scoped to one screen first (user's explicit choice) before touching
+  any other: `BotEditorForm.tsx`'s Persona/Guardrails/Tools/Appearance
+  tab content now sits inside a real `Card` (border + shadow + its own
+  `CardTitle`) instead of bare text floating on the page background,
+  and the column is `mx-auto`-centered instead of pinned to the left
+  edge with dead canvas to the right. `Input`/`Textarea`/`Checkbox`
+  (our own hand-rolled primitives, not CARE pulls) given `shadow-xs` +
+  a `hover:border-strong-border` transition to match `Button`'s
+  existing polish tier. Caught a real, separate bug while verifying the
+  new hover state for real (not just screenshotting it): a bare
+  unlayered `* { border-color: hsl(var(--border)); }` in
+  `app/globals.css` was silently winning over *every* `hover:border-*`
+  utility in the app — including `Button`'s pre-existing `secondary`/
+  `ghost`/`destructive` hover-border variants — because Tailwind v4
+  puts utilities (hover variants included) in `@layer utilities`, which
+  CSS cascade layers always rank below any unlayered rule regardless of
+  specificity. Confirmed via `getComputedStyle` before/after a real
+  `page.hover()`, not a screenshot (a screenshot wouldn't have shown a
+  1-shade border color change either way). Fixed by moving that rule
+  into `@layer base` alongside the official Tailwind-v4-codemod border
+  shim already there. Verified: guardrails, `tsc`, build, all 14
+  `tests/e2e/` specs unchanged, all 7 `tests/visual/` specs (6 baselines
+  regenerated — the shadow/hover addition is a real, correct visual
+  diff — confirmed stable across two clean re-runs), and the hover fix
+  itself re-verified for real post-fix (`getComputedStyle` genuinely
+  changes on hover now). `docs/design/preview/bot-editor.html` updated
+  to match (Card-wrapped scenes). Sidebar's near-empty look was
+  diagnosed separately as *not* a component bug (the real CARE
+  `Sidebar` is correctly wired) — it only has one nav item because the
+  product only has one console section today; a user/org identity
+  footer (matching CARE's avatar+name pattern) is real, small, deferred
+  scope, not yet built.
 
 **Known gaps:**
 - 🔲 Design system tokens/infra and a real 18-component primitive layer
@@ -205,6 +246,17 @@ make a meaningful change, update this before ending your turn.
   principles.md #10's shape wherever it applies); any new primitive it
   needs beyond those 18 follows ADR 0010 — reference CARE, hand-author,
   don't pull. That's the agreed next step.
+- 🔲 The depth/polish pass (principles.md #5/#9 — real Card boundaries,
+  centered layout, hover/shadow states on Input/Textarea/Checkbox) is
+  done on the bot editor only, by deliberate scope choice (one screen
+  proven completely before spreading the pattern). login/signup, the
+  bots list, and integrations haven't had this pass yet — apply the
+  same recipe (Card-wrap floating content, `mx-auto` instead of
+  pinned-left, check every interactive element's hover/focus/active
+  state renders for real via `getComputedStyle`, not just a screenshot)
+  when each is next touched. A sidebar user/org identity footer
+  (avatar + name, matching CARE's own pattern) is separately unbuilt —
+  not a bug, just not scoped yet.
 - The console sidebar nav shell is done: `app/(console)/layout.tsx` +
   `components/console/AppSidebar.tsx` now use the real CARE `Sidebar`
   (icon-collapsible, cookie-persisted state, active-route highlighting,
