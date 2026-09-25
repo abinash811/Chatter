@@ -8,7 +8,9 @@
 import { readFileSync } from "fs";
 import { execSync } from "child_process";
 
-const ALLOWLIST = new Set(["app/globals.css", "tailwind.config.ts"]);
+// app/global-error.tsx is deliberately self-contained — see its own
+// file header for why it can't reference the token system.
+const ALLOWLIST = new Set(["app/globals.css", "tailwind.config.ts", "app/global-error.tsx"]);
 const HEX_COLOR = /#[0-9a-fA-F]{3,8}\b/;
 const ARBITRARY_TAILWIND_COLOR = /\b(?:bg|text|border|ring)-(?:red|blue|green|yellow|purple|pink|indigo|orange|teal|cyan|lime|amber|emerald|violet|fuchsia|rose|sky)-\d{2,3}\b/;
 

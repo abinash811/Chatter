@@ -57,6 +57,16 @@ update it in place rather than leaving it to rot.
   (`.github/dependabot.yml`, weekly, npm + GitHub Actions) — Chatter's
   size doesn't need Renovate's extra configurability yet.
 
+## Notifications / error handling
+
+- **Toast library**: Sonner is the current shadcn/ui-recommended choice
+  (also what PharmaCare uses). Adopted 2026-09-25:
+  `components/ui/toaster.tsx`, mounted once in `app/layout.tsx`, close
+  button always shown. *Checked 2026-09-25.*
+- **Error boundaries**: Next.js App Router's `error.tsx`/
+  `global-error.tsx` convention files. Adopted 2026-09-25 — plain-
+  language messages, no stack trace shown to the user.
+
 ## Testing
 
 - Not yet researched for current practice beyond what's already in

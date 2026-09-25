@@ -5,3 +5,4 @@
 export { Button, type ButtonProps } from "./button";
 export { Input } from "./input";
 export { Badge } from "./badge";
+export { Toaster } from "./toaster";

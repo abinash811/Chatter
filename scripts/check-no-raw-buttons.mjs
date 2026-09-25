@@ -7,7 +7,10 @@
 import { readFileSync } from "fs";
 import { execSync } from "child_process";
 
-const ALLOWLIST = new Set(["components/ui/button.tsx"]);
+// app/global-error.tsx is deliberately self-contained — it replaces the
+// entire root layout when triggered, so it can't assume the component
+// library (or anything else about the app's setup) still works.
+const ALLOWLIST = new Set(["components/ui/button.tsx", "app/global-error.tsx"]);
 
 const files = execSync("git ls-files 'app/**/*.tsx' 'components/**/*.tsx'", { encoding: "utf8" })
   .trim()

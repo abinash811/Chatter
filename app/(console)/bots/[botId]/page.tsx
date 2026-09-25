@@ -1,10 +1,10 @@
-import { revalidatePath } from "next/cache";
 import { getCurrentSession } from "@/lib/auth";
 import { withOrgContext, getOrCreateBotPublicKey } from "@/lib/db";
-import { getOrCreateDraft, saveDraft, publishDraft, parseAppearance } from "@/lib/ai/botConfig";
+import { getOrCreateDraft, parseAppearance } from "@/lib/ai/botConfig";
 import { listAllTools } from "@/lib/ai/tools/registry";
 import "@/lib/ai/tools";
-import { Button, Badge } from "@/components/ui";
+import { Badge } from "@/components/ui";
+import { BotEditorForm } from "./BotEditorForm";
 
 // Notion register (docs/architecture.md §7): calm, generous spacing —
 // this is where a non-technical business owner writes their bot's
@@ -27,31 +27,6 @@ export default async function BotPage({ params }: { params: Promise<{ botId: str
 
   const enabledTools = new Set(draft.tools as string[]);
   const appearance = parseAppearance(draft.appearance);
-
-  async function saveDraftAction(formData: FormData) {
-    "use server";
-    const session = await getCurrentSession();
-    await saveDraft(session.orgId, botId, {
-      persona: String(formData.get("persona") ?? ""),
-      guardrails: String(formData.get("guardrails") ?? ""),
-      tools: listAllTools()
-        .map((t) => t.name)
-        .filter((name) => formData.get(`tool_${name}`) === "on"),
-      appearance: {
-        greeting: String(formData.get("greeting") ?? ""),
-        accentColor: String(formData.get("accentColor") ?? "#7c3aed"), // allow-raw-color — form fallback, not console UI
-      },
-    });
-    revalidatePath(`/bots/${botId}`);
-  }
-
-  async function publishAction() {
-    "use server";
-    const session = await getCurrentSession();
-    await publishDraft(session.orgId, botId);
-    revalidatePath(`/bots/${botId}`);
-  }
-
   const embedSnippet = `<script src="${process.env.APP_BASE_URL}/widget.js" data-bot-key="${publicKey}"></script>`;
 
   return (
@@ -70,95 +45,18 @@ export default async function BotPage({ params }: { params: Promise<{ botId: str
         </div>
       </div>
 
-      <form action={saveDraftAction} className="mt-6 space-y-6">
-        <div className="space-y-2">
-          <label className="text-sm font-medium" htmlFor="persona">
-            Persona
-          </label>
-          <p className="text-sm text-muted-foreground">
-            How should your bot introduce itself and talk to visitors? Write it in your own words.
-          </p>
-          <textarea
-            id="persona"
-            name="persona"
-            defaultValue={draft.persona}
-            rows={5}
-            className="w-full rounded border border-border bg-transparent p-3 text-sm"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium" htmlFor="guardrails">
-            Guardrails
-          </label>
-          <p className="text-sm text-muted-foreground">
-            Anything your bot should never do or say — e.g. never quote a final price, never
-            give medical advice.
-          </p>
-          <textarea
-            id="guardrails"
-            name="guardrails"
-            defaultValue={draft.guardrails}
-            rows={4}
-            className="w-full rounded border border-border bg-transparent p-3 text-sm"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <span className="text-sm font-medium">Tools</span>
-          <div className="space-y-1">
-            {listAllTools().map((tool) => (
-              <label key={tool.name} className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  name={`tool_${tool.name}`}
-                  defaultChecked={enabledTools.has(tool.name)}
-                />
-                {tool.name}
-                <span className="text-muted-foreground">— {tool.description}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <span className="text-sm font-medium">Widget appearance</span>
-          <p className="text-sm text-muted-foreground">
-            What visitors see before they've sent a message, and the widget's accent color.
-          </p>
-          <label className="block text-sm">
-            Greeting
-            <input
-              name="greeting"
-              defaultValue={appearance.greeting}
-              className="mt-1 w-full rounded border border-border bg-transparent p-2 text-sm"
-            />
-          </label>
-          <label className="block text-sm">
-            Accent color
-            <input
-              type="color"
-              name="accentColor"
-              defaultValue={appearance.accentColor}
-              className="mt-1 block h-row-sm w-16 rounded border border-border bg-transparent"
-            />
-          </label>
-        </div>
-
-        <div className="flex gap-2">
-          <Button type="submit" variant="outline">
-            Save draft
-          </Button>
-        </div>
-      </form>
-
-      <form action={publishAction} className="mt-4">
-        <Button type="submit">Publish</Button>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Publishing makes this the version live visitors talk to. Conversations already in
-          progress finish on the version they started with.
-        </p>
-      </form>
+      <BotEditorForm
+        botId={botId}
+        persona={draft.persona}
+        guardrails={draft.guardrails}
+        tools={listAllTools().map((tool) => ({
+          name: tool.name,
+          description: tool.description,
+          enabled: enabledTools.has(tool.name),
+        }))}
+        greeting={appearance.greeting}
+        accentColor={appearance.accentColor}
+      />
 
       <div className="mt-8 space-y-2 border-t border-border pt-6">
         <span className="text-sm font-medium">Embed on your site</span>
