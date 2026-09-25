@@ -46,6 +46,19 @@ Before saying a piece of work is done:
    feature that silently degrades below what a guardrail requires
    (tenant isolation, traceability, graceful tool fallback) is not done
    even if it compiles and runs.
+11. **Open Dependabot PRs relevant to what you touched.** ADR 0009: the
+   Tailwind v3/v4 mismatch wasn't a detection gap — Dependabot had
+   already opened a PR for it — it was a triage gap, nobody looked.
+   Applies to any dependency (a framework, a UI library, a build tool),
+   not just this one case. `list_pull_requests`/`search_pull_requests`
+   (github MCP), filter to `dependabot[bot]`. A minor/patch bump
+   touching a file you're already changing: fine to fold in. A major
+   bump: triage it — mechanical and low-risk (a types package, a CI
+   action, something the upstream project you're matching already
+   requires) can be verified and merged in the same pass; a real
+   framework major (Next.js, Prisma, TypeScript) needs its own
+   dedicated migration effort — say so and leave it open, don't bundle
+   it in silently and don't silently ignore it either.
 
 None of this replaces actually running the thing — see CLAUDE.md's
 "never commit code that hasn't actually been run." This checklist is

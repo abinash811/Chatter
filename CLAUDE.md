@@ -166,6 +166,21 @@ make a meaningful change, update this before ending your turn.
   source has no such concept (Vite SPA), Next.js App Router requires
   it; this was already true before the v4 upgrade, just never listed
   here explicitly until now.
+- Dependency sweep after ADR 0009 (the actual gap was triage, not
+  detection — see the ADR): 5 more open Dependabot PRs found and
+  triaged, not just Tailwind's. Merged (verified: `tsc`, guardrails,
+  build, a real headless-browser check, all 11 E2E specs): `actions/
+  checkout`/`actions/setup-node` v4→v7 (`.github/workflows/ci.yml`),
+  `@types/node` 22→26, `tailwind-merge` 2→3 (v3 is what CARE itself
+  pins post-Tailwind-v4 — checked, not assumed), `lucide-react` 0→1
+  (checked the real breaking-changes list — brand-icon removal and
+  `*Circle` renames — against every icon we actually import; none
+  affected). **Deliberately left open, not silently bundled in**:
+  Next.js 15→16, Prisma 5→7 (×2, client+CLI), TypeScript 5→7 — each a
+  real framework major needing its own dedicated migration effort, not
+  a same-pass triage item. `.claude/skills/ship-checklist/SKILL.md` now
+  has this as a standing item (any dependency, not just this one case)
+  so it isn't only a one-time catch-up.
 - 🟡 No real end-to-end verified Claude reply yet — blocked on a real
   `ANTHROPIC_API_KEY` (everything up to that boundary is confirmed
   correct, see README's "Verified by a real run").
@@ -175,6 +190,12 @@ make a meaningful change, update this before ending your turn.
 - 🔲 No component-level tests — see the fuller gap list from the
   2026-09-25 product-building-process discussion (not yet its own doc;
   ask the user if this should become one).
+- 🟡 4 open Dependabot major-version PRs deliberately deferred, not
+  forgotten: Next.js 15→16 (#5), Prisma 5→7 client (#4) and CLI (#8),
+  TypeScript 5→7 (#10). Each needs its own dedicated migration pass —
+  Prisma's especially, given RLS/tenant-isolation sits directly on it.
+  Check `list_pull_requests`/`search_pull_requests` (github MCP) for
+  current state before assuming these are still exactly as described.
 
 ## Where things live
 
