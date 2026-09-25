@@ -32,7 +32,9 @@ Before saying a piece of work is done:
    (resolve or add an entry for anything newly discovered),
    `docs/features.md` if a feature shipped or changed, `docs/roadmap.md`
    if something moved out of Next/Later, `docs/architecture.md` if a
-   design decision landed.
+   design decision landed, `docs/business-logic.md` if a core flow
+   changed, `docs/api.md` if a route was added or its shape changed,
+   `docs/glossary.md` if a new term was introduced.
 8. **A new UI page or pattern** — does a `docs/design/preview/` mockup
    exist for it? If not, one should be added (see CLAUDE.md's design
    rule).

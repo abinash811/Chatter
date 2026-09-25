@@ -99,6 +99,12 @@ make a meaningful change, update this before ending your turn.
 ## Where things live
 
 - `docs/product-spec.md` — MVP scope and product decisions made so far
+- `docs/glossary.md` — domain terms in plain language; add a term in the
+  same PR that introduces it
+- `docs/business-logic.md` — how the core flows actually work (draft/
+  publish, the chat/tool-calling loop, tenant isolation in practice) —
+  update in the same PR as the code it describes
+- `docs/api.md` — every HTTP route, one place
 - `docs/architecture.md` — system design, living doc, updated as decisions land
 - `docs/roadmap.md` — Now/Next/Later feature priorities
 - `docs/features.md` — every feature, one place, built vs. planned;
