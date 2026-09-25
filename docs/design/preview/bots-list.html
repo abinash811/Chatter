@@ -21,16 +21,24 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
 .field-input-sm { height: 32px; border: 1px solid #e5e5e5; border-radius: 6px; padding: 0 10px; font-size: 13px; width: 160px; }
 .btn-sm { height: 32px; padding: 0 12px; background: #065f46; color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 500; }
 
-.list { margin-top: 12px; border-top: 1px solid #e5e5e5; }
-.row { display: flex; align-items: center; height: 48px; padding: 0 8px; border-bottom: 1px solid #e5e5e5; font-size: 13px; }
+/* Real CARE Table (components/ui/table.tsx, ADR 0008) via
+   components/console/BotsTable.tsx — not the old borderless div-list. */
+.list { margin-top: 12px; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; }
+.thead-row { display: flex; align-items: center; height: 40px; padding: 0 8px; background: #fafafa; border-bottom: 1px solid #e5e5e5; font-size: 13px; font-weight: 500; color: #0a0a0c; }
+.th-name { flex: 1; padding-left: 8px; }
+.th-status { width: 140px; }
+.th-created { width: 100px; text-align: right; padding-right: 24px; }
+.row { display: flex; align-items: center; height: 40px; padding: 0 8px; border-bottom: 1px solid #e5e5e5; font-size: 13px; cursor: pointer; }
+.row:last-child { border-bottom: none; }
 .row:hover { background: #fafafa; }
-.row-name { font-weight: 500; color: #0a0a0c; flex: 1; display: flex; align-items: center; gap: 10px; }
+.row-name { font-weight: 500; color: #0a0a0c; flex: 1; display: flex; align-items: center; gap: 10px; padding-left: 8px; }
 .row-icon { width: 28px; height: 28px; border-radius: 6px; background: #ecfdf5; color: #065f46; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px; flex-shrink: 0; }
-.row-meta { color: #a3a3a3; font-size: 12px; font-variant-numeric: tabular-nums; width: 110px; text-align: right; }
-.badge { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 4px; margin-left: 16px; width: 90px; text-align: center; }
-.badge-published { background: #ecfdf5; color: #065f46; }
+.row-status { width: 140px; }
+.badge { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 4px; display: inline-block; }
+.badge-published { background: #065f46; color: #fff; }
 .badge-draft { background: #f5f5f5; color: #737373; }
-.row-chevron { color: #d4d4d4; margin-left: 12px; }
+.row-meta { color: #a3a3a3; font-size: 12px; font-variant-numeric: tabular-nums; width: 76px; text-align: right; }
+.row-chevron { color: #d4d4d4; margin-left: 12px; width: 16px; }
 
 .empty { padding: 56px 0; text-align: center; }
 .empty-icon { width: 40px; height: 40px; border-radius: 9999px; background: #f5f5f5; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; color: #a3a3a3; }
@@ -59,23 +67,29 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     </div>
 
     <div class="list">
+      <div class="thead-row">
+        <div class="th-name">Name</div>
+        <div class="th-status">Status</div>
+        <div class="th-created">Created</div>
+        <div style="width:28px;"></div>
+      </div>
       <div class="row">
         <div class="row-name"><div class="row-icon">SB</div>Support bot</div>
-        <div class="row-meta">Edited 2h ago</div>
-        <div class="badge badge-published">Published</div>
-        <div class="row-chevron">→</div>
+        <div class="row-status"><span class="badge badge-published">Published</span></div>
+        <div class="row-meta">2h ago</div>
+        <div class="row-chevron">›</div>
       </div>
       <div class="row">
         <div class="row-name"><div class="row-icon">SC</div>Sales concierge</div>
-        <div class="row-meta">Edited 1d ago</div>
-        <div class="badge badge-published">Published</div>
-        <div class="row-chevron">→</div>
+        <div class="row-status"><span class="badge badge-published">Published</span></div>
+        <div class="row-meta">1d ago</div>
+        <div class="row-chevron">›</div>
       </div>
       <div class="row">
         <div class="row-name"><div class="row-icon">TB</div>Test 1</div>
-        <div class="row-meta">Edited just now</div>
-        <div class="badge badge-draft">Draft only</div>
-        <div class="row-chevron">→</div>
+        <div class="row-status"><span class="badge badge-draft">Draft only</span></div>
+        <div class="row-meta">just now</div>
+        <div class="row-chevron">›</div>
       </div>
     </div>
   </div>

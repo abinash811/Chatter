@@ -181,6 +181,18 @@ make a meaningful change, update this before ending your turn.
   a same-pass triage item. `.claude/skills/ship-checklist/SKILL.md` now
   has this as a standing item (any dependency, not just this one case)
   so it isn't only a one-time catch-up.
+- `/bots` rebuilt on the real CARE `Table` (`components/console/
+  BotsTable.tsx`, ADR 0008) — column headers (Name/Status/Created),
+  whole-row click-to-navigate (a small client component just for the
+  router handler; the page itself stays server-rendered), same data
+  passed as plain serializable fields (not full Prisma records — the
+  lesson from the bot-editor's earlier server/client serialization
+  bug). `docs/design/preview/bots-list.html` updated to match the real
+  headed-table look, not the old borderless div-list. Verified: full
+  guardrail suite, `tsc`, build, a real headless-browser check
+  (create → table shows it → row click navigates), and 2 new
+  `tests/e2e/bots-list.spec.ts` specs (13 total now) — not just a
+  throwaway script.
 - 🟡 No real end-to-end verified Claude reply yet — blocked on a real
   `ANTHROPIC_API_KEY` (everything up to that boundary is confirmed
   correct, see README's "Verified by a real run").

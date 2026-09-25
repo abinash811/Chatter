@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
-import { ChevronRight, Bot as BotIcon } from "lucide-react";
+import { Bot as BotIcon } from "lucide-react";
 import { getCurrentSession } from "@/lib/auth";
 import { withOrgContext, getOrCreateBotPublicKey } from "@/lib/db";
-import { Badge, Button, Input } from "@/components/ui";
-import { relativeTime } from "@/lib/utils";
+import { Button, Input } from "@/components/ui";
+import { BotsTable } from "@/components/console/BotsTable";
 
 // First real console screen. Linear register: dense list, one row
 // height (docs/architecture.md §7), no decoration beyond what's needed
@@ -56,24 +56,15 @@ export default async function BotsPage() {
           <p className="text-sm text-muted-foreground">Create one above to get started.</p>
         </div>
       ) : (
-        <div className="mt-4 divide-y divide-border rounded-lg border border-border shadow-xs">
-          {bots.map((bot) => (
-            <a
-              key={bot.id}
-              href={`/bots/${bot.id}`}
-              className="group flex h-row items-center gap-3 px-3 text-sm transition-colors hover:bg-muted"
-            >
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-accent/10 text-xs font-semibold text-accent">
-                {bot.name.slice(0, 2).toUpperCase()}
-              </div>
-              <span className="flex-1 font-medium">{bot.name}</span>
-              <span className="text-xs text-muted-foreground">Created {relativeTime(bot.createdAt)}</span>
-              <Badge variant={bot.versions.length > 0 ? "default" : "muted"}>
-                {bot.versions.length > 0 ? "Published" : "Draft only"}
-              </Badge>
-              <ChevronRight className="h-4 w-4 text-border transition-colors group-hover:text-muted-foreground" />
-            </a>
-          ))}
+        <div className="mt-4 rounded-lg border border-border shadow-xs">
+          <BotsTable
+            bots={bots.map((bot) => ({
+              id: bot.id,
+              name: bot.name,
+              createdAt: bot.createdAt,
+              published: bot.versions.length > 0,
+            }))}
+          />
         </div>
       )}
     </div>
