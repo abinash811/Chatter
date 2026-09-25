@@ -52,11 +52,17 @@ export default {
         panel: "hsl(var(--panel))",
         "panel-foreground": "hsl(var(--panel-foreground))",
         // Full numbered scale (CARE's exact emerald values, via
-        // tailwindcss/colors — not our semantic --accent pair). CARE's
-        // own registry components reference `primary-100`,
-        // `primary-900`, etc. directly; without this, anything pulled
-        // via scripts/pull-care-component.mjs breaks on those classes.
+        // tailwindcss/colors) plus DEFAULT/foreground pointing at our
+        // --accent pair — CARE's registry components reference both
+        // the bare `bg-primary`/`text-primary-foreground` (their
+        // semantic, theme-swapping pair) and the numbered steps
+        // directly (`primary-100`, `primary-900`, for hover/active
+        // shades). Without DEFAULT, `bg-primary` silently resolves to
+        // nothing (found via a real screenshot — the Log In button
+        // rendered unstyled).
+        "primary-foreground": "hsl(var(--accent-foreground))",
         primary: {
+          DEFAULT: "hsl(var(--accent))",
           50: "#ecfdf5",
           100: "#d1fae5",
           200: "#a7f3d0",

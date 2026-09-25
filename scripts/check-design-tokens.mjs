@@ -4,6 +4,17 @@
 // definitions themselves (app/globals.css, tailwind.config.ts) — every
 // other file should reference a token (bg-accent, text-muted-foreground)
 // instead.
+//
+// ADR 0008 exception: components/ui/*.tsx pulled verbatim from CARE
+// (scripts/pull-care-component.mjs, marked with a `@type registry:`
+// header) are themselves part of the token/primitive layer now, not
+// app code using ad hoc styling — CARE's real design vocabulary uses
+// full numbered Tailwind scales directly (red-700, blue-400, etc.) for
+// multi-shade hover/active states, not just single semantic aliases.
+// Hand-authored app code still must reference a token, never a raw
+// color — this exception is for verbatim-vendored files only, and
+// re-pulling a component must never be used to sneak an unrelated
+// hand edit past this check.
 
 import { readFileSync } from "fs";
 import { execSync } from "child_process";
@@ -13,6 +24,7 @@ import { execSync } from "child_process";
 const ALLOWLIST = new Set(["app/globals.css", "tailwind.config.ts", "app/global-error.tsx"]);
 const HEX_COLOR = /#[0-9a-fA-F]{3,8}\b/;
 const ARBITRARY_TAILWIND_COLOR = /\b(?:bg|text|border|ring)-(?:red|blue|green|yellow|purple|pink|indigo|orange|teal|cyan|lime|amber|emerald|violet|fuchsia|rose|sky)-\d{2,3}\b/;
+const CARE_REGISTRY_HEADER = /@type registry:/;
 
 const files = execSync("git ls-files '*.ts' '*.tsx' '*.css'", { encoding: "utf8" })
   .trim()
@@ -24,6 +36,7 @@ let failed = false;
 for (const file of files) {
   if (ALLOWLIST.has(file)) continue;
   const content = readFileSync(file, "utf8");
+  if (file.startsWith("components/ui/") && CARE_REGISTRY_HEADER.test(content.slice(0, 300))) continue;
   const lines = content.split("\n");
   lines.forEach((line, i) => {
     // Explicit, narrow escape hatch — for business-configurable widget

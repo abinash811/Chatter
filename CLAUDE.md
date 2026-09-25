@@ -101,34 +101,54 @@ make a meaningful change, update this before ending your turn.
   `/login`+`/signup` hero panel's two decorative circles
   (`prefers-reduced-motion` respected).
 
-- Pulling real CARE components is now a one-line command, not a manual
-  research pass each time: `scripts/pull-care-component.mjs` (verified
-  against a real component, `badge`, reverted after — proved the JSON
-  format and our token gaps, not kept). `components.json` registers
-  the `careui` registry too, but the shadcn CLI itself can't actually
-  fetch from it — its `{name}` URL-substitution only replaces the
-  first occurrence (verified in the CLI's own bundle), and CARE serves
-  each item at a path needing the name twice
-  (`registry/care-ui/<name>/<name>.json`). Our script reads the same
-  JSON directly instead, sidestepping that CLI limitation — and also
+- 18 real CARE primitives pulled and committed permanently —
+  `Dialog`, `AlertDialog`, `Tabs`, `Table`, `DropdownMenu`, `Popover`,
+  `Tooltip`, `Select`, `Separator`, `Avatar`, `Skeleton`, `Sidebar`,
+  `Alert`, `Switch`, `RadioGroup`, `Sheet`, `ScrollArea`, and `Button`
+  itself replaced with CARE's real one (ours only had 4 variants/2
+  sizes; theirs has 8 variants incl. `secondary`/`tertiary`/`link`/
+  `destructive-solid` and icon-square sizes the pulled Dialog/Sheet/
+  Sidebar all depend on). One-time pull — not re-fetched on every use;
+  these are now ours to maintain, same as any other file in the repo.
+  Added `@base-ui/react@^1.8.0` (real version checked via `npm view`,
+  matches what `careui` itself pins) and a `primary` numbered emerald
+  scale + `primary`/`primary-foreground` DEFAULT pair to
+  `tailwind.config.ts` (CARE's components reference both the numbered
+  steps and the bare semantic pair — missing the DEFAULT silently
+  broke the Log In button's fill, caught by an actual screenshot, not
+  by `tsc`). `check-design-tokens.mjs` now exempts verbatim-pulled
+  files (marked by their `@type registry:` header) from the raw-color
+  guardrail — CARE's real design vocabulary uses numbered Tailwind
+  scale steps directly for hover/active shades, not just single
+  semantic tokens; hand-authored app code still must use a token.
+  Verified: full guardrail suite, `tsc`, production build, and all 11
+  `tests/e2e/` specs (unchanged, still passing) against the real
+  swapped-in Button — not just a visual check.
+- `scripts/pull-care-component.mjs` itself: one-line command for
+  anything still needed later, not a manual research pass each time
+  (verified against a real component before the batch pull above).
+  `components.json` registers the `careui` registry too, but the
+  shadcn CLI itself can't actually fetch from it — its `{name}`
+  URL-substitution only replaces the first occurrence (verified in
+  the CLI's own bundle), and CARE serves each item at a path needing
+  the name twice (`registry/care-ui/<name>/<name>.json`). Our script
+  reads the same JSON directly instead, sidestepping that CLI
+  limitation — and also
   the fact that this cloud session's egress policy blocks
   `careui.ohc.network` outright (`--from <local-checkout>` covers
   that case; live `fetch()` is the path for any environment with real
-  network access — a contributor's machine, CI, etc.). Full numbered
-  `primary-*` emerald scale added to `tailwind.config.ts` since CARE's
-  own components reference it directly (`bg-primary-100`, not just our
-  semantic `accent` token) — pulling `badge` surfaced this gap.
-  `docs/conventions.md`'s "Building a new feature" step 2 now points
-  here before anyone hand-builds a primitive we don't have.
+  network access — a contributor's machine, CI, etc.).
+  `docs/conventions.md`'s "Building a new feature" step 2 points here
+  before anyone hand-builds a primitive we don't have.
 
 **Known gaps:**
-- 🔲 Design system tokens/infra + the pull mechanism are done (ADR
-  0008); actually pulling real components for each screen and
-  rebuilding layout/density against real CARE screens (not just
-  recoloring our existing ones) is still open — the agreed next step.
-  Expect each pulled component to need some adaptation (e.g. `badge`
-  pulls in `@base-ui/react`, a dependency we don't have yet — check
-  real versions with `npm view` before installing, per CLAUDE.md).
+- 🔲 Design system tokens/infra, the pull mechanism, and a real
+  18-component primitive layer are all done (ADR 0008). Still open:
+  rebuilding each *screen's* layout/density against real CARE screens
+  — bots list, bot editor, integrations, the sidebar nav shell — using
+  these primitives (Table for lists, Dialog for confirmations, Sidebar
+  for nav, etc.), not just recoloring what already existed. That's the
+  agreed next step.
 - 🟡 No real end-to-end verified Claude reply yet — blocked on a real
   `ANTHROPIC_API_KEY` (everything up to that boundary is confirmed
   correct, see README's "Verified by a real run").
