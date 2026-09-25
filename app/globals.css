@@ -8,11 +8,10 @@
  * Monochrome + one deliberate accent, per the Linear register chosen for
  * the console's daily-driver screens.
  *
- * NOTE: these values are the standard shadcn/ui zinc-based defaults,
- * chosen for their track record, not independently re-audited here.
- * Running an actual WCAG 2.2 AA contrast check (axe-core/Lighthouse) is
- * still a TODO before this ships — see docs/research/design-system-
- * standards.md's shadcn component gaps.
+ * Finalized in ADR 0007 (primary color choice + verified WCAG AA
+ * contrast ratios for every pair below). Component-level contrast
+ * inside shadcn's flagged gaps (docs/research/design-system-
+ * standards.md) is still unaudited.
  */
 :root {
   --background: 0 0% 100%;
@@ -38,7 +37,12 @@
   --muted: 240 3.7% 15.9%;
   --muted-foreground: 240 5% 64.9%;
   --border: 240 3.7% 15.9%;
-  --accent: 262 83% 66%;
+  /* ADR 0007: 66% measured at 4.02:1 for white button text — below
+     WCAG AA's 4.5:1 minimum for text. 62% passes at 4.80:1. (A single
+     accent value can't also pass as standalone text-on-dark-background
+     at this hue/saturation — dark mode isn't wired up in the app yet,
+     so this fixes the case that will actually matter first.) */
+  --accent: 262 83% 62%;
   --accent-foreground: 0 0% 100%;
   --destructive: 0 62.8% 30.6%;
 }

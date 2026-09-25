@@ -23,6 +23,12 @@ export default {
       borderRadius: {
         DEFAULT: "var(--radius)",
       },
+      // Type scale, finalized in ADR 0007 — six named steps, nothing
+      // arbitrary in between. "micro" is a deliberate recurring role
+      // (uppercase eyebrow labels), not a one-off.
+      fontSize: {
+        micro: ["0.625rem", { lineHeight: "1rem" }], // 10px
+      },
       // Linear-register consistency: two row heights, used everywhere,
       // not one-off per screen (docs/architecture.md §7).
       spacing: {

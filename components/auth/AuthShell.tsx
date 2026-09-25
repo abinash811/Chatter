@@ -36,12 +36,12 @@ export function AuthShell({
 
         <div className="relative z-10 flex flex-1 flex-col justify-center">
           <div className="mb-7">
-            <h2 className="mb-2 text-[19px] font-bold leading-snug text-panel-foreground">
+            <h2 className="mb-2 text-lg font-bold leading-snug text-panel-foreground">
               One chat engine.
               <br />
               Every business.
             </h2>
-            <p className="text-[11px] leading-relaxed text-panel-foreground/45">
+            <p className="text-xs leading-relaxed text-panel-foreground/45">
               Ecommerce, healthcare, automotive — the same
               <br />
               Claude-powered core, your own guardrails.
@@ -50,7 +50,7 @@ export function AuthShell({
 
           <div className="flex flex-col gap-2">
             {TRUST_ITEMS.map((item) => (
-              <div key={item} className="flex items-center gap-2 text-[11px] text-panel-foreground/55">
+              <div key={item} className="flex items-center gap-2 text-xs text-panel-foreground/55">
                 <div className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] bg-panel-foreground/[0.08]">
                   <Check className="h-2.5 w-2.5 text-panel-foreground/65" strokeWidth={2.5} />
                 </div>
@@ -63,7 +63,7 @@ export function AuthShell({
 
       <div className="flex flex-1 items-center justify-center bg-background p-6">
         <div className="w-full max-w-sm rounded-lg border border-border p-7">
-          <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-accent">{eyebrow}</p>
+          <p className="mb-1 text-micro font-bold uppercase tracking-widest text-accent">{eyebrow}</p>
           <h1 className="mb-1 text-lg font-semibold">{title}</h1>
           <p className="mb-6 text-sm text-muted-foreground">{subtitle}</p>
           {children}

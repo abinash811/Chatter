@@ -12,9 +12,12 @@ This doc is the concrete rules; the research doc is the reasoning.
 - **Contrast**: text and interactive elements meet WCAG AA minimum
   contrast ratios (4.5:1 normal text, 3:1 large text/UI components)
   against their actual background — including a business's chosen
-  widget colors, not just the console's fixed token set. Not yet
-  independently audited (axe-core/Lighthouse) — flagged as a known TODO
-  in `app/globals.css`'s token comment, still true.
+  widget colors, not just the console's fixed token set. The core
+  color-token pairs (accent/foreground/muted-foreground against
+  background, both light and dark mode) are verified — see ADR 0007 for
+  the actual computed ratios and one real bug it caught (dark-mode
+  button text was failing at 4.02:1, fixed). Component-level contrast
+  (inside shadcn's flagged gaps below) is still unaudited.
 - **Keyboard navigation**: every interactive element (buttons, form
   fields, links) reachable and operable via keyboard alone, in a
   sensible tab order. No custom interaction that only works with a
