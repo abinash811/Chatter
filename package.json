@@ -19,6 +19,8 @@
     "check:all": "npm run check:isolation && npm run check:vertical && npm run check:secrets && npm run check:tokens && npm run check:buttons && npm run check:imports && npm run check:filelength",
     "canary": "node scripts/canary.mjs",
     "test:e2e": "playwright test",
+    "test:visual": "playwright test --config=playwright.visual.config.ts",
+    "test:visual:update": "playwright test --config=playwright.visual.config.ts --update-snapshots",
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
     "test:unit:coverage": "vitest run --coverage"

@@ -94,3 +94,25 @@ update it in place rather than leaving it to rot.
   calls, traceability logging, request/response mapping), not a real
   network or database call; that's still what `tests/e2e/` and CI's
   real-Postgres steps are for.
+- **Visual regression testing**: Playwright's own built-in
+  `toHaveScreenshot()` (already a dependency via `@playwright/test`)
+  over a third-party service (Percy, Chromatic) — zero new cost/vendor
+  for a project this size, and it's the standard "you already have
+  Playwright" choice. Adopted 2026-09-25: `tests/visual/`,
+  `playwright.visual.config.ts` (separate from `playwright.config.ts`
+  — different lifecycle, baselines get regenerated with
+  `--update-snapshots`, functional E2E specs never should). Real,
+  documented risk: a screenshot baseline is only trustworthy against
+  the exact environment it was generated in — font rasterization and
+  the rendering path can differ machine to machine. Wired into CI as
+  `continue-on-error: true` until a real CI run confirms these
+  baselines (generated in this project's sandboxed dev environment)
+  actually match GitHub's runner — see the workflow step's own
+  comment for what to do once that's confirmed either way. Verified
+  the diff mechanism actually catches something, not just that it
+  runs: an initial `maxDiffPixelRatio: 0.02` config silently let a
+  real, intentional color change on the login page's brand icon pass
+  clean (a small element is a tiny fraction of a full-page screenshot's
+  pixel count) — found by deliberately breaking something and checking
+  the suite actually failed, removed the ratio cap, then confirmed the
+  same change now fails correctly.

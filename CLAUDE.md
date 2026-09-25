@@ -217,6 +217,29 @@ make a meaningful change, update this before ending your turn.
   style "verify for real" discipline). `docs/research/current-
   practices.md` has the Vitest-over-Jest reasoning (checked via
   WebSearch, not recalled).
+- Visual regression testing added — `tests/visual/` (Playwright's own
+  `toHaveScreenshot()`, `playwright.visual.config.ts`), closing the
+  "I eyeball a screenshot each time, nothing automated" gap from the
+  same discussion. 6 baselines: login, signup, bots empty/with-a-bot
+  (Created column masked — it's a relative timestamp), bot editor
+  (embed snippet masked — it embeds a random public key), sidebar
+  icon-collapsed. Actually verified the mechanism catches something,
+  not just that it runs green: an initial `maxDiffPixelRatio: 0.02`
+  silently let a real, deliberately-introduced color change on the
+  login page's brand icon pass — a small element is a tiny fraction of
+  a full-page screenshot's pixels. Removed the ratio cap, confirmed the
+  same change now correctly fails both pages that use `AuthShell`
+  (login+signup) and nothing else, then reverted the test change.
+  Wired into CI as `continue-on-error: true` for now, deliberately —
+  the baselines were generated in this project's sandboxed dev
+  environment, not GitHub's own runner, and a screenshot baseline is
+  only trustworthy against the exact environment that generated it.
+  **Needs a human/future-session check**: look at the first real CI
+  run of this step — if green, flip `continue-on-error` off (a
+  one-line change in `.github/workflows/ci.yml`); if it fails on
+  something that isn't a real visual regression, regenerate baselines
+  from that CI run's uploaded `test-results/` artifact instead of this
+  sandbox's, then flip it. Don't leave it non-blocking indefinitely.
 - 🟡 No real end-to-end verified Claude reply yet — blocked on a real
   `ANTHROPIC_API_KEY` (everything up to that boundary is confirmed
   correct, see README's "Verified by a real run").
