@@ -77,21 +77,31 @@ request was phrased.
 2. **Check design.** Does a `docs/design/preview/` mockup exist? If
    this is user-facing and none exists, add one — see `docs/design/
    principles.md` for the bar to build against, and Principle #10 if
-   it's a record-editing screen. Need a UI primitive we don't have yet
-   (Dialog, Table, Sidebar, Tabs, etc.)? Use CARE (`ohcnetwork/care_fe`/
-   `careui`) as a **visual and behavioral reference only** — look at
-   what it does, then hand-author it ourselves against `@base-ui/react`
-   (for behavior: focus trap, keyboard nav, ARIA) and our own tokens in
-   `app/globals.css` (ADR 0010). Do **not** pull CARE's component source
-   verbatim (`scripts/pull-care-component.mjs` is no longer the default
-   path, per ADR 0010 — it can still be handy for `--from
-   <local-checkout>` reference-reading while hand-authoring, nothing
-   more): the 18 primitives pulled that way before this ADR produced
-   three separate silent bugs (dead classes assuming a version/attribute
-   we didn't actually have), none caught by `tsc` or the build, all
-   caught only by a real screenshot. Add the export to `components/ui/
-   index.ts` and verify with a real screenshot before considering it
-   done, same as any other new UI pattern.
+   it's a record-editing screen. For composition/polish (density,
+   hierarchy, whitespace, depth), work from documented Linear/Notion/
+   Stripe conventions (`docs/research/design-system-standards.md`) —
+   **not** CARE: ADR 0011 dropped CARE as a visual reference entirely,
+   since this environment can't actually reach its live product
+   (network egress blocks its whole domain family and GitHub's image
+   CDNs alike) and its GitHub source is component code, not a design
+   artifact — it doesn't show what a designer decided about density or
+   polish. Need a UI primitive we don't have yet (Dialog, Table,
+   Sidebar, Tabs, etc.)? Build it against `@base-ui/react` directly (for
+   real behavior: focus trap, keyboard nav, ARIA) and our own tokens in
+   `app/globals.css`, informed by the same Linear/Notion/Stripe
+   conventions for how it should look. Do **not** pull CARE's component
+   source verbatim (`scripts/pull-care-component.mjs` is no longer the
+   default path, per ADR 0010 — it can still be handy for `--from
+   <local-checkout>` reference-reading, nothing more): the 18 primitives
+   pulled that way before that ADR produced three separate silent bugs
+   (dead classes assuming a version/attribute we didn't actually have),
+   none caught by `tsc` or the build, all caught only by a real
+   screenshot. Add the export to `components/ui/index.ts` and verify
+   with a real screenshot before considering it done, same as any other
+   new UI pattern — and if it has any hover/focus/active state, verify
+   that state with `getComputedStyle` before/after a real interaction,
+   not just a screenshot (a 1-shade border change won't show up in one;
+   see the `app/globals.css` cascade-layers bug this caught).
 3. **Check data/security implications.** A new table or column? It's
    tenant-scoped unless there's a specific reason it isn't (`orgId` +
    an RLS policy + an index — `docs/security.md`). Touches secrets,

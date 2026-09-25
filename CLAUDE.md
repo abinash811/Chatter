@@ -234,6 +234,35 @@ make a meaningful change, update this before ending your turn.
   product only has one console section today; a user/org identity
   footer (matching CARE's avatar+name pattern) is real, small, deferred
   scope, not yet built.
+- **CARE dropped as visual reference entirely — ADR 0011.** User still
+  found the bot editor "very basic," and pushed on why: `care_fe`'s
+  GitHub repo is component *source code*, not a design artifact —
+  reading TSX/Tailwind tells us nothing about what a designer decided
+  on density/hierarchy/polish for a real finished screen. Tried to fix
+  this properly (get real screenshots/live access to CARE's actual
+  product via `WebSearch`/`WebFetch`) and every avenue failed for
+  environment reasons, not CARE-specific ones: CARE's whole domain
+  family blocked, GitHub's own image CDNs blocked, confirmed
+  non-CARE-specific by testing `linear.app` and `en.wikipedia.org`
+  (also blocked), and the Playwright MCP browser is separately broken
+  here (Chromium needs `--no-sandbox` as root; MCP config can't
+  hot-reload mid-session). User's decision: stop referencing CARE's
+  product at all, build from documented real knowledge of Linear/
+  Notion/Stripe instead (the actual bar per principles.md #9 and
+  `docs/research/design-system-standards.md`) — refines ADR 0010, does
+  not reverse it (still no verbatim source pulls); ADR 0008's tokens/
+  colors are unaffected. First application: `components/ui/card.tsx`
+  retuned — `bg-soft-background` as a calm recessed panel (not a plain
+  white box with only a border), white `Input`/`Textarea` fields
+  popping inside it, bigger `CardTitle` for real hierarchy, more
+  generous padding (`p-6`, `space-y-4`) — drawn from documented Notion/
+  Stripe conventions, not CARE's code. `docs/conventions.md`'s
+  "Building a new feature" step 2 updated to point at Linear/Notion/
+  Stripe conventions instead of "check CARE." Verified: guardrails,
+  `tsc`, build, all 14 `tests/e2e/` specs, all 7 `tests/visual/` specs
+  (only `bot-editor.png` actually changed — confirms the Input/Textarea
+  `bg-background` change was a correct no-op on white-background
+  screens — stable across two re-runs).
 
 **Known gaps:**
 - 🔲 Design system tokens/infra and a real 18-component primitive layer
