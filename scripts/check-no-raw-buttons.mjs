@@ -6,17 +6,21 @@
 
 import { readFileSync } from "fs";
 import { execSync } from "child_process";
+import { isVerbatimCareFile } from "./lib/careExemption.mjs";
 
 // app/global-error.tsx is deliberately self-contained — it replaces the
 // entire root layout when triggered, so it can't assume the component
 // library (or anything else about the app's setup) still works.
-const ALLOWLIST = new Set(["components/ui/button.tsx", "app/global-error.tsx"]);
-// ADR 0008: components/ui/*.tsx pulled verbatim from CARE (marked by
-// their own `@type registry:` header) are themselves primitives, same
-// reasoning as button.tsx above — they may define their own raw
+// components/ui/button.tsx no longer needs a named entry here — it's a
+// verbatim CARE pull now too (ADR 0008), already covered by
+// isVerbatimCareFile below. (Found via scripts/check-guardrail-
+// exemptions.mjs surfacing it as a redundant double-exemption.)
+const ALLOWLIST = new Set(["app/global-error.tsx"]);
+// ADR 0008: components/ui/*.tsx pulled verbatim from CARE (button.tsx
+// included) are themselves primitives — they may define their own raw
 // <button> internally (e.g. sidebar.tsx's trigger). App code (app/,
 // hand-authored components) still must always go through <Button>.
-const CARE_REGISTRY_HEADER = /@type registry:/;
+// See scripts/lib/careExemption.mjs.
 
 const files = execSync("git ls-files 'app/**/*.tsx' 'components/**/*.tsx'", { encoding: "utf8" })
   .trim()
@@ -27,8 +31,8 @@ let failed = false;
 
 for (const file of files) {
   if (ALLOWLIST.has(file)) continue;
-  if (file.startsWith("components/ui/") && CARE_REGISTRY_HEADER.test(readFileSync(file, "utf8").slice(0, 300))) continue;
   const content = readFileSync(file, "utf8");
+  if (isVerbatimCareFile(file, content)) continue;
   const lines = content.split("\n");
   lines.forEach((line, i) => {
     if (/<button\b/.test(line)) {

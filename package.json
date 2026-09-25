@@ -17,6 +17,7 @@
     "check:imports": "node scripts/check-component-imports.mjs",
     "check:filelength": "node scripts/check-file-length.mjs",
     "check:all": "npm run check:isolation && npm run check:vertical && npm run check:secrets && npm run check:tokens && npm run check:buttons && npm run check:imports && npm run check:filelength",
+    "check:exemptions": "node scripts/check-guardrail-exemptions.mjs",
     "canary": "node scripts/canary.mjs",
     "test:e2e": "playwright test",
     "test:visual": "playwright test --config=playwright.visual.config.ts",

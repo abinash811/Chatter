@@ -239,6 +239,25 @@ make a meaningful change, update this before ending your turn.
   `success` on GitHub's real runner, confirming the sandbox-generated
   baselines do match. Flipped to blocking (`continue-on-error` removed)
   in the same pass.
+- Guardrail-exemption visibility added (gap #5 from the "critique the
+  automated setup" discussion — closes it; gap #4, verifying an actual
+  deploy, is blocked on a real Render deployment existing, not yet
+  actionable). `scripts/check-guardrail-exemptions.mjs`
+  (`npm run check:exemptions`) reports every file currently trusted
+  rather than mechanically enforced — a named allowlist entry in a
+  handful of check-*.mjs scripts, or a verbatim CARE pull (ADR 0008).
+  A report, not a gate — always exits 0, not wired into `check:all`.
+  The `@type registry:` exemption logic itself was triplicated across
+  `check-design-tokens.mjs`/`check-no-raw-buttons.mjs`/
+  `check-file-length.mjs`; extracted to one shared helper
+  (`scripts/lib/careExemption.mjs`) all four scripts (including the new
+  report) now import, so enforcement and the report can't silently
+  drift apart. Running the report immediately surfaced a real, small
+  bug: `components/ui/button.tsx` was double-exempted (a named
+  allowlist entry from before it was replaced with CARE's real version,
+  plus the CARE-pull exemption it now also matches) — removed the
+  now-redundant named entry. `ship-checklist` has this as a standing
+  item, run when the exemption surface actually changes.
 - 🟡 No real end-to-end verified Claude reply yet — blocked on a real
   `ANTHROPIC_API_KEY` (everything up to that boundary is confirmed
   correct, see README's "Verified by a real run").
@@ -256,6 +275,12 @@ make a meaningful change, update this before ending your turn.
   Prisma's especially, given RLS/tenant-isolation sits directly on it.
   Check `list_pull_requests`/`search_pull_requests` (github MCP) for
   current state before assuming these are still exactly as described.
+- 🔲 Gap #4 from the "critique the automated setup" discussion — CI
+  verifies a build, never an actual deploy — is genuinely blocked, not
+  deferred: nothing is deployed to Render yet (confirmed with the
+  user 2026-09-25), so there's nothing to write a post-deploy check
+  against. Building that automation now would be speculative. Once a
+  real deployment exists, this becomes actionable.
 
 ## Where things live
 

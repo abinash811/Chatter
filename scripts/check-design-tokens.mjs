@@ -18,13 +18,13 @@
 
 import { readFileSync } from "fs";
 import { execSync } from "child_process";
+import { isVerbatimCareFile } from "./lib/careExemption.mjs";
 
 // app/global-error.tsx is deliberately self-contained — see its own
 // file header for why it can't reference the token system.
 const ALLOWLIST = new Set(["app/globals.css", "tailwind.config.ts", "app/global-error.tsx"]);
 const HEX_COLOR = /#[0-9a-fA-F]{3,8}\b/;
 const ARBITRARY_TAILWIND_COLOR = /\b(?:bg|text|border|ring)-(?:red|blue|green|yellow|purple|pink|indigo|orange|teal|cyan|lime|amber|emerald|violet|fuchsia|rose|sky)-\d{2,3}\b/;
-const CARE_REGISTRY_HEADER = /@type registry:/;
 
 const files = execSync("git ls-files '*.ts' '*.tsx' '*.css'", { encoding: "utf8" })
   .trim()
@@ -36,7 +36,7 @@ let failed = false;
 for (const file of files) {
   if (ALLOWLIST.has(file)) continue;
   const content = readFileSync(file, "utf8");
-  if (file.startsWith("components/ui/") && CARE_REGISTRY_HEADER.test(content.slice(0, 300))) continue;
+  if (isVerbatimCareFile(file, content)) continue;
   const lines = content.split("\n");
   lines.forEach((line, i) => {
     // Explicit, narrow escape hatch — for business-configurable widget

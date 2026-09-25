@@ -74,6 +74,15 @@ Before saying a piece of work is done:
    framework major (Next.js, Prisma, TypeScript) needs its own
    dedicated migration effort — say so and leave it open, don't bundle
    it in silently and don't silently ignore it either.
+14. **`npm run check:exemptions`** — a visibility report (not a gate,
+   always exits 0) over every file currently trusted rather than
+   mechanically enforced by a guardrail. Pulled a new CARE component,
+   or added a new named allowlist entry to any check-*.mjs script? Run
+   this and glance at the total — it already caught one real bug once
+   (`button.tsx` double-listed as both a named entry and a verbatim
+   CARE file, after it was replaced with CARE's real version). Not
+   every run needs this — just when the exemption surface actually
+   changed.
 
 None of this replaces actually running the thing — see CLAUDE.md's
 "never commit code that hasn't actually been run." This checklist is
