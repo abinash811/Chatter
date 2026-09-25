@@ -193,15 +193,41 @@ make a meaningful change, update this before ending your turn.
   (create → table shows it → row click navigates), and 2 new
   `tests/e2e/bots-list.spec.ts` specs (13 total now) — not just a
   throwaway script.
+- A real unit-test layer now exists — `tests/unit/` (Vitest,
+  `vitest.config.mts`), closing the biggest gap from the 2026-09-25
+  "critique the automated setup" discussion: `lib/ai/` (the chat loop,
+  model gateway, tool registry, system prompt assembly) had zero
+  automated coverage of any kind before this, since E2E never exercises
+  a real Claude call. 38 specs across 7 files: `lib/ai/chat.ts`'s
+  `sendMessage` (no-tool replies, the tool-use loop, parallel tool
+  calls + traceability logging, the `MAX_TOOL_ITERATIONS` fallback, the
+  conversation-ownership check), `lib/ai/gateway.ts`'s exact Anthropic
+  SDK request/response mapping (found and fixed a real testability bug
+  in the process — it lazily `require()`'d the SDK inside the
+  constructor, which bypassed Vitest's mocking and hit the real SDK;
+  switched to a static import, which needed no behavior change since
+  only *instantiating* `Anthropic` touches `ANTHROPIC_API_KEY`, not
+  importing the class), `lib/ai/systemPrompt.ts`, the tool registry,
+  `lib/schemas/auth.ts`, `lib/rateLimit.ts`, `lib/utils.ts`. Every
+  external dependency (the SDK, Prisma via `withOrgContext`) mocked at
+  the module boundary — this tests the engine's own logic, not a real
+  network/DB call, which stays `tests/e2e/`'s + CI's job. Wired into
+  the pre-commit hook and CI (`npm run test:unit`, before the slower
+  DB/build/E2E steps — fails in seconds, not minutes, per ADR-0009-
+  style "verify for real" discipline). `docs/research/current-
+  practices.md` has the Vitest-over-Jest reasoning (checked via
+  WebSearch, not recalled).
 - 🟡 No real end-to-end verified Claude reply yet — blocked on a real
   `ANTHROPIC_API_KEY` (everything up to that boundary is confirmed
   correct, see README's "Verified by a real run").
 - 🔲 Not yet built: password reset flow, knowledge-base ingestion
   pipeline, onboarding flow (org naming/invites/multi-org switcher),
   appearance/theming editor.
-- 🔲 No component-level tests — see the fuller gap list from the
-  2026-09-25 product-building-process discussion (not yet its own doc;
-  ask the user if this should become one).
+- 🟡 `lib/ai/` and other pure/mockable logic now has real unit tests
+  (`tests/unit/`); React component rendering tests do not yet, though
+  `@testing-library/react`/`jsdom` are installed and `vitest.config.mts`
+  is already set up for `.tsx` specs — adding one is now a small,
+  unblocked step, not a new framework decision.
 - 🟡 4 open Dependabot major-version PRs deliberately deferred, not
   forgotten: Next.js 15→16 (#5), Prisma 5→7 client (#4) and CLI (#8),
   TypeScript 5→7 (#10). Each needs its own dedicated migration pass —

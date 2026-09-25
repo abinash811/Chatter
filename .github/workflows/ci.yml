@@ -57,6 +57,13 @@ jobs:
       - name: Type check
         run: npx tsc --noEmit
 
+      - name: Unit tests (tests/unit/ — lib/ai/'s engine logic, schemas, utils)
+        # Fast, isolated, no real database or Claude API call — runs
+        # before the slower DB/build/E2E steps below so a regression in
+        # the engine itself (the chat loop, tool registry, the Anthropic
+        # SDK request/response mapping) fails in seconds, not minutes.
+        run: npm run test:unit
+
       - name: Create non-superuser app role and hand it the database
         run: |
           psql "$ADMIN_DATABASE_URL" -c "CREATE ROLE chatter LOGIN PASSWORD 'chatter' CREATEDB;"

@@ -16,4 +16,7 @@ npm run check:all
 echo "[pre-commit] Type check..."
 npx tsc --noEmit
 
+echo "[pre-commit] Unit tests..."
+npm run test:unit
+
 echo "[pre-commit] All checks passed."

@@ -76,3 +76,21 @@ update it in place rather than leaving it to rot.
   after the canary. Real per-request DB isolation isn't needed —
   Postgres RLS already scopes each signed-up test user to their own
   org, so tests run serially against the same dev database safely.
+- **Unit/component test runner**: Vitest, not Jest — the 2026 consensus
+  for a new Next.js/TS project (native ESM+TS, no `ts-jest`/`babel-jest`
+  config, ~5-10x faster; Next.js's own docs support both, but community
+  practice has clearly shifted to Vitest for new projects, Jest only
+  for existing codebases where migrating costs more than it saves).
+  Confirmed via WebSearch, not recalled. Adopted 2026-09-25: `tests/
+  unit/`, `vitest.config.mts`, `@testing-library/react` for future
+  component tests. This is the fast, isolated layer Playwright's E2E
+  suite was never meant to be — `lib/ai/` (the chat loop, model
+  gateway, tool registry) had zero automated coverage of any kind
+  before this, since E2E never exercises a real Claude API call
+  (blocked on a real `ANTHROPIC_API_KEY`) and nothing else tested it.
+  Every external dependency (the Anthropic SDK, Prisma via
+  `withOrgContext`) is mocked at the module boundary — these tests
+  verify the engine's own logic (iteration guards, parallel tool
+  calls, traceability logging, request/response mapping), not a real
+  network or database call; that's still what `tests/e2e/` and CI's
+  real-Postgres steps are for.

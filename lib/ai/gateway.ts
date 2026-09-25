@@ -41,6 +41,8 @@ export interface ModelGateway {
   generateReply(params: GenerateReplyParams): Promise<GenerateReplyResult>;
 }
 
+import Anthropic from "@anthropic-ai/sdk";
+
 export function getModelGateway(): ModelGateway {
   // Only implementation for now; a provider/tier switch is a new
   // implementation + a change here, not a rewrite of callers.
@@ -48,11 +50,16 @@ export function getModelGateway(): ModelGateway {
 }
 
 class ClaudeGateway implements ModelGateway {
-  private client: import("@anthropic-ai/sdk").default;
+  private client: Anthropic;
 
   constructor() {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const Anthropic = require("@anthropic-ai/sdk").default;
+    // Importing the class doesn't touch ANTHROPIC_API_KEY — only
+    // instantiating it does, and that still only happens here, lazily,
+    // when a gateway is actually used. A static import (vs. the
+    // require() this replaced) is also what makes this class mockable
+    // in tests/unit/lib/ai/gateway.test.ts — a runtime require() bypassed
+    // Vitest's module mocking and hit the real SDK, which then tripped
+    // its own jsdom/browser-safety guard.
     this.client = new Anthropic();
   }
 

@@ -12,13 +12,19 @@ Before saying a piece of work is done:
    raw `<button>`, barrel-only component imports, no file over 300
    lines).
 2. **`npx tsc --noEmit`**.
-3. **`node scripts/verify-rls.mjs`** if anything RLS-adjacent changed
+3. **`npm run test:unit`** (`tests/unit/`, Vitest) — always, it's fast
+   (~3s). Touched `lib/ai/` (the chat loop, gateway, tool registry,
+   system prompt), a Zod schema, or any other pure/mockable logic?
+   Add or update a spec, don't just eyeball it — this suite exists
+   specifically because the engine itself had zero automated coverage
+   of any kind before it was added.
+4. **`node scripts/verify-rls.mjs`** if anything RLS-adjacent changed
    (a new tenant-scoped table, a new query path, a new index).
-4. **`npm run build`** — the strict production build, not just `dev`
+5. **`npm run build`** — the strict production build, not just `dev`
    compiling.
-5. **`npm run canary`** (against a running build) if any route, layout,
+6. **`npm run canary`** (against a running build) if any route, layout,
    or auth-adjacent code changed.
-6. **`npm run test:e2e`** (`tests/e2e/`, against a running build) if
+7. **`npm run test:e2e`** (`tests/e2e/`, against a running build) if
    auth, the bot editor, or error-boundary behavior changed. This is
    the persistent regression suite — when you verify something new by
    hand with a throwaway script, that verification belongs in
@@ -26,7 +32,7 @@ Before saying a piece of work is done:
    manual script caught once is a bug that can silently come back;
    a spec file in the suite is the only thing that actually prevents
    that.
-7. **Docs still accurate?** — CLAUDE.md's "Current state" section
+8. **Docs still accurate?** — CLAUDE.md's "Current state" section
    (update it — this is the one most likely to silently go stale),
    README.md's "What's scaffolded so far" list, `docs/open-questions.md`
    (resolve or add an entry for anything newly discovered),
@@ -35,18 +41,18 @@ Before saying a piece of work is done:
    design decision landed, `docs/business-logic.md` if a core flow
    changed, `docs/api.md` if a route was added or its shape changed,
    `docs/glossary.md` if a new term was introduced.
-8. **A new UI page or pattern** — does a `docs/design/preview/` mockup
+9. **A new UI page or pattern** — does a `docs/design/preview/` mockup
    exist for it? If not, one should be added (see CLAUDE.md's design
    rule).
-9. **A new technical pattern** (library, tool, approach) — checked
+10. **A new technical pattern** (library, tool, approach) — checked
    against `docs/research/current-practices.md`, or added there if it
    wasn't already covered?
-10. **Any new gap deliberately deferred?** Say so explicitly — don't let
+11. **Any new gap deliberately deferred?** Say so explicitly — don't let
    a known limitation go unmentioned. See CLAUDE.md's guardrails: a
    feature that silently degrades below what a guardrail requires
    (tenant isolation, traceability, graceful tool fallback) is not done
    even if it compiles and runs.
-11. **Open Dependabot PRs relevant to what you touched.** ADR 0009: the
+12. **Open Dependabot PRs relevant to what you touched.** ADR 0009: the
    Tailwind v3/v4 mismatch wasn't a detection gap — Dependabot had
    already opened a PR for it — it was a triage gap, nobody looked.
    Applies to any dependency (a framework, a UI library, a build tool),
