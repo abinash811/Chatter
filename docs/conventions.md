@@ -89,7 +89,11 @@ request was phrased.
    the design tokens.
 6. **Verify for real.** Actually run it — a migration against a real
    database, a real browser flow — not just `tsc`. CLAUDE.md's "never
-   commit code that hasn't actually been run."
+   commit code that hasn't actually been run." If that verification is
+   a browser flow (auth, a form, anything a user clicks through), write
+   it as a spec in `tests/e2e/` rather than a throwaway script — the
+   whole point is that it keeps running on every future change, not
+   just this one.
 7. **Ship checklist.** Run the `ship-checklist` skill before calling it
    done.
 

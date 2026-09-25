@@ -83,4 +83,15 @@ jobs:
           npm run start &
           for i in $(seq 1 30); do curl -sf "$APP_BASE_URL/login" -o /dev/null && break; sleep 1; done
           npm run canary
-          kill %1
+
+      - name: Run the persistent E2E regression suite
+        # tests/e2e/ — real signup/login/bot-editor/error-boundary flows,
+        # not just canary.mjs's smoke check. Every assertion in here
+        # caught a real bug when first written as a throwaway verification
+        # script; kept permanently now instead of re-discovering the same
+        # regressions later. Reuses the server already started above.
+        run: npm run test:e2e
+
+      - name: Stop server
+        if: always()
+        run: kill %1 || true

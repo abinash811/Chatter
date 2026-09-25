@@ -77,6 +77,13 @@ make a meaningful change, update this before ending your turn.
   `CardContent` — wired into a real screen (the bot editor now uses
   Card-per-section, matching `docs/design/preview/bot-editor.html`),
   not added speculatively.
+- `tests/e2e/` — a persistent Playwright regression suite (11 specs:
+  auth flows, bot-editor save/publish/toasts, the error boundary),
+  replacing the prior pattern of writing a throwaway verification
+  script and deleting it after one run. Wired into `ci.yml` after the
+  canary. Closes the biggest gap from the 2026-09-25 "critique our
+  setup" discussion — nothing previously re-checked these flows on a
+  later change.
 
 **Known gaps:**
 - 🟡 No real end-to-end verified Claude reply yet — blocked on a real
@@ -110,6 +117,10 @@ make a meaningful change, update this before ending your turn.
 - `docs/open-questions.md` — decisions not yet made; owner is the user
 - `docs/conventions.md` — naming, shared-component import rule, file-size
   guidance, git workflow, and the review checklist.
+- `tests/e2e/` — the persistent Playwright regression suite (`npm run
+  test:e2e`), run in CI on every push. When you verify a browser flow
+  by hand, it belongs here as a real spec, not a throwaway script
+  deleted after one run.
 - `docs/design/principles.md` — the sharp, opinionated design bar every
   screen is checked against (component reuse, tokens, depth/polish,
   plain language, the Linear/Notion/Stripe register mapping). Read this

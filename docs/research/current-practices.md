@@ -69,5 +69,10 @@ update it in place rather than leaving it to rot.
 
 ## Testing
 
-- Not yet researched for current practice beyond what's already in
-  place (Playwright canary + CI against a real Postgres instance).
+- **E2E test runner**: `@playwright/test` (the structured test runner,
+  distinct from the raw `playwright` library `scripts/canary.mjs`
+  uses) is the standard choice for a Next.js app's browser-level
+  regression suite. Adopted 2026-09-25: `tests/e2e/`, wired into CI
+  after the canary. Real per-request DB isolation isn't needed —
+  Postgres RLS already scopes each signed-up test user to their own
+  org, so tests run serially against the same dev database safely.
