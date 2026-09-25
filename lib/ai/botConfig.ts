@@ -21,7 +21,7 @@ export interface BotAppearance {
 
 const DEFAULT_APPEARANCE: BotAppearance = {
   greeting: "Hi! How can I help you today?",
-  accentColor: "#7c3aed", // allow-raw-color — business-customizable default, not console UI
+  accentColor: "#065f46", // allow-raw-color — business-customizable default, not console UI (matches ADR 0008's emerald, not left over from ADR 0007's violet)
 };
 
 export function parseAppearance(value: Prisma.JsonValue): BotAppearance {

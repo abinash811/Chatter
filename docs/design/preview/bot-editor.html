@@ -25,12 +25,23 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
 .btn-outline { height: 32px; padding: 0 14px; border: 1px solid #e5e5e5; background: #fff; border-radius: 6px; font-size: 13px; font-weight: 500; color: #0a0a0c; }
 .btn-primary { height: 32px; padding: 0 14px; background: #065f46; color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 500; }
 
-/* Notion register: calm, generous spacing, one card per concern */
-.section-card { border: 1px solid #e5e5e5; border-radius: 8px; padding: 20px; margin-bottom: 16px; }
-.section-title { font-size: 13px; font-weight: 600; color: #0a0a0c; margin-bottom: 4px; }
+/* docs/design/principles.md #10: Tabs, not stacked cards — one page-
+   composition pattern for every record-editing screen (inspired by
+   CARE's own screens' shape, ADR 0008, not their healthcare content). */
+.tabs-list { display: flex; gap: 4px; background: #f5f5f5; border-radius: 8px; padding: 3px; width: fit-content; margin-bottom: 20px; }
+.tab { height: 32px; padding: 0 14px; border-radius: 6px; font-size: 13px; font-weight: 500; color: #737373; display: flex; align-items: center; }
+.tab.active { background: #fff; color: #065f46; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
 .section-sub { font-size: 12px; color: #737373; line-height: 1.5; margin-bottom: 12px; }
 .field-textarea { width: 100%; border: 1px solid #e5e5e5; border-radius: 6px; padding: 10px 12px; font-size: 13px; color: #0a0a0c; font-family: inherit; }
 .field-input { width: 100%; border: 1px solid #e5e5e5; border-radius: 6px; padding: 0 12px; height: 36px; font-size: 13px; }
+
+/* Dialog scene */
+.dialog-overlay { position: relative; background: #fff; }
+.dialog-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; }
+.dialog { width: 400px; background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+.dialog-title { font-size: 15px; font-weight: 600; color: #0a0a0c; margin-bottom: 6px; }
+.dialog-desc { font-size: 13px; color: #737373; line-height: 1.5; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; padding-top: 14px; border-top: 1px solid #e5e5e5; }
 
 .tool-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-top: 1px solid #f5f5f5; }
 .tool-row:first-child { border-top: none; }
@@ -52,7 +63,7 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
 </style>
 </head><body>
 
-<div class="page-label">Bot editor — Notion register: sectioned cards, one explicit save method</div>
+<div class="page-label">Bot editor — Notion register, but the page shape follows docs/design/principles.md #10 (persistent top bar + Tabs + confirm dialog)</div>
 <div class="shell">
   <div class="sidebar">
     <div class="brand-row">
@@ -72,50 +83,115 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
       </div>
     </div>
 
-    <div class="section-card">
-      <div class="section-title">Persona</div>
-      <div class="section-sub">How should your bot introduce itself and talk to visitors? Write it in your own words.</div>
-      <textarea class="field-textarea" rows="4" readonly>You're a friendly, concise assistant for a small ecommerce shop. Keep replies short.</textarea>
+    <div class="tabs-list">
+      <div class="tab active">Persona</div>
+      <div class="tab">Guardrails</div>
+      <div class="tab">Tools</div>
+      <div class="tab">Appearance</div>
     </div>
 
-    <div class="section-card">
-      <div class="section-title">Guardrails</div>
-      <div class="section-sub">Anything your bot should never do or say — e.g. never quote a final price, never give medical advice.</div>
-      <textarea class="field-textarea" rows="3" readonly>Never promise a refund without checking policy. Never share another customer's order info.</textarea>
-    </div>
+    <div class="section-sub">How should your bot introduce itself and talk to visitors? Write it in your own words.</div>
+    <textarea class="field-textarea" rows="6" readonly>You're a friendly, concise assistant for a small ecommerce shop. Keep replies short.</textarea>
+  </div>
+</div>
 
-    <div class="section-card">
-      <div class="section-title">Tools</div>
-      <div class="section-sub">What your bot can look up or do while chatting.</div>
-      <div class="tool-row">
-        <div class="checkbox checked"></div>
-        <div><div class="tool-name">search_knowledge_base</div><div class="tool-desc">Search this business's docs/FAQs for relevant answers.</div></div>
-      </div>
-      <div class="tool-row">
-        <div class="checkbox"></div>
-        <div><div class="tool-name">check_order_status</div><div class="tool-desc">Look up a customer's order by order number.</div></div>
-      </div>
-    </div>
+<div class="sep"></div>
 
-    <div class="section-card">
-      <div class="section-title">Widget appearance</div>
-      <div class="section-sub">What visitors see before they've sent a message, and the widget's accent color.</div>
-      <div class="field-row">
-        <div class="field-col" style="flex:3;">
-          <label class="field-label-sm">Greeting</label>
-          <input class="field-input" value="Hi! How can we help today?" readonly/>
-        </div>
-        <div class="field-col" style="flex:0 0 auto;">
-          <label class="field-label-sm">Accent</label>
-          <div class="color-swatch"></div>
-        </div>
+<div class="page-label">Tools tab</div>
+<div class="shell">
+  <div class="sidebar">
+    <div class="brand-row">
+      <div class="brand-icon"><svg width="12" height="12" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12c0 4.418-4.03 8-9 8-1.17 0-2.29-.2-3.31-.56L3 21l1.56-4.69C3.57 15.06 3 13.58 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></div>
+      <div class="brand-name">Chatter</div>
+    </div>
+    <div class="nav-item">Bots</div>
+  </div>
+  <div class="main">
+    <div class="topbar">
+      <div class="bot-title">Support bot <span class="status-pill">Published v3</span></div>
+      <div class="topbar-actions">
+        <span class="link-muted">Integrations</span>
+        <button class="btn-outline">Save draft</button>
+        <button class="btn-primary">Publish</button>
       </div>
     </div>
+    <div class="tabs-list">
+      <div class="tab">Persona</div>
+      <div class="tab">Guardrails</div>
+      <div class="tab active">Tools</div>
+      <div class="tab">Appearance</div>
+    </div>
+    <div class="section-sub">What your bot can look up or do while chatting.</div>
+    <div class="tool-row">
+      <div class="checkbox checked"></div>
+      <div><div class="tool-name">search_knowledge_base</div><div class="tool-desc">Search this business's docs/FAQs for relevant answers.</div></div>
+    </div>
+    <div class="tool-row">
+      <div class="checkbox"></div>
+      <div><div class="tool-name">check_order_status</div><div class="tool-desc">Look up a customer's order by order number.</div></div>
+    </div>
+  </div>
+</div>
 
+<div class="sep"></div>
+
+<div class="page-label">Appearance tab (embed snippet lives here now, not a separate section below the form)</div>
+<div class="shell">
+  <div class="sidebar">
+    <div class="brand-row">
+      <div class="brand-icon"><svg width="12" height="12" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12c0 4.418-4.03 8-9 8-1.17 0-2.29-.2-3.31-.56L3 21l1.56-4.69C3.57 15.06 3 13.58 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></div>
+      <div class="brand-name">Chatter</div>
+    </div>
+    <div class="nav-item">Bots</div>
+  </div>
+  <div class="main">
+    <div class="topbar">
+      <div class="bot-title">Support bot <span class="status-pill">Published v3</span></div>
+      <div class="topbar-actions">
+        <span class="link-muted">Integrations</span>
+        <button class="btn-outline">Save draft</button>
+        <button class="btn-primary">Publish</button>
+      </div>
+    </div>
+    <div class="tabs-list">
+      <div class="tab">Persona</div>
+      <div class="tab">Guardrails</div>
+      <div class="tab">Tools</div>
+      <div class="tab active">Appearance</div>
+    </div>
+    <div class="section-sub">What visitors see before they've sent a message, and the widget's accent color.</div>
+    <div class="field-row">
+      <div class="field-col" style="flex:3;">
+        <label class="field-label-sm">Greeting</label>
+        <input class="field-input" value="Hi! How can we help today?" readonly/>
+      </div>
+      <div class="field-col" style="flex:0 0 auto;">
+        <label class="field-label-sm">Accent</label>
+        <div class="color-swatch"></div>
+      </div>
+    </div>
     <div class="embed-section">
       <div class="section-title">Embed on your site</div>
       <div class="section-sub">Paste this before the closing &lt;/body&gt; tag on any page.</div>
       <div class="code-block">&lt;script src="https://chatter.app/widget.js" data-bot-key="pk_a1b2c3..."&gt;&lt;/script&gt;</div>
+    </div>
+  </div>
+</div>
+
+<div class="sep"></div>
+
+<div class="page-label">Publish confirmation dialog — docs/design/principles.md #10: never publish (change what's live) without confirming first</div>
+<div class="shell" style="height:340px;">
+  <div class="dialog-overlay" style="flex:1;">
+    <div class="dialog-backdrop">
+      <div class="dialog">
+        <div class="dialog-title">Publish this bot?</div>
+        <div class="dialog-desc">Visitors will see this version immediately. Conversations already in progress finish on the version they started with.</div>
+        <div class="dialog-actions">
+          <button class="btn-outline">Cancel</button>
+          <button class="btn-primary">Publish</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>

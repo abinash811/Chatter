@@ -31,7 +31,7 @@ export async function saveDraftAction(
         .filter((name) => formData.get(`tool_${name}`) === "on"),
       appearance: {
         greeting: String(formData.get("greeting") ?? ""),
-        accentColor: String(formData.get("accentColor") ?? "#7c3aed"), // allow-raw-color — form fallback, not console UI
+        accentColor: String(formData.get("accentColor") ?? "#065f46"), // allow-raw-color — form fallback, not console UI (matches lib/ai/botConfig.ts's DEFAULT_APPEARANCE)
       },
     });
     revalidatePath(`/bots/${botId}`);

@@ -33,14 +33,38 @@ test("save draft shows a success toast with a working close button", async ({ pa
   await expect(toast).toBeHidden();
 });
 
-test("publish shows a success toast", async ({ page }) => {
+test("publish requires confirming in the dialog, then shows a success toast and updates the status badge", async ({
+  page,
+}) => {
   await signUpAndCreateBot(page, "Publish Test Bot");
+  await expect(page.getByText("Never published")).toBeVisible();
+
+  // Top-bar "Publish" only opens the confirmation dialog (docs/design/
+  // principles.md #10) — it must not publish by itself.
   await page.click('button:has-text("Publish")');
-  await expect(page.getByText("Published")).toBeVisible();
+  await expect(page.getByText("Publish this bot?")).toBeVisible();
+  await expect(page.getByText("Never published")).toBeVisible();
+
+  await page.click('div[role="dialog"] button:has-text("Publish")');
+  await expect(page.getByText("Published — visitors will see this version now.")).toBeVisible();
+  await expect(page.getByText("Publish this bot?")).toBeHidden();
+  await expect(page.getByText("Published v1")).toBeVisible();
 });
 
-test("a tool Checkbox toggles and its state survives a save", async ({ page }) => {
+test("Cancel in the publish dialog leaves the bot unpublished", async ({ page }) => {
+  await signUpAndCreateBot(page, "Cancel Publish Test Bot");
+  await page.click('button:has-text("Publish")');
+  await expect(page.getByText("Publish this bot?")).toBeVisible();
+
+  await page.click('div[role="dialog"] button:has-text("Cancel")');
+  await expect(page.getByText("Publish this bot?")).toBeHidden();
+  await expect(page.getByText("Never published")).toBeVisible();
+});
+
+test("a tool Checkbox (on the Tools tab) toggles and its state survives a save", async ({ page }) => {
   await signUpAndCreateBot(page, "Checkbox Test Bot");
+  await page.click('button[role="tab"]:has-text("Tools")');
+
   const checkbox = page.locator('input[name="tool_search_knowledge_base"]');
   await checkbox.check();
   await expect(checkbox).toBeChecked();
@@ -48,6 +72,7 @@ test("a tool Checkbox toggles and its state survives a save", async ({ page }) =
   await page.click('button:has-text("Save draft")');
   await expect(page.getByText("Draft saved.")).toBeVisible();
   await page.reload();
+  await page.click('button[role="tab"]:has-text("Tools")');
   await expect(page.locator('input[name="tool_search_knowledge_base"]')).toBeChecked();
 });
 

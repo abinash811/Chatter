@@ -65,6 +65,22 @@ test("bot editor page (embed snippet masked — it embeds a random public key)",
   await expect(page).toHaveScreenshot("bot-editor.png", { mask: [page.locator("pre")] });
 });
 
+test("bot editor — publish confirmation dialog (docs/design/principles.md #10)", async ({ page }) => {
+  await page.goto("/signup");
+  await page.fill('input[name="email"]', uniqueEmail("visual-publish-dialog"));
+  await page.fill('input[name="password"]', PASSWORD);
+  await page.fill('input[name="confirmPassword"]', PASSWORD);
+  await page.click('button[type="submit"]');
+  await expect(page).toHaveURL(/\/bots$/);
+
+  await page.fill('input[name="name"]', "Support bot");
+  await Promise.all([page.waitForURL(/\/bots\/[^/]+$/), page.click('button:has-text("New bot")')]);
+  await page.click('button:has-text("Publish")');
+  await expect(page.getByText("Publish this bot?")).toBeVisible();
+
+  await expect(page).toHaveScreenshot("bot-editor-publish-dialog.png");
+});
+
 test("console sidebar — icon-collapsed", async ({ page }) => {
   await page.goto("/signup");
   await page.fill('input[name="email"]', uniqueEmail("visual-sidebar"));

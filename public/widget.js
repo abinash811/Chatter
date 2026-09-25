@@ -29,7 +29,10 @@
   // reload starts a fresh conversation. Persisting it (localStorage,
   // keyed by botKey) is a follow-up, not done here.
   var conversationId = null;
-  var appearance = { greeting: "Hi! How can I help you today?", accentColor: "#7c3aed" };
+  // Matches lib/ai/botConfig.ts's DEFAULT_APPEARANCE (ADR 0008's emerald,
+  // not left over from ADR 0007's violet) — this is only the fallback
+  // before /api/widget/config responds with the business's real value.
+  var appearance = { greeting: "Hi! How can I help you today?", accentColor: "#065f46" };
 
   root.innerHTML =
     '<style>' +

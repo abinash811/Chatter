@@ -140,14 +140,48 @@ make a meaningful change, update this before ending your turn.
   network access — a contributor's machine, CI, etc.).
   `docs/conventions.md`'s "Building a new feature" step 2 points here
   before anyone hand-builds a primitive we don't have.
+- Bot editor rebuilt on CARE's real record-editing *shape*, not just its
+  components — the user's explicit correction that the design-consistency
+  goal was page composition, not component swapping. Landed as a new,
+  documented principle (`docs/design/principles.md` #10: persistent top
+  bar with Save/Publish always visible + real `Tabs` instead of stacked
+  `Card`s + a `Dialog` confirmation before anything that changes what's
+  live) so every future multi-section record-editing screen follows the
+  same shape instead of a fresh layout decision each time.
+  `BotEditorForm.tsx` rewritten accordingly; `page.tsx` is now a thin
+  data-fetch shell. Caught and fixed a real upstream bug in the process:
+  CARE's own pulled `components/ui/tabs.tsx` used bare
+  `data-horizontal:`/`data-vertical:` Tailwind classes, but Base UI's
+  Tabs only ever sets a valued `data-orientation="horizontal"|"vertical"`
+  attribute, never that bare boolean one — confirmed via compiled CSS
+  output and Base UI's own source, not guessed — so the tabs rendered as
+  an unstyled vertical stack. Patched to `data-[orientation=...]:`
+  bracket syntax (documented as a correctness-fix exception to "never
+  hand-edit a pulled file," which is for style preference, not bugs).
+  Also caught a false-positive E2E assertion in the process (the old
+  publish test's `getByText("Published")` was matching the pre-existing
+  "Never published" badge, so it never actually verified a publish
+  happened) and fixed three stale violet (`#7c3aed`, pre-ADR-0008)
+  color defaults found opportunistically in `lib/ai/botConfig.ts`,
+  `app/(console)/bots/[botId]/actions.ts`, and `public/widget.js` — all
+  now `#065f46` matching the real `--accent`. Verified: `tests/e2e/`
+  rewritten for the new Tabs+Dialog structure (publish now requires
+  confirming in the dialog, a new Cancel-leaves-unpublished test, the
+  tools checkbox test switches tabs first) and all specs pass; a new
+  `tests/visual/` spec for the publish dialog, baselines regenerated and
+  confirmed stable across two clean re-runs; `docs/design/preview/
+  bot-editor.html` rebuilt to match (Persona/Tools/Appearance tab scenes
+  plus the publish-dialog scene, embed snippet now inside the Appearance
+  tab instead of a separate section).
 
 **Known gaps:**
 - 🔲 Design system tokens/infra, the pull mechanism, and a real
-  18-component primitive layer are all done (ADR 0008). Still open:
-  rebuilding each remaining *screen's* layout/density against real CARE
-  screens — bots list, bot editor, integrations — using these
-  primitives (Table for lists, Dialog for confirmations, etc.), not
-  just recoloring what already existed. That's the agreed next step.
+  18-component primitive layer are all done (ADR 0008). Bots list (real
+  CARE `Table`) and the bot editor (persistent top bar + `Tabs` +
+  `Dialog`, principles.md #10) are now rebuilt on these primitives —
+  not just recolored. Still open: the integrations page, using the same
+  primitives (and, going forward, principles.md #10's shape wherever it
+  applies). That's the agreed next step.
 - The console sidebar nav shell is done: `app/(console)/layout.tsx` +
   `components/console/AppSidebar.tsx` now use the real CARE `Sidebar`
   (icon-collapsible, cookie-persisted state, active-route highlighting,

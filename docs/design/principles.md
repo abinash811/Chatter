@@ -57,3 +57,24 @@ For the mechanical "how," see `docs/conventions.md` and
    here.** The actual bar, not an aspiration — when a screen feels
    "basic," it's failing this principle specifically, usually principle
    5 (no depth/polish) or 6 (system-speak instead of plain language).
+
+10. **One page-composition pattern for record-editing screens, applied
+    everywhere, not decided fresh per page.** Any screen that edits one
+    entity across multiple sections (a bot's persona/guardrails/tools/
+    appearance today; anything else with 3+ config sections later) uses
+    the same shape:
+    - A **persistent top bar** — entity name, status, primary actions
+      (Save/Publish) — always visible, never buried at the bottom of a
+      scrolling form.
+    - Real `<Tabs>` to switch between sections, not stacked `<Card>`s
+      scrolled through top to bottom.
+    - A `<Dialog>` confirmation before any action that changes what's
+      live/visible to someone else (publishing, disconnecting an
+      integration).
+    Inspired by CARE's (`ohcnetwork/care_fe`/`careui`, ADR 0008) own
+    record-editing screens — not their healthcare content, the
+    *shape*. The reason this is its own principle, not just "match
+    CARE": once a user learns this shape on one screen, every other
+    screen that edits something behaves the same way — zero cognitive
+    load from re-learning a layout per page, which is the actual goal,
+    not visual sameness for its own sake.
