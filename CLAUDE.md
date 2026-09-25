@@ -84,18 +84,28 @@ make a meaningful change, update this before ending your turn.
   canary. Closes the biggest gap from the 2026-09-25 "critique our
   setup" discussion — nothing previously re-checked these flows on a
   later change.
-- Design polish pass inspired by CARE (`ohcnetwork/care_fe`, reviewed
-  for UI/UX ideas, not cloned into the codebase): `warning`/`info`
-  semantic color tokens added alongside `accent`/`destructive`
-  (`app/globals.css`, `tailwind.config.ts` — not yet used by a
-  screen, reserved for the next surface that needs them), and a
-  subtle CSS-keyframe float/drift animation on the `/login`+`/signup`
-  hero panel's two decorative circles (`prefers-reduced-motion`
-  respected), mirrored in `docs/design/preview/auth.html`. Verified
-  with a real headless-browser run confirming the animation actually
-  computes and applies.
+- Design system now an exact copy of CARE's (`ohcnetwork/care_fe` +
+  `ohcnetwork/careui`), not our own palette — ADR 0008, superseding
+  ADR 0007's violet accent. Every real Tailwind color value (emerald
+  primary, neutral scale, red/amber/violet semantics, indigo ring)
+  computed from `tailwindcss/colors`, not guessed. Full CARE token set
+  now defined in `app/globals.css`/`tailwind.config.ts` (background/
+  card/popover/secondary/sidebar-* tiers, not just the 8 we had),
+  radius `0.625rem`, Figtree font (`next/font/google`). Every existing
+  screen re-themed automatically — no component edits needed, since
+  nothing used raw colors. Verified with a real headless-browser run
+  against a production build (computed `--accent` and font both
+  confirmed live) and a screenshot. `docs/design/preview/*.html`
+  mockups updated to match.
+- Design polish: subtle CSS-keyframe float/drift animation on the
+  `/login`+`/signup` hero panel's two decorative circles
+  (`prefers-reduced-motion` respected).
 
 **Known gaps:**
+- 🔲 Design system tokens/infra are done (ADR 0008); actually pulling
+  real components from the `careui` shadcn registry and rebuilding
+  each screen's layout/density against real CARE screens (not just
+  recoloring our existing ones) is still open — the agreed next step.
 - 🟡 No real end-to-end verified Claude reply yet — blocked on a real
   `ANTHROPIC_API_KEY` (everything up to that boundary is confirmed
   correct, see README's "Verified by a real run").

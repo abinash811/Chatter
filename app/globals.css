@@ -5,54 +5,108 @@
 /*
  * Design tokens (docs/architecture.md §7). One definition, referenced
  * everywhere — never hardcode a color/radius in a component.
- * Monochrome + one deliberate accent, per the Linear register chosen for
- * the console's daily-driver screens.
  *
- * Finalized in ADR 0007 (primary color choice + verified contrast
- * ratios for every pair below). Component-level contrast inside
- * shadcn's flagged gaps (docs/research/design-system-standards.md) is
- * still unaudited.
+ * ADR 0008: an exact port of ohcnetwork/care_fe + ohcnetwork/careui's
+ * token values — not our own palette. Every value below is a direct
+ * HSL conversion of their real Tailwind color (emerald/neutral/red/
+ * amber/violet/indigo), computed from tailwindcss/colors, not recalled
+ * or approximated. Supersedes ADR 0007's violet accent.
  */
 :root {
-  --background: 0 0% 100%;
-  --foreground: 240 10% 3.9%;
-  --muted: 240 4.8% 95.9%;
-  --muted-foreground: 240 3.8% 46.1%;
-  --border: 240 5.9% 90%;
-  --accent: 262 83% 58%;
-  --accent-foreground: 0 0% 100%;
-  --destructive: 0 84% 60%;
-  --warning: 38 92% 50%;
+  --background: 0 0% 100%; /* white */
+  --soft-background: 0 0% 98%; /* neutral-50 */
+  --muted-background: 0 0% 96%; /* neutral-100 */
+  --strong-background: 0 0% 90%; /* neutral-200 */
+  --muted: 0 0% 96%; /* neutral-100 */
+  --foreground: 0 0% 4%; /* neutral-950 */
+  --muted-foreground: 0 0% 25%; /* neutral-700 */
+  --soft-foreground: 0 0% 32%; /* neutral-600 */
+  --disabled-foreground: 0 0% 83%; /* neutral-300 */
+  --placeholder-foreground: 0 0% 45%; /* neutral-500 */
+  --inverse-foreground: 0 0% 100%; /* white */
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 4%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 4%;
+  --accent: 163 88% 20%; /* emerald-800 — CARE's primary */
+  --accent-foreground: 152 81% 96%; /* emerald-50 */
+  --secondary: 0 0% 96%; /* neutral-100 */
+  --secondary-foreground: 0 0% 9%; /* neutral-900 */
+  --destructive: 0 72% 51%; /* red-600 */
+  --destructive-foreground: 0 86% 97%; /* red-50 */
+  --warning: 38 92% 50%; /* amber-500 — CARE's warning extension */
   --warning-foreground: 0 0% 100%;
-  --info: 217 91% 60%;
-  --info-foreground: 0 0% 100%;
-  --radius: 0.5rem;
+  --alert: 258 90% 66%; /* violet-500 — CARE's alert extension */
+  --alert-foreground: 0 0% 100%;
+  --soft-border: 0 0% 96%; /* neutral-100 */
+  --border: 0 0% 90%; /* neutral-200 */
+  --strong-border: 0 0% 83%; /* neutral-300 */
+  --stronger-border: 0 0% 64%; /* neutral-400 */
+  --inverse-border: 0 0% 100%;
+  --input: 0 0% 83%; /* neutral-300 */
+  --ring: 239 84% 67%; /* indigo-500 */
+  --sidebar: 0 0% 96%; /* neutral-100 */
+  --sidebar-foreground: 0 0% 4%;
+  --sidebar-primary: 163 88% 20%; /* emerald-800 */
+  --sidebar-primary-foreground: 152 81% 96%;
+  --sidebar-accent: 0 0% 90%; /* neutral-200 */
+  --sidebar-accent-foreground: 0 0% 4%;
+  --sidebar-border: 0 0% 90%;
+  --sidebar-ring: 234 89% 74%; /* indigo-400 */
+  --radius: 0.625rem; /* CARE's exact radius, not our old 0.5rem */
   /* Fixed-dark brand surface (the auth split-layout panel,
      docs/design/preview/auth.html) — same value as .dark's --background,
      but deliberately its own token: this panel stays dark regardless of
      light/dark mode, it's not a theme-following background. */
-  --panel: 240 10% 3.9%;
+  --panel: 0 0% 4%;
   --panel-foreground: 0 0% 100%;
 }
 
 .dark {
-  --background: 240 10% 3.9%;
-  --foreground: 0 0% 98%;
-  --muted: 240 3.7% 15.9%;
-  --muted-foreground: 240 5% 64.9%;
-  --border: 240 3.7% 15.9%;
-  /* ADR 0007: 66% measured at 4.02:1 for white button text — below our
-     4.5:1 minimum for readable text. 62% passes at 4.80:1. (A single
-     accent value can't also pass as standalone text-on-dark-background
-     at this hue/saturation — dark mode isn't wired up in the app yet,
-     so this fixes the case that will actually matter first.) */
-  --accent: 262 83% 62%;
-  --accent-foreground: 0 0% 100%;
-  --destructive: 0 62.8% 30.6%;
-  --warning: 38 92% 56%;
+  --background: 0 0% 4%; /* neutral-950 */
+  --soft-background: 0 0% 9%; /* neutral-900 */
+  --muted-background: 0 0% 15%; /* neutral-800 */
+  --strong-background: 0 0% 25%; /* neutral-700 */
+  --muted: 0 0% 15%;
+  --foreground: 0 0% 98%; /* neutral-50 */
+  --muted-foreground: 0 0% 90%; /* neutral-200 */
+  --soft-foreground: 0 0% 83%; /* neutral-300 */
+  --disabled-foreground: 0 0% 25%; /* neutral-700 */
+  --placeholder-foreground: 0 0% 32%; /* neutral-600 */
+  --inverse-foreground: 0 0% 0%; /* black */
+  --card: 0 0% 9%;
+  --card-foreground: 0 0% 100%;
+  --popover: 0 0% 4%;
+  --popover-foreground: 0 0% 98%;
+  --accent: 158 64% 52%; /* emerald-400 */
+  --accent-foreground: 166 91% 9%; /* emerald-950 */
+  --secondary: 0 0% 15%; /* neutral-800 */
+  --secondary-foreground: 0 0% 98%;
+  --destructive: 0 91% 71%; /* red-400 */
+  --destructive-foreground: 0 86% 97%;
+  --warning: 38 92% 50%;
   --warning-foreground: 0 0% 100%;
-  --info: 217 91% 65%;
-  --info-foreground: 0 0% 100%;
+  --alert: 258 90% 66%;
+  --alert-foreground: 0 0% 100%;
+  /* CARE's dark borders/input are white-alpha over black (e.g.
+     white/9%); approximated here as solid neutral steps since our HSL
+     var system doesn't carry alpha compositing — visually equivalent
+     on a near-black background. */
+  --soft-border: 0 0% 9%; /* neutral-900 */
+  --border: 0 0% 15%; /* neutral-800 */
+  --strong-border: 0 0% 25%; /* neutral-700 */
+  --stronger-border: 0 0% 32%; /* neutral-600 */
+  --inverse-border: 0 0% 100%;
+  --input: 0 0% 25%; /* neutral-700 */
+  --ring: 239 84% 67%;
+  --sidebar: 0 0% 9%;
+  --sidebar-foreground: 0 0% 98%;
+  --sidebar-primary: 158 64% 52%;
+  --sidebar-primary-foreground: 166 91% 9%;
+  --sidebar-accent: 0 0% 15%;
+  --sidebar-accent-foreground: 0 0% 98%;
+  --sidebar-border: 0 0% 15%;
+  --sidebar-ring: 234 89% 74%;
 }
 
 * {
@@ -62,6 +116,7 @@
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
+  font-family: var(--font-figtree), sans-serif;
 }
 
 /* Auth hero panel motion (components/auth/AuthShell.tsx). Subtle —

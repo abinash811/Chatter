@@ -1,6 +1,7 @@
 # ADR 0007: Finalized design tokens — color, typography, spacing
 
-Status: accepted
+Status: superseded by ADR 0008 (color/radius/font only — typography step
+sizes below are unaffected)
 
 Date: 2026-09-25
 
