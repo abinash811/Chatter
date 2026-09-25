@@ -100,21 +100,13 @@ jobs:
         run: npm run test:e2e
 
       - name: Run visual regression suite (tests/visual/)
-        # continue-on-error: true, deliberately, for now — the baseline
-        # PNGs (tests/visual/__screenshots__/) were generated in this
-        # project's sandboxed dev environment, not in this exact CI
-        # runner. A screenshot baseline is only trustworthy against the
-        # environment it was generated in (font rasterization, the
-        # rendering path, etc. can differ), so the first real CI run of
-        # this step needs to be checked by hand: if it's green, flip
-        # this to blocking in a follow-up commit; if it's red on
-        # something that isn't a real visual regression, regenerate the
-        # baselines from *this* runner's own output (download the run's
-        # test-results artifact, use its -actual.png files) before
-        # flipping it to blocking. Don't leave it non-blocking forever —
-        # that defeats the point.
+        # Was continue-on-error: true — checked run 36171075919 (commit
+        # c43adb0) by hand at the step level (not just overall job
+        # status, which continue-on-error can mask): this step's own
+        # conclusion was "success" on GitHub's real runner, confirming
+        # the baselines generated in this project's sandboxed dev
+        # environment do match CI's actual render. Flipped to blocking.
         id: visual
-        continue-on-error: true
         run: npm run test:visual
         env:
           APP_BASE_URL: http://localhost:3000

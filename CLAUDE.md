@@ -230,16 +230,15 @@ make a meaningful change, update this before ending your turn.
   a full-page screenshot's pixels. Removed the ratio cap, confirmed the
   same change now correctly fails both pages that use `AuthShell`
   (login+signup) and nothing else, then reverted the test change.
-  Wired into CI as `continue-on-error: true` for now, deliberately —
-  the baselines were generated in this project's sandboxed dev
-  environment, not GitHub's own runner, and a screenshot baseline is
-  only trustworthy against the exact environment that generated it.
-  **Needs a human/future-session check**: look at the first real CI
-  run of this step — if green, flip `continue-on-error` off (a
-  one-line change in `.github/workflows/ci.yml`); if it fails on
-  something that isn't a real visual regression, regenerate baselines
-  from that CI run's uploaded `test-results/` artifact instead of this
-  sandbox's, then flip it. Don't leave it non-blocking indefinitely.
+  Wired into CI, initially as `continue-on-error: true` — the baselines
+  were generated in this project's sandboxed dev environment, not
+  GitHub's own runner, and a screenshot baseline is only trustworthy
+  against the exact environment that generated it. **Resolved**:
+  checked run 36171075919 (commit c43adb0) at the step level, not just
+  overall job status — `"Run visual regression suite"` itself concluded
+  `success` on GitHub's real runner, confirming the sandbox-generated
+  baselines do match. Flipped to blocking (`continue-on-error` removed)
+  in the same pass.
 - 🟡 No real end-to-end verified Claude reply yet — blocked on a real
   `ANTHROPIC_API_KEY` (everything up to that boundary is confirmed
   correct, see README's "Verified by a real run").
