@@ -80,4 +80,4 @@ or someone else's:
 - [ ] Keyboard-only pass: reach and operate every interactive element
       without a mouse
 - [ ] Any new color usage (including widget-appearance defaults) meets
-      WCAG AA contrast — see `docs/accessibility.md`
+      the contrast target — see `docs/accessibility.md`

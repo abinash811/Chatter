@@ -29,7 +29,8 @@ default-by-inertia choice but a deliberate one, for three reasons:
    Linear-caliber quality bar already chosen for the console register.
 3. Zero migration cost — already the accent everywhere.
 
-**Contrast, actually verified** (WCAG AA: 4.5:1 for text), not assumed:
+**Contrast, actually verified** (target: 4.5:1 for text — genuinely
+readable, not a compliance checkbox), not assumed:
 
 | Pair | Ratio | Result |
 |---|---|---|

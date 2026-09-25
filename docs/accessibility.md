@@ -1,23 +1,20 @@
 # Accessibility
 
-Baseline standard: **WCAG 2.2 Level AA** — see `docs/research/
-design-system-standards.md` for why this specific bar (the globally
-recognized standard, and what enterprise buyers audit against during
-procurement, relevant for the healthcare vertical specifically).
-
-This doc is the concrete rules; the research doc is the reasoning.
+Our own bar for what "usable for everyone" means, not an external
+certification — the goal is a genuinely good, readable, operable product,
+judged on that basis rather than compliance with a named standard.
 
 ## Rules
 
-- **Contrast**: text and interactive elements meet WCAG AA minimum
-  contrast ratios (4.5:1 normal text, 3:1 large text/UI components)
-  against their actual background — including a business's chosen
+- **Contrast**: text and interactive elements are actually easy to read
+  against their background — a minimum 4.5:1 contrast ratio for normal
+  text, 3:1 for large text/UI components — including a business's chosen
   widget colors, not just the console's fixed token set. The core
   color-token pairs (accent/foreground/muted-foreground against
   background, both light and dark mode) are verified — see ADR 0007 for
   the actual computed ratios and one real bug it caught (dark-mode
-  button text was failing at 4.02:1, fixed). Component-level contrast
-  (inside shadcn's flagged gaps below) is still unaudited.
+  button text was too low-contrast, fixed). Component-level contrast is
+  still unaudited.
 - **Keyboard navigation**: every interactive element (buttons, form
   fields, links) reachable and operable via keyboard alone, in a
   sensible tab order. No custom interaction that only works with a
@@ -35,12 +32,12 @@ This doc is the concrete rules; the research doc is the reasoning.
 ## Known component gaps
 
 An independent audit found 5 of shadcn/ui's 48 components have real
-WCAG 2.2 AA gaps: **Combobox, Data Table, Context Menu, Chart (Recharts-
-based), Input OTP**. Two are directly relevant to this product's planned
-surfaces — analytics (Chart) and knowledge-base management (Data
-Table) — and need explicit accessibility review when built, not an
-assumption that "shadcn is generally solid" covers them. See `docs/
-research/design-system-standards.md` for the source audit.
+usability gaps for keyboard/screen-reader users: **Combobox, Data Table,
+Context Menu, Chart (Recharts-based), Input OTP**. Two are directly
+relevant to this product's planned surfaces — analytics (Chart) and
+knowledge-base management (Data Table) — and need explicit review when
+built, not an assumption that "shadcn is generally solid" covers them.
+See `docs/research/design-system-standards.md` for the source audit.
 
 ## Where this applies
 

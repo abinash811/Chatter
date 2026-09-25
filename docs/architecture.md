@@ -112,11 +112,9 @@ applied here to every future setting.
   Schema: `prisma/schema.prisma`. Policies: `db/migrations/0001_init_rls.sql`.
 
 ### 7. Design system
-- Baseline standard: **WCAG 2.2 Level AA** (W3C) — the actual
-  international accessibility standard, covering contrast ratios,
-  keyboard navigation, focus states, screen-reader support. This is also
-  what enterprise buyers (relevant for healthcare especially) audit for
-  during procurement.
+- Baseline: good contrast, full keyboard navigation, visible focus
+  states, and screen-reader support — judged on whether it's actually
+  usable, not against a named certification. See `docs/accessibility.md`.
 - Consistency mechanism: **design tokens**, not per-screen discipline —
   colors, type scale, spacing, and radius defined once and referenced
   everywhere, split into a fixed structural layer (component behavior/
@@ -130,7 +128,7 @@ applied here to every future setting.
   library. Not yet locked in — tech stack is still open — but the natural
   fit if the Next.js/Tailwind direction from
   `docs/research/tech-stack-trends-2026.md` is confirmed. Known gap to
-  plan for: an independent 2026 WCAG 2.2 AA audit of shadcn's 48
+  plan for: an independent 2026 usability audit of shadcn's 48
   components found 34 pass out of the box, 9 need minor fixes, and 5 have
   real gaps — **Combobox, Data Table, Context Menu, Chart, Input OTP** —
   relevant to the analytics dashboard (Chart) and knowledge-base

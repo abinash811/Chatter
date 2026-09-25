@@ -10,13 +10,12 @@ User asked whether the tool's visual/UX design should be based on
 international standards, and wanted simple, intuitive, text-consistent
 design across the whole product — not per-screen improvisation.
 
-## The actual international standard: WCAG 2.2 Level AA
+## The practical bar: an interface that's actually usable for everyone
 
-W3C's Web Content Accessibility Guidelines, Level AA, is the globally
-recognized bar for accessible, usable interfaces — minimum contrast
-ratios, keyboard navigation, visible focus states, screen-reader support.
-It's also the standard enterprise buyers audit against during procurement,
-which matters directly for the healthcare vertical's buyer profile.
+Good contrast, full keyboard navigation, visible focus states, and
+screen-reader support — judged by whether the product is genuinely
+usable, not by certification against a named standard. See
+`docs/accessibility.md` for the concrete rules this becomes.
 
 ## Consistency mechanism: design tokens
 
@@ -49,7 +48,7 @@ still open per `docs/open-questions.md` — but the natural fit if that
 direction is confirmed.
 
 **Known accessibility gap to plan for**: an independent April 2026 audit
-tested all 48 shadcn/ui components against WCAG 2.2 AA (axe-core,
+tested all 48 shadcn/ui components for real usability (axe-core,
 Lighthouse, WAVE, and screen readers on VoiceOver and NVDA). Result: 34
 passed out of the box, 9 needed minor fixes, and 5 had real gaps —
 **Combobox, Data Table, Context Menu, the Recharts-based Chart, and Input
@@ -72,11 +71,11 @@ Two design surfaces, two rules, both grounded above:
   colors rather than left unchecked.
 
 ## Update 2026-09-23: "international company standard" meant Linear/
-Stripe/Notion-caliber UX, not just W3C compliance
+Stripe/Notion-caliber UX, not formal compliance
 
 Follow-up clarification: the user meant design *quality* on the bar set
-by Linear, Stripe, and Notion — simple, intuitive, minimal — not (only)
-formal accessibility compliance. Researched what actually differentiates
+by Linear, Stripe, and Notion — simple, intuitive, minimal — not formal
+compliance certification. Researched what actually differentiates
 each, since "clean and minimal" undersells how different their recipes
 are.
 
@@ -122,7 +121,7 @@ registers, not one aesthetic applied uniformly**:
   warmth, since it talks to end customers/patients/visitors, not power
   users.
 
-This sits on top of, not instead of, the WCAG 2.2 AA + design-token
+This sits on top of, not instead of, the usability + design-token
 foundation above — these are the aesthetic/interaction-quality principles
 layered on an already-accessible technical base.
 

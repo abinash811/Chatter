@@ -62,8 +62,8 @@ make a meaningful change, update this before ending your turn.
   update in the same PR as the code that ships or changes one
 - `docs/security.md` — tenant isolation, auth, secrets, traceability,
   known gaps, in one reference instead of scattered across guardrails/ADRs
-- `docs/accessibility.md` — the concrete WCAG 2.2 AA rules (the "why" is
-  in `docs/research/design-system-standards.md`)
+- `docs/accessibility.md` — the concrete rules for a genuinely usable
+  interface (the "why" is in `docs/research/design-system-standards.md`)
 - `docs/adr/` — Architecture Decision Records, one per significant,
   hard-to-reverse decision. Template at `docs/adr/template.md`.
 - `docs/research/` — competitive and technical research notes

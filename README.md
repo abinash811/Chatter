@@ -48,9 +48,9 @@ product spec, architecture, and decisions (ADRs).
   `BotPublicKey`) and every tool call is logged (`ToolCallLog`).
 
 - Console app shell: `app/layout.tsx`, `app/globals.css` (design tokens
-  per `docs/architecture.md` §7 — WCAG-AA-track shadcn zinc defaults, not
-  yet independently contrast-audited), `tailwind.config.ts`,
-  `components/ui/` (Button, Badge). First real screen:
+  per `docs/architecture.md` §7 — finalized in ADR 0007, contrast
+  verified), `tailwind.config.ts`, `components/ui/` (Button, Badge).
+  First real screen:
   `app/(console)/bots/page.tsx`, a Linear-register dense bot list.
 - Console auth (ADR 0006, superseding ADR 0004): email + password via
   Auth.js Credentials provider (`lib/auth.ts`, `lib/password.ts`), JWT
