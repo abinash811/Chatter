@@ -275,12 +275,13 @@ make a meaningful change, update this before ending your turn.
   Prisma's especially, given RLS/tenant-isolation sits directly on it.
   Check `list_pull_requests`/`search_pull_requests` (github MCP) for
   current state before assuming these are still exactly as described.
-- 🔲 Gap #4 from the "critique the automated setup" discussion — CI
-  verifies a build, never an actual deploy — is genuinely blocked, not
-  deferred: nothing is deployed to Render yet (confirmed with the
-  user 2026-09-25), so there's nothing to write a post-deploy check
-  against. Building that automation now would be speculative. Once a
-  real deployment exists, this becomes actionable.
+- Gap #4 from the "critique the automated setup" discussion —
+  CI verifies a build, never an actual deploy — dropped by explicit
+  user decision (2026-09-25: "ignore Render completely"), not just
+  deferred. No deploy-verification automation to build until/unless
+  this is revisited. `render.yaml`/ADR 0005 (deployment prep) stay in
+  the repo as-is; this only affects whether CI gets a post-deploy check,
+  not whether Render prep work is undone.
 
 ## Where things live
 
