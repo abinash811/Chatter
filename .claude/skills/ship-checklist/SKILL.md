@@ -69,7 +69,15 @@ Before saying a piece of work is done:
    bar): does it have a real hover state, a real focus state, a real
    active/pressed state, and a considered loading state (`Skeleton`,
    not a blank flash)? Is depth/elevation deliberate, not just a flat
-   bordered box? If any answer is no, say so explicitly to the user as
+   bordered box? **Also resize the real running app below ~900px and
+   look at it, and actually tab through it with a mouse untouched** —
+   these were a total blind spot until 2026-09-26 (zero screens ever
+   checked below 1280px, zero real keyboard-only passes except one),
+   found only by asking "what haven't we even thought to check," not by
+   a screen-by-screen review. Note the result in `docs/design/audit.md`'s
+   "Responsive & accessibility" table even when the answer is "not
+   checked" — that's real information, don't let it read as "fine" by
+   omission. If any answer is no, say so explicitly to the user as
    a known gap — don't silently ship a screen that's flatter than the
    rest of the app and let it go unmentioned. This applies even to a
    screen the user didn't explicitly ask to be polished. **Update

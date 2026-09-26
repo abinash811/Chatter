@@ -44,6 +44,38 @@ inline-hex version of this mistake; this table exists to block the
 subtler version, where a real token gets reused for a meaning it wasn't
 designed to carry.
 
+## Responsive & accessibility
+
+Added 2026-09-26 after finding this was a total blind spot, not just an
+unfinished one: only 6 files in the whole app use any responsive
+Tailwind prefix, every `tests/visual/` baseline runs at a fixed
+1280×800, and no screen has ever had a real keyboard-only or
+screen-reader pass — `docs/accessibility.md`'s contrast numbers are
+real, but nothing else on it has been verified against an actual
+assistive tool. Same lesson as "System coverage" above: a per-screen
+depth/polish table can't surface a gap nobody thought to add a column
+for. This table is what closes that.
+
+| Screen | Checked <900px wide | Real keyboard-only pass | Screen-reader pass | Notes |
+|---|---|---|---|---|
+| Login/signup | 🔲 | 🔲 | 🔲 | Never checked below 1280px. |
+| Bots list | 🔲 | ✅ | 🔲 | Row keyboard-nav fixed 2026-09-26 (`tabIndex`/`role="link"`/`onKeyDown`); no narrow-viewport or SR check. |
+| Bot editor | 🔲 | 🔲 | 🔲 | Tabs/Dialog behavior not re-checked keyboard-only since the shadcn migration. |
+| Knowledge | 🔲 | 🔲 | 🔲 | |
+| Integrations | 🔲 | 🔲 | 🔲 | |
+| Settings | 🔲 | 🔲 | 🔲 | |
+| Conversations list/detail | 🔲 | 🔲 | 🔲 | |
+| Sidebar/top bar | 🔲 | 🟡 | 🔲 | Collapse toggle keyboard-reachable (native `<button>`); switcher/nav not re-checked. |
+
+**Rule going forward:** before calling any UI work done, add both to the
+design-bar self-check (`ship-checklist` item 13) — not just hover/focus/
+active/loading: (1) resize the real running app below ~900px and look
+at it, don't just assume Tailwind's defaults degrade gracefully; (2)
+actually tab through the screen with a mouse untouched. A full
+screen-reader pass isn't required per change, but note in this table
+whether one's ever been done for that screen — don't let "never
+checked" silently read as "fine."
+
 ## Depth/polish (principles.md #5/#9)
 
 | Screen | Hover | Focus | Active | Loading skeleton | Depth (Card/shadow) | Notes |
