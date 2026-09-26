@@ -74,67 +74,39 @@ reason.)
 
 ## Where things live
 
-- `docs/north-star.md` — the long-term "Configurable AI Agent Platform"
-  product direction (chat-first now, voice/multi-agent orchestration
-  later, healthcare-first vertical, other verticals after). Read this
-  for the "why," `docs/roadmap.md` for "what's next," and the rest of
-  `docs/*.md` for "how it's actually built" — this file doesn't replace
-  any of them.
-- `docs/changelog.md` — the detailed session-by-session build history
-  (what changed, real bugs caught while verifying, what was actually
-  run) that used to live directly in this file's "Current state"
-  section. That section is now a short index into this file,
-  `docs/features.md`, and `docs/roadmap.md` — don't let it grow back
-  into a narrative; new detailed entries go here instead.
-- `docs/product-spec.md` — MVP scope and product decisions made so far
-- `docs/glossary.md` — domain terms in plain language; add a term in the
-  same PR that introduces it
-- `docs/business-logic.md` — how the core flows actually work (draft/
-  publish, the chat/tool-calling loop, tenant isolation in practice) —
-  update in the same PR as the code it describes
+- `docs/north-star.md` — long-term product direction (the "why")
+- `docs/changelog.md` — detailed session-by-session build history (real
+  bugs caught, what was verified). New detailed entries go here, not
+  back into this file's "Current state."
+- `docs/product-spec.md` — MVP scope and product decisions so far
+- `docs/glossary.md` — domain terms; add a term in the same PR that
+  introduces it
+- `docs/business-logic.md` — how core flows actually work; update in the
+  same PR as the code it describes
 - `docs/api.md` — every HTTP route, one place
-- `docs/architecture.md` — system design, living doc, updated as decisions land
-- `docs/roadmap.md` — Now/Next/Later feature priorities
-- `docs/ai-tech-radar.md` — living adopt/trial/assess/hold tracker for
-  AI/RAG-specific technology (models, retrieval, chunking/parsing,
-  eval/ops) — separate from `docs/roadmap.md` (that's *what's next*;
-  this is *what's true about our stack right now*) and from whatever
-  general-product tech radar exists outside this repo.
-- `docs/features.md` — every feature, one place, built vs. planned;
-  update in the same PR as the code that ships or changes one
-- `docs/security.md` — tenant isolation, auth, secrets, traceability,
-  known gaps, in one reference instead of scattered across guardrails/ADRs
-- `docs/accessibility.md` — the concrete rules for a genuinely usable
-  interface (the "why" is in `docs/research/design-system-standards.md`)
-- `docs/adr/` — Architecture Decision Records, one per significant,
-  hard-to-reverse decision. Template at `docs/adr/template.md`.
-- `docs/research/` — competitive and technical research notes
-- `docs/research/current-practices.md` — a living reference, unlike the
-  other research notes: checked (or updated) before introducing any new
-  technical pattern, so a decision doesn't quietly rely on stale
-  training-data memory of "how this is usually done."
+- `docs/architecture.md` — system design, living doc
+- `docs/roadmap.md` — Now/Next/Later priorities
+- `docs/ai-tech-radar.md` — adopt/trial/assess/hold tracker for AI/RAG
+  tech specifically (what's true about our stack now, not what's next)
+- `docs/features.md` — every feature, built vs. planned; update in the
+  same PR that ships or changes one
+- `docs/security.md` — tenant isolation, auth, secrets, traceability
+- `docs/accessibility.md` — concrete usability rules
+- `docs/adr/` — Architecture Decision Records; template at
+  `docs/adr/template.md`
+- `docs/research/` — competitive/technical research;
+  `current-practices.md` is checked before adopting any new pattern
 - `docs/open-questions.md` — decisions not yet made; owner is the user
-- `docs/conventions.md` — naming, shared-component import rule, file-size
-  guidance, git workflow, and the review checklist.
-- `tests/e2e/` — the persistent Playwright regression suite (`npm run
-  test:e2e`), run in CI on every push. When you verify a browser flow
-  by hand, it belongs here as a real spec, not a throwaway script
-  deleted after one run.
-- `docs/design/principles.md` — the sharp, opinionated design bar every
-  screen is checked against (component reuse, tokens, depth/polish,
-  plain language, the Linear/Notion/Stripe register mapping). Read this
-  before `docs/design/preview/`.
-- `docs/design/audit.md` — the living per-screen scoreboard against
-  that bar (hover/focus/active/loading states, plus open functionality
-  gaps like search or row actions). Update a screen's row in the same
-  turn you touch it or audit it — `ship-checklist`'s design-bar
-  self-check step points here so a finding never lives only in chat.
-- `docs/design/design-system.md` — the consolidated real reference:
-  every current token value + its provenance, the component inventory
-  and which source each primitive is actually on (shadcn-official vs.
-  still-CARE-derived). Check this before hand-picking a color/spacing
-  value or assuming a component's source. If it and `app/globals.css`
-  ever disagree, the CSS is correct and this file is stale.
+- `docs/conventions.md` — naming, imports, file size, git workflow,
+  review checklist, the "Building a new feature" intake process
+- `tests/e2e/` — the persistent Playwright suite (CI on every push); a
+  hand-verified browser flow becomes a spec here, not a throwaway script
+- `docs/design/principles.md` — the design bar every screen is checked
+  against; read before `docs/design/preview/`
+- `docs/design/audit.md` — living per-screen scoreboard against that
+  bar; update a screen's row the same turn you touch or audit it
+- `docs/design/design-system.md` — current token values + component
+  provenance; if it and `app/globals.css` disagree, the CSS is correct
 - `docs/design/preview/` — static HTML mockups, the visual ground truth
   for a page before it's built in code. **Before writing any new page or
   UI pattern, check this folder first.** If a preview exists, match it

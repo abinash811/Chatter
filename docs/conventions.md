@@ -74,8 +74,22 @@ request was phrased.
    for, what does "done" look like? Ambiguous, or a real design/
    architecture decision hiding in it? Ask — don't guess silently
    (`docs/open-questions.md`'s rule).
-2. **Check design.** Does a `docs/design/preview/` mockup exist? If
-   this is user-facing and none exists, add one. **Current system (ADR
+2. **Check design.** Not four mandatory reads — targeted lookups, most
+   of them skipped most of the time: `principles.md` is the philosophy/
+   bar, checked when questioning *whether* something meets the standard,
+   not per task; `design-system.md` is a targeted lookup for an actual
+   token value or a component's source, not a full read; `preview/` is
+   only the one file for the screen being touched, if it exists;
+   `audit.md` is mainly a *write* destination (log a finding there), a
+   read only when specifically auditing a screen. **A preview mockup is
+   a pre-build sketch, not a maintained source of truth once a screen
+   ships** — its hardcoded colors are known to drift from
+   `design-system.md`'s real tokens (`docs/design/README.md`'s
+   documented gap), so once code exists, `design-system.md` + the real
+   running app win over a stale preview, not the other way around.
+   Does a `docs/design/preview/` mockup exist for a screen that hasn't
+   shipped yet? If this is user-facing and none exists, add one.
+   **Current system (ADR
    0014, supersedes ADR 0008/0010/0011): shadcn/ui's official registry
    for components, Claude Console's real screenshots for layout/
    structure.** Not CARE for either purpose anymore — see ADR 0014 for
