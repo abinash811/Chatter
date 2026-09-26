@@ -42,7 +42,9 @@ Before saying a piece of work is done:
    shared chrome; add one when a genuinely new page/pattern ships (same
    bar as `docs/design/preview/`).
 9. **Docs still accurate?** — CLAUDE.md's "Current state" section
-   (update it — this is the one most likely to silently go stale),
+   (update it — this is the one most likely to silently go stale; keep
+   the entry to a line or two with a pointer, the full story goes in
+   `docs/changelog.md` — CLAUDE.md is an index, not a narrative log),
    README.md's "What's scaffolded so far" list, `docs/open-questions.md`
    (resolve or add an entry for anything newly discovered),
    `docs/features.md` if a feature shipped or changed, `docs/roadmap.md`
