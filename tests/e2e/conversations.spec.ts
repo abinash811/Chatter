@@ -7,7 +7,10 @@ import { signUpAndCreateBot, seedConversations } from "./helpers";
 // ANTHROPIC_API_KEY — a placeholder in this environment, same class of
 // gap documented for knowledge.spec.ts's embeddings call), so every spec
 // here seeds via seedConversations (tests/e2e/helpers.ts) rather than
-// driving a real chat turn.
+// driving a real chat turn. ADR 0016: "Issue" (not "Handoff") is the
+// user-facing term, and tool calls show a plain-language summary by
+// default — the raw toolName/JSON only appears once "Technical details"
+// is expanded.
 
 test("empty state before any conversation exists", async ({ page }) => {
   await signUpAndCreateBot(page, "Empty Inbox Bot");
@@ -15,7 +18,7 @@ test("empty state before any conversation exists", async ({ page }) => {
   await expect(page.getByText("No conversations yet")).toBeVisible();
 });
 
-test("seeded conversations appear in the list with the right handoff indicator", async ({ page }) => {
+test("seeded conversations appear in the list with the right issue indicator", async ({ page }) => {
   await signUpAndCreateBot(page, "Inbox Bot");
   const botId = page.url().split("/bots/")[1];
   await seedConversations(botId);
@@ -23,19 +26,19 @@ test("seeded conversations appear in the list with the right handoff indicator",
   await page.goto("/conversations");
   await expect(page.getByRole("heading", { name: "Conversations" })).toBeVisible();
   await expect(page.locator("table tbody tr")).toHaveCount(2);
-  await expect(page.locator("table tbody").getByText("Handoff", { exact: true })).toBeVisible();
+  await expect(page.locator("table tbody").getByText("Issue", { exact: true })).toBeVisible();
 });
 
-test("handoff-triggered-only filter narrows the list to just the handoff conversation", async ({ page }) => {
-  await signUpAndCreateBot(page, "Handoff Filter Bot");
+test("has-an-issue filter narrows the list to just the issue conversation", async ({ page }) => {
+  await signUpAndCreateBot(page, "Issue Filter Bot");
   const botId = page.url().split("/bots/")[1];
   await seedConversations(botId);
 
   await page.goto("/conversations");
-  await page.locator("#handoff-only").click();
-  await expect(page).toHaveURL(/handoff=1/);
+  await page.locator("#issues-only").click();
+  await expect(page).toHaveURL(/issues=1/);
   await expect(page.locator("table tbody tr")).toHaveCount(1);
-  await expect(page.locator("table tbody").getByText("Handoff", { exact: true })).toBeVisible();
+  await expect(page.locator("table tbody").getByText("Issue", { exact: true })).toBeVisible();
 });
 
 test("bot filter narrows the list to only the selected bot's conversations", async ({ page }) => {
@@ -57,20 +60,28 @@ test("bot filter narrows the list to only the selected bot's conversations", asy
   await expect(page.getByText("No conversations yet")).toBeVisible();
 });
 
-test("clicking a conversation row opens the full transcript with the tool call inline", async ({ page }) => {
+test("clicking a conversation row opens the full transcript with a plain-language tool call summary", async ({
+  page,
+}) => {
   await signUpAndCreateBot(page, "Detail View Bot");
   const botId = page.url().split("/bots/")[1];
-  const { handoffConversationId } = await seedConversations(botId);
+  const { issueConversationId } = await seedConversations(botId);
 
   await page.goto("/conversations");
-  await page.locator("#handoff-only").click();
-  await expect(page).toHaveURL(/handoff=1/);
+  await page.locator("#issues-only").click();
+  await expect(page).toHaveURL(/issues=1/);
   await page.locator("table tbody tr").first().click();
-  await expect(page).toHaveURL(new RegExp(`/conversations/${handoffConversationId}$`));
+  await expect(page).toHaveURL(new RegExp(`/conversations/${issueConversationId}$`));
 
   await expect(page.getByText("Where is my order #ORD1234?")).toBeVisible();
+  await expect(page.getByText(/Handed off to a human/)).toBeVisible();
+  await expect(page.getByText("Issue", { exact: true })).toBeVisible();
+
+  // The raw toolName/JSON is real (guardrail #6 traceability) but tucked
+  // behind a disclosure, not shown by default to a non-technical reviewer.
+  await expect(page.getByText("check_order_status")).not.toBeVisible();
+  await page.click("summary:has-text('Technical details')");
   await expect(page.getByText("check_order_status")).toBeVisible();
-  await expect(page.getByText("Handoff", { exact: true })).toBeVisible();
 });
 
 test("a conversation from another org is not reachable by id (tenant isolation)", async ({ page, browser }) => {

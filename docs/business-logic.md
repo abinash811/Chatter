@@ -217,37 +217,49 @@ question/answer fields a business owner just typed (`useActionState`'s
 failure, unless the action's returned state re-seeds them via
 `defaultValue`; same fix already shipped for `/login`'s email field).
 
-## Conversation inbox (`lib/conversations.ts`, ADR 0015)
+## Conversation inbox (`lib/conversations.ts`, ADR 0015 + ADR 0016)
 
 `Conversation`, `Message`, and `ToolCallLog` were written on every chat
 turn since `lib/ai/chat.ts`'s `sendMessage` first shipped, but no console
 route ever read them back — `/conversations` (list) and `/conversations/
 [conversationId]` (detail) close that gap. Dashboard-only for v1, per
 ADR 0015 (resolving the previously-open "human handoff channel" question):
-no email/Slack push in this pass.
+no email/Slack push in this pass. Built for a non-technical business
+owner to review real conversations and spot problems, per ADR 0016 — not
+a developer debugging screen.
 
 **List** (`listConversations`): one row per `Conversation`, joined to its
 bot's name and its most recent `Message` for a preview, filterable by
 `botId`, a `fromDate` (the console's date-range presets), and
-`handoffOnly`. **Handoff-triggered is derived, not stored** — a
-conversation counts as handoff-triggered if any of its `ToolCallLog` rows'
-`output` contains `handoff_required` (the string every action tool
-returns per guardrail #4 when it can't fulfill a request — see
-`lib/ai/tools/checkOrderStatus.ts`). This needed no schema change or
-backfill, computed at query time from data that already existed.
+`issuesOnly`. **"Has an issue" is derived, not stored** — a conversation
+counts as having an issue if any of its `ToolCallLog` rows' own
+`describeForInbox` (ADR 0016) says so. Each tool decides for itself what
+an issue means for its own output shape (guardrail #2 — the core engine
+never special-cases a specific tool): `check_order_status` flags both
+`handoff_required` and `not_found` (either way the visitor didn't get an
+answer), `search_knowledge_base` flags its own "nothing found" outcome.
+A tool without `describeForInbox` falls back to a generic
+`output.includes("handoff_required")` check. None of this needed a
+schema change or backfill — computed at query time from data that
+already existed.
 
 **Detail** (`getConversationDetail`): the full message transcript and
 every `ToolCallLog` row for one conversation, merged into a single
 chronological timeline by the console (`ConversationThread.tsx`) — a
 tool call renders inline next to the messages around it, not in a
-separate tab a reviewer has to cross-reference by timestamp. This is
-guardrail #6 (traceability) actually surfaced in the UI, not just logged
-to a table nobody reads.
+separate tab a reviewer has to cross-reference by timestamp. Each tool
+call shows its plain-language `describeForInbox` summary as the primary,
+always-visible line (e.g. "Looked up order #1234 — found it." or
+"Searched the knowledge base for \"shipping to Mars\" — nothing
+found.") — the raw tool name/input/output JSON stays real and available
+(guardrail #6 traceability) but tucked behind a native `<details>`
+"Technical details" disclosure, not deleted, so an engineer debugging a
+bad answer can still get at it from the same page a business owner uses.
 
 **Deliberately not built**: a `status`/"resolved" concept. `docs/roadmap.
 md`'s "Resolution-rate analytics" already flagged this as needing a real
 product definition first (closed by visitor leaving satisfied? no
-handoff triggered? something else?) — ADR 0015 left it undefined rather
+issue triggered? something else?) — ADR 0015 left it undefined rather
 than silently picking one while building the inbox; tracked as `docs/
 open-questions.md` #7.
 
@@ -260,9 +272,10 @@ writes directly via Prisma, scoped through the same `withOrgContext` +
 `BotPublicKey` mechanism the app itself uses to bootstrap an `orgId`
 from a `botId` — standing in for a real chat turn, same pattern
 `knowledge.spec.ts` already used for a directly-seeded knowledge entry.
-Every other part of the feature (list rendering, filters, the handoff
-derivation, the detail transcript, tenant isolation across orgs) was
-verified for real against a real Postgres instance and a real browser.
+Every other part of the feature (list rendering, filters, the issue
+derivation for both tools, the plain-language summaries, the detail
+transcript, tenant isolation across orgs) was verified for real against
+a real Postgres instance and a real browser.
 
 ## Tenant isolation in practice
 

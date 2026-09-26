@@ -1,11 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// ADR 0015: the conversation inbox's handoff-triggered derivation is the
-// one piece of real logic here (no schema column, computed from
-// ToolCallLog.output at query time) — everything else is a straight
-// Prisma read, so this focuses on that derivation and the handoff-only
-// filter, mocked at the withOrgContext boundary same as tests/unit/lib/
-// ai/chat.test.ts.
+// ADR 0015 + ADR 0016: the conversation inbox's "issue" derivation is
+// the one piece of real logic here (no schema column, computed from
+// each tool's own describeForInbox at query time) — everything else is
+// a straight Prisma read, so this focuses on that derivation and the
+// issues-only filter, mocked at the withOrgContext boundary same as
+// tests/unit/lib/ai/chat.test.ts. describeToolCall uses the *real*
+// tool registry (lib/ai/tools/index.ts's side-effect import), so
+// "check_order_status" below exercises the real describeForInbox this
+// suite's own tests/unit/lib/ai/tools/checkOrderStatus.test.ts covers,
+// not a re-mocked stand-in — this is deliberately an integration point.
 
 const findManyConversations = vi.fn();
 const findManyToolCallLogs = vi.fn();
@@ -36,44 +40,67 @@ describe("listConversations", () => {
     _count: { messages: 2 },
   };
 
-  it("marks a conversation as handoff-triggered when a tool call output contains handoff_required", async () => {
+  it("marks a conversation as having an issue when a real tool's describeForInbox says so", async () => {
     findManyConversations.mockResolvedValue([baseConversation]);
     findManyToolCallLogs.mockResolvedValue([
-      { conversationId: "conv-1", output: JSON.stringify({ status: "handoff_required" }) },
+      {
+        conversationId: "conv-1",
+        toolName: "check_order_status",
+        input: { orderNumber: "1" },
+        output: JSON.stringify({ status: "handoff_required", reason: "No Shopify store connected for this bot yet." }),
+      },
     ]);
 
     const rows = await listConversations("org-1");
     expect(rows).toHaveLength(1);
-    expect(rows[0].handoffTriggered).toBe(true);
+    expect(rows[0].hasIssue).toBe(true);
   });
 
-  it("does not mark a conversation as handoff-triggered when no tool call signals it", async () => {
+  it("does not mark a conversation as having an issue when every tool call succeeded", async () => {
     findManyConversations.mockResolvedValue([baseConversation]);
     findManyToolCallLogs.mockResolvedValue([
-      { conversationId: "conv-1", output: JSON.stringify({ status: "found", order: {} }) },
+      {
+        conversationId: "conv-1",
+        toolName: "check_order_status",
+        input: { orderNumber: "1" },
+        output: JSON.stringify({ status: "found", order: {} }),
+      },
     ]);
 
     const rows = await listConversations("org-1");
-    expect(rows[0].handoffTriggered).toBe(false);
+    expect(rows[0].hasIssue).toBe(false);
   });
 
-  it("handoffOnly filter excludes non-handoff conversations", async () => {
+  it("falls back to the generic handoff_required substring check for an unregistered tool", async () => {
+    findManyConversations.mockResolvedValue([baseConversation]);
+    findManyToolCallLogs.mockResolvedValue([
+      { conversationId: "conv-1", toolName: "some_future_tool", input: {}, output: '{"status":"handoff_required"}' },
+    ]);
+
+    const rows = await listConversations("org-1");
+    expect(rows[0].hasIssue).toBe(true);
+  });
+
+  it("issuesOnly filter excludes conversations without an issue", async () => {
     const other = { ...baseConversation, id: "conv-2" };
     findManyConversations.mockResolvedValue([baseConversation, other]);
     findManyToolCallLogs.mockResolvedValue([
-      { conversationId: "conv-1", output: JSON.stringify({ status: "handoff_required" }) },
+      {
+        conversationId: "conv-1",
+        toolName: "check_order_status",
+        input: { orderNumber: "1" },
+        output: JSON.stringify({ status: "not_found", orderNumber: "1" }),
+      },
     ]);
 
-    const rows = await listConversations("org-1", { handoffOnly: true });
+    const rows = await listConversations("org-1", { issuesOnly: true });
     expect(rows).toHaveLength(1);
     expect(rows[0].id).toBe("conv-1");
   });
 
   it("truncates the last message preview to 140 characters", async () => {
     const longContent = "a".repeat(200);
-    findManyConversations.mockResolvedValue([
-      { ...baseConversation, messages: [{ content: longContent }] },
-    ]);
+    findManyConversations.mockResolvedValue([{ ...baseConversation, messages: [{ content: longContent }] }]);
     findManyToolCallLogs.mockResolvedValue([]);
 
     const rows = await listConversations("org-1");
@@ -96,7 +123,7 @@ describe("getConversationDetail", () => {
     expect(detail).toBeNull();
   });
 
-  it("flags only the tool call whose output signals a handoff", async () => {
+  it("gives each tool call a plain-language summary and flags only the one with an issue", async () => {
     findUniqueConversation.mockResolvedValue({
       id: "conv-1",
       botId: "bot-1",
@@ -116,13 +143,17 @@ describe("getConversationDetail", () => {
         id: "call-2",
         toolName: "check_order_status",
         input: { orderNumber: "2" },
-        output: JSON.stringify({ status: "handoff_required" }),
+        output: JSON.stringify({ status: "handoff_required", reason: "No Shopify store connected for this bot yet." }),
         createdAt: new Date(),
       },
     ]);
 
     const detail = await getConversationDetail("org-1", "conv-1");
-    expect(detail?.toolCalls.find((t) => t.id === "call-1")?.isHandoff).toBe(false);
-    expect(detail?.toolCalls.find((t) => t.id === "call-2")?.isHandoff).toBe(true);
+    const call1 = detail?.toolCalls.find((t) => t.id === "call-1");
+    const call2 = detail?.toolCalls.find((t) => t.id === "call-2");
+    expect(call1?.isIssue).toBe(false);
+    expect(call1?.summary).toBe("Looked up order #1 — found it.");
+    expect(call2?.isIssue).toBe(true);
+    expect(call2?.summary).toContain("Handed off to a human");
   });
 });

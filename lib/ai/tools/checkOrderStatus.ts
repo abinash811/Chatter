@@ -61,6 +61,28 @@ export const checkOrderStatusTool: Tool = {
     }
     return JSON.stringify({ status: "found", order: data.orders[0] });
   },
+
+  // ADR 0016: plain-language summary for the conversation inbox — a
+  // non-technical reviewer sees this, not the raw {status, reason}
+  // JSON. Both "not_found" and "handoff_required" count as an issue:
+  // either way the visitor didn't get their answer from the bot alone.
+  describeForInbox(input, output) {
+    const orderNumber = input.orderNumber as string;
+    const parsed = JSON.parse(output) as { status: string; reason?: string };
+    switch (parsed.status) {
+      case "found":
+        return { summary: `Looked up order #${orderNumber} — found it.`, isIssue: false };
+      case "not_found":
+        return { summary: `Looked up order #${orderNumber} — no matching order found.`, isIssue: true };
+      default: {
+        const reason = (parsed.reason ?? "couldn't complete the lookup").replace(/\.$/, "");
+        return {
+          summary: `Tried to look up order #${orderNumber} — ${reason}. Handed off to a human.`,
+          isIssue: true,
+        };
+      }
+    }
+  },
 };
 
 registerTool(checkOrderStatusTool);

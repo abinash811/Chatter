@@ -1,15 +1,18 @@
 import { withOrgContext } from "@/lib/db";
+import { getTool } from "@/lib/ai/tools/registry";
+import "@/lib/ai/tools";
 
-// ADR 0015: the conversation inbox's data layer. "Handoff-triggered" is
-// derived here, not stored — a conversation counts as handoff-triggered
-// if any of its ToolCallLog rows carried a handoff_required result (see
-// lib/ai/tools/checkOrderStatus.ts), computed at query time so no schema
-// change or backfill was needed. Deliberately no "status"/"resolved"
-// concept — docs/open-questions.md #7 leaves that definition open.
+// ADR 0015 + ADR 0016: the conversation inbox's data layer. "Issue" is
+// derived here, not stored — a conversation counts as having an issue if
+// any of its ToolCallLog rows describe themselves as one (see each
+// tool's own describeForInbox, ADR 0016) — computed at query time so no
+// schema change or backfill was needed. Deliberately no "status"/
+// "resolved" concept — docs/open-questions.md #7 leaves that definition
+// open.
 
 export interface ConversationListFilters {
   botId?: string;
-  handoffOnly?: boolean;
+  issuesOnly?: boolean;
   fromDate?: Date;
 }
 
@@ -20,14 +23,25 @@ export interface ConversationListRow {
   createdAt: Date;
   messageCount: number;
   lastMessagePreview: string | null;
-  handoffTriggered: boolean;
+  hasIssue: boolean;
 }
 
-// A tool call's raw output is a JSON string (ToolCallLog.output is a
-// String column, not Json — see prisma/schema.prisma), so this checks
-// the substring rather than parsing every row's JSON up front.
-function outputSignalsHandoff(output: string): boolean {
-  return output.includes("handoff_required");
+// ADR 0016: each tool decides for itself what a plain-language summary
+// and an "issue" mean for its own input/output shape (guardrail #2 — the
+// core engine never special-cases a specific tool's meaning). A tool
+// that hasn't implemented describeForInbox (or a ToolCallLog row from a
+// tool no longer in the registry) gets this generic fallback — the
+// literal-substring check ADR 0015 shipped with.
+function describeToolCall(
+  toolName: string,
+  input: unknown,
+  output: string,
+): { summary: string; isIssue: boolean } {
+  const tool = getTool(toolName);
+  if (tool?.describeForInbox) {
+    return tool.describeForInbox(input as Record<string, unknown>, output);
+  }
+  return { summary: `Ran ${toolName}.`, isIssue: output.includes("handoff_required") };
 }
 
 export async function listConversations(
@@ -50,10 +64,12 @@ export async function listConversations(
 
     const toolCallsByConversation = await tx.toolCallLog.findMany({
       where: { conversationId: { in: conversations.map((c) => c.id) } },
-      select: { conversationId: true, output: true },
+      select: { conversationId: true, toolName: true, input: true, output: true },
     });
-    const handoffConversationIds = new Set(
-      toolCallsByConversation.filter((log) => outputSignalsHandoff(log.output)).map((log) => log.conversationId),
+    const issueConversationIds = new Set(
+      toolCallsByConversation
+        .filter((log) => describeToolCall(log.toolName, log.input, log.output).isIssue)
+        .map((log) => log.conversationId),
     );
 
     return conversations
@@ -64,9 +80,9 @@ export async function listConversations(
         createdAt: conversation.createdAt,
         messageCount: conversation._count.messages,
         lastMessagePreview: conversation.messages[0]?.content.slice(0, 140) ?? null,
-        handoffTriggered: handoffConversationIds.has(conversation.id),
+        hasIssue: issueConversationIds.has(conversation.id),
       }))
-      .filter((row) => !filters.handoffOnly || row.handoffTriggered);
+      .filter((row) => !filters.issuesOnly || row.hasIssue);
   });
 }
 
@@ -83,7 +99,8 @@ export interface ConversationDetailToolCall {
   input: unknown;
   output: string;
   createdAt: Date;
-  isHandoff: boolean;
+  summary: string;
+  isIssue: boolean;
 }
 
 export interface ConversationDetail {
@@ -125,14 +142,18 @@ export async function getConversationDetail(
         content: m.content,
         createdAt: m.createdAt,
       })),
-      toolCalls: toolCalls.map((t) => ({
-        id: t.id,
-        toolName: t.toolName,
-        input: t.input,
-        output: t.output,
-        createdAt: t.createdAt,
-        isHandoff: outputSignalsHandoff(t.output),
-      })),
+      toolCalls: toolCalls.map((t) => {
+        const { summary, isIssue } = describeToolCall(t.toolName, t.input, t.output);
+        return {
+          id: t.id,
+          toolName: t.toolName,
+          input: t.input,
+          output: t.output,
+          createdAt: t.createdAt,
+          summary,
+          isIssue,
+        };
+      }),
     };
   });
 }

@@ -18,7 +18,7 @@ const RANGE_TO_MS: Record<string, number> = {
 export default async function ConversationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ botId?: string; range?: string; handoff?: string }>;
+  searchParams: Promise<{ botId?: string; range?: string; issues?: string }>;
 }) {
   const session = await getCurrentSession();
   const params = await searchParams;
@@ -30,7 +30,7 @@ export default async function ConversationsPage({
   const rangeMs = params.range ? RANGE_TO_MS[params.range] : undefined;
   const conversations = await listConversations(session.orgId, {
     botId: params.botId,
-    handoffOnly: params.handoff === "1",
+    issuesOnly: params.issues === "1",
     fromDate: rangeMs ? new Date(Date.now() - rangeMs) : undefined,
   });
 

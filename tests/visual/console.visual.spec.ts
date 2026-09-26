@@ -97,13 +97,13 @@ test("conversations list — with seeded conversations (Started column masked, i
 test("conversation detail — full transcript with an inline tool call (ADR 0015)", async ({ page }) => {
   await signUpAndCreateBot(page, "Support bot", "visual-conversation-detail");
   const botId = page.url().split("/bots/")[1];
-  const { handoffConversationId } = await seedConversations(botId);
+  const { issueConversationId } = await seedConversations(botId);
 
-  await page.goto(`/conversations/${handoffConversationId}`);
+  await page.goto(`/conversations/${issueConversationId}`);
   await expect(page).toHaveScreenshot("conversation-detail.png", {
-    // Every relative timestamp in the thread ("Visitor · 4m ago", "Tool
-    // call · 4m ago") and the header's "Started X ago" — all real
-    // wall-clock-relative text, same masking rationale as bots-
+    // Every relative timestamp in the thread ("Visitor · 4m ago", the
+    // tool call's own timestamp) and the header's "Started X ago" — all
+    // real wall-clock-relative text, same masking rationale as bots-
     // table.png's Created column.
     mask: [page.locator(".text-xs.text-muted-foreground"), page.getByText(/^Started /)],
   });

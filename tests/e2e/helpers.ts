@@ -39,7 +39,7 @@ export async function signUpAndCreateBot(page: Page, botName: string, emailPrefi
 // solves via BotPublicKey, the one table exempt from RLS.
 export async function seedConversations(
   botId: string,
-): Promise<{ normalConversationId: string; handoffConversationId: string }> {
+): Promise<{ normalConversationId: string; issueConversationId: string }> {
   const orgId = await getOrgIdForBot(botId);
   const draft = await withOrgContext(orgId, (tx) => tx.botConfigVersion.findFirstOrThrow({ where: { botId } }));
 
@@ -55,16 +55,16 @@ export async function seedConversations(
     }),
   );
 
-  const handoff = await withOrgContext(orgId, (tx) =>
+  const withIssue = await withOrgContext(orgId, (tx) =>
     tx.conversation.create({ data: { orgId, botId, configVersionId: draft.id } }),
   );
   await withOrgContext(orgId, (tx) =>
     tx.message.createMany({
       data: [
-        { orgId, conversationId: handoff.id, role: "user", content: "Where is my order #ORD1234?" },
+        { orgId, conversationId: withIssue.id, role: "user", content: "Where is my order #ORD1234?" },
         {
           orgId,
-          conversationId: handoff.id,
+          conversationId: withIssue.id,
           role: "assistant",
           content: "I've noted your order number and will connect you with a human.",
         },
@@ -75,17 +75,17 @@ export async function seedConversations(
     tx.toolCallLog.create({
       data: {
         orgId,
-        conversationId: handoff.id,
+        conversationId: withIssue.id,
         toolName: "check_order_status",
-        input: { orderNumber: "1234" },
+        input: { orderNumber: "ORD1234" },
         output: JSON.stringify({
           status: "handoff_required",
           reason: "No Shopify store connected for this bot yet.",
-          collected: { orderNumber: "1234" },
+          collected: { orderNumber: "ORD1234" },
         }),
       },
     }),
   );
 
-  return { normalConversationId: normal.id, handoffConversationId: handoff.id };
+  return { normalConversationId: normal.id, issueConversationId: withIssue.id };
 }

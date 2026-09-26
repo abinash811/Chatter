@@ -6,12 +6,25 @@ import type { ModelTool } from "@/lib/ai/gateway";
 // an MCP client call later) — never inline that choice at the call site.
 export interface Tool extends ModelTool {
   handle(orgId: string, botId: string, input: Record<string, unknown>): Promise<string>;
+  // Optional (ADR 0016): how this tool's call should read to a
+  // non-technical reviewer in the conversation inbox. A tool that
+  // doesn't implement this gets a generic fallback (lib/conversations.ts)
+  // — this is additive, not required.
+  describeForInbox?(input: Record<string, unknown>, output: string): { summary: string; isIssue: boolean };
 }
 
 const registry = new Map<string, Tool>();
 
 export function registerTool(tool: Tool): void {
   registry.set(tool.name, tool);
+}
+
+// Safe lookup for interpreting a historical ToolCallLog row — unlike
+// getToolsForNames/runTool, this must not throw for a tool that no
+// longer exists (e.g. removed from the registry after the call it
+// logged was made).
+export function getTool(name: string): Tool | undefined {
+  return registry.get(name);
 }
 
 // Reads which tools are enabled from the bot's published config

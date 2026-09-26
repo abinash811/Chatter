@@ -711,6 +711,66 @@ make a meaningful change, update this before ending your turn.
   only.md` all added/updated; `docs/open-questions.md` #2 resolved and
   removed (remaining entries renumbered), a new #7 added for the
   deferred "resolved" status semantics.
+- **Conversation inbox made genuinely non-technical (ADR 0016) —
+  user's explicit framing: this screen is "logs for non-tech persons,"
+  not a developer debugging view, and needs a general way to "filter
+  conversations with issues."** The inbox as shipped under ADR 0015
+  showed raw tool-call JSON and only recognized one specific tool's
+  literal `handoff_required` string as an "issue" — missed
+  `search_knowledge_base`'s own "nothing found" outcome entirely, and
+  wasn't readable by a business owner who doesn't know what
+  `handoff_required` means. Added an optional `describeForInbox(input,
+  output)` method to the `Tool` interface (`lib/ai/tools/registry.ts`)
+  — each tool decides, next to its own input/output shape, what a
+  plain-language summary and an "issue" mean for itself (guardrail #2:
+  the core engine never special-cases a specific tool). Implemented for
+  both existing tools: `check_order_status` flags `handoff_required`
+  *and* `not_found` (either way the visitor didn't get an answer, e.g.
+  "Looked up order #1234 — no matching order found."); `search_
+  knowledge_base` flags its own "nothing found" sentence (e.g.
+  "Searched the knowledge base for \"shipping to Mars\" — nothing
+  found."). A tool without `describeForInbox` gets a generic fallback
+  (the exact ADR 0015 behavior), so this is additive, not breaking.
+  Renamed the "Handoff" concept to **"Issue"** throughout — `hasIssue`,
+  the `issuesOnly`/`issues=1` filter and URL param, the "Issue" badge,
+  the table's "Issues" column, the "Has an issue" checkbox label — a
+  plain-language umbrella a non-technical reviewer recognizes.
+  `ConversationThread.tsx` now shows each tool call's plain-language
+  summary as the primary, always-visible line; the raw tool name/input/
+  output JSON stays real and available (guardrail #6 traceability) but
+  moved behind a native `<details>` "Technical details" disclosure
+  instead of being deleted, so an engineer debugging a bad answer can
+  still get at it from the same page a business owner uses. Deliberately
+  did **not** hide the raw data entirely or add a second "developer
+  view" page — one page serves both audiences.
+
+  Caught one real bug while writing this, not trusting types: the
+  `handoff_required` reason string already ends in a period
+  ("...connected for this bot yet."), so appending ". Handed off to a
+  human." produced a double period — fixed by stripping the trailing
+  period before interpolating, caught by actually reading the rendered
+  summary in a real browser screenshot, not just running the unit test
+  (whose fixture string happened not to end in one).
+
+  Verified: guardrails, `tsc`, a clean rebuild, `npm run test:unit` (99
+  passed — 12 new specs: a new `tests/unit/lib/ai/tools/
+  checkOrderStatus.test.ts` file, `describeForInbox` cases added to
+  `searchKnowledgeBase.test.ts`, and `conversations.test.ts` rewritten to
+  exercise the real tool registry rather than a re-mocked stand-in,
+  including a generic-fallback case for an unregistered tool name), all
+  40 `tests/e2e/` specs (rewritten `conversations.spec.ts` — new
+  copy/selectors, plus a check that the raw tool name is genuinely
+  hidden until "Technical details" is expanded), and 2 regenerated
+  `tests/visual/` baselines (conversations list, conversation detail —
+  the only two that changed) stable across two clean re-runs. Manually
+  seeded and screenshotted both tool types' issue cases (an order
+  lookup handoff and a knowledge-base miss) in a real browser to
+  confirm the plain-language copy actually reads well, not just that
+  the boolean flag is correct. `docs/adr/0016-conversation-inbox-plain-
+  language-issues.md` (new), `docs/architecture.md` §2 (documents the
+  new optional `Tool.describeForInbox`), `docs/business-logic.md`,
+  `docs/features.md`, `docs/design/preview/conversations.html`, and
+  `docs/design/README.md` all updated.
 
 **Known gaps:**
 - 🔲 Design system tokens/infra and a real 18-component primitive layer

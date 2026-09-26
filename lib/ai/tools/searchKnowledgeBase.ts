@@ -49,6 +49,21 @@ export const searchKnowledgeBaseTool: Tool = {
       .map((c) => (c.kind === "qa" ? `Q: ${c.title}\nA: ${c.content}` : `From "${c.title}":\n${c.content}`))
       .join("\n\n---\n\n");
   },
+
+  // ADR 0016: unlike check_order_status, this tool's output is a plain
+  // string, not structured JSON — its own "nothing found" sentence
+  // (returned above) is the one signal this tool has for "the visitor
+  // didn't get an answer," so it's matched literally rather than parsed.
+  describeForInbox(input, output) {
+    const query = input.query as string;
+    const noResults = output === "No relevant information found in the knowledge base.";
+    return {
+      summary: noResults
+        ? `Searched the knowledge base for "${query}" — nothing found.`
+        : `Searched the knowledge base for "${query}".`,
+      isIssue: noResults,
+    };
+  },
 };
 
 registerTool(searchKnowledgeBaseTool);

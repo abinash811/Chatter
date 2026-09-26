@@ -35,7 +35,11 @@ doc as ADRs land instead of letting decisions live only in chat history.
   `check_order_status`, `book_appointment`, `check_vehicle_availability`).
   Each tool either calls a business-configured webhook/integration, or
   falls back to "collect info + hand off to human" (guardrail #4 in
-  CLAUDE.md — this is not optional).
+  CLAUDE.md — this is not optional). A tool may also implement an
+  optional `describeForInbox(input, output)` (ADR 0016), returning a
+  plain-language summary and whether the call counts as an issue for the
+  conversation inbox (`/conversations`) — each tool decides this for its
+  own output shape, never a hardcoded case in the core engine.
 - Streamed responses back to the widget.
 - **BYOA (bring-your-own API key)**: optional, per-org, off by default —
   a business can plug in their own Anthropic key from `/settings`

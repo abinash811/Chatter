@@ -14,7 +14,8 @@ interface ThreadToolCall {
   input: unknown;
   output: string;
   createdAt: Date;
-  isHandoff: boolean;
+  summary: string;
+  isIssue: boolean;
 }
 
 type TimelineEntry =
@@ -66,17 +67,29 @@ export function ConversationThread({
         ) : (
           <div key={entry.toolCall.id} className="flex flex-col gap-1">
             <span className="text-xs text-muted-foreground">
-              Tool call · {relativeTime(entry.toolCall.createdAt)}
-              {entry.toolCall.isHandoff && (
+              {relativeTime(entry.toolCall.createdAt)}
+              {entry.toolCall.isIssue && (
                 <Badge variant="destructive" className="ml-2">
-                  Handoff
+                  Issue
                 </Badge>
               )}
             </span>
-            <div className="rounded-lg border border-border bg-soft-background px-3 py-2 font-mono text-xs">
-              <div className="font-semibold">{entry.toolCall.toolName}</div>
-              <div className="mt-1 text-muted-foreground">in: {JSON.stringify(entry.toolCall.input)}</div>
-              <div className="mt-1 text-muted-foreground">out: {entry.toolCall.output}</div>
+            {/* ADR 0016: plain-language summary is the primary, always-
+                visible line — a non-technical reviewer never needs to
+                read JSON. The raw input/output stays available (guardrail
+                #6 traceability) behind a native disclosure instead of
+                being deleted, so an engineer debugging a bad answer can
+                still get at it from the same page. */}
+            <div className="rounded-lg border border-border bg-soft-background px-3 py-2 text-sm">
+              {entry.toolCall.summary}
+              <details className="mt-1">
+                <summary className="cursor-pointer text-xs text-muted-foreground">Technical details</summary>
+                <div className="mt-1 font-mono text-xs text-muted-foreground">
+                  <div className="font-semibold text-foreground">{entry.toolCall.toolName}</div>
+                  <div className="mt-1">in: {JSON.stringify(entry.toolCall.input)}</div>
+                  <div className="mt-1">out: {entry.toolCall.output}</div>
+                </div>
+              </details>
             </div>
           </div>
         ),

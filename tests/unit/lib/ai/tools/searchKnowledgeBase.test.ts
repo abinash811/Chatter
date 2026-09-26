@@ -51,3 +51,24 @@ describe("search_knowledge_base tool", () => {
     expect(result).toBe("No relevant information found in the knowledge base.");
   });
 });
+
+// ADR 0016: the conversation inbox's plain-language summary + issue flag.
+describe("search_knowledge_base tool — describeForInbox", () => {
+  it("is not an issue when the search found something", () => {
+    const { summary, isIssue } = searchKnowledgeBaseTool.describeForInbox!(
+      { query: "returns" },
+      "Q: What is your return policy?\nA: 30 days.",
+    );
+    expect(summary).toBe('Searched the knowledge base for "returns".');
+    expect(isIssue).toBe(false);
+  });
+
+  it("is an issue when nothing was found", () => {
+    const { summary, isIssue } = searchKnowledgeBaseTool.describeForInbox!(
+      { query: "shipping to Mars" },
+      "No relevant information found in the knowledge base.",
+    );
+    expect(summary).toBe('Searched the knowledge base for "shipping to Mars" — nothing found.');
+    expect(isIssue).toBe(true);
+  });
+});

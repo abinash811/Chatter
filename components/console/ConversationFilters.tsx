@@ -3,7 +3,7 @@
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Checkbox, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui";
 
-// Filters are URL-driven (?botId=&range=&handoff=1) so the list page
+// Filters are URL-driven (?botId=&range=&issues=1) so the list page
 // stays a server component that refetches on navigation, matching this
 // codebase's existing pattern (no client-side data fetching layer
 // introduced just for this screen). ADR 0015: deliberately no "status"
@@ -33,7 +33,7 @@ export function ConversationFilters({ bots }: { bots: { id: string; name: string
 
   const botId = searchParams.get("botId") ?? "all";
   const range = searchParams.get("range") ?? "all";
-  const handoffOnly = searchParams.get("handoff") === "1";
+  const issuesOnly = searchParams.get("issues") === "1";
 
   // Base UI's <Select.Value> can only resolve the selected label from an
   // actually-mounted <Select.Item> — its popup content is unmounted while
@@ -72,12 +72,12 @@ export function ConversationFilters({ bots }: { bots: { id: string; name: string
 
       <div className="flex items-center gap-2">
         <Checkbox
-          id="handoff-only"
-          checked={handoffOnly}
-          onChange={(e) => setParam("handoff", e.target.checked ? "1" : null)}
+          id="issues-only"
+          checked={issuesOnly}
+          onChange={(e) => setParam("issues", e.target.checked ? "1" : null)}
         />
-        <Label htmlFor="handoff-only" className="text-sm font-normal text-muted-foreground">
-          Handoff triggered only
+        <Label htmlFor="issues-only" className="text-sm font-normal text-muted-foreground">
+          Has an issue
         </Label>
       </div>
     </div>

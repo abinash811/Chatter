@@ -100,14 +100,18 @@ billing instead of our managed key. Off by default. **How**: `app/
 `lib/crypto.ts` for encryption at rest. ADR 0012.
 
 ### Conversation inbox
-**Who**: the business owner, for human handoff. **What**: `/conversations`
-— a filterable list (by bot, date, handoff-triggered) of every widget
-conversation, and `/conversations/[conversationId]` — the full message
-transcript with tool calls rendered inline. Dashboard-only for v1, no
-email/Slack push. **How**: `lib/conversations.ts`,
-`components/console/{ConversationsTable,ConversationFilters,
-ConversationThread}.tsx`. ADR 0015. No `status`/"resolved" concept yet —
-see `docs/open-questions.md` #7.
+**Who**: the business owner — a non-technical reviewer, not a developer.
+**What**: `/conversations` — a filterable list (by bot, date, "has an
+issue") of every widget conversation, and `/conversations/
+[conversationId]` — the full message transcript with each tool call
+shown as a plain-language summary ("Looked up order #1234 — found it.")
+rather than raw JSON; the raw input/output stays available behind a
+"Technical details" disclosure. Dashboard-only for v1, no email/Slack
+push. **How**: `lib/conversations.ts`, each tool's own
+`describeForInbox` (`lib/ai/tools/*.ts`), `components/console/
+{ConversationsTable,ConversationFilters,ConversationThread}.tsx`. ADR
+0015 + ADR 0016. No `status`/"resolved" concept yet — see `docs/open-
+questions.md` #7.
 
 ## Planned
 
