@@ -218,10 +218,12 @@ Deterministic checks + a browser canary, run at three points so a
 violation is caught as early and as cheaply as possible — reading code
 alone doesn't catch any of these (see "Verified by a real run" above):
 
-- **`.claude/skills/`** (`bot-engine-build`, `console-frontend-build`,
-  `ship-checklist`) — read by Claude Code before touching the relevant
-  layer, so the patterns are followed on the way in, not just checked on
-  the way out.
+- **`.claude/rules/`** (`bot-engine.md`, `console-frontend.md`,
+  path-scoped to `lib/ai/`+`lib/integrations/` and `app/(console)/`+
+  `components/ui/` respectively) plus **`.claude/skills/ship-checklist`**
+  — the rules load automatically the moment Claude Code touches a
+  matching file (no reliance on remembering to invoke them), so the
+  patterns are followed on the way in, not just checked on the way out.
 - **`.githooks/pre-commit`** — `npm run check:all` + typecheck, before a
   commit is even made. One-time setup per clone:
   `git config core.hooksPath .githooks`.

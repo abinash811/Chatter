@@ -1,11 +1,18 @@
 ---
-name: bot-engine-build
-description: Use before writing or modifying anything under lib/ai/ or lib/integrations/ — the model gateway, tool registry, chat loop, or an action tool/integration adapter. Enforces the interface/connector split and the guardrails that are easy to violate by accident in this layer.
+paths:
+  - "lib/ai/**"
+  - "lib/integrations/**"
 ---
 
 # Bot engine build
 
-Before writing code in `lib/ai/` or `lib/integrations/`:
+Loads automatically when touching `lib/ai/` or `lib/integrations/` — the
+model gateway, tool registry, chat loop, or an action tool/integration
+adapter. Enforces the interface/connector split and the guardrails that
+are easy to violate by accident in this layer. (Converted from a skill
+to a path-scoped rule 2026-09-26 so it loads deterministically instead
+of depending on the model choosing to invoke it — see
+`code.claude.com/docs/en/memory`'s `.claude/rules/` mechanism.)
 
 1. **Read the existing interface before adding to it.** `lib/ai/gateway.ts`
    (`ModelGateway`), `lib/ai/tools/registry.ts` (`Tool`), and

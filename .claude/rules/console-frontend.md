@@ -1,11 +1,18 @@
 ---
-name: console-frontend-build
-description: Use before writing or modifying anything under app/(console)/ or components/ui/ — a console page, a UI primitive, a form/server action. Enforces the design-token system and the register (Linear/Notion/Stripe) mapping from docs/architecture.md §7.
+paths:
+  - "app/(console)/**"
+  - "components/ui/**"
 ---
 
 # Console frontend build
 
-Before writing a console screen or component:
+Loads automatically when touching `app/(console)/` or `components/ui/`
+— a console page, a UI primitive, a form/server action. Enforces the
+design-token system and the register (Linear/Notion/Stripe) mapping
+from `docs/architecture.md` §7. (Converted from a skill to a
+path-scoped rule 2026-09-26 so it loads deterministically instead of
+depending on the model choosing to invoke it — see
+`code.claude.com/docs/en/memory`'s `.claude/rules/` mechanism.)
 
 1. **Never hardcode a color.** No hex codes, no Tailwind arbitrary color
    classes (`bg-red-500`, `text-blue-600`). Use a token —
