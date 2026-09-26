@@ -127,17 +127,29 @@ applied here to every future setting.
   generic-core-plus-thin-configurable-layer pattern used elsewhere in this
   architecture (vertical templates, tool interface/connector split),
   applied to design instead of code.
-- Foundation, not built from scratch: current (2026) default pairing for
-  a Next.js + Tailwind stack is **shadcn/ui** (Radix-based, accessible by
-  default, ships with a token system) rather than a hand-rolled component
-  library. Not yet locked in — tech stack is still open — but the natural
-  fit if the Next.js/Tailwind direction from
-  `docs/research/tech-stack-trends-2026.md` is confirmed. Known gap to
-  plan for: an independent 2026 usability audit of shadcn's 48
-  components found 34 pass out of the box, 9 need minor fixes, and 5 have
-  real gaps — **Combobox, Data Table, Context Menu, Chart, Input OTP** —
-  relevant to the analytics dashboard (Chart) and knowledge-base
-  management screens (Data Table) specifically.
+- Foundation: **shadcn/ui's official registry** (Radix-based via the
+  unified `radix-ui` package, accessible by default, ships with a token
+  system) — locked in as of ADR 0014, after an intermediate detour
+  through an exact copy of CARE's fork (ADR 0008), which got dropped as
+  both a component source and a visual reference (ADR 0010, ADR 0011)
+  once verbatim-pulling CARE's drifted assumptions produced three
+  separate silent bugs invisible to `tsc`/the build. `scripts/pull-
+  shadcn-component.mjs` pulls real, current source directly from
+  `github.com/shadcn-ui/ui` (the live registry API at `ui.shadcn.com` is
+  blocked by this environment's egress policy; `raw.githubusercontent.
+  com` isn't). Known gap to plan for: an independent 2026 usability
+  audit of shadcn's 48 components found 34 pass out of the box, 9 need
+  minor fixes, and 5 have real gaps — **Combobox, Data Table, Context
+  Menu, Chart, Input OTP** — relevant to the analytics dashboard (Chart)
+  and knowledge-base management screens (Data Table) specifically.
+- Layout/structure reference: **Claude Console's real, current product**
+  (ADR 0014) — collapsible sidebar sections, bordered-not-shadowed
+  cards, solid-dark primary vs. outlined secondary buttons, borderless
+  plain-text tables. Typography/color stay shadcn's own defaults, not
+  Anthropic's brand serif/palette (a separate commercial product
+  shouldn't copy another's exact brand assets). Rollout is new-screens-
+  first — existing shipped screens keep their CARE look until each is
+  deliberately migrated, not a blanket repaint.
 - Two surfaces, two consistency rules:
   - **Admin console** (our product): one fixed brand/token set everywhere,
     no per-screen exceptions.

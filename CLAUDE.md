@@ -484,13 +484,51 @@ make a meaningful change, update this before ending your turn.
   concept, not even in the schema — added to `docs/glossary.md`), and an
   LLM model picker + pricing display are new scope needing a decision
   before they're buildable. 3 new entries added to `docs/open-
-  questions.md` (#6 prompt-template scope, #7 nudges scope/mechanism,
-  #8 model-picker pricing display) — none silently assumed. Also
-  recorded the explicit healthcare-second-vertical sequencing in
-  `docs/roadmap.md`'s Later section, blocked on open question #3
-  (regulated-vertical compliance posture) same as before. Docs-only —
-  no code written this pass, matching the user's explicit "plan the
-  roadmap" framing, not a build request.
+  questions.md` (renumbered to #5/#6/#7 once ADR 0014 below resolved
+  the old #5 — prompt-template scope, nudges scope/mechanism, model-
+  picker pricing display) — none silently assumed. Also recorded the
+  explicit healthcare-second-vertical sequencing in `docs/roadmap.md`'s
+  Later section, blocked on open question #3 (regulated-vertical
+  compliance posture) same as before. Docs-only — no code written this
+  pass, matching the user's explicit "plan the roadmap" framing, not a
+  build request.
+- **Design system moved off CARE entirely: shadcn/ui's official
+  registry + Claude Console's real layout — ADR 0014, supersedes ADR
+  0008/0010/0011.** User supplied real screenshots of Claude Console
+  (Dashboard, Skills pages) — resolves ADR 0011's exact unsolved problem
+  (no real screenshots of a finished product to reference, only CARE's
+  source code) with an actual finished product. Explicit user choices
+  via `AskUserQuestion`: don't chase Anthropic's brand serif (shadcn's
+  own defaults instead — a separate commercial product shouldn't copy
+  another's exact brand assets); re-pull all 18 CARE primitives from
+  shadcn's official registry over time (resolves the old open-questions
+  #5, "leave CARE primitives as-is," which this decision overrides);
+  new-screens-first rollout, not a blanket repaint. Investigated real
+  constraints before building anything: `ui.shadcn.com`'s live registry
+  API is denied by this session's egress policy (confirmed via
+  `$HTTPS_PROXY/__agentproxy/status` — a genuine policy denial, not a
+  target-server issue), but `raw.githubusercontent.com` is reachable and
+  shadcn's actual new-york-v4 component source is checked into their
+  repo as static files — fetched and verified for real (Button, Table,
+  Card), confirming shadcn's official registry uses the unified
+  `radix-ui` package (v1.6.7, checked via `npm view`), not `@base-ui/
+  react` like CARE's fork. `scripts/pull-shadcn-component.mjs` built to
+  fetch this real source (mirrors `scripts/pull-care-component.mjs`'s
+  shape). **Caught and immediately fixed a real mistake while verifying
+  it**: an early version of the script defaulted to writing straight
+  into `components/ui/button.tsx` — the shared barrel every existing
+  CARE-themed screen imports from — clobbering the live version before
+  any rollout decision existed for that specific component; caught via
+  `git status`/`git diff --stat` right after running it, reverted with
+  `git checkout --` before anything was committed, and the script fixed
+  to print to stdout by default with an explicit `--write` flag required
+  to touch `components/ui/`. `docs/conventions.md`'s "Building a new
+  feature" step 2 and `docs/architecture.md` §7 both updated to the new
+  system (the latter also fixed a long-stale "tech stack still open"
+  line that had never been updated through ADRs 0008 or 0010/0011).
+  Docs + a verified-but-not-yet-integrated tooling script only — no
+  screen rebuilt yet, per the new-screens-first rollout; that happens
+  when the first "self-serve configurability" pillar is actually built.
 
 **Known gaps:**
 - 🔲 Design system tokens/infra and a real 18-component primitive layer

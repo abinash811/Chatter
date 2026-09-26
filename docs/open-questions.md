@@ -20,18 +20,7 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
 4. **Site crawling in v1 ingestion**, or manual upload/Q&A only for v1 with
    crawling added later? Crawling is high-value but adds real scope
    (crawler, dedup, refresh scheduling, respecting robots.txt, etc.).
-5. **Retroactively rewrite the 18 already-pulled CARE primitives?** ADR
-   0010 stops pulling CARE component source verbatim going forward
-   (reference-only, hand-authored against our own tokens instead), but
-   doesn't decide whether the 18 primitives already pulled under the old
-   mechanism (Dialog, Sidebar, Tabs, Table, etc. — see CLAUDE.md's "Done"
-   list) get rewritten now or stay as-is. They're already patched for
-   the three known bugs and covered by the existing test suites.
-   Recommend: leave them as-is unless/until a specific one causes another
-   issue — rewriting 18 already-working, already-verified components
-   speculatively isn't worth the churn; apply the new policy to new
-   primitives and screen rebuilds instead.
-6. **Prompt/persona template scope** (`docs/roadmap.md`'s "Self-serve
+5. **Prompt/persona template scope** (`docs/roadmap.md`'s "Self-serve
    configurability" #1). Is this 2-3 use-case templates within v1's
    single ecommerce vertical (support/sales/lead-gen tone+goals), or a
    cross-vertical library? Affects whether it's small scope now or
@@ -39,7 +28,7 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
    meaningful. Recommend: 2-3 ecommerce use-case templates now — a
    library with only one vertical to draw from isn't really a library
    yet.
-7. **Nudges — scope and mechanism** (`docs/roadmap.md`'s "Self-serve
+6. **Nudges — scope and mechanism** (`docs/roadmap.md`'s "Self-serve
    configurability" #6). What triggers (exit-intent, time-on-page,
    scroll-depth, cart-abandonment)? Generic across verticals or
    ecommerce-specific to start? Where does the business owner configure
@@ -47,7 +36,7 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
    No recommendation yet — needs real scoping (and likely a small
    competitor check: how Intercom/Drift/Tidio actually expose this)
    before an ADR.
-8. **LLM model picker + pricing display** (`docs/roadmap.md`'s "Self-
+7. **LLM model picker + pricing display** (`docs/roadmap.md`'s "Self-
    serve configurability" #7). Does pricing display apply to BYOA users
    at all (they pay Anthropic directly) or only the managed-key path?
    What does "pricing" mean here — real per-token cost passed through,
@@ -91,3 +80,9 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
 - ~~BYOA (bring-your-own API key/account)~~ — built as an optional
   per-org setting (`/settings`), not the default: a business can plug
   in their own Anthropic key, or use our managed one. See ADR 0012.
+- ~~Retroactively rewrite the 18 already-pulled CARE primitives?~~ —
+  yes, re-pull all of them from shadcn/ui's official registry over
+  time (new-screens-first, not a blanket pass) — superseded by the
+  larger decision to move off CARE as both component source and visual
+  reference entirely, replaced by shadcn/ui + Claude Console's real
+  layout. See ADR 0014.

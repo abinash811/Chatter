@@ -75,33 +75,46 @@ request was phrased.
    architecture decision hiding in it? Ask — don't guess silently
    (`docs/open-questions.md`'s rule).
 2. **Check design.** Does a `docs/design/preview/` mockup exist? If
-   this is user-facing and none exists, add one — see `docs/design/
-   principles.md` for the bar to build against, and Principle #10 if
-   it's a record-editing screen. For composition/polish (density,
-   hierarchy, whitespace, depth), work from documented Linear/Notion/
-   Stripe conventions (`docs/research/design-system-standards.md`) —
-   **not** CARE: ADR 0011 dropped CARE as a visual reference entirely,
-   since this environment can't actually reach its live product
-   (network egress blocks its whole domain family and GitHub's image
-   CDNs alike) and its GitHub source is component code, not a design
-   artifact — it doesn't show what a designer decided about density or
-   polish. Need a UI primitive we don't have yet (Dialog, Table,
-   Sidebar, Tabs, etc.)? Build it against `@base-ui/react` directly (for
-   real behavior: focus trap, keyboard nav, ARIA) and our own tokens in
-   `app/globals.css`, informed by the same Linear/Notion/Stripe
-   conventions for how it should look. Do **not** pull CARE's component
-   source verbatim (`scripts/pull-care-component.mjs` is no longer the
-   default path, per ADR 0010 — it can still be handy for `--from
-   <local-checkout>` reference-reading, nothing more): the 18 primitives
-   pulled that way before that ADR produced three separate silent bugs
-   (dead classes assuming a version/attribute we didn't actually have),
-   none caught by `tsc` or the build, all caught only by a real
-   screenshot. Add the export to `components/ui/index.ts` and verify
-   with a real screenshot before considering it done, same as any other
-   new UI pattern — and if it has any hover/focus/active state, verify
-   that state with `getComputedStyle` before/after a real interaction,
-   not just a screenshot (a 1-shade border change won't show up in one;
-   see the `app/globals.css` cascade-layers bug this caught).
+   this is user-facing and none exists, add one. **Current system (ADR
+   0014, supersedes ADR 0008/0010/0011): shadcn/ui's official registry
+   for components, Claude Console's real screenshots for layout/
+   structure.** Not CARE for either purpose anymore — see ADR 0014 for
+   why (CARE's fork had drifted assumptions vs. shadcn's own upstream;
+   Claude Console gave us actual product screenshots, the thing ADR
+   0011 could never get for CARE). This only applies to *new* screens
+   for now (`docs/roadmap.md`'s "Self-serve configurability" pillars) —
+   existing shipped screens keep their CARE look until each is
+   deliberately migrated, not touched as a side effect of building
+   something else.
+   - **Layout/structure**: match Claude Console's actual patterns —
+     collapsible sidebar sections with a subtle gray-pill active state,
+     bordered-not-shadowed cards, solid-dark primary buttons vs.
+     outlined secondary, borderless plain-text tables with monospace
+     IDs, generous whitespace, color reserved for sparing accents, never
+     UI chrome. Principle #10 still applies if it's a record-editing
+     screen.
+   - **Components**: need a primitive we don't have under this system
+     yet (Dialog, Table, Sidebar, Tabs, etc.)? Pull it from shadcn/ui's
+     real, current official source — `node scripts/pull-shadcn-
+     component.mjs <name>` (prints to stdout by default; `--write` to
+     place it in `components/ui/`, a deliberate extra step since that's
+     a shared barrel every existing screen also imports from). Verify
+     the pulled file compiles and its dependencies (`radix-ui`, etc.)
+     are actually installed before wiring it into a screen. Do **not**
+     hand-guess a component's current output syntax from memory — the
+     whole reason ADR 0010 exists is that Tailwind/`data-*`/CSS-variable
+     mismatches are invisible to `tsc`/the build; always pull the real
+     current source instead.
+   - **Typography/tokens**: shadcn's own defaults (neutral base color,
+     its standard sans-serif) — not Anthropic's brand serif (explicit
+     user call, ADR 0014: Claude Console is a layout reference, not a
+     font to replicate) and not CARE's emerald palette.
+   - Add the export to `components/ui/index.ts` and verify with a real
+     screenshot before considering it done, same as any other new UI
+     pattern — and if it has any hover/focus/active state, verify that
+     state with `getComputedStyle` before/after a real interaction, not
+     just a screenshot (a 1-shade border change won't show up in one;
+     see the `app/globals.css` cascade-layers bug this caught).
 3. **Check data/security implications.** A new table or column? It's
    tenant-scoped unless there's a specific reason it isn't (`orgId` +
    an RLS policy + an index — `docs/security.md`). Touches secrets,
