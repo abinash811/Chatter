@@ -588,6 +588,61 @@ make a meaningful change, update this before ending your turn.
   static reference mockups and nothing breaks, but they visibly drifted
   from what the app now renders). `docs/conventions.md` and this file
   updated to point at it.
+- **`Sidebar` and `Table` migrated to shadcn's official registry source
+  (ADR 0014) — first 2 of the 18 CARE-derived primitives.** Both fetched
+  for real via `scripts/pull-shadcn-component.mjs` from
+  `raw.githubusercontent.com` (not recalled/guessed), import paths
+  adapted to this repo's aliases. A deliberate exception to strict
+  new-screens-first phasing, at the user's direct request: both are
+  shared shell components every existing console page already depends
+  on, not a new screen — their public API surface (`SidebarProvider`,
+  `Sidebar`, `SidebarHeader`/`Content`/`Footer`/`Group`/`GroupContent`/
+  `Menu`/`MenuItem`/`MenuButton`, `SidebarInset`, `SidebarTrigger`,
+  `Table`/`TableHeader`/`Body`/`Row`/`Head`/`Cell`) is unchanged, so
+  every consumer (`AppSidebar.tsx`, `app/(console)/layout.tsx`,
+  `BotsTable.tsx`) needed zero edits. New `radix-ui` dependency (v1.6.7,
+  checked via `npm view`) — shadcn's official registry uses the unified
+  `radix-ui` package, not CARE's `@base-ui/react`. `tsc` surfaced
+  exactly one real incompatibility: shadcn's Sidebar passes
+  `delayDuration={0}` to `TooltipProvider`, but Chatter's CARE-derived
+  `tooltip.tsx` names the same prop `delay` — fixed with a one-line,
+  documented change (kept Tooltip itself on its CARE-derived version
+  rather than cascading the migration to it, Button, Sheet, Separator,
+  and Skeleton, since this confirmed everything else was already
+  structurally compatible). Table kept one deliberate deviation from
+  the verbatim shadcn source: `TableHead`'s `bg-soft-background` tint
+  (shadcn's own plain default has none) — matches Claude Console's real
+  screenshots, which do show a tinted header row.
+
+  Caught a real false-alarm regression while verifying: the first full
+  `tests/e2e/` run after the migration showed every test past the first
+  timing out at 30s, looking like a severe Sidebar bug. Root cause was
+  a stale leftover `next-server` process still bound to port 3000,
+  serving an old build's chunk manifest that no longer matched the
+  freshly rebuilt `.next` output — confirmed via direct Playwright
+  debugging (console/pageerror capture caught `ChunkLoadError`s and
+  `400`s on `_next/static` assets) before touching any component code,
+  then fixed by force-killing the stale process and starting a
+  genuinely fresh server. Re-ran clean: all 34 `tests/e2e/` specs
+  passed at normal speed (~20s). This recurred once more on the actual
+  verification pass reported here (a second leftover `next-server`
+  process was found and killed the same way) — a real, repeatable
+  hazard of this environment, not a one-off; worth remembering that a
+  30s-timeout wall on every test past the first means "stale server,"
+  not "real regression."
+
+  Verified: guardrails, `tsc`, a full clean rebuild (`rm -rf .next &&
+  npm run build`), `npm run test:unit` (82 passed), all 34
+  `tests/e2e/` specs (confirmed passing against a genuinely fresh
+  server both times), real behavioral checks (sidebar collapse toggles
+  `data-state`, `sidebar_state` cookie persists across reload, tooltip
+  renders on hover of a collapsed nav icon confirming the `delay={0}`
+  fix), and 7 `tests/visual/` baselines regenerated (exactly the
+  console-shell-dependent ones — login/signup/onboarding correctly
+  unchanged, since they're outside the console route group) and
+  confirmed stable across two clean re-runs. `docs/design/design-
+  system.md`'s component inventory updated to reflect these 2 as
+  migrated, 16 still CARE-derived.
 
 **Known gaps:**
 - 🔲 Design system tokens/infra and a real 18-component primitive layer

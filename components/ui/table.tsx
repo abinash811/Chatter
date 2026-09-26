@@ -4,6 +4,15 @@
  * @dependencies none
  * @type registry:ui
  */
+// ADR 0014: real, current source from shadcn/ui's official registry
+// (github.com/shadcn-ui/ui, new-york-v4 style) via
+// scripts/pull-shadcn-component.mjs — not CARE's fork. One deliberate
+// deviation from the verbatim source: TableHead keeps a subtle
+// `bg-soft-background` header tint (shadcn's own plain default has
+// none) — matches Claude Console's real screenshots, which do show a
+// tinted header row (docs/design/design-system.md).
+"use client";
+
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
@@ -48,7 +57,7 @@ function TableFooter({ className, ...props }: React.ComponentProps<"tfoot">) {
     <tfoot
       data-slot="table-footer"
       className={cn(
-        "bg-muted/50 border-t font-medium last:[&>tr]:border-b-0",
+        "border-t bg-muted/50 font-medium [&>tr]:last:border-b-0",
         className
       )}
       {...props}
@@ -61,7 +70,7 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
     <tr
       data-slot="table-row"
       className={cn(
-        "hover:bg-muted/50 has-aria-expanded:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors",
+        "border-b transition-colors hover:bg-muted/50 has-aria-expanded:bg-muted/50 data-[state=selected]:bg-muted",
         className
       )}
       {...props}
@@ -74,7 +83,7 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
     <th
       data-slot="table-head"
       className={cn(
-        "bg-soft-background text-foreground h-10 min-h-10 px-2 py-1 text-left align-middle font-medium whitespace-nowrap has-[[role=checkbox]]:pr-0",
+        "h-10 bg-soft-background px-2 text-left align-middle font-medium whitespace-nowrap text-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
         className
       )}
       {...props}
@@ -87,7 +96,7 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
     <td
       data-slot="table-cell"
       className={cn(
-        "p-2 align-middle whitespace-nowrap has-[[role=checkbox]]:pr-0",
+        "p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
         className
       )}
       {...props}
@@ -102,7 +111,7 @@ function TableCaption({
   return (
     <caption
       data-slot="table-caption"
-      className={cn("text-muted-foreground mt-4 text-sm", className)}
+      className={cn("mt-4 text-sm text-muted-foreground", className)}
       {...props}
     />
   );

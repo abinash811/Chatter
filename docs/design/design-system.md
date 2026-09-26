@@ -106,13 +106,31 @@ before ADR 0014, not a coincidence worth re-deriving.
 
 ## Component inventory
 
-18 primitives currently in `components/ui/`, all still on their
-original CARE-derived source (ADR 0008) as of this writing — being
-re-pulled from shadcn's official registry screen by screen, not in one
-batch (ADR 0014's new-screens-first rollout):
+18 primitives total in `components/ui/`. 2 are now on shadcn's real
+official registry source (ADR 0014); the remaining 16 are still on
+their original CARE-derived source (ADR 0008), being re-pulled
+screen by screen, not in one batch (ADR 0014's new-screens-first
+rollout — `Sidebar`/`Table` were a deliberate exception, since both
+are shared shell components every existing console screen already
+depends on, not a new screen; see this doc's own header comment
+convention on each file for which source it's really on):
 
-`Dialog`, `AlertDialog`, `Tabs`, `Table`, `DropdownMenu`, `Popover`,
-`Tooltip`, `Select`, `Separator`, `Avatar`, `Skeleton`, `Sidebar`,
+**Migrated to shadcn-official:**
+
+- `Sidebar` — one documented adaptation: our CARE-derived
+  `TooltipProvider` (`components/ui/tooltip.tsx`) names its zero-delay
+  prop `delay`, not shadcn's `delayDuration` — kept Tooltip on its
+  existing CARE-derived version rather than expanding the migration,
+  since `tsc` confirmed this was the only real incompatibility.
+- `Table` — one deliberate deviation from the verbatim source: kept
+  `TableHead`'s `bg-soft-background` tint (shadcn's own plain default
+  has none) — matches Claude Console's real screenshots, which do show
+  a tinted header row.
+
+**Still CARE-derived (ADR 0008):**
+
+`Dialog`, `AlertDialog`, `Tabs`, `DropdownMenu`, `Popover`,
+`Tooltip`, `Select`, `Separator`, `Avatar`, `Skeleton`,
 `Alert`, `Switch`, `RadioGroup`, `Sheet`, `ScrollArea`, `Button`.
 
 Plus Chatter's own hand-authored primitives (never CARE-derived):
@@ -131,8 +149,7 @@ see ADR 0014's Consequences for why).
   toggles it yet — no live dark-mode contrast verification has been
   done (same unverified status as before ADR 0014, not a new gap this
   introduced).
-- The 18 CARE-derived primitives haven't been re-pulled yet — this doc
-  describes the *token* layer (fully migrated) and the *intended*
-  component provenance, not yet the actual state of every `.tsx` file.
+- 16 of the 18 CARE-derived primitives haven't been re-pulled yet
+  (`Sidebar`/`Table` are done — see the component inventory above).
   Check a given file's own header comment for which source it's really
   on.
