@@ -31,6 +31,13 @@ The generic core plus one concrete vertical template — see
 
 Validated by competitor research, not yet built:
 
+- **RAG retrieval-quality upgrade** — hybrid search (Postgres full-text
+  + vector), reranking, and query rewriting (folding conversation
+  history into the retrieval query). See `docs/ai-tech-radar.md`'s
+  Retrieval & search section for the full detail and the still-open
+  reranker vendor choice (Voyage vs. Cohere). Prioritized first among
+  the RAG-architecture gaps since it improves every chunk already
+  ingested, with no re-ingestion needed.
 - **Write-capable action tools** — issue a refund, update a shipping
   address, edit/cancel a booking — not just lookups. Gorgias treats
   these as core, not advanced; our tool registry (ADR 0002) already
@@ -56,6 +63,19 @@ Validated by competitor research, not yet built:
 Explicitly deferred — see `docs/product-spec.md`'s "Explicitly out of
 scope for v1" for the full list. Notable additions from research:
 
+- **Ingestion-quality upgrade** — adaptive per-source chunking, parent-
+  child/contextual retrieval, table/OCR-aware parsing (today's
+  extraction is plain-text-only — a table flattens into garbled text, a
+  scanned PDF page extracts nothing). See `docs/ai-tech-radar.md`'s
+  Ingestion & parsing section — deliberately after the retrieval-
+  quality upgrade above, since it requires re-ingesting existing
+  content to benefit and the table/OCR piece is the least-defined item
+  on the radar (vendor/approach not yet chosen).
+- **RAG evaluation harness + feedback loop** — a labeled test set (an
+  open-source starting point, per the user's own call, rather than
+  hand-built) run on every retrieval/chunking/prompt change, plus a
+  production 👍/👎 signal. See `docs/ai-tech-radar.md`'s Eval & ops
+  section. Deferred until there's a real eval set to run.
 - Voice input (Intercom Fin ships it; not validated as needed for our
   target yet)
 - Multi-channel beyond the website widget (WhatsApp, etc.)

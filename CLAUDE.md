@@ -441,6 +441,32 @@ make a meaningful change, update this before ending your turn.
   ingestion.md`, `docs/business-logic.md`, `docs/security.md`,
   `docs/features.md`, `docs/roadmap.md`, `docs/glossary.md`,
   `docs/design/preview/knowledge.html`/`README.md` all updated.
+- **`docs/ai-tech-radar.md` created — a RAG-architecture maturity gap
+  analysis, not yet built.** User asked what a "high-class,
+  international-company-level" RAG product needs beyond what ADR
+  0013 shipped; identified 8 real gaps (table/OCR-aware parsing,
+  heading-aware cleaning/structuring, adaptive per-source chunking,
+  parent-child/contextual retrieval, hybrid vector+full-text search,
+  reranking, query rewriting, an eval harness) against the current
+  pipeline. **Explicit user decision: document only, don't build yet**
+  — phased into `docs/roadmap.md`'s Next (retrieval-quality upgrade:
+  hybrid search + reranking + query rewriting — prioritized first since
+  it improves every already-ingested chunk, no re-ingestion needed) and
+  Later (ingestion-quality upgrade: adaptive chunking + parent-child +
+  table/OCR parsing; eval harness — user's own call to adopt an
+  open-source framework later rather than hand-roll one now). The radar
+  itself is a new, separate living doc (distinct from whatever general-
+  product tech radar exists outside this repo) tracking AI/RAG tech
+  specifically via adopt/trial/assess/hold rings — registered in this
+  file's "Where things live" list. Reranker vendor is the one concrete
+  open decision recorded there: Voyage `rerank-2` (same vendor/key as
+  `lib/ai/embeddings.ts`, lowest integration cost) vs. Cohere Rerank
+  v3.5 (strongest standalone reranker in isolation, per general
+  knowledge — not yet re-verified via WebSearch since no build is
+  happening yet); whichever is picked, the plan is a `RerankProvider`
+  interface matching `ModelGateway`/`EmbeddingsProvider`'s existing
+  swap-the-provider pattern so switching vendors later stays a
+  contained change.
 
 **Known gaps:**
 - 🔲 Design system tokens/infra and a real 18-component primitive layer
@@ -613,6 +639,11 @@ make a meaningful change, update this before ending your turn.
 - `docs/api.md` — every HTTP route, one place
 - `docs/architecture.md` — system design, living doc, updated as decisions land
 - `docs/roadmap.md` — Now/Next/Later feature priorities
+- `docs/ai-tech-radar.md` — living adopt/trial/assess/hold tracker for
+  AI/RAG-specific technology (models, retrieval, chunking/parsing,
+  eval/ops) — separate from `docs/roadmap.md` (that's *what's next*;
+  this is *what's true about our stack right now*) and from whatever
+  general-product tech radar exists outside this repo.
 - `docs/features.md` — every feature, one place, built vs. planned;
   update in the same PR as the code that ships or changes one
 - `docs/security.md` — tenant isolation, auth, secrets, traceability,
