@@ -81,11 +81,15 @@ request was phrased.
    structure.** Not CARE for either purpose anymore — see ADR 0014 for
    why (CARE's fork had drifted assumptions vs. shadcn's own upstream;
    Claude Console gave us actual product screenshots, the thing ADR
-   0011 could never get for CARE). This only applies to *new* screens
-   for now (`docs/roadmap.md`'s "Self-serve configurability" pillars) —
-   existing shipped screens keep their CARE look until each is
-   deliberately migrated, not touched as a side effect of building
-   something else.
+   0011 could never get for CARE). `docs/design/design-system.md` has
+   the actual current token values/component inventory — check it
+   before hand-picking a color or spacing value. The *token layer*
+   already applies everywhere (colors/radius are global CSS variables,
+   can't be phased per-screen); the *component* migration is new-
+   screens-first (`docs/roadmap.md`'s "Self-serve configurability"
+   pillars) — existing shipped screens' CARE-derived component files
+   stay as they are until each is deliberately migrated, not touched as
+   a side effect of building something else.
    - **Layout/structure**: match Claude Console's actual patterns —
      collapsible sidebar sections with a subtle gray-pill active state,
      bordered-not-shadowed cards, solid-dark primary buttons vs.

@@ -526,9 +526,68 @@ make a meaningful change, update this before ending your turn.
   feature" step 2 and `docs/architecture.md` §7 both updated to the new
   system (the latter also fixed a long-stale "tech stack still open"
   line that had never been updated through ADRs 0008 or 0010/0011).
-  Docs + a verified-but-not-yet-integrated tooling script only — no
-  screen rebuilt yet, per the new-screens-first rollout; that happens
-  when the first "self-serve configurability" pillar is actually built.
+  This pass was docs + a verified-but-not-yet-integrated tooling script
+  only — the actual token rewrite followed in the next session (see the
+  Done bullet immediately below).
+- **Token layer actually rewritten to shadcn's neutral palette +
+  `docs/design/design-system.md` written — ADR 0014's second half.**
+  Unlike components (phased, new-screens-first), color/radius tokens
+  are global CSS variables in `app/globals.css` — there's no way to
+  phase them per-screen, confirmed and flagged to the user before
+  touching anything: swapping the values re-themes every existing
+  screen immediately, same blanket effect ADR 0007→0008's CARE swap
+  had. Every value computed from the real, installed `tailwindcss/
+  colors` package (neutral/red/amber/violet scales), not guessed — same
+  discipline ADR 0008 used. Primary is now monochrome (near-black
+  light/near-white dark), matching both shadcn's actual default *and*
+  Claude Console's real screenshots (solid-black buttons, no colored
+  chrome). Switched from CARE's HSL-triplet-in-a-`hsl(var(--x))`-
+  wrapper convention to shadcn's own real convention (raw `oklch(...)`
+  values assigned directly) — required to use real oklch values at
+  all, and picked up dark-mode alpha-channel borders (`oklch(1 0 0 /
+  10%)`) as a genuine capability upgrade the old HSL-triplet format
+  couldn't express. Figtree (`next/font/google`, CARE's typeface)
+  removed from `app/layout.tsx` entirely — shadcn's real default has no
+  custom font, just the platform sans-serif stack; explicit user
+  decision not to chase Anthropic's brand serif either.
+
+  Caught two real bugs by actually building and checking this, not
+  trusting types: (1) a CSS comment (`soft-*/strong-*/disabled...`)
+  contained a literal `*/` mid-sentence, closing the comment early —
+  Lightning CSS's minifier choked on the orphaned text as real CSS
+  (`Unexpected token Delim('*')`), caught by a full clean rebuild
+  (`rm -rf .next && npm run build`), invisible on a cached build. (2)
+  `components/ui/sidebar.tsx` (a CARE-pulled file) had a raw
+  `hsl(var(--sidebar-border))` inside an arbitrary-value Tailwind
+  class — silently wrong the moment the underlying variable became a
+  full oklch string instead of an HSL triplet (`hsl(oklch(...))` is
+  invalid), invisible to `tsc`/the build, only found by grepping every
+  real source file for `hsl(var(--` after the rewrite. Fixed to
+  `var(--sidebar-border)` directly — the same class of pulled-file bug
+  ADR 0010 was created to prevent, caught this time by being thorough
+  rather than by luck.
+
+  Verified for real, not just computed on paper: a real headless-
+  browser check (`getComputedStyle` on `/login`) confirmed `--
+  background`/`--foreground`/`--primary` resolve to the expected white/
+  black/black, the submit button's actual rendered background is
+  `oklch(0 0 0)`, zero console errors on reload. Contrast specifically:
+  rendered each token to an actual `<canvas>` pixel (not hand-computed
+  oklch math) and calculated real WCAG ratios — `muted-foreground`
+  4.74:1, `soft-foreground` 7.81:1, both passing AA text contrast;
+  `border`/`disabled-foreground` intentionally ~1.3–1.5:1, correct for
+  non-text elements, matching shadcn's own real border value exactly.
+  Full guardrail suite, `tsc`, all 82 unit tests, all 34 `tests/e2e/`
+  specs unchanged and passing, all 9 `tests/visual/` baselines
+  regenerated (every one changed, as expected — a real, deliberate
+  diff) and confirmed stable across two clean re-runs.
+  `docs/design/design-system.md` (new) consolidates every token value,
+  its provenance, the component inventory, and what's still stale
+  (`docs/design/preview/*.html`'s hardcoded colors — flagged as a known
+  gap in `docs/design/README.md`, not silently ignored, since these are
+  static reference mockups and nothing breaks, but they visibly drifted
+  from what the app now renders). `docs/conventions.md` and this file
+  updated to point at it.
 
 **Known gaps:**
 - 🔲 Design system tokens/infra and a real 18-component primitive layer
@@ -730,6 +789,12 @@ make a meaningful change, update this before ending your turn.
   screen is checked against (component reuse, tokens, depth/polish,
   plain language, the Linear/Notion/Stripe register mapping). Read this
   before `docs/design/preview/`.
+- `docs/design/design-system.md` — the consolidated real reference:
+  every current token value + its provenance, the component inventory
+  and which source each primitive is actually on (shadcn-official vs.
+  still-CARE-derived). Check this before hand-picking a color/spacing
+  value or assuming a component's source. If it and `app/globals.css`
+  ever disagree, the CSS is correct and this file is stale.
 - `docs/design/preview/` — static HTML mockups, the visual ground truth
   for a page before it's built in code. **Before writing any new page or
   UI pattern, check this folder first.** If a preview exists, match it

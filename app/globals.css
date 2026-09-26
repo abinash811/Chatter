@@ -1,64 +1,62 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-background: hsl(var(--background));
-  --color-soft-background: hsl(var(--soft-background));
-  --color-muted-background: hsl(var(--muted-background));
-  --color-strong-background: hsl(var(--strong-background));
-  --color-muted: hsl(var(--muted));
-  --color-foreground: hsl(var(--foreground));
-  --color-muted-foreground: hsl(var(--muted-foreground));
-  --color-soft-foreground: hsl(var(--soft-foreground));
-  --color-disabled-foreground: hsl(var(--disabled-foreground));
-  --color-placeholder-foreground: hsl(var(--placeholder-foreground));
-  --color-inverse-foreground: hsl(var(--inverse-foreground));
-  --color-card: hsl(var(--card));
-  --color-card-foreground: hsl(var(--card-foreground));
-  --color-popover: hsl(var(--popover));
-  --color-popover-foreground: hsl(var(--popover-foreground));
-  --color-accent: hsl(var(--accent));
-  --color-accent-foreground: hsl(var(--accent-foreground));
-  --color-secondary: hsl(var(--secondary));
-  --color-secondary-foreground: hsl(var(--secondary-foreground));
-  --color-destructive: hsl(var(--destructive));
-  --color-destructive-foreground: hsl(var(--destructive-foreground));
-  --color-warning: hsl(var(--warning));
-  --color-warning-foreground: hsl(var(--warning-foreground));
-  --color-alert: hsl(var(--alert));
-  --color-alert-foreground: hsl(var(--alert-foreground));
-  --color-border: hsl(var(--border));
-  --color-soft-border: hsl(var(--soft-border));
-  --color-strong-border: hsl(var(--strong-border));
-  --color-stronger-border: hsl(var(--stronger-border));
-  --color-inverse-border: hsl(var(--inverse-border));
-  --color-input: hsl(var(--input));
-  --color-ring: hsl(var(--ring));
-  --color-sidebar: hsl(var(--sidebar));
-  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
-  --color-sidebar-primary: hsl(var(--sidebar-primary));
-  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
-  --color-sidebar-accent: hsl(var(--sidebar-accent));
-  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
-  --color-sidebar-border: hsl(var(--sidebar-border));
-  --color-sidebar-ring: hsl(var(--sidebar-ring));
-  --color-panel: hsl(var(--panel));
-  --color-panel-foreground: hsl(var(--panel-foreground));
-  --color-primary-foreground: hsl(var(--accent-foreground));
+  --color-background: var(--background);
+  --color-soft-background: var(--soft-background);
+  --color-muted-background: var(--muted-background);
+  --color-strong-background: var(--strong-background);
+  --color-muted: var(--muted);
+  --color-foreground: var(--foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-soft-foreground: var(--soft-foreground);
+  --color-disabled-foreground: var(--disabled-foreground);
+  --color-placeholder-foreground: var(--placeholder-foreground);
+  --color-inverse-foreground: var(--inverse-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-alert: var(--alert);
+  --color-alert-foreground: var(--alert-foreground);
+  --color-border: var(--border);
+  --color-soft-border: var(--soft-border);
+  --color-strong-border: var(--strong-border);
+  --color-stronger-border: var(--stronger-border);
+  --color-inverse-border: var(--inverse-border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-panel: var(--panel);
+  --color-panel-foreground: var(--panel-foreground);
+  --color-primary-foreground: var(--primary-foreground);
 
-  --color-primary-50: #ecfdf5;
-  --color-primary-100: #d1fae5;
-  --color-primary-200: #a7f3d0;
-  --color-primary-300: #6ee7b7;
-  --color-primary-400: #34d399;
-  --color-primary-500: #10b981;
-  --color-primary-600: #059669;
-  --color-primary-700: #047857;
-  --color-primary-800: #065f46;
-  --color-primary-900: #064e3b;
-  --color-primary-950: #022c22;
-  --color-primary: hsl(var(--accent));
-
-  --font-sans: var(--font-figtree), sans-serif;
+  --color-primary-50: oklch(98.5% 0 none);
+  --color-primary-100: oklch(97% 0 none);
+  --color-primary-200: oklch(92.2% 0 none);
+  --color-primary-300: oklch(87% 0 none);
+  --color-primary-400: oklch(70.8% 0 none);
+  --color-primary-500: oklch(55.6% 0 none);
+  --color-primary-600: oklch(43.9% 0 none);
+  --color-primary-700: oklch(37.1% 0 none);
+  --color-primary-800: oklch(26.9% 0 none);
+  --color-primary-900: oklch(20.5% 0 none);
+  --color-primary-950: oklch(14.5% 0 none);
+  --color-primary: var(--primary);
 
   --radius: var(--radius);
   --radius-sm: calc(var(--radius) - 4px);
@@ -92,110 +90,124 @@
 }
 
 /*
- * Design tokens (docs/architecture.md §7). One definition, referenced
- * everywhere — never hardcode a color/radius in a component.
+ * Design tokens (docs/architecture.md §7, docs/design/design-system.md).
+ * One definition, referenced everywhere — never hardcode a color/radius
+ * in a component.
  *
- * ADR 0008: an exact port of ohcnetwork/care_fe + ohcnetwork/careui's
- * token values — not our own palette. Every value below is a direct
- * HSL conversion of their real Tailwind color (emerald/neutral/red/
- * amber/violet/indigo), computed from tailwindcss/colors, not recalled
- * or approximated. Supersedes ADR 0007's violet accent.
+ * ADR 0014: shadcn/ui's own default "neutral" theme (its real, current
+ * :root/.dark values, verified via raw.githubusercontent.com — see the
+ * ADR — not CARE's emerald/indigo palette). Primary is monochrome (near-
+ * black in light mode, near-white in dark), matching both shadcn's
+ * actual default AND Claude Console's real screenshots (a solid-black
+ * "Build an agent"/"Create skill" button, no colored UI chrome anywhere
+ * — color reserved for sparing illustration accents only). Every neutral/
+ * red/amber/violet value computed from tailwindcss/colors, not guessed —
+ * same discipline ADR 0008 used for CARE's palette. warning/alert/panel/
+ * soft/strong/disabled/placeholder/inverse tiers are Chatter's own
+ * extended vocabulary (shadcn's leaner default set doesn't define them)
+ * — kept from before, values re-derived from the same neutral/amber/
+ * violet scales instead of CARE's specific numbers.
  */
 :root {
-  --background: 0 0% 100%; /* white */
-  --soft-background: 0 0% 98%; /* neutral-50 */
-  --muted-background: 0 0% 96%; /* neutral-100 */
-  --strong-background: 0 0% 90%; /* neutral-200 */
-  --muted: 0 0% 96%; /* neutral-100 */
-  --foreground: 0 0% 4%; /* neutral-950 */
-  --muted-foreground: 0 0% 25%; /* neutral-700 */
-  --soft-foreground: 0 0% 32%; /* neutral-600 */
-  --disabled-foreground: 0 0% 83%; /* neutral-300 */
-  --placeholder-foreground: 0 0% 45%; /* neutral-500 */
-  --inverse-foreground: 0 0% 100%; /* white */
-  --card: 0 0% 100%;
-  --card-foreground: 0 0% 4%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 4%;
-  --accent: 163 88% 20%; /* emerald-800 — CARE's primary */
-  --accent-foreground: 152 81% 96%; /* emerald-50 */
-  --secondary: 0 0% 96%; /* neutral-100 */
-  --secondary-foreground: 0 0% 9%; /* neutral-900 */
-  --destructive: 0 72% 51%; /* red-600 */
-  --destructive-foreground: 0 86% 97%; /* red-50 */
-  --warning: 38 92% 50%; /* amber-500 — CARE's warning extension */
-  --warning-foreground: 0 0% 100%;
-  --alert: 258 90% 66%; /* violet-500 — CARE's alert extension */
-  --alert-foreground: 0 0% 100%;
-  --soft-border: 0 0% 96%; /* neutral-100 */
-  --border: 0 0% 90%; /* neutral-200 */
-  --strong-border: 0 0% 83%; /* neutral-300 */
-  --stronger-border: 0 0% 64%; /* neutral-400 */
-  --inverse-border: 0 0% 100%;
-  --input: 0 0% 83%; /* neutral-300 */
-  --ring: 239 84% 67%; /* indigo-500 */
-  --sidebar: 0 0% 96%; /* neutral-100 */
-  --sidebar-foreground: 0 0% 4%;
-  --sidebar-primary: 163 88% 20%; /* emerald-800 */
-  --sidebar-primary-foreground: 152 81% 96%;
-  --sidebar-accent: 0 0% 90%; /* neutral-200 */
-  --sidebar-accent-foreground: 0 0% 4%;
-  --sidebar-border: 0 0% 90%;
-  --sidebar-ring: 234 89% 74%; /* indigo-400 */
-  --radius: 0.625rem; /* CARE's exact radius, not our old 0.5rem */
+  --background: oklch(1 0 0); /* pure white */
+  --soft-background: oklch(98.5% 0 none); /* neutral-50 */
+  --muted-background: oklch(97% 0 none); /* neutral-100 */
+  --strong-background: oklch(92.2% 0 none); /* neutral-200 */
+  --muted: oklch(97% 0 none); /* neutral-100 */
+  --foreground: oklch(0% 0 0); /* pure black */
+  --muted-foreground: oklch(55.6% 0 none); /* neutral-500 */
+  --soft-foreground: oklch(43.9% 0 none); /* neutral-600 */
+  --disabled-foreground: oklch(87% 0 none); /* neutral-300 */
+  --placeholder-foreground: oklch(55.6% 0 none); /* neutral-500 */
+  --inverse-foreground: oklch(1 0 0); /* white */
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0% 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0% 0 0);
+  --primary: oklch(0% 0 0); /* monochrome — shadcn default + Claude Console's solid-black buttons */
+  --primary-foreground: oklch(98.5% 0 none);
+  --accent: oklch(97% 0 none); /* neutral-100 */
+  --accent-foreground: oklch(20.5% 0 none); /* neutral-900 */
+  --secondary: oklch(97% 0 none); /* neutral-100 */
+  --secondary-foreground: oklch(20.5% 0 none); /* neutral-900 */
+  --destructive: oklch(57.7% 0.245 27.325); /* red-600 */
+  --destructive-foreground: oklch(97.1% 0.013 17.38); /* red-50 */
+  --warning: oklch(76.9% 0.188 70.08); /* amber-500 */
+  --warning-foreground: oklch(0% 0 0);
+  --alert: oklch(60.6% 0.25 292.717); /* violet-500 */
+  --alert-foreground: oklch(1 0 0);
+  --soft-border: oklch(97% 0 none); /* neutral-100 */
+  --border: oklch(92.2% 0 none); /* neutral-200 */
+  --strong-border: oklch(87% 0 none); /* neutral-300 */
+  --stronger-border: oklch(70.8% 0 none); /* neutral-400 */
+  --inverse-border: oklch(1 0 0);
+  --input: oklch(87% 0 none); /* neutral-300 */
+  --ring: oklch(70.8% 0 none); /* neutral-400 — shadcn's real default ring */
+  --sidebar: oklch(98.5% 0 none); /* neutral-50 — subtly distinct from pure-white background */
+  --sidebar-foreground: oklch(0% 0 0);
+  --sidebar-primary: oklch(20.5% 0 none); /* neutral-900 — monochrome active-item marker */
+  --sidebar-primary-foreground: oklch(98.5% 0 none);
+  --sidebar-accent: oklch(97% 0 none); /* neutral-100 — the subtle gray-pill active state seen in Claude Console */
+  --sidebar-accent-foreground: oklch(0% 0 0);
+  --sidebar-border: oklch(92.2% 0 none);
+  --sidebar-ring: oklch(70.8% 0 none);
+  --radius: 0.625rem; /* matches shadcn's own real current default exactly */
   /* Fixed-dark brand surface (the auth split-layout panel,
      docs/design/preview/auth.html) — same value as .dark's --background,
      but deliberately its own token: this panel stays dark regardless of
      light/dark mode, it's not a theme-following background. */
-  --panel: 0 0% 4%;
-  --panel-foreground: 0 0% 100%;
+  --panel: oklch(14.5% 0 none); /* neutral-950 */
+  --panel-foreground: oklch(98.5% 0 none);
 }
 
 .dark {
-  --background: 0 0% 4%; /* neutral-950 */
-  --soft-background: 0 0% 9%; /* neutral-900 */
-  --muted-background: 0 0% 15%; /* neutral-800 */
-  --strong-background: 0 0% 25%; /* neutral-700 */
-  --muted: 0 0% 15%;
-  --foreground: 0 0% 98%; /* neutral-50 */
-  --muted-foreground: 0 0% 90%; /* neutral-200 */
-  --soft-foreground: 0 0% 83%; /* neutral-300 */
-  --disabled-foreground: 0 0% 25%; /* neutral-700 */
-  --placeholder-foreground: 0 0% 32%; /* neutral-600 */
-  --inverse-foreground: 0 0% 0%; /* black */
-  --card: 0 0% 9%;
-  --card-foreground: 0 0% 100%;
-  --popover: 0 0% 4%;
-  --popover-foreground: 0 0% 98%;
-  --accent: 158 64% 52%; /* emerald-400 */
-  --accent-foreground: 166 91% 9%; /* emerald-950 */
-  --secondary: 0 0% 15%; /* neutral-800 */
-  --secondary-foreground: 0 0% 98%;
-  --destructive: 0 91% 71%; /* red-400 */
-  --destructive-foreground: 0 86% 97%;
-  --warning: 38 92% 50%;
-  --warning-foreground: 0 0% 100%;
-  --alert: 258 90% 66%;
-  --alert-foreground: 0 0% 100%;
-  /* CARE's dark borders/input are white-alpha over black (e.g.
-     white/9%); approximated here as solid neutral steps since our HSL
-     var system doesn't carry alpha compositing — visually equivalent
-     on a near-black background. */
-  --soft-border: 0 0% 9%; /* neutral-900 */
-  --border: 0 0% 15%; /* neutral-800 */
-  --strong-border: 0 0% 25%; /* neutral-700 */
-  --stronger-border: 0 0% 32%; /* neutral-600 */
-  --inverse-border: 0 0% 100%;
-  --input: 0 0% 25%; /* neutral-700 */
-  --ring: 239 84% 67%;
-  --sidebar: 0 0% 9%;
-  --sidebar-foreground: 0 0% 98%;
-  --sidebar-primary: 158 64% 52%;
-  --sidebar-primary-foreground: 166 91% 9%;
-  --sidebar-accent: 0 0% 15%;
-  --sidebar-accent-foreground: 0 0% 98%;
-  --sidebar-border: 0 0% 15%;
-  --sidebar-ring: 234 89% 74%;
+  --background: oklch(14.5% 0 none); /* neutral-950 */
+  --soft-background: oklch(20.5% 0 none); /* neutral-900 */
+  --muted-background: oklch(26.9% 0 none); /* neutral-800 */
+  --strong-background: oklch(37.1% 0 none); /* neutral-700 */
+  --muted: oklch(26.9% 0 none);
+  --foreground: oklch(98.5% 0 none); /* neutral-50 */
+  --muted-foreground: oklch(70.8% 0 none); /* neutral-400 */
+  --soft-foreground: oklch(87% 0 none); /* neutral-300 */
+  --disabled-foreground: oklch(37.1% 0 none); /* neutral-700 */
+  --placeholder-foreground: oklch(55.6% 0 none); /* neutral-500 */
+  --inverse-foreground: oklch(0% 0 0); /* black */
+  --card: oklch(20.5% 0 none);
+  --card-foreground: oklch(98.5% 0 none);
+  --popover: oklch(14.5% 0 none);
+  --popover-foreground: oklch(98.5% 0 none);
+  --primary: oklch(92.2% 0 none); /* monochrome — shadcn's real dark-mode primary */
+  --primary-foreground: oklch(20.5% 0 none);
+  --accent: oklch(37.1% 0 none); /* neutral-700 */
+  --accent-foreground: oklch(98.5% 0 none);
+  --secondary: oklch(26.9% 0 none); /* neutral-800 */
+  --secondary-foreground: oklch(98.5% 0 none);
+  --destructive: oklch(70.4% 0.191 22.216); /* red-400 */
+  --destructive-foreground: oklch(97.1% 0.013 17.38);
+  --warning: oklch(76.9% 0.188 70.08);
+  --warning-foreground: oklch(0% 0 0);
+  --alert: oklch(60.6% 0.25 292.717);
+  --alert-foreground: oklch(1 0 0);
+  /* oklch's alpha slash lets a border/input read as a translucent white
+     overlay on the near-black background, matching shadcn's own real
+     dark-mode values exactly — the old HSL-triplet convention (ADR 0008)
+     couldn't carry alpha, so this is a genuine capability upgrade, not
+     just a repaint. */
+  --soft-border: oklch(1 0 0 / 5%);
+  --border: oklch(1 0 0 / 10%);
+  --strong-border: oklch(1 0 0 / 15%);
+  --stronger-border: oklch(1 0 0 / 25%);
+  --inverse-border: oklch(1 0 0);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(55.6% 0 none); /* neutral-500 — shadcn's real dark-mode ring */
+  --sidebar: oklch(20.5% 0 none);
+  --sidebar-foreground: oklch(98.5% 0 none);
+  --sidebar-primary: oklch(92.2% 0 none);
+  --sidebar-primary-foreground: oklch(20.5% 0 none);
+  --sidebar-accent: oklch(26.9% 0 none);
+  --sidebar-accent-foreground: oklch(98.5% 0 none);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(55.6% 0 none);
 }
 
 /* Must be @layer base, not a bare unlayered rule: Tailwind v4 puts every
@@ -212,14 +224,13 @@
    by checking a computed value for real. */
 @layer base {
   * {
-    border-color: hsl(var(--border));
+    border-color: var(--border);
   }
 }
 
 body {
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
-  font-family: var(--font-figtree), sans-serif;
+  background-color: var(--background);
+  color: var(--foreground);
 }
 
 /* Auth hero panel motion (components/auth/AuthShell.tsx). Subtle —

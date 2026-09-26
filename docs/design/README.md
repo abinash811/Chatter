@@ -7,13 +7,22 @@ centered form with no design pass at all.
 
 **Rule** (see CLAUDE.md): before building any new page or UI pattern,
 check `preview/` first. If a preview exists, match it. If none exists,
-follow the token/component rules already in `docs/architecture.md` §7 and
-`app/globals.css`, then add a preview here after shipping.
+follow the token/component rules in `docs/design/design-system.md`
+(the consolidated real values) and `docs/architecture.md` §7, then add
+a preview here after shipping.
 
 Unlike `app/globals.css` (the real, referenced tokens), these preview
 files hardcode color/type values — they're throwaway visual references,
 not code, so `check-design-tokens.mjs` doesn't scan them. Keep the values
 in sync with `app/globals.css` by hand when tokens change.
+
+**Known gap (ADR 0014, 2026-09-26):** the token swap off CARE's emerald/
+indigo palette to shadcn's neutral one hasn't been back-ported into
+these HTML files yet — every preview below still shows the old CARE
+colors, stale against what the real app now renders. Not urgent (these
+are static reference mockups, not runtime code — nothing breaks), but
+real drift; update each file's hardcoded values the next time that
+screen is touched, same as the file-by-file component migration.
 
 ## Files
 
