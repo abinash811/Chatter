@@ -120,3 +120,10 @@ export async function getCurrentSession(): Promise<Session> {
   }
   return { userId: session.userId as string, orgId: session.orgId as string };
 }
+
+// User isn't RLS-protected (same reasoning as the login lookups above) —
+// used by the console shell to show the signed-in user's email.
+export async function getUserEmail(userId: string): Promise<string> {
+  const user = await rawClient.user.findUniqueOrThrow({ where: { id: userId }, select: { email: true } });
+  return user.email;
+}

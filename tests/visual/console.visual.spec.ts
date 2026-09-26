@@ -15,6 +15,16 @@ import { signUpAndCreateBot, seedConversations, uniqueEmail, PASSWORD } from "..
 // reachable through any real user journey (see tests/e2e/bots-
 // list.spec.ts's same note). Replaced with the onboarding screen and
 // the settings page, both genuinely new.
+//
+// The sidebar (components/console/AppSidebar.tsx) shows the real org
+// name and signed-in email on every console screen — both per-run-
+// unique text (uniqueEmail()'s timestamp+random suffix), same
+// instability class as a relative timestamp. sidebarMasks(page) must be
+// spread into every console-shell screenshot's mask array or the
+// baseline flakes on every re-run, not just the first.
+function sidebarMasks(page: import("@playwright/test").Page) {
+  return [page.getByTestId("sidebar-org-name"), page.getByTestId("sidebar-user-email")];
+}
 
 test("login page", async ({ page }) => {
   await page.goto("/login");
@@ -41,13 +51,13 @@ test("bots list — with a bot (Created column masked, it's a relative timestamp
   await page.goto("/bots");
 
   await expect(page).toHaveScreenshot("bots-table.png", {
-    mask: [page.locator('[data-slot="table-body"] tr td:nth-child(3)')],
+    mask: [page.locator('[data-slot="table-body"] tr td:nth-child(3)'), ...sidebarMasks(page)],
   });
 });
 
 test("bot editor page (embed snippet masked — it embeds a random public key)", async ({ page }) => {
   await signUpAndCreateBot(page, "Support bot", "visual-editor");
-  await expect(page).toHaveScreenshot("bot-editor.png", { mask: [page.locator("pre")] });
+  await expect(page).toHaveScreenshot("bot-editor.png", { mask: [page.locator("pre"), ...sidebarMasks(page)] });
 });
 
 test("bot editor — publish confirmation dialog (docs/design/principles.md #10)", async ({ page }) => {
@@ -55,7 +65,7 @@ test("bot editor — publish confirmation dialog (docs/design/principles.md #10)
   await page.click('button:has-text("Publish")');
   await expect(page.getByText("Publish this bot?")).toBeVisible();
 
-  await expect(page).toHaveScreenshot("bot-editor-publish-dialog.png");
+  await expect(page).toHaveScreenshot("bot-editor-publish-dialog.png", { mask: sidebarMasks(page) });
 });
 
 test("knowledge base — empty state and Add Q&A dialog", async ({ page }) => {
@@ -63,21 +73,21 @@ test("knowledge base — empty state and Add Q&A dialog", async ({ page }) => {
 
   await page.click('a:has-text("Knowledge")');
   await expect(page).toHaveURL(/\/knowledge$/);
-  await expect(page).toHaveScreenshot("knowledge-empty.png");
+  await expect(page).toHaveScreenshot("knowledge-empty.png", { mask: sidebarMasks(page) });
 
   // Add Q&A/Upload file/Add URL (ADR 0013) now live behind one "Add"
   // DropdownMenu instead of a single button.
   await page.click('button:has-text("Add")');
   await page.click('div[role="menu"] >> text="Add Q&A"');
   await expect(page.getByRole("heading", { name: "Add a question and answer" })).toBeVisible();
-  await expect(page).toHaveScreenshot("knowledge-add-dialog.png");
+  await expect(page).toHaveScreenshot("knowledge-add-dialog.png", { mask: sidebarMasks(page) });
 });
 
 test("settings page", async ({ page }) => {
   await signUpAndCreateBot(page, "Support bot", "visual-settings");
   await page.click('a:has-text("Settings")');
   await expect(page).toHaveURL(/\/settings$/);
-  await expect(page).toHaveScreenshot("settings.png", { mask: [page.locator("#orgName")] });
+  await expect(page).toHaveScreenshot("settings.png", { mask: [page.locator("#orgName"), ...sidebarMasks(page)] });
 });
 
 test("conversations list — with seeded conversations (Started column masked, it's a relative timestamp)", async ({
@@ -90,7 +100,7 @@ test("conversations list — with seeded conversations (Started column masked, i
   await page.click('a:has-text("Conversations")');
   await expect(page).toHaveURL(/\/conversations$/);
   await expect(page).toHaveScreenshot("conversations-list.png", {
-    mask: [page.locator('[data-slot="table-body"] tr td:last-child')],
+    mask: [page.locator('[data-slot="table-body"] tr td:last-child'), ...sidebarMasks(page)],
   });
 });
 
@@ -105,7 +115,7 @@ test("conversation detail — full transcript with an inline tool call (ADR 0015
     // tool call's own timestamp) and the header's "Started X ago" — all
     // real wall-clock-relative text, same masking rationale as bots-
     // table.png's Created column.
-    mask: [page.locator(".text-xs.text-muted-foreground"), page.getByText(/^Started /)],
+    mask: [page.locator(".text-xs.text-muted-foreground"), page.getByText(/^Started /), ...sidebarMasks(page)],
   });
 });
 
@@ -114,5 +124,5 @@ test("console sidebar — icon-collapsed", async ({ page }) => {
 
   await page.click('[data-slot="sidebar-trigger"]');
   await page.waitForTimeout(250); // the collapse transition (app/globals.css) is 200ms
-  await expect(page).toHaveScreenshot("sidebar-collapsed.png");
+  await expect(page).toHaveScreenshot("sidebar-collapsed.png", { mask: sidebarMasks(page) });
 });

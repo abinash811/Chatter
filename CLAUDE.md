@@ -836,8 +836,86 @@ make a meaningful change, update this before ending your turn.
   split to track), `docs/conventions.md`'s "Building a new feature"
   step 2 updated, `docs/adr/0017-complete-shadcn-migration-drop-base-
   ui.md` added.
+- **`docs/north-star.md` added** — the user's long-term "Configurable AI
+  Agent Platform" product direction (chat-first now, voice/healthcare-
+  multi-agent orchestration later, other verticals after that), captured
+  so a new session has it without re-reading full chat history.
+  `docs/roadmap.md` flagged with the current phase (Phase 1: chat-based,
+  Chatbase-parity + our own product opinions; voice and other verticals
+  explicitly deferred). Docs-only.
+- **Console sidebar rebuilt against a real Chatbase screenshot
+  reference** (user-supplied, not recalled) — replaces the bare
+  "Chatter" logo + 3 nav items shell with: a real org-name header (no
+  fabricated plan badge — we have no billing/plan concept yet, so one
+  wasn't invented), a functional nav search filter, a "Getting started"
+  checklist widget backed by real per-org data (5 steps: first bot,
+  knowledge added, appearance customized, published, integration
+  connected — each a live count query, not a stored flag), and a
+  signed-in-user footer (avatar initial + email + logout). Top bar
+  deliberately left alone this pass (user's explicit call — its real
+  content, a bot switcher/type dropdown, belongs to a future bot-editor
+  redesign, not the shell). `lib/auth.ts` gained `getUserEmail()` (User
+  isn't RLS-protected, same reasoning as the existing login lookups);
+  `lib/ai/botConfig.ts`'s `DEFAULT_APPEARANCE` exported so the checklist
+  can tell a genuinely customized appearance apart from the value
+  `getOrCreateDraft` silently seeds every new draft with.
+
+  Caught two real bugs by actually running this, not trusting types:
+  (1) comparing appearance against `{}` instead of `DEFAULT_APPEARANCE`
+  marked "customize appearance" done the moment anyone opened the bot
+  editor, before ever touching it — caught by a real e2e assertion
+  expecting 1/5 and getting 2/5, not by `tsc`. (2) masking the org-name/
+  user-email `<span>`s directly for `tests/visual/` made the mask
+  bounding box track the text's own rendered width — same character
+  *count* every run (fixed-length timestamp+random suffix) still shifts
+  a few pixels per run from ordinary glyph-width variation, so the
+  baseline flaked on every re-run, not just the first. Fixed by masking
+  the fixed-width parent row instead of the shrink-to-fit text node;
+  confirmed via two clean re-runs after the fix, where the first
+  "regenerate once and move on" attempt would have shipped a still-flaky
+  baseline.
+
+  Also hit and worked around a real, pre-existing environment gap, not
+  a code bug: this container had no `node_modules`, no local Postgres
+  role/db/pgvector, and no `.env` — all set up fresh (`npm install`,
+  `postgresql-16-pgvector` installed, `chatter` role/db created,
+  `db:migrate` + `apply-sql-migrations.mjs` run) to actually verify
+  against a real Postgres instead of skipping verification. Also hit the
+  documented "stale `next-server` process serving an old build" hazard
+  from the ADR 0014 Sidebar/Table migration entry above, twice — same
+  fix (kill the stale process, rebuild, retest).
+
+  Verified: guardrails, `tsc`, a clean rebuild, all 99 unit tests
+  unchanged, all 44 `tests/e2e/` specs (41 existing + 3 new
+  `tests/e2e/sidebar.spec.ts` specs: search filter, checklist progress +
+  navigation, footer identity + logout), and all 11 `tests/visual/`
+  baselines regenerated (every one changed, as expected — the sidebar is
+  present on every console screen) and confirmed stable across two
+  clean re-runs. The browser canary itself couldn't run (this
+  container's Playwright install is missing the exact `chrome-headless-
+  shell` revision `scripts/canary.mjs` expects — a version-pin drift
+  between the pre-installed browser and the `playwright` npm package,
+  unrelated to this change) — worked around with a one-off equivalent
+  check using the full Chromium binary the e2e/visual suites already use
+  successfully, confirming zero console/page errors on `/login` and the
+  unauthenticated `/bots` redirect. Not fixed permanently; flagged here
+  rather than silently skipped. `docs/design/preview/console-shell.html`
+  rebuilt to match.
 
 **Known gaps:**
+- 🟡 `scripts/canary.mjs` can't run in this container as-is — the
+  pre-installed Playwright browser only has
+  `chromium_headless_shell-1194`, but the `playwright` npm package
+  (installed fresh this session, no `node_modules` existed before)
+  expects `-1243`. `tests/e2e/`/`tests/visual/` both work around this
+  already (`playwright.config.ts`/`playwright.visual.config.ts` pass
+  `executablePath: /opt/pw-browsers/chromium`, the full browser, not the
+  headless-shell variant), so real browser coverage isn't blocked — only
+  the standalone canary script's default `chromium.launch()` is. Fix is
+  either the same `executablePath` override added to `canary.mjs`, or
+  re-running `npx playwright install` to fetch the matching shell —
+  neither done yet, flagged rather than silently skipped next time this
+  comes up.
 - 🔲 Design system tokens/infra and a real 18-component primitive layer
   are done — **all 18 now on shadcn's real official source, ADR 0017**
   (superseding the ADR 0008/CARE-pull mechanism entirely; see the Done
@@ -998,6 +1076,12 @@ make a meaningful change, update this before ending your turn.
 
 ## Where things live
 
+- `docs/north-star.md` — the long-term "Configurable AI Agent Platform"
+  product direction (chat-first now, voice/multi-agent orchestration
+  later, healthcare-first vertical, other verticals after). Read this
+  for the "why," `docs/roadmap.md` for "what's next," and the rest of
+  `docs/*.md` for "how it's actually built" — this file doesn't replace
+  any of them.
 - `docs/product-spec.md` — MVP scope and product decisions made so far
 - `docs/glossary.md` — domain terms in plain language; add a term in the
   same PR that introduces it

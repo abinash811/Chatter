@@ -19,7 +19,10 @@ export interface BotAppearance {
   accentColor: string;
 }
 
-const DEFAULT_APPEARANCE: BotAppearance = {
+// Exported so callers (e.g. the sidebar's "Getting started" checklist)
+// can tell a genuinely customized appearance apart from the one every
+// draft is silently seeded with by getOrCreateDraft below.
+export const DEFAULT_APPEARANCE: BotAppearance = {
   greeting: "Hi! How can I help you today?",
   accentColor: "#065f46", // allow-raw-color — business-customizable default, not console UI (matches ADR 0008's emerald, not left over from ADR 0007's violet)
 };
