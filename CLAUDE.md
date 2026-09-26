@@ -467,6 +467,30 @@ make a meaningful change, update this before ending your turn.
   interface matching `ModelGateway`/`EmbeddingsProvider`'s existing
   swap-the-provider pattern so switching vendors later stays a
   contained change.
+- **"Self-serve configurability" roadmap pillar planned — not built.**
+  User's explicit product bar: "a dumb person should be able to land on
+  this, configure, and use it" — build Zipchat-caliber self-serve
+  ecommerce first, then scale to other verticals (healthcare named
+  explicitly). Investigated real current status (not assumed) before
+  planning: confirmed no `/conversations` console route exists despite
+  `Conversation`/`Message`/`ToolCallLog` all being written on every chat
+  turn — corrected `docs/roadmap.md`'s "Now" bullet, which read like
+  this was already built. Six pillars added to `docs/roadmap.md`'s new
+  "Self-serve configurability" section, each with real status: tool
+  enable/disable already built (bot editor Tools tab, nothing to do);
+  appearance/theming editor a known gap, promoted from vague to explicit
+  scope; conversation inbox + filters the single biggest concrete gap
+  (data exists, zero UI); prompt/persona templates, nudges (a wholly new
+  concept, not even in the schema — added to `docs/glossary.md`), and an
+  LLM model picker + pricing display are new scope needing a decision
+  before they're buildable. 3 new entries added to `docs/open-
+  questions.md` (#6 prompt-template scope, #7 nudges scope/mechanism,
+  #8 model-picker pricing display) — none silently assumed. Also
+  recorded the explicit healthcare-second-vertical sequencing in
+  `docs/roadmap.md`'s Later section, blocked on open question #3
+  (regulated-vertical compliance posture) same as before. Docs-only —
+  no code written this pass, matching the user's explicit "plan the
+  roadmap" framing, not a build request.
 
 **Known gaps:**
 - 🔲 Design system tokens/infra and a real 18-component primitive layer

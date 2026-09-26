@@ -24,8 +24,65 @@ The generic core plus one concrete vertical template — see
 - Two action tools: `search_knowledge_base`, `check_order_status`
   (both read-only — see Next)
 - Email + password auth (ADR 0006), tenant isolation via RLS (ADR 0003)
-- Conversation history + human handoff (dashboard inbox only for v1,
-  per `docs/open-questions.md` #2)
+- Conversation/Message/ToolCallLog data captured on every chat turn —
+  **no dashboard UI to view them yet** (corrected from this file's
+  earlier "dashboard inbox" phrasing, which described the MVP target,
+  not built status). See "Self-serve configurability" below — this is
+  now the single biggest concrete gap in that list.
+
+## Self-serve configurability (Next — 2026-09-26 user directive)
+
+The bar: "a dumb person should be able to land on this, configure, and
+use it" — maximum self-serve control at the console, all real
+complexity (RAG, gateway, tools) hidden behind it. Six pillars, each
+marked with real status (not aspirational):
+
+1. **Prompt/persona templates** — pick a starting system prompt instead
+   of writing one from scratch. **Not built.** Distinct from ADR 0001's
+   *vertical* template (ecommerce/healthcare defaults + tool subset +
+   compliance notes) — this is a use-case template *within* a vertical
+   (support vs. sales vs. lead-gen tone/goals). Needs a decision: is
+   this v1's single ecommerce vertical getting 2-3 use-case templates,
+   or a cross-vertical template library? See `docs/open-questions.md`.
+2. **Tool enable/disable** — **already built.** Bot editor's Tools tab,
+   per-tool checkboxes, `BotConfigVersion`. Nothing to do here beyond
+   adding new tools as they ship.
+3. **Bot UI / appearance editor** — **known gap**, already tracked
+   (widget theming fields — color/avatar/greeting/position — exist in
+   the data model per `docs/product-spec.md`, but no console UI edits
+   them yet). Promoted from a vague "Later" item to explicit v1-
+   completion scope.
+4. **RAG setup, user-facing** — ingestion (Q&A/file/URL) is built (ADR
+   0013); retrieval *tuning* is not exposed at all — `search_knowledge_
+   base`'s top-5 result cap and similarity behavior are hardcoded, not
+   a business-owner-facing setting. Scope needs deciding: expose tuning
+   knobs (risky — a "dumb person" bar argues against raw knobs), or
+   keep it invisible and only improve it via `docs/ai-tech-radar.md`'s
+   retrieval-quality upgrade (recommended — matches the simplicity bar
+   better than a settings knob most users would misuse).
+5. **Conversation inbox + filters** — **not built**, biggest concrete
+   gap (see the corrected "Now" bullet above). The data (`Conversation`/
+   `Message`/`ToolCallLog`) already exists; this is a pure console UI +
+   filtering (by status/date/bot/handoff-triggered) build.
+6. **Nudges** — **not built at all**, not even in the schema. New
+   concept beyond `docs/product-spec.md`'s original scope (the existing
+   "Later" list only had a vague "proactive triggers (exit intent,
+   time-on-page)" line). Needs real scoping before an ADR: trigger
+   types, whether ecommerce-specific (cart abandonment) or generic,
+   and where the config UI lives. See `docs/open-questions.md`.
+7. **LLM model picker + pricing visibility** — BYOA (ADR 0012) exists,
+   but there's no model *picker* (Claude model tier) or any pricing
+   display at all today. Needs a decision: pricing shown for the
+   managed-key path only (BYOA users pay Anthropic directly, so "our"
+   pricing may not apply to them the same way), and what "pricing"
+   means here — real per-token cost, a markup, or a simple tier label.
+   See `docs/open-questions.md`.
+
+Sequencing once each open question above is answered: appearance editor
+and tool enable/disable's "nothing to do" make #2/#3 the fastest wins;
+conversation inbox (#5) is the highest-value build (data already
+exists); prompt templates (#1), nudges (#6), and model/pricing (#7)
+each need a scoping decision before they're buildable, not just time.
 
 ## Next
 
@@ -86,6 +143,15 @@ scope for v1" for the full list. Notable additions from research:
   sub-agents) — our own research already concluded a single agent +
   tool registry should be tried first (see competitive-landscape.md's
   Claude Agent SDK section)
-- Proactive triggers (exit intent, time-on-page)
 - Visual flow builder (Voiceflow/Botpress-style) — not yet researched,
   see competitive-landscape.md's TODO
+- **Second vertical template: healthcare** — explicit user sequencing
+  (2026-09-26): prove the generic core solid on ecommerce (this
+  roadmap's "Self-serve configurability" pillars) before adding a
+  second template. `docs/product-spec.md`'s phasing already calls this
+  out (generic core always, one concrete template first); this just
+  records the healthcare-next intent plainly. Guardrail #3 applies in
+  full once started — explicit diagnosis/PHI-advice refusal baked into
+  the template's default system prompt, not bolted on after. Blocked on
+  `docs/open-questions.md` #3 (compliance posture for regulated
+  verticals) being answered first.

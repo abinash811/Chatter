@@ -31,6 +31,30 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
    issue — rewriting 18 already-working, already-verified components
    speculatively isn't worth the churn; apply the new policy to new
    primitives and screen rebuilds instead.
+6. **Prompt/persona template scope** (`docs/roadmap.md`'s "Self-serve
+   configurability" #1). Is this 2-3 use-case templates within v1's
+   single ecommerce vertical (support/sales/lead-gen tone+goals), or a
+   cross-vertical library? Affects whether it's small scope now or
+   waits until a second vertical exists to make "cross-vertical"
+   meaningful. Recommend: 2-3 ecommerce use-case templates now — a
+   library with only one vertical to draw from isn't really a library
+   yet.
+7. **Nudges — scope and mechanism** (`docs/roadmap.md`'s "Self-serve
+   configurability" #6). What triggers (exit-intent, time-on-page,
+   scroll-depth, cart-abandonment)? Generic across verticals or
+   ecommerce-specific to start? Where does the business owner configure
+   them — a new console section, or folded into the appearance editor?
+   No recommendation yet — needs real scoping (and likely a small
+   competitor check: how Intercom/Drift/Tidio actually expose this)
+   before an ADR.
+8. **LLM model picker + pricing display** (`docs/roadmap.md`'s "Self-
+   serve configurability" #7). Does pricing display apply to BYOA users
+   at all (they pay Anthropic directly) or only the managed-key path?
+   What does "pricing" mean here — real per-token cost passed through,
+   a markup, or a simple tier label ("fast" vs. "smart")? The last
+   option ties into the still-open billing/pricing model question below
+   — a real per-token cost display only makes sense once that's
+   answered.
 
 ## Not yet asked
 

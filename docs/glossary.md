@@ -83,6 +83,13 @@ DNS meaning of "register."
 one platform; "integration" is the general concept or the saved
 connection itself.
 
+**Nudge** — a proactive, rule-triggered message the widget shows without
+the visitor asking first (e.g. "still deciding? I can help" after 30s
+on a product page, or a cart-abandonment prompt). Distinct from a normal
+reply, which only ever responds to something the visitor typed. Not yet
+built — see `docs/roadmap.md`'s "Self-serve configurability" #6 and
+`docs/open-questions.md` #7 for the still-open scope questions.
+
 **BYOA (bring your own API key/account)** — a business plugs in their
 own Anthropic API key (`/settings`) instead of using our managed one,
 so their bots run on their own Claude account and billing. Optional,
