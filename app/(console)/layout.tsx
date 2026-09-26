@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getCurrentSession } from "@/lib/auth";
+import { withOrgContext } from "@/lib/db";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui";
 import { AppSidebar } from "@/components/console/AppSidebar";
 
@@ -11,10 +12,19 @@ import { AppSidebar } from "@/components/console/AppSidebar";
 // component reads/writes, so the expanded/collapsed choice survives a
 // reload without a client-side flash.
 export default async function ConsoleLayout({ children }: { children: React.ReactNode }) {
+  let orgId: string;
   try {
-    await getCurrentSession();
+    orgId = (await getCurrentSession()).orgId;
   } catch {
     redirect("/login");
+  }
+
+  // ADR 0012: onboardedAt is null until app/onboarding/ completes.
+  // /onboarding itself lives outside this route group, so this can
+  // never redirect-loop against itself.
+  const org = await withOrgContext(orgId, (tx) => tx.org.findUniqueOrThrow({ where: { id: orgId } }));
+  if (!org.onboardedAt) {
+    redirect("/onboarding");
   }
 
   const cookieStore = await cookies();

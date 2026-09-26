@@ -1,4 +1,5 @@
 import { withOrgContext } from "@/lib/db";
+import { encrypt } from "@/lib/crypto";
 import { registerIntegrationProvider, type IntegrationProvider } from "@/lib/integrations/provider";
 
 // First concrete adapter for the generic connect/disconnect interface.
@@ -51,12 +52,13 @@ export const shopifyProvider: IntegrationProvider = {
     });
     if (!res.ok) throw new Error(`Shopify token exchange failed: ${res.status}`);
     const { access_token } = (await res.json()) as { access_token: string };
+    const encryptedToken = encrypt(access_token);
 
     await withOrgContext(orgId, (tx) =>
       tx.integration.upsert({
         where: { botId_provider: { botId, provider: "shopify" } },
-        create: { orgId, botId, provider: "shopify", shopDomain: shop, accessToken: access_token },
-        update: { shopDomain: shop, accessToken: access_token },
+        create: { orgId, botId, provider: "shopify", shopDomain: shop, accessToken: encryptedToken },
+        update: { shopDomain: shop, accessToken: encryptedToken },
       }),
     );
 

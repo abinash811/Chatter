@@ -5,16 +5,18 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // unless a gateway is actually instantiated) — mock the SDK's default
 // export as a class whose instances expose messages.create.
 const createMock = vi.fn();
+const AnthropicMock = vi.fn().mockImplementation(function () {
+  return { messages: { create: createMock } };
+});
 vi.mock("@anthropic-ai/sdk", () => ({
   // A regular function, not an arrow — arrow functions can never be
   // called with `new`, and ClaudeGateway does `new Anthropic()`.
-  default: vi.fn().mockImplementation(function () {
-    return { messages: { create: createMock } };
-  }),
+  default: AnthropicMock,
 }));
 
 beforeEach(() => {
   createMock.mockReset();
+  AnthropicMock.mockClear();
 });
 
 describe("ClaudeGateway (the exact Anthropic SDK boundary — getting this wrong breaks every conversation)", () => {
@@ -111,5 +113,17 @@ describe("ClaudeGateway (the exact Anthropic SDK boundary — getting this wrong
     await expect(getModelGateway().generateReply({ cachedSystemPrompt: "x", messages: [] })).rejects.toThrow(
       /Unexpected content block type/,
     );
+  });
+
+  it("BYOA (ADR 0012): passes an explicit apiKey to the SDK when given", async () => {
+    const { getModelGateway } = await import("@/lib/ai/gateway");
+    getModelGateway("sk-ant-the-orgs-own-key");
+    expect(AnthropicMock).toHaveBeenCalledWith({ apiKey: "sk-ant-the-orgs-own-key" });
+  });
+
+  it("BYOA (ADR 0012): falls back to the SDK's own env-based default with no apiKey given", async () => {
+    const { getModelGateway } = await import("@/lib/ai/gateway");
+    getModelGateway();
+    expect(AnthropicMock).toHaveBeenCalledWith();
   });
 });

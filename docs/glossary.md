@@ -82,3 +82,12 @@ DNS meaning of "register."
 (Shopify today). "Connector" specifically means the code adapter for
 one platform; "integration" is the general concept or the saved
 connection itself.
+
+**BYOA (bring your own API key/account)** — a business plugs in their
+own Anthropic API key (`/settings`) instead of using our managed one,
+so their bots run on their own Claude account and billing. Optional,
+off by default, per org — see ADR 0012.
+
+**Onboarding** — the single combined screen (`/onboarding`) a brand-new
+signup completes before reaching the console: name the workspace, name
+the first bot. See ADR 0012.

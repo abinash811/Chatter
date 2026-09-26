@@ -1,25 +1,5 @@
 import { test, expect } from "@playwright/test";
-
-function uniqueEmail(prefix: string) {
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@example.com`;
-}
-
-const PASSWORD = "hunter2pass";
-
-// Each test signs up fresh (cheap, and keeps tests independent — no
-// shared fixture state to leak between them).
-async function signUpAndCreateBot(page: import("@playwright/test").Page, botName: string) {
-  await page.goto("/signup");
-  await page.fill('input[name="email"]', uniqueEmail("editor"));
-  await page.fill('input[name="password"]', PASSWORD);
-  await page.fill('input[name="confirmPassword"]', PASSWORD);
-  await page.click('button[type="submit"]');
-  await expect(page).toHaveURL(/\/bots$/);
-
-  await page.fill('input[name="name"]', botName);
-  await page.click('button:has-text("New bot")');
-  await expect(page).toHaveURL(/\/bots\/[^/]+$/);
-}
+import { signUpAndCreateBot } from "./helpers";
 
 test("save draft shows a success toast with a working close button", async ({ page }) => {
   await signUpAndCreateBot(page, "Test Bot");

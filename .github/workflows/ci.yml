@@ -41,6 +41,11 @@ jobs:
       DATABASE_URL: postgresql://chatter:chatter@localhost:5432/chatter
       ANTHROPIC_API_KEY: test-placeholder-key
       AUTH_SECRET: test-placeholder-secret-value-not-real
+      # Must actually be a 32-byte key, base64 — unlike the other
+      # placeholders above, lib/crypto.ts (ADR 0012) validates this one's
+      # decoded length, so an arbitrary string fails every encrypt/decrypt
+      # call in CI.
+      ENCRYPTION_KEY: STDwPEpkjZ+omIEMcPsyu7co8ATetQhtvGhFY3zp3N8=
       APP_BASE_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v7

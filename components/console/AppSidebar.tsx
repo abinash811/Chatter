@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MessageCircle, Bot as BotIcon, LogOut } from "lucide-react";
+import { MessageCircle, Bot as BotIcon, Settings, LogOut } from "lucide-react";
 import {
   Sidebar,
   SidebarHeader,
@@ -20,7 +20,10 @@ import { logoutAction } from "@/app/(console)/actions";
 // not the hand-rolled <nav> it replaces. Nav items live here, not in
 // layout.tsx, since usePathname()'s active-state needs a client boundary;
 // the auth check stays server-side in the layout.
-const NAV_ITEMS = [{ href: "/bots", label: "Bots", icon: BotIcon }];
+const NAV_ITEMS = [
+  { href: "/bots", label: "Bots", icon: BotIcon },
+  { href: "/settings", label: "Settings", icon: Settings },
+];
 
 export function AppSidebar() {
   const pathname = usePathname();

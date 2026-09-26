@@ -6,6 +6,60 @@ any unfamiliar term. Update this in the same PR as the code it
 describes, or it goes stale exactly like the thing it exists to
 prevent.
 
+## Onboarding (`lib/onboarding.ts`, ADR 0012)
+
+A brand-new account's org is auto-provisioned at first login
+(`lib/auth.ts`'s `jwt` callback) with a placeholder name and
+`onboardedAt: null`. `app/(console)/layout.tsx` redirects every console
+page to `/onboarding` until that's set — there's no way to reach `/bots`
+(or any other console page) with an unnamed org and zero bots.
+
+`/onboarding` is a single combined screen (workspace name + first bot's
+name), deliberately not a multi-step wizard: only one vertical template
+exists concretely (`docs/product-spec.md`'s phasing), so a template
+picker with one option would be premature UI, and inviting teammates is
+separate, larger scope with no design done yet. Submitting sets
+`org.name` + `org.onboardedAt`, creates the first bot, and redirects
+straight into that bot's editor — a brand-new account never sees an
+empty `/bots` list.
+
+**Known side effect**: since onboarding always creates a first bot and
+no bot-delete feature exists yet, `app/(console)/bots/page.tsx`'s "No
+bots yet" empty state is real code with no real user journey that
+reaches it anymore. Left in place — cheap to keep, and reachable again
+the moment bot deletion (or a skippable onboarding path) ships. See
+`tests/e2e/bots-list.spec.ts`'s note.
+
+## BYOA — bring your own Anthropic API key (`/settings`, ADR 0012)
+
+Optional, per-org, off by default. `Org.anthropicApiKeyEncrypted` is
+null unless a business sets their own key from `/settings`; `lib/ai/
+chat.ts` decrypts it (if set) and passes it to `getModelGateway(apiKey)`
+— `lib/ai/gateway.ts`'s `ClaudeGateway` uses it for the Anthropic SDK
+client instead of the SDK's own `ANTHROPIC_API_KEY` env default. One
+lookup per request, reused across every bot in that org (an API key is
+a billing-account-level credential, not a per-bot one). Nothing past
+that point — tools, RAG, the chat loop itself — knows or cares which
+key served the call.
+
+The real key is never sent back to the browser once saved: `/settings`
+shows only "a key is set" and a masked input, never the decrypted
+value. See "Secrets encryption at rest" below.
+
+## Secrets encryption at rest (`lib/crypto.ts`, ADR 0012)
+
+AES-256-GCM via Node's built-in `crypto`, keyed by `ENCRYPTION_KEY` (a
+32-byte key, base64, required env var). Applied to both
+`Org.anthropicApiKeyEncrypted` (BYOA, above) and `Integration.
+accessToken` (Shopify OAuth tokens) — the latter had stood with a
+literal "encryption mechanism TODO" comment until this closed it in the
+same pass BYOA was built, rather than leaving two different
+plaintext-secret gaps side by side. Authenticated encryption: a
+tampered or corrupted ciphertext fails to decrypt instead of silently
+returning garbage. No key-rotation tooling exists yet — rotating
+`ENCRYPTION_KEY` would require re-encrypting every stored secret by
+hand; a known gap, not a v1 blocker (see ADR 0012's Consequences).
+
 ## Draft / publish (bot configuration)
 
 A bot has at most one **draft** row at a time (`BotConfigVersion` with

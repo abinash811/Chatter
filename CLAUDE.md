@@ -192,7 +192,7 @@ make a meaningful change, update this before ending your turn.
   0008 — CARE is still the exact visual target, tokens/colors/radius/
   font unchanged; only the *mechanism* for matching new UI to it changes.
   Whether to retroactively rewrite the 18 already-pulled primitives is
-  a separate, undecided question — see `docs/open-questions.md` #6.
+  a separate, undecided question — see `docs/open-questions.md` #5.
 - **Bot editor depth/polish pass (principles.md #5/#9)** — user pushed
   back that the design system was "very basic," not Linear/Notion/
   Stripe-caliber, after comparing our actual bot editor screenshot
@@ -302,6 +302,79 @@ make a meaningful change, update this before ending your turn.
   verification note. File/URL ingestion is separate, larger,
   deliberately not-built scope — `docs/roadmap.md`/`docs/features.md`
   updated to reflect manual Q&A done, file upload still open.
+- **Onboarding wizard + optional BYOA + real secrets encryption at rest
+  (ADR 0012).** User asked for a self-serve setup flow and the ability
+  to bring your own Claude API key, with a one-time-fee framing that
+  surfaced a separate business-model question (deferred to `docs/
+  open-questions.md`'s "Not yet asked" — billing/pricing stays
+  explicitly undecided; only onboarding + BYOA were actually built).
+  `Org.onboardedAt` (null until done) gates every `(console)` page —
+  `app/(console)/layout.tsx` redirects to `/onboarding` (outside that
+  route group, no redirect loop possible) until a brand-new account
+  names its workspace and its first bot in one combined screen
+  (`app/onboarding/`, `lib/onboarding.ts`) — no template picker (only
+  one template exists) or teammate invites (separate, larger, no design
+  done) in this pass. Completing onboarding lands straight in the new
+  bot's editor, not an empty `/bots` list. Resolves `docs/open-
+  questions.md` #5 (BYOA), previously deferred.
+
+  BYOA: `Org.anthropicApiKeyEncrypted`, nullable, off by default,
+  editable from a new `/settings` page (`app/(console)/settings/`) —
+  an API key is billing-account-level, not per-bot, so it lives on
+  `Org`. `lib/ai/gateway.ts`'s `getModelGateway()` takes an optional
+  `apiKey`; `lib/ai/chat.ts` decrypts the org's key (if set) and passes
+  it through — the Anthropic SDK falls back to its own env-var default
+  otherwise. No interface-shape change, so tools/RAG/the chat loop
+  don't know or care which key served a call. `/settings` never echoes
+  the real key back once saved — only "a key is set" + a masked input
+  + a Remove action.
+
+  Encryption: while building BYOA, found `Integration.accessToken`
+  (Shopify tokens) had stood with a literal "encryption mechanism TODO"
+  comment, storing real OAuth tokens in plaintext — flagged this to the
+  user rather than silently repeating the same shortcut for the new,
+  more sensitive Anthropic key (direct billing exposure if leaked).
+  User confirmed: build real encryption now, close both gaps in the
+  same pass. `lib/crypto.ts` — AES-256-GCM via Node's built-in `crypto`,
+  no new dependency, keyed by a new required `ENCRYPTION_KEY` env var
+  (32 bytes, base64) — applied to both `Org.anthropicApiKeyEncrypted`
+  and `Integration.accessToken`. Authenticated encryption: a tampered
+  ciphertext fails to decrypt instead of silently returning garbage.
+
+  Caught a real bug by actually running it, not trusting types: the
+  exact same `"use server" can only export async functions` mistake as
+  the knowledge feature (`settingsIdleState` exported from `actions.ts`
+  500'd every render) — fixed the same way, constant moved into the
+  client component.
+
+  Verified: guardrails, `tsc`, a real Prisma migration applied against
+  the actual dev Postgres (`prisma migrate diff` also wanted to drop
+  `knowledge_chunks.embedding` — a column deliberately outside
+  `schema.prisma` since Prisma can't declare `vector` natively — that
+  part of the diff was hand-excluded from the migration file), RLS
+  verification against the real new `orgs` columns, 9 new unit specs
+  (`lib/crypto.ts` real AES round-trip + tamper/missing-key/wrong-length
+  failure modes; `lib/ai/chat.ts`/`gateway.ts`'s BYOA key-threading),
+  15 new `tests/e2e/` specs across `onboarding.spec.ts` and
+  `settings.spec.ts` (all previously-passing specs across 5 files
+  updated for the new post-signup redirect target — extracted a shared
+  `tests/e2e/helpers.ts` in the process, since the same signup+bot-
+  creation flow was duplicated in six places), a real save→reload→
+  remove BYOA round-trip confirming the DB stores ciphertext (not the
+  raw key) and the UI never re-renders it, 2 new `tests/visual/`
+  baselines (onboarding, settings — org-name field masked, it's
+  per-run-unique). `docs/design/preview/onboarding.html` and
+  `settings.html` added; `docs/business-logic.md` has the full write-up
+  (Onboarding, BYOA, and Secrets-encryption-at-rest sections);
+  `docs/security.md`, `docs/features.md`, `docs/glossary.md`, README.md
+  updated to match.
+
+  **Known side effect, not a bug**: `bots/page.tsx`'s "No bots yet"
+  empty state is now unreachable through any real user journey (a first
+  bot always exists post-onboarding, no bot-delete feature exists) —
+  left in place, cheap to keep, reachable again once deletion ships.
+  `tests/e2e/bots-list.spec.ts`'s old empty-state test was removed with
+  a comment explaining why, not silently deleted.
 
 **Known gaps:**
 - 🔲 Design system tokens/infra and a real 18-component primitive layer
@@ -439,8 +512,9 @@ make a meaningful change, update this before ending your turn.
   `ANTHROPIC_API_KEY` (everything up to that boundary is confirmed
   correct, see README's "Verified by a real run").
 - 🔲 Not yet built: password reset flow, file/URL knowledge ingestion
-  (manual Q&A is done — see the Done bullet above), onboarding flow
-  (org naming/invites/multi-org switcher), appearance/theming editor.
+  (manual Q&A is done — see the Done bullet above), teammate invites/
+  multi-org switcher (org naming is done — a real onboarding flow now
+  exists, see the Done bullet below), appearance/theming editor.
 - 🟡 `lib/ai/` and other pure/mockable logic now has real unit tests
   (`tests/unit/`); React component rendering tests do not yet, though
   `@testing-library/react`/`jsdom` are installed and `vitest.config.mts`

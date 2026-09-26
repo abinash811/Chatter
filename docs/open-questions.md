@@ -20,12 +20,7 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
 4. **Site crawling in v1 ingestion**, or manual upload/Q&A only for v1 with
    crawling added later? Crawling is high-value but adds real scope
    (crawler, dedup, refresh scheduling, respecting robots.txt, etc.).
-5. **BYOA (bring-your-own API key/account).** Let a business use their own
-   Claude/provider key instead of our managed one. Cheap to add later
-   given the model gateway (ADR 0002); recommend defaulting to our
-   managed key for v1 and adding BYOA as a per-business config option
-   once the gateway exists — not v1-blocking.
-6. **Retroactively rewrite the 18 already-pulled CARE primitives?** ADR
+5. **Retroactively rewrite the 18 already-pulled CARE primitives?** ADR
    0010 stops pulling CARE component source verbatim going forward
    (reference-only, hand-authored against our own tokens instead), but
    doesn't decide whether the 18 primitives already pulled under the old
@@ -40,7 +35,13 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
 ## Not yet asked
 
 - Billing/pricing model — explicitly deferred, not needed until there's a
-  product to charge for.
+  product to charge for. Note (2026-09-26): the user floated a one-time
+  setup fee (instead of recurring) as part of the same request that led
+  to BYOA — flagged as a real, separate business-model call with
+  sustainability implications (we still host infra indefinitely even
+  when a business brings its own LLM key) rather than silently building
+  around it. BYOA itself shipped (ADR 0012); the pricing question is
+  still open.
 
 ## Resolved
 
@@ -63,3 +64,6 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
   answer. See `lib/ai/chat.ts`.
 - ~~Console auth provider~~ — email + password via Auth.js Credentials,
   JWT sessions. See ADR 0006 (superseding ADR 0004's Google OAuth).
+- ~~BYOA (bring-your-own API key/account)~~ — built as an optional
+  per-org setting (`/settings`), not the default: a business can plug
+  in their own Anthropic key, or use our managed one. See ADR 0012.

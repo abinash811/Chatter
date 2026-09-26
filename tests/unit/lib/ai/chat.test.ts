@@ -13,6 +13,7 @@ const findUniqueConversation = vi.fn();
 const createConversation = vi.fn();
 const createMessage = vi.fn();
 const createToolCallLog = vi.fn();
+const findOrg = vi.fn();
 
 vi.mock("@/lib/db", () => ({
   withOrgContext: vi.fn((_orgId: string, fn: (tx: unknown) => unknown) =>
@@ -21,14 +22,19 @@ vi.mock("@/lib/db", () => ({
       conversation: { findUniqueOrThrow: findUniqueConversation, create: createConversation },
       message: { create: createMessage },
       toolCallLog: { create: createToolCallLog },
+      org: { findUniqueOrThrow: findOrg },
     }),
   ),
 }));
 
+// BYOA (ADR 0012) — decrypt is only exercised when an org has its own
+// key set; most tests leave anthropicApiKeyEncrypted null (see
+// findOrg's default below) so the gateway mock's own default applies.
+vi.mock("@/lib/crypto", () => ({ decrypt: vi.fn((s: string) => `decrypted:${s}`) }));
+
 const generateReply = vi.fn();
-vi.mock("@/lib/ai/gateway", () => ({
-  getModelGateway: () => ({ generateReply }),
-}));
+const getModelGateway = vi.fn(() => ({ generateReply }));
+vi.mock("@/lib/ai/gateway", () => ({ getModelGateway }));
 
 vi.mock("@/lib/ai/systemPrompt", () => ({
   buildSystemPrompt: vi.fn().mockResolvedValue("system prompt"),
@@ -45,6 +51,8 @@ beforeEach(() => {
   findFirstVersion.mockResolvedValue({ id: "version-1", tools: [] });
   createConversation.mockResolvedValue({ id: "conv-new", messages: [] });
   createMessage.mockResolvedValue({});
+  findOrg.mockResolvedValue({ id: "org-1", anthropicApiKeyEncrypted: null });
+  getModelGateway.mockReturnValue({ generateReply });
 });
 
 describe("sendMessage", () => {
@@ -146,5 +154,24 @@ describe("sendMessage", () => {
 
     expect(generateReply).toHaveBeenCalledTimes(5);
     expect(result.reply).toBe("Sorry, I wasn't able to finish that — I'll get a human to help you instead.");
+  });
+
+  it("BYOA (ADR 0012): uses the managed key (no override) when the org has no key of its own", async () => {
+    generateReply.mockResolvedValue({ content: [{ type: "text", text: "hi" }], stopReason: "end_turn" });
+    const { sendMessage } = await import("@/lib/ai/chat");
+
+    await sendMessage({ orgId: "org-1", botId: "bot-1", userMessage: "hi" });
+
+    expect(getModelGateway).toHaveBeenCalledWith(undefined);
+  });
+
+  it("BYOA (ADR 0012): decrypts and passes the org's own key when it has set one", async () => {
+    findOrg.mockResolvedValue({ id: "org-1", anthropicApiKeyEncrypted: "encrypted-blob" });
+    generateReply.mockResolvedValue({ content: [{ type: "text", text: "hi" }], stopReason: "end_turn" });
+    const { sendMessage } = await import("@/lib/ai/chat");
+
+    await sendMessage({ orgId: "org-1", botId: "bot-1", userMessage: "hi" });
+
+    expect(getModelGateway).toHaveBeenCalledWith("decrypted:encrypted-blob");
   });
 });

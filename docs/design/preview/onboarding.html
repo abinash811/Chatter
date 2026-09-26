@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: #e5e7eb; }
+.page-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; padding: 8px 16px; background: #fff; border-bottom: 1px solid #e5e5e5; color: #065f46; }
+
+.screen { display: flex; align-items: center; justify-content: center; height: 460px; background: #fff; }
+.card { width: 360px; border: 1px solid #e5e5e5; border-radius: 10px; padding: 24px; background: #fafafa; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+.card-title { font-size: 16px; font-weight: 600; color: #0a0a0c; margin-bottom: 5px; }
+.card-sub { font-size: 13px; color: #737373; margin-bottom: 16px; }
+.field-label-sm { font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 5px; display: block; }
+.field-input { width: 100%; border: 1px solid #e5e5e5; border-radius: 6px; padding: 0 12px; height: 36px; font-size: 13px; background: #fff; margin-bottom: 12px; }
+.btn-primary { width: 100%; height: 36px; background: #065f46; color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; }
+</style>
+</head><body>
+
+<div class="page-label">Onboarding — /onboarding (OnboardingForm.tsx), ADR 0012: one combined step, no template picker or invites yet</div>
+<div class="screen">
+  <div class="card">
+    <div class="card-title">Welcome to Chatter</div>
+    <div class="card-sub">Let's set up your workspace and your first bot.</div>
+    <label class="field-label-sm">Workspace name</label>
+    <input class="field-input" value="yourname@example.com's workspace" readonly/>
+    <label class="field-label-sm">Your first bot's name</label>
+    <input class="field-input" placeholder="Support bot" readonly/>
+    <button class="btn-primary">Continue</button>
+  </div>
+</div>
+
+</body></html>

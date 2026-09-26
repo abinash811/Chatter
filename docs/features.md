@@ -81,6 +81,21 @@ knowledgeBase.ts`, `app/(console)/bots/[botId]/knowledge/`. File/URL
 ingestion is separate, not-yet-built scope — see `docs/business-
 logic.md`'s "Knowledge base ingestion" section.
 
+### Onboarding
+**Who**: a brand-new signup. **What**: a single combined screen (name
+your workspace, name your first bot) instead of a silently
+auto-provisioned org and an empty bots list — lands straight in the new
+bot's editor. **How**: `lib/onboarding.ts`, `app/onboarding/`. ADR 0012.
+No template picker or teammate invites yet — see `docs/business-
+logic.md`'s "Onboarding" section.
+
+### Settings + BYOA (bring your own Claude API key)
+**Who**: the business owner. **What**: rename the workspace; optionally
+plug in their own Anthropic API key so bots run on their own account and
+billing instead of our managed key. Off by default. **How**: `app/
+(console)/settings/`, `lib/ai/gateway.ts`'s `getModelGateway(apiKey?)`,
+`lib/crypto.ts` for encryption at rest. ADR 0012.
+
 ## Planned
 
 See `docs/roadmap.md` (Now/Next/Later). Notable near-term items: write-

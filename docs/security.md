@@ -42,9 +42,19 @@ The embeddable widget only ever talks to our backend over its own API —
 it never holds a Claude API key, database credential, or any other
 secret (guardrail #5), checked mechanically by `scripts/check-no-
 client-secrets.mjs` on every commit and in CI. Real secrets
-(`ANTHROPIC_API_KEY`, `DATABASE_URL`, `AUTH_SECRET`, integration client
-secrets) live in environment variables only, never committed — `.env` is
-gitignored, `.env.example` documents the shape with empty values.
+(`ANTHROPIC_API_KEY`, `DATABASE_URL`, `AUTH_SECRET`, `ENCRYPTION_KEY`,
+integration client secrets) live in environment variables only, never
+committed — `.env` is gitignored, `.env.example` documents the shape
+with empty values.
+
+**Secrets we store, at rest**: a business's own Claude API key (BYOA,
+optional per-org, `/settings`) and Shopify OAuth tokens
+(`Integration.accessToken`) are both encrypted with AES-256-GCM
+(`lib/crypto.ts`, keyed by `ENCRYPTION_KEY`, ADR 0012) — not plaintext.
+The decrypted API key is never sent back to the browser once saved;
+`/settings` shows only whether one is set. No key-rotation tooling
+exists yet (rotating `ENCRYPTION_KEY` means re-encrypting every stored
+secret by hand) — a known gap, tracked in ADR 0012, not a v1 blocker.
 
 **If a real secret is ever pasted into a chat session or committed by
 mistake, treat it as compromised and rotate it immediately** — this
@@ -90,5 +100,5 @@ single instance's map can't see another instance's count.
 
 - A documented incident-response process (who does what if tenant
   isolation is ever found broken in production).
-- Encryption at rest for `Integration.accessToken` — the schema comment
-  already flags this as TODO.
+- Key-rotation tooling for `ENCRYPTION_KEY` (ADR 0012) — rotating it
+  today means re-encrypting every stored secret by hand.

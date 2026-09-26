@@ -1,23 +1,5 @@
 import { test, expect } from "@playwright/test";
-
-function uniqueEmail(prefix: string) {
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@example.com`;
-}
-
-const PASSWORD = "hunter2pass";
-
-async function signUpAndCreateBot(page: import("@playwright/test").Page, botName: string) {
-  await page.goto("/signup");
-  await page.fill('input[name="email"]', uniqueEmail("knowledge"));
-  await page.fill('input[name="password"]', PASSWORD);
-  await page.fill('input[name="confirmPassword"]', PASSWORD);
-  await page.click('button[type="submit"]');
-  await expect(page).toHaveURL(/\/bots$/);
-
-  await page.fill('input[name="name"]', botName);
-  await page.click('button:has-text("New bot")');
-  await expect(page).toHaveURL(/\/bots\/[^/]+$/);
-}
+import { signUpAndCreateBot } from "./helpers";
 
 // Coverage note: creating a real Q&A entry requires a working embeddings
 // call (lib/ai/embeddings.ts, Voyage AI) — VOYAGE_API_KEY is a

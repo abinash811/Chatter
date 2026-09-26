@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { withOrgContext } from "@/lib/db";
+import { decrypt } from "@/lib/crypto";
 import { getModelGateway, type ModelMessage } from "@/lib/ai/gateway";
 import { buildSystemPrompt } from "@/lib/ai/systemPrompt";
 import { getToolsForNames, runTool } from "@/lib/ai/tools/registry";
@@ -81,7 +82,11 @@ export async function sendMessage(params: SendMessageParams): Promise<SendMessag
     }),
   );
 
-  const gateway = getModelGateway();
+  // BYOA (ADR 0012): an org's own key if they've set one, else the
+  // gateway falls back to our managed ANTHROPIC_API_KEY.
+  const org = await withOrgContext(orgId, (tx) => tx.org.findUniqueOrThrow({ where: { id: orgId } }));
+  const apiKey = org.anthropicApiKeyEncrypted ? decrypt(org.anthropicApiKeyEncrypted) : undefined;
+  const gateway = getModelGateway(apiKey);
   let finalText = "";
 
   for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {

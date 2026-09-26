@@ -1,4 +1,5 @@
 import { withOrgContext } from "@/lib/db";
+import { decrypt } from "@/lib/crypto";
 import { registerTool, type Tool } from "@/lib/ai/tools/registry";
 
 // Ecommerce vertical template's first action tool. Per the interface/
@@ -41,7 +42,7 @@ export const checkOrderStatusTool: Tool = {
 
     const res = await fetch(
       `https://${integration.shopDomain}/admin/api/2026-01/orders.json?name=${encodeURIComponent(orderNumber)}`,
-      { headers: { "X-Shopify-Access-Token": integration.accessToken } },
+      { headers: { "X-Shopify-Access-Token": decrypt(integration.accessToken) } },
     );
 
     if (!res.ok) {

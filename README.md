@@ -80,10 +80,14 @@ product spec, architecture, and decisions (ADRs).
   before now, `searchKnowledgeBaseTool` had real retrieval but nothing
   ever wrote a row to search. File/URL ingestion is still open.
 
-Not yet built: file/URL ingestion, a real onboarding flow (org naming,
-invites, multi-org switcher), the appearance/theming editor (persona +
-guardrails + tools only for now). Still blocked on the remaining items
-in `docs/open-questions.md`.
+- Onboarding + optional BYOA (bring your own Claude API key): `lib/
+  onboarding.ts`, `app/onboarding/`, `app/(console)/settings/`,
+  `lib/crypto.ts` (secrets encryption at rest — also closes the old
+  plaintext-`Integration.accessToken` gap). ADR 0012.
+
+Not yet built: file/URL ingestion, teammate invites/multi-org switcher,
+the appearance/theming editor (persona + guardrails + tools only for
+now). Still blocked on the remaining items in `docs/open-questions.md`.
 
 ## Local setup
 
@@ -111,6 +115,10 @@ Verified end to end on 2026-09-23 (see "Verified by a real run" below).
 8. Set `AUTH_SECRET` (any random string — `npx auth secret` generates
    one) for console login. No external app registration needed — visit
    `/signup` to create an account directly.
+9. Set `ENCRYPTION_KEY` (a 32-byte key, base64 — generate with
+   `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`)
+   for `lib/crypto.ts`, which encrypts stored secrets (BYOA API keys,
+   Shopify tokens) at rest.
 
 ## Verified by a real run (2026-09-23)
 

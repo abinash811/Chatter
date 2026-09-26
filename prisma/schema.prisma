@@ -21,9 +21,20 @@ enum MembershipRole {
 }
 
 model Org {
-  id          String       @id @default(uuid())
-  name        String
-  createdAt   DateTime     @default(now())
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  // Null until the onboarding flow (app/onboarding/) completes — see
+  // ADR 0012. app/(console)/layout.tsx redirects here on every request
+  // until this is set, so a brand-new org can never reach the console
+  // shell without naming itself and creating its first bot.
+  onboardedAt DateTime?
+  // Optional BYOA (ADR 0012): null means "use our managed
+  // ANTHROPIC_API_KEY"; set means this org's bots call Claude with
+  // their own key instead. AES-256-GCM via lib/crypto.ts, never the
+  // raw key — same treatment as Integration.accessToken below.
+  anthropicApiKeyEncrypted String?
+
   memberships Membership[]
   bots        Bot[]
 
@@ -100,7 +111,7 @@ model Integration {
   botId        String
   provider     String // "shopify" for v1; more as platforms are added
   shopDomain   String?
-  accessToken  String // encrypted at rest — encryption mechanism TODO
+  accessToken  String // AES-256-GCM via lib/crypto.ts (ADR 0012) — never the raw token
   connectedAt  DateTime @default(now())
 
   bot Bot @relation(fields: [botId], references: [id])

@@ -15,13 +15,13 @@ test("unauthenticated /bots redirects to /login", async ({ page }) => {
   await expect(page).toHaveURL(/\/login$/);
 });
 
-test("signup creates a session and lands on /bots", async ({ page }) => {
+test("signup creates a session and lands on /onboarding (a brand-new org is never onboarded yet)", async ({ page }) => {
   await page.goto("/signup");
   await page.fill('input[name="email"]', uniqueEmail("signup"));
   await page.fill('input[name="password"]', PASSWORD);
   await page.fill('input[name="confirmPassword"]', PASSWORD);
   await page.click('button[type="submit"]');
-  await expect(page).toHaveURL(/\/bots$/);
+  await expect(page).toHaveURL(/\/onboarding$/);
 });
 
 test("login with correct credentials works end to end", async ({ page }) => {
@@ -31,14 +31,16 @@ test("login with correct credentials works end to end", async ({ page }) => {
   await page.fill('input[name="password"]', PASSWORD);
   await page.fill('input[name="confirmPassword"]', PASSWORD);
   await page.click('button[type="submit"]');
-  await expect(page).toHaveURL(/\/bots$/);
+  await expect(page).toHaveURL(/\/onboarding$/);
 
   await page.context().clearCookies();
   await page.goto("/login");
   await page.fill('input[name="email"]', email);
   await page.fill('input[name="password"]', PASSWORD);
   await page.click('button[type="submit"]');
-  await expect(page).toHaveURL(/\/bots$/);
+  // Still not onboarded — the gate applies on every request, not just
+  // right after signup.
+  await expect(page).toHaveURL(/\/onboarding$/);
 });
 
 test("wrong password shows an inline error without clearing the email field", async ({ page }) => {
@@ -48,7 +50,7 @@ test("wrong password shows an inline error without clearing the email field", as
   await page.fill('input[name="password"]', PASSWORD);
   await page.fill('input[name="confirmPassword"]', PASSWORD);
   await page.click('button[type="submit"]');
-  await expect(page).toHaveURL(/\/bots$/);
+  await expect(page).toHaveURL(/\/onboarding$/);
 
   await page.context().clearCookies();
   await page.goto("/login");
@@ -78,7 +80,7 @@ test("duplicate signup shows a clear error", async ({ page }) => {
   await page.fill('input[name="password"]', PASSWORD);
   await page.fill('input[name="confirmPassword"]', PASSWORD);
   await page.click('button[type="submit"]');
-  await expect(page).toHaveURL(/\/bots$/);
+  await expect(page).toHaveURL(/\/onboarding$/);
 
   await page.goto("/signup");
   await page.fill('input[name="email"]', email);

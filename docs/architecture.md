@@ -37,6 +37,11 @@ doc as ADRs land instead of letting decisions live only in chat history.
   falls back to "collect info + hand off to human" (guardrail #4 in
   CLAUDE.md — this is not optional).
 - Streamed responses back to the widget.
+- **BYOA (bring-your-own API key)**: optional, per-org, off by default —
+  a business can plug in their own Anthropic key from `/settings`
+  instead of using our managed one. The model gateway (below) resolves
+  it once per request; nothing past that point (tools, RAG, the chat
+  loop) knows or cares which key served the call. See ADR 0012.
 
 **Design rule: interface vs. connector are separate layers, from day one.**
 What Claude sees — the tool name and JSON schema (`check_order_status`,

@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { signUpAndCreateBot, uniqueEmail, PASSWORD } from "../e2e/helpers";
 
 // Visual regression layer (playwright.config.ts's toHaveScreenshot,
 // see playwright.visual.config.ts for the known cross-environment
@@ -7,12 +8,13 @@ import { test, expect } from "@playwright/test";
 // automated setup" discussion. Separate from tests/e2e/'s functional
 // specs — this only asserts pixels didn't unexpectedly move, not
 // behavior.
-
-function uniqueEmail(prefix: string) {
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@example.com`;
-}
-
-const PASSWORD = "hunter2pass";
+//
+// Note: the old "bots list — empty state" baseline is gone, not just
+// renamed — ADR 0012's onboarding flow always creates a first bot, and
+// no bot-delete feature exists yet, so that empty state is no longer
+// reachable through any real user journey (see tests/e2e/bots-
+// list.spec.ts's same note). Replaced with the onboarding screen and
+// the settings page, both genuinely new.
 
 test("login page", async ({ page }) => {
   await page.goto("/login");
@@ -24,26 +26,18 @@ test("signup page", async ({ page }) => {
   await expect(page).toHaveScreenshot("signup.png");
 });
 
-test("bots list — empty state", async ({ page }) => {
+test("onboarding screen", async ({ page }) => {
   await page.goto("/signup");
-  await page.fill('input[name="email"]', uniqueEmail("visual-empty"));
+  await page.fill('input[name="email"]', uniqueEmail("visual-onboarding"));
   await page.fill('input[name="password"]', PASSWORD);
   await page.fill('input[name="confirmPassword"]', PASSWORD);
   await page.click('button[type="submit"]');
-  await expect(page).toHaveURL(/\/bots$/);
-  await expect(page).toHaveScreenshot("bots-empty.png");
+  await expect(page).toHaveURL(/\/onboarding$/);
+  await expect(page).toHaveScreenshot("onboarding.png", { mask: [page.locator("#orgName")] });
 });
 
 test("bots list — with a bot (Created column masked, it's a relative timestamp)", async ({ page }) => {
-  await page.goto("/signup");
-  await page.fill('input[name="email"]', uniqueEmail("visual-table"));
-  await page.fill('input[name="password"]', PASSWORD);
-  await page.fill('input[name="confirmPassword"]', PASSWORD);
-  await page.click('button[type="submit"]');
-  await expect(page).toHaveURL(/\/bots$/);
-
-  await page.fill('input[name="name"]', "Support bot");
-  await Promise.all([page.waitForURL(/\/bots\/[^/]+$/), page.click('button:has-text("New bot")')]);
+  await signUpAndCreateBot(page, "Support bot", "visual-table");
   await page.goto("/bots");
 
   await expect(page).toHaveScreenshot("bots-table.png", {
@@ -52,29 +46,12 @@ test("bots list — with a bot (Created column masked, it's a relative timestamp
 });
 
 test("bot editor page (embed snippet masked — it embeds a random public key)", async ({ page }) => {
-  await page.goto("/signup");
-  await page.fill('input[name="email"]', uniqueEmail("visual-editor"));
-  await page.fill('input[name="password"]', PASSWORD);
-  await page.fill('input[name="confirmPassword"]', PASSWORD);
-  await page.click('button[type="submit"]');
-  await expect(page).toHaveURL(/\/bots$/);
-
-  await page.fill('input[name="name"]', "Support bot");
-  await Promise.all([page.waitForURL(/\/bots\/[^/]+$/), page.click('button:has-text("New bot")')]);
-
+  await signUpAndCreateBot(page, "Support bot", "visual-editor");
   await expect(page).toHaveScreenshot("bot-editor.png", { mask: [page.locator("pre")] });
 });
 
 test("bot editor — publish confirmation dialog (docs/design/principles.md #10)", async ({ page }) => {
-  await page.goto("/signup");
-  await page.fill('input[name="email"]', uniqueEmail("visual-publish-dialog"));
-  await page.fill('input[name="password"]', PASSWORD);
-  await page.fill('input[name="confirmPassword"]', PASSWORD);
-  await page.click('button[type="submit"]');
-  await expect(page).toHaveURL(/\/bots$/);
-
-  await page.fill('input[name="name"]', "Support bot");
-  await Promise.all([page.waitForURL(/\/bots\/[^/]+$/), page.click('button:has-text("New bot")')]);
+  await signUpAndCreateBot(page, "Support bot", "visual-publish-dialog");
   await page.click('button:has-text("Publish")');
   await expect(page.getByText("Publish this bot?")).toBeVisible();
 
@@ -82,15 +59,7 @@ test("bot editor — publish confirmation dialog (docs/design/principles.md #10)
 });
 
 test("knowledge base — empty state and Add Q&A dialog", async ({ page }) => {
-  await page.goto("/signup");
-  await page.fill('input[name="email"]', uniqueEmail("visual-knowledge"));
-  await page.fill('input[name="password"]', PASSWORD);
-  await page.fill('input[name="confirmPassword"]', PASSWORD);
-  await page.click('button[type="submit"]');
-  await expect(page).toHaveURL(/\/bots$/);
-
-  await page.fill('input[name="name"]', "Support bot");
-  await Promise.all([page.waitForURL(/\/bots\/[^/]+$/), page.click('button:has-text("New bot")')]);
+  await signUpAndCreateBot(page, "Support bot", "visual-knowledge");
 
   await page.click('a:has-text("Knowledge")');
   await expect(page).toHaveURL(/\/knowledge$/);
@@ -101,13 +70,15 @@ test("knowledge base — empty state and Add Q&A dialog", async ({ page }) => {
   await expect(page).toHaveScreenshot("knowledge-add-dialog.png");
 });
 
+test("settings page", async ({ page }) => {
+  await signUpAndCreateBot(page, "Support bot", "visual-settings");
+  await page.click('a:has-text("Settings")');
+  await expect(page).toHaveURL(/\/settings$/);
+  await expect(page).toHaveScreenshot("settings.png", { mask: [page.locator("#orgName")] });
+});
+
 test("console sidebar — icon-collapsed", async ({ page }) => {
-  await page.goto("/signup");
-  await page.fill('input[name="email"]', uniqueEmail("visual-sidebar"));
-  await page.fill('input[name="password"]', PASSWORD);
-  await page.fill('input[name="confirmPassword"]', PASSWORD);
-  await page.click('button[type="submit"]');
-  await expect(page).toHaveURL(/\/bots$/);
+  await signUpAndCreateBot(page, "Support bot", "visual-sidebar");
 
   await page.click('[data-slot="sidebar-trigger"]');
   await page.waitForTimeout(250); // the collapse transition (app/globals.css) is 200ms

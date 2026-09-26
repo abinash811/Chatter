@@ -43,16 +43,19 @@ export interface ModelGateway {
 
 import Anthropic from "@anthropic-ai/sdk";
 
-export function getModelGateway(): ModelGateway {
+// apiKey: BYOA override (ADR 0012) — an org's own Anthropic key, already
+// decrypted by the caller (lib/ai/chat.ts). Omit to use the SDK's own
+// ANTHROPIC_API_KEY env default (the managed key).
+export function getModelGateway(apiKey?: string): ModelGateway {
   // Only implementation for now; a provider/tier switch is a new
   // implementation + a change here, not a rewrite of callers.
-  return new ClaudeGateway();
+  return new ClaudeGateway(apiKey);
 }
 
 class ClaudeGateway implements ModelGateway {
   private client: Anthropic;
 
-  constructor() {
+  constructor(apiKey?: string) {
     // Importing the class doesn't touch ANTHROPIC_API_KEY — only
     // instantiating it does, and that still only happens here, lazily,
     // when a gateway is actually used. A static import (vs. the
@@ -60,7 +63,7 @@ class ClaudeGateway implements ModelGateway {
     // in tests/unit/lib/ai/gateway.test.ts — a runtime require() bypassed
     // Vitest's module mocking and hit the real SDK, which then tripped
     // its own jsdom/browser-safety guard.
-    this.client = new Anthropic();
+    this.client = apiKey ? new Anthropic({ apiKey }) : new Anthropic();
   }
 
   async generateReply(params: GenerateReplyParams): Promise<GenerateReplyResult> {
