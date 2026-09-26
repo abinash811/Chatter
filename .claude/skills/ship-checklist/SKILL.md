@@ -61,7 +61,17 @@ Before saying a piece of work is done:
    feature that silently degrades below what a guardrail requires
    (tenant isolation, traceability, graceful tool fallback) is not done
    even if it compiles and runs.
-13. **Open Dependabot PRs relevant to what you touched.** ADR 0009: the
+13. **Explicit design-bar self-check for any UI change** (2026-09-26
+   user directive) — before calling a screen done, name it out loud
+   against `docs/design/principles.md` #5/#9 (the Linear/Stripe/Notion
+   bar): does it have a real hover state, a real focus state, a real
+   active/pressed state, and a considered loading state (`Skeleton`,
+   not a blank flash)? Is depth/elevation deliberate, not just a flat
+   bordered box? If any answer is no, say so explicitly to the user as
+   a known gap — don't silently ship a screen that's flatter than the
+   rest of the app and let it go unmentioned. This applies even to a
+   screen the user didn't explicitly ask to be polished.
+14. **Open Dependabot PRs relevant to what you touched.** ADR 0009: the
    Tailwind v3/v4 mismatch wasn't a detection gap — Dependabot had
    already opened a PR for it — it was a triage gap, nobody looked.
    Applies to any dependency (a framework, a UI library, a build tool),
@@ -74,7 +84,7 @@ Before saying a piece of work is done:
    framework major (Next.js, Prisma, TypeScript) needs its own
    dedicated migration effort — say so and leave it open, don't bundle
    it in silently and don't silently ignore it either.
-14. **`npm run check:exemptions`** — a visibility report (not a gate,
+15. **`npm run check:exemptions`** — a visibility report (not a gate,
    always exits 0) over every file currently trusted rather than
    mechanically enforced by a guardrail. Pulled a new CARE component,
    or added a new named allowlist entry to any check-*.mjs script? Run

@@ -28,7 +28,12 @@ export function SignupForm() {
 
       <p className="text-center text-sm text-muted-foreground">
         Already have an account?{" "}
-        <a href="/login" className="text-accent hover:underline">
+        {/* font-medium + underline, not text-accent — monochrome palette
+            has no separate link color, so an always-visible underline is
+            what actually differentiates this from body text (see
+            components/auth/AuthShell.tsx's comment for the same
+            near-invisible-text bug this was copying). */}
+        <a href="/login" className="font-medium text-foreground underline underline-offset-4">
           Log in
         </a>
       </p>

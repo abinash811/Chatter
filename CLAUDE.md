@@ -959,6 +959,61 @@ make a meaningful change, update this before ending your turn.
   slightly stale on this one point (same honest gap-flagging as the
   general design-system-preview staleness already noted in `docs/
   design/README.md`), not silently assumed current.
+- **Skeleton loading states + a real, previously-invisible text/ring bug
+  found and fixed across the whole console — 2026-09-26, user directive
+  ("flag when we're not building high-class international standard
+  products").** `Skeleton` (pulled in ADR 0017, zero real usage until
+  now) wired into 7 new `loading.tsx` files — Next.js App Router's
+  automatic per-segment Suspense boundary — for `/bots`, `/bots/
+  [botId]` (editor), its `knowledge` and `integrations` sub-routes,
+  `/conversations`, `/conversations/[conversationId]`, and `/settings`.
+  Each skeleton matches its real page's actual shape (row counts,
+  column widths, Card sections) rather than a generic spinner. The
+  bot-scoped ones deliberately skip the shared `BotTopBar` (already
+  rendered by the parent layout around the Suspense boundary — including
+  it would have shown two top bars briefly). Confirmed genuinely
+  rendering, not just wired: CDP network-latency emulation
+  (`Network.emulateNetworkConditions`) plus a polling loop, since local
+  Postgres is normally too fast to ever show a loading state — a
+  screenshot alone can't prove a race condition like this.
+
+  Caught and fixed a real, previously-invisible bug across 6 files while
+  doing this pass, not related to loading states at all: `text-accent`
+  (no `bg-accent` pairing) and `ring-accent`/`accent-accent` were used
+  as a standalone brand text/ring/checked-fill color in `AuthShell.tsx`
+  (the "SIGN IN"/"SIGN UP" eyebrow), `LoginForm.tsx`/`SignupForm.tsx`
+  (the "Sign up"/"Log in" links), `BotsTable.tsx` (avatar initials), and
+  `Input`/`Textarea`/`Checkbox` (focus rings + checked fill) — but ADR
+  0014's token swap redefined `--accent` as a pale neutral-100
+  *background* tint (paired with `--accent-foreground` for text on top
+  of it), not a text/ring color. Every one of those was rendering as
+  near-invisible pale text/rings on a white background, invisible to
+  `tsc`/the build the same way every other Tailwind-token regression in
+  this project's history has been — only caught by actually looking at
+  real screenshots and `getComputedStyle` output, not by reading the
+  code. Fixed to `text-foreground`/`ring-ring`/`accent-primary` (the
+  correct real shadcn tokens, matching `Button`'s own
+  `focus-visible:ring-ring/50`); the two auth links also gained
+  `font-medium underline` since a monochrome palette has no separate
+  link color to rely on for differentiation from body text.
+
+  `AuthShell.tsx`'s right-side card also got the same depth/polish pass
+  as the bot editor and bots list (`bg-soft-background` + `shadow-xs`,
+  was a flat bordered box) — closes the login/signup item from the
+  polish-pass known gap below.
+
+  **Process change, not just a one-off fix**: `.claude/skills/ship-
+  checklist/SKILL.md` now has a standing item (an explicit design-bar
+  self-check — real hover/focus/active/loading states, named out loud
+  against principles.md #5/#9 — before calling any UI change done) per
+  the user's explicit instruction to flag this going forward rather than
+  wait to be asked.
+
+  Verified: guardrails, `tsc`, a clean rebuild, all 99 unit tests. Full
+  `tests/e2e`/`tests/visual` suites intentionally not run this pass per
+  explicit user request (mid-session) — flagged here rather than
+  silently claimed as verified; both should be run and any resulting
+  baseline updates committed before this is called fully shipped.
 
 **Known gaps:**
 - 🟡 `scripts/canary.mjs` can't run in this container as-is — the
@@ -986,17 +1041,22 @@ make a meaningful change, update this before ending your turn.
   hasn't had a dedicated depth/polish pass (principles.md #5/#9 — Card
   wrapping, etc.) the way the bot editor has; that's the part still
   open.
-- 🔲 The depth/polish pass (principles.md #5/#9 — real Card boundaries,
-  centered layout, hover/shadow states on Input/Textarea/Checkbox) is
-  done on the bot editor only, by deliberate scope choice (one screen
-  proven completely before spreading the pattern). login/signup, the
-  bots list, and integrations haven't had this pass yet — apply the
-  same recipe (Card-wrap floating content, `mx-auto` instead of
-  pinned-left, check every interactive element's hover/focus/active
-  state renders for real via `getComputedStyle`, not just a screenshot)
-  when each is next touched. A sidebar user/org identity footer
-  (avatar + name, matching CARE's own pattern) is separately unbuilt —
-  not a bug, just not scoped yet.
+- 🟡 The depth/polish pass (principles.md #5/#9 — real Card boundaries,
+  centered layout, hover/shadow/focus/active states, considered loading
+  states) is done on the bot editor, the bots list, and login/signup
+  (see the Done bullet above). Still open: the integrations page's own
+  content (still a plain provider-row list, though it now shares the
+  polished `BotTopBar`), the settings page, the knowledge page, the
+  conversations list/detail, and the sidebar itself (structurally solid
+  per the 2026-09-26 rebuild, but never got a dedicated shadow/hover
+  polish pass the way the bot editor did). Apply the same recipe
+  (Card-wrap floating content, real hover/focus/active states checked
+  via `getComputedStyle`, a `loading.tsx` skeleton matching the real
+  layout) when each is next touched — and check `text-accent`/
+  `ring-accent`/`accent-accent` don't reappear; the real tokens are
+  `text-foreground`/`ring-ring`/`accent-primary`. A sidebar user/org
+  identity footer (avatar + name) already exists (added with the
+  sidebar rebuild) — no longer a gap.
 - The console sidebar nav shell is done: `app/(console)/layout.tsx` +
   `components/console/AppSidebar.tsx` now use the real CARE `Sidebar`
   (icon-collapsible, cookie-persisted state, active-route highlighting,

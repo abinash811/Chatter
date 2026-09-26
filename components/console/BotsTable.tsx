@@ -70,7 +70,10 @@ export function BotsTable({ bots }: { bots: BotRow[] }) {
           >
             <TableCell>
               <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-accent/10 text-xs font-semibold text-accent shadow-xs transition-shadow group-hover:shadow-sm">
+                {/* text-foreground, not text-accent — same near-invisible-
+                    text bug as AuthShell's eyebrow label (--accent is a
+                    pale background tint post-ADR-0014, not a text color). */}
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-accent/10 text-xs font-semibold text-foreground shadow-xs transition-shadow group-hover:shadow-sm">
                   {bot.name.slice(0, 2).toUpperCase()}
                 </div>
                 <span className="font-medium">{bot.name}</span>
