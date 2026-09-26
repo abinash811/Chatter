@@ -84,10 +84,12 @@ export function KnowledgeForm({ botId, entries }: { botId: string; entries: Know
   return (
     <div>
       <div className="flex h-row items-center justify-between">
-        <h1 className="flex items-center gap-2 text-lg font-semibold">
+        {/* h2, not h1 — the page's h1 is the (sr-only) bot name in the
+            shared BotTopBar, app/(console)/bots/[botId]/layout.tsx. */}
+        <h2 className="flex items-center gap-2 text-lg font-semibold">
           Knowledge base
           {entries.length > 0 && <span className="text-sm font-normal text-muted-foreground">{entries.length}</span>}
-        </h1>
+        </h2>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button type="button" size="sm">

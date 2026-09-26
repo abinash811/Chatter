@@ -20,8 +20,12 @@ test("publish requires confirming in the dialog, then shows a success toast and 
   await expect(page.getByText("Never published")).toBeVisible();
 
   // Top-bar "Publish" only opens the confirmation dialog (docs/design/
-  // principles.md #10) — it must not publish by itself.
-  await page.click('button:has-text("Publish")');
+  // principles.md #10) — it must not publish by itself. An exact-name
+  // role query, not `:has-text`, since the bot switcher (BotTopBar,
+  // ADR-less 2026-09-26 top-bar change) is itself a <button> whose
+  // visible text is the bot's own name — "Publish Test Bot" would
+  // otherwise substring-match this selector too.
+  await page.getByRole("button", { name: "Publish", exact: true }).click();
   await expect(page.getByText("Publish this bot?")).toBeVisible();
   await expect(page.getByText("Never published")).toBeVisible();
 
@@ -33,7 +37,7 @@ test("publish requires confirming in the dialog, then shows a success toast and 
 
 test("Cancel in the publish dialog leaves the bot unpublished", async ({ page }) => {
   await signUpAndCreateBot(page, "Cancel Publish Test Bot");
-  await page.click('button:has-text("Publish")');
+  await page.getByRole("button", { name: "Publish", exact: true }).click();
   await expect(page.getByText("Publish this bot?")).toBeVisible();
 
   await page.click('div[role="dialog"] button:has-text("Cancel")');

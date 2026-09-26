@@ -14,7 +14,11 @@ import { signUpAndCreateBot, seedKnowledgeEntry } from "./helpers";
 // behavior, not just that the error path is hit.
 
 async function openAddMenu(page: import("@playwright/test").Page, item: "Add Q&A" | "Upload file" | "Add URL") {
-  await page.click('button:has-text("Add")');
+  // Exact-name role query, not `:has-text` — the bot switcher (BotTopBar,
+  // 2026-09-26 top-bar change) is itself a <button> whose visible text
+  // is the bot's own name, e.g. "Add Menu KB Bot" would otherwise
+  // substring-match a plain CSS `button:has-text("Add")` selector.
+  await page.getByRole("button", { name: "Add", exact: true }).click();
   await page.click(`div[role="menu"] >> text="${item}"`);
 }
 
@@ -28,7 +32,7 @@ test("the Add menu offers Q&A, file, and URL entry points", async ({ page }) => 
   await signUpAndCreateBot(page, "Add Menu KB Bot");
   await page.goto(page.url() + "/knowledge");
 
-  await page.click('button:has-text("Add")');
+  await page.getByRole("button", { name: "Add", exact: true }).click();
   await expect(page.getByRole("menuitem", { name: "Add Q&A" })).toBeVisible();
   await expect(page.getByRole("menuitem", { name: "Upload file" })).toBeVisible();
   await expect(page.getByRole("menuitem", { name: "Add URL" })).toBeVisible();

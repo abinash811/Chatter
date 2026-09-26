@@ -46,7 +46,9 @@ export default async function IntegrationsPage({
 
   return (
     <div>
-      <h1 className="h-row flex items-center text-lg font-semibold">Integrations</h1>
+      {/* h2, not h1 — the page's h1 is the (sr-only) bot name in the
+          shared BotTopBar, app/(console)/bots/[botId]/layout.tsx. */}
+      <h2 className="h-row flex items-center text-lg font-semibold">Integrations</h2>
 
       <div className="mt-4 divide-y divide-border border-y border-border">
         {listIntegrationProviders().map((provider) => {

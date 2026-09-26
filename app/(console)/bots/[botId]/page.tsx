@@ -10,16 +10,22 @@ import { BotEditorForm } from "./BotEditorForm";
 // page shape now follows docs/design/principles.md #10 (persistent top
 // bar + tabs + confirm-before-publish), the same pattern every future
 // record-editing screen uses. This page is now just a thin data-fetch
-// shell; BotEditorForm owns the whole visual composition, including the
-// header, since the header's Save/Publish buttons need the client-side
-// action state that lives there.
+// shell; BotEditorForm owns the tab content, and the shared BotTopBar
+// (app/(console)/bots/[botId]/layout.tsx) owns the bot name/switcher.
+//
+// The layout also validates botId belongs to this org, but Next.js
+// fetches a layout and its page's data in parallel, not sequentially —
+// a layout throwing does NOT guarantee this page's own fetch never
+// starts. Confirmed for real: without this page's own check, an invalid
+// botId raced getOrCreateDraft into a raw Prisma foreign-key violation
+// instead of the clean "not found" the layout throws. This existsOrThrow
+// is cheap (no fields needed beyond confirming the row exists) and is
+// what actually determines which error message a real visitor sees.
 export default async function BotPage({ params }: { params: Promise<{ botId: string }> }) {
   const session = await getCurrentSession();
   const { botId } = await params;
 
-  const bot = await withOrgContext(session.orgId, (tx) =>
-    tx.bot.findUniqueOrThrow({ where: { id: botId } }),
-  );
+  await withOrgContext(session.orgId, (tx) => tx.bot.findUniqueOrThrow({ where: { id: botId }, select: { id: true } }));
   const draft = await getOrCreateDraft(session.orgId, botId);
   const publishedVersion = await withOrgContext(session.orgId, (tx) =>
     tx.botConfigVersion.findFirst({
@@ -36,7 +42,6 @@ export default async function BotPage({ params }: { params: Promise<{ botId: str
   return (
     <BotEditorForm
       botId={botId}
-      botName={bot.name}
       publishedVersion={publishedVersion?.version ?? null}
       persona={draft.persona}
       guardrails={draft.guardrails}

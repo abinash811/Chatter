@@ -14,14 +14,23 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
 
 .main { flex: 1; padding: 24px 32px 48px; max-width: 680px; }
 
+/* Shared bot-scoped top bar (components/console/BotTopBar.tsx,
+   2026-09-26) — bot switcher + Editor/Knowledge/Integrations nav,
+   persistent across all 3 bot-scoped pages, not just this one. Sits
+   above the page-specific action row below it. */
+.shell-topbar { display: flex; align-items: center; justify-content: space-between; padding: 0 0 12px; margin-bottom: 16px; border-bottom: 1px solid #e5e5e5; }
+.bot-switcher { font-size: 16px; font-weight: 600; color: #0a0a0c; display: flex; align-items: center; gap: 6px; }
+.bot-switcher .chevron { color: #a3a3a3; font-size: 12px; }
+.page-nav { display: flex; gap: 16px; }
+.page-nav .item { font-size: 13px; font-weight: 500; color: #737373; }
+.page-nav .item.active { color: #0a0a0c; }
+
 /* Sticky-feeling action bar — one save method visible at all times, per
    21st.dev's settings-page guidance: don't mix instant + explicit save,
    and keep the primary action (Publish) visually distinct. */
 .topbar { display: flex; align-items: center; justify-content: space-between; padding-bottom: 16px; border-bottom: 1px solid #e5e5e5; margin-bottom: 20px; }
-.bot-title { font-size: 18px; font-weight: 600; color: #0a0a0c; display: flex; align-items: center; gap: 10px; }
 .status-pill { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 4px; background: #f5f5f5; color: #737373; }
 .topbar-actions { display: flex; align-items: center; gap: 8px; }
-.link-muted { font-size: 13px; color: #737373; }
 .btn-outline { height: 32px; padding: 0 14px; border: 1px solid #e5e5e5; background: #fff; border-radius: 6px; font-size: 13px; font-weight: 500; color: #0a0a0c; }
 .btn-primary { height: 32px; padding: 0 14px; background: #065f46; color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 500; }
 
@@ -81,10 +90,13 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
   </div>
 
   <div class="main">
+    <div class="shell-topbar">
+      <div class="bot-switcher">Support bot <span class="chevron">&#9662;</span></div>
+      <div class="page-nav"><span class="item active">Editor</span><span class="item">Knowledge</span><span class="item">Integrations</span></div>
+    </div>
     <div class="topbar">
-      <div class="bot-title">Support bot <span class="status-pill">Published v3</span></div>
+      <div class="status-pill">Published v3</div>
       <div class="topbar-actions">
-        <span class="link-muted">Integrations</span>
         <button class="btn-outline">Save draft</button>
         <button class="btn-primary">Publish</button>
       </div>
@@ -117,10 +129,13 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     <div class="nav-item">Bots</div>
   </div>
   <div class="main">
+    <div class="shell-topbar">
+      <div class="bot-switcher">Support bot <span class="chevron">&#9662;</span></div>
+      <div class="page-nav"><span class="item active">Editor</span><span class="item">Knowledge</span><span class="item">Integrations</span></div>
+    </div>
     <div class="topbar">
-      <div class="bot-title">Support bot <span class="status-pill">Published v3</span></div>
+      <div class="status-pill">Published v3</div>
       <div class="topbar-actions">
-        <span class="link-muted">Integrations</span>
         <button class="btn-outline">Save draft</button>
         <button class="btn-primary">Publish</button>
       </div>
@@ -158,10 +173,13 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     <div class="nav-item">Bots</div>
   </div>
   <div class="main">
+    <div class="shell-topbar">
+      <div class="bot-switcher">Support bot <span class="chevron">&#9662;</span></div>
+      <div class="page-nav"><span class="item active">Editor</span><span class="item">Knowledge</span><span class="item">Integrations</span></div>
+    </div>
     <div class="topbar">
-      <div class="bot-title">Support bot <span class="status-pill">Published v3</span></div>
+      <div class="status-pill">Published v3</div>
       <div class="topbar-actions">
-        <span class="link-muted">Integrations</span>
         <button class="btn-outline">Save draft</button>
         <button class="btn-primary">Publish</button>
       </div>

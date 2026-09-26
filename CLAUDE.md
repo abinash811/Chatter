@@ -901,6 +901,64 @@ make a meaningful change, update this before ending your turn.
   unauthenticated `/bots` redirect. Not fixed permanently; flagged here
   rather than silently skipped. `docs/design/preview/console-shell.html`
   rebuilt to match.
+- **Bot-scoped top bar with a bot switcher (`components/console/
+  BotTopBar.tsx`) — 2026-09-26, matches the Chatbase reference
+  screenshot's own bot switcher.** Explicit user-confirmed scope: one
+  persistent top bar shared across all 3 bot-scoped pages (editor/
+  knowledge/integrations) via a new `app/(console)/bots/[botId]/
+  layout.tsx`, replacing each page's own separate header — not scoped
+  to the editor alone. Switching bots preserves the current page
+  (Knowledge stays on Knowledge for the new bot) by reusing the
+  pathname's subpath after `/bots/{botId}` verbatim, rather than always
+  landing on the editor. `BotEditorForm.tsx`'s own top row now only
+  keeps what's specific to it (publish-status badge, Save/Publish) —
+  the bot name/switcher and Knowledge/Integrations links moved to the
+  shared bar. Knowledge/Integrations pages' own `<h1>`s demoted to
+  `<h2>` (the page's real h1 is now the switcher row's sr-only bot
+  name) — a page should have exactly one h1.
+
+  Caught two real bugs by actually running this, not trusting types:
+  (1) assumed a parent layout throwing prevents a child page's own data
+  fetch from starting — false for Next.js App Router, which fetches a
+  layout and its page in parallel rather than sequentially. Without the
+  page keeping its own lightweight bot-existence check, an invalid
+  `botId` raced `getOrCreateDraft` into a raw Prisma foreign-key
+  violation instead of the clean "not found" the layout throws — same
+  end result (the plain-language error boundary still shows) but an
+  ugly, harder-to-debug error logged along the way. Fixed by keeping a
+  cheap `findUniqueOrThrow` in the editor page too, confirmed via a real
+  server log showing a clean Prisma `NotFoundError` afterward, not the
+  FK violation. (2) 4 existing `tests/e2e/` specs broke because their
+  own selectors (`button:has-text("Publish")`, `button:has-text("Add")`,
+  a bare `getByText(<bot name>)`) coincidentally substring-matched the
+  new switcher — a `<button>` whose visible text is literally the bot's
+  own name (test bots were named "Publish Test Bot", "Add Menu KB Bot",
+  etc.) — so a click meant for the real action button silently opened
+  the switcher's dropdown instead. Fixed by switching those assertions
+  to `getByRole` with `exact: true` (the switcher's accessible role is
+  `combobox`, not `button`, so a role-scoped query never collides) —
+  worth remembering as a real, recurring hazard of adding any new
+  visible-text control near existing text-based test selectors, not a
+  one-off.
+
+  Verified: guardrails, `tsc`, a clean rebuild, all 99 unit tests
+  unchanged, all 47 `tests/e2e/` specs (44 existing, all updated
+  selectors re-verified passing, + 3 new `tests/e2e/bot-top-bar.spec.ts`
+  specs: switcher lists every bot and preserves the current page on
+  switch, nav highlights the active page, and the error-boundary case
+  for an invalid/foreign bot id), and all 11 `tests/visual/` baselines
+  regenerated (bot editor, its publish dialog, knowledge empty/add-
+  dialog, and the icon-collapsed sidebar — every screen that renders a
+  bot-scoped page) and confirmed stable across two clean re-runs. Also
+  manually screenshotted the Integrations page for real (no existing
+  `tests/visual/` baseline for it) to confirm it correctly picked up the
+  new shared top bar with zero page-specific changes needed.
+  `docs/design/preview/bot-editor.html` updated to show the new shared
+  top bar above each tab scene; `knowledge.html`/`settings.html`/
+  `conversations.html` previews were not touched this pass and are now
+  slightly stale on this one point (same honest gap-flagging as the
+  general design-system-preview staleness already noted in `docs/
+  design/README.md`), not silently assumed current.
 
 **Known gaps:**
 - 🟡 `scripts/canary.mjs` can't run in this container as-is — the
@@ -921,10 +979,13 @@ make a meaningful change, update this before ending your turn.
   (superseding the ADR 0008/CARE-pull mechanism entirely; see the Done
   bullet below). Bots list (real `Table`) and the bot editor (persistent
   top bar + `Tabs` + `Dialog`, principles.md #10) are rebuilt on these
-  primitives, not just recolored. Still open: the integrations page,
-  using the same primitives where they fit (and, going forward,
-  principles.md #10's shape wherever it applies) — a design/layout gap,
-  not a component-source gap anymore.
+  primitives, not just recolored. The integrations page now shares the
+  same persistent `BotTopBar` (bot switcher + Editor/Knowledge/
+  Integrations nav, 2026-09-26) as the editor and knowledge pages — the
+  top-level shell gap is closed. Its own content (a plain provider list)
+  hasn't had a dedicated depth/polish pass (principles.md #5/#9 — Card
+  wrapping, etc.) the way the bot editor has; that's the part still
+  open.
 - 🔲 The depth/polish pass (principles.md #5/#9 — real Card boundaries,
   centered layout, hover/shadow states on Input/Textarea/Checkbox) is
   done on the bot editor only, by deliberate scope choice (one screen

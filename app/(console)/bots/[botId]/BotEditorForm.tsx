@@ -48,7 +48,6 @@ function useActionToast(state: SaveDraftState) {
 // not their healthcare content.
 export function BotEditorForm({
   botId,
-  botName,
   publishedVersion,
   persona,
   guardrails,
@@ -58,7 +57,6 @@ export function BotEditorForm({
   embedSnippet,
 }: {
   botId: string;
-  botName: string;
   publishedVersion: number | null;
   persona: string;
   guardrails: string;
@@ -83,17 +81,11 @@ export function BotEditorForm({
   return (
     <div className="mx-auto max-w-2xl">
       <div className="flex h-row items-center justify-between">
-        <div className="flex items-center gap-2">
-          <h1 className="text-lg font-semibold">{botName}</h1>
-          <Badge variant="muted">{publishedVersion ? `Published v${publishedVersion}` : "Never published"}</Badge>
-        </div>
+        {/* Bot name + switcher now live in the shared BotTopBar
+            (app/(console)/bots/[botId]/layout.tsx) — this row keeps only
+            what's specific to the editor: publish status and actions. */}
+        <Badge variant="muted">{publishedVersion ? `Published v${publishedVersion}` : "Never published"}</Badge>
         <div className="flex items-center gap-3">
-          <a href={`/bots/${botId}/knowledge`} className="text-sm text-muted-foreground hover:underline">
-            Knowledge
-          </a>
-          <a href={`/bots/${botId}/integrations`} className="text-sm text-muted-foreground hover:underline">
-            Integrations
-          </a>
           <Button type="submit" form="bot-editor-form" variant="outline" size="sm" disabled={isSaving}>
             {isSaving ? "Saving..." : "Save draft"}
           </Button>
