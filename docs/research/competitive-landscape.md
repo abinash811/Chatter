@@ -1,8 +1,9 @@
 # Research note: Competitive landscape — AI chat/support agents
 
-Date: 2026-09-14
+Date: 2026-09-14, updated 2026-09-26
 Researcher: Claude (web search)
-Status: partial — Zipchat AI covered in depth, others are TODO
+Status: Zipchat AI, Gorgias, Intercom Fin, Drift, Tidio, Chatbase,
+Voiceflow, and Alludium all covered; RAG-for-multi-tenant-SaaS still TODO
 
 ## Why this research
 
@@ -189,12 +190,100 @@ Sources:
 - https://www.eesel.ai/blog/drift-vs-tidio
 - https://www.happyfox.com/compare/tidio-vs-drift/
 
+## Update 2026-09-26: Chatbase, Voiceflow, Alludium
+
+Resolves this file's own prior TODO on Chatbase/Voiceflow; Alludium added
+at the user's explicit request.
+
+### Chatbase (generic AI chatbot builder — closest analog to our "generic
+base" half of the product)
+
+No-code builder: train an agent on a website crawl, uploaded documents, or
+a Q&A knowledge base, then embed it via script tag. Not vertical-specific —
+the same builder serves any industry, closer to our "generic core, no
+hardcoded vertical" design (ADR 0001) than Zipchat/Gorgias's ecommerce-only
+framing. 2026 feature set: **AI Actions** (the same read/write tool-calling
+shape as our own tool registry — book appointments, check order status,
+collect leads), voice and telephony channels, multi-model routing (choice
+of underlying LLM per agent), automatic re-training when a source document
+changes plus flagging gaps/conflicting answers in the knowledge base, and
+integrations into existing helpdesks (Zendesk, Freshdesk, Gorgias, Help
+Scout, HubSpot, Intercom) rather than replacing them. Pricing is
+**credit-based**, not seat-based: a free tier (50 msg credits/mo, 1 agent),
+then Hobby $40/mo (1,500 credits), Standard $150/mo, Pro $500/mo —
+real per-conversation cost varies by which model tier a message uses,
+since premium models burn credits faster.
+
+**Implication for us**: Chatbase is the single closest existing product to
+what Chatter's "generic core" is trying to be — validates that a
+vertical-agnostic builder is a real, viable category, not just our own
+hypothesis. Two concrete features worth weighing against our own roadmap:
+(1) automatic re-training/gap-flagging on knowledge sources — we have no
+equivalent freshness/gap-detection today, worth a line in
+`docs/ai-tech-radar.md` alongside the already-tracked ingestion-quality
+upgrades; (2) credit-based, model-tier-aware pricing is a second real
+precedent (alongside Intercom Fin's outcome-based model) for the still-open
+billing/pricing question — relevant once that's revisited, not actionable
+now.
+
+### Voiceflow (visual conversation-design tooling)
+
+A drag-and-drop visual flow builder for designing chat *and* voice agent
+conversations, not a RAG-first Q&A tool first — the design surface is the
+flow diagram (branches, conditions, API-call steps), with a vector-based
+knowledge base and multi-LLM support (GPT, Claude, others) layered in
+underneath. Supports running multiple agents from one workspace, and
+recently added an in-app AI copilot ("Atlas," Aug 2026) that helps author
+the flow itself. Pricing is hybrid: a base plan plus usage credits (Pro
+tiers $60–120/mo for 10k–20k credits), billed per customer message
+($0.005) and per phone-minute ($0.05) on self-serve, moving to large custom
+enterprise contracts (reported median ~$258k/yr) at the high end.
+
+**Implication for us**: confirms `docs/roadmap.md`'s Later-section framing
+is right — a visual flow builder is real, validated tooling in this
+category, but it's a fundamentally different design philosophy (author a
+flow graph) from our current one (RAG retrieval + tool-calling, the model
+decides what to do at each turn, per `docs/architecture.md` §2). Not a gap
+to close for v1; our own prior research (this file's Claude Agent SDK
+section) already concluded starting narrow with tool-calling over a
+flow-builder is the right v1 call. Worth revisiting only if a customer
+segment specifically wants deterministic, hand-authored flows (e.g. a
+strict compliance script in a regulated vertical) rather than a model
+deciding conversationally.
+
+### Alludium — flagged as a different category, not a direct competitor
+
+A London startup (backed by Sure Valley Ventures/Catenai) that opened its
+"Agent Operating System" to public users in March 2026: teams build and
+run networks of AI agents that automate internal work — connecting to
+Google Workspace, Microsoft 365, Slack, Notion, Trello, HubSpot — via a
+conversational, no-code interface. This is an **internal workplace
+automation** product (employees delegating tasks to agents across their
+own company's tools), not a customer-facing support/sales chat widget for
+a business's *own customers* — a different buyer and use case than
+Zipchat/Gorgias/Chatbase/us, despite the shared "AI agent" framing.
+
+**Implication for us**: recorded per the user's request, but no direct
+product-shape implication — Alludium doesn't compete for the same buyer
+or solve the same problem as Chatter. Worth a re-check only if Chatter
+ever considers an *internal* (non-customer-facing) agent surface, which
+is out of scope for everything in `docs/product-spec.md` today.
+
+Sources:
+- https://sitegpt.ai/blog/chatbase-review
+- https://www.lindy.ai/blog/chatbase-review
+- https://chatimize.com/reviews/chatbase/
+- https://checkthat.ai/brands/chatbase/pricing
+- https://www.featurebase.app/blog/voiceflow-pricing
+- https://www.getmacha.com/blog/voiceflow-complete-guide
+- https://www.voiceflow.com/pricing
+- https://www.ringly.io/blog/voiceflow-pricing
+- https://itbrief.co.uk/story/alludium-launches-public-no-code-ai-agent-platform
+- https://uk.finance.yahoo.com/news/catenai-backed-alludium-opens-ai-080036417.html
+- https://www.alludium.ai/news/news-welcome
+
 ## TODO — still need to research
 
-- **Chatbase** — generic (non-ecommerce) AI chatbot builder; likely closest
-  analog to our "generic base" half of the product.
-- **Voiceflow / Botpress** — conversation-design tooling; relevant if we
-  ever expose a visual flow builder beyond pure RAG+tools.
 - RAG architecture best practices for multi-tenant SaaS specifically
   (retrieval scoping, embedding refresh strategies, hybrid search).
 - Embeddable widget engineering patterns (shadow DOM vs. iframe trade-offs,

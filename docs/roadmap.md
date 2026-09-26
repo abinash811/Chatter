@@ -142,8 +142,11 @@ scope for v1" for the full list. Notable additions from research:
   sub-agents) — our own research already concluded a single agent +
   tool registry should be tried first (see competitive-landscape.md's
   Claude Agent SDK section)
-- Visual flow builder (Voiceflow/Botpress-style) — not yet researched,
-  see competitive-landscape.md's TODO
+- Visual flow builder (Voiceflow/Botpress-style) — researched
+  (competitive-landscape.md's 2026-09-26 update): a fundamentally
+  different design philosophy (author a flow graph) from our current
+  RAG+tool-calling approach, not a gap to close for v1 — see that
+  section for when it'd actually be worth revisiting
 - **Second vertical template: healthcare** — explicit user sequencing
   (2026-09-26): prove the generic core solid on ecommerce (this
   roadmap's "Self-serve configurability" pillars) before adding a
