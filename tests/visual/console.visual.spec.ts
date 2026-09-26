@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { signUpAndCreateBot, uniqueEmail, PASSWORD } from "../e2e/helpers";
+import { signUpAndCreateBot, seedConversations, uniqueEmail, PASSWORD } from "../e2e/helpers";
 
 // Visual regression layer (playwright.config.ts's toHaveScreenshot,
 // see playwright.visual.config.ts for the known cross-environment
@@ -78,6 +78,35 @@ test("settings page", async ({ page }) => {
   await page.click('a:has-text("Settings")');
   await expect(page).toHaveURL(/\/settings$/);
   await expect(page).toHaveScreenshot("settings.png", { mask: [page.locator("#orgName")] });
+});
+
+test("conversations list — with seeded conversations (Started column masked, it's a relative timestamp)", async ({
+  page,
+}) => {
+  await signUpAndCreateBot(page, "Support bot", "visual-conversations");
+  const botId = page.url().split("/bots/")[1];
+  await seedConversations(botId);
+
+  await page.click('a:has-text("Conversations")');
+  await expect(page).toHaveURL(/\/conversations$/);
+  await expect(page).toHaveScreenshot("conversations-list.png", {
+    mask: [page.locator('[data-slot="table-body"] tr td:last-child')],
+  });
+});
+
+test("conversation detail — full transcript with an inline tool call (ADR 0015)", async ({ page }) => {
+  await signUpAndCreateBot(page, "Support bot", "visual-conversation-detail");
+  const botId = page.url().split("/bots/")[1];
+  const { handoffConversationId } = await seedConversations(botId);
+
+  await page.goto(`/conversations/${handoffConversationId}`);
+  await expect(page).toHaveScreenshot("conversation-detail.png", {
+    // Every relative timestamp in the thread ("Visitor · 4m ago", "Tool
+    // call · 4m ago") and the header's "Started X ago" — all real
+    // wall-clock-relative text, same masking rationale as bots-
+    // table.png's Created column.
+    mask: [page.locator(".text-xs.text-muted-foreground"), page.getByText(/^Started /)],
+  });
 });
 
 test("console sidebar — icon-collapsed", async ({ page }) => {

@@ -24,11 +24,9 @@ The generic core plus one concrete vertical template — see
 - Two action tools: `search_knowledge_base`, `check_order_status`
   (both read-only — see Next)
 - Email + password auth (ADR 0006), tenant isolation via RLS (ADR 0003)
-- Conversation/Message/ToolCallLog data captured on every chat turn —
-  **no dashboard UI to view them yet** (corrected from this file's
-  earlier "dashboard inbox" phrasing, which described the MVP target,
-  not built status). See "Self-serve configurability" below — this is
-  now the single biggest concrete gap in that list.
+- Conversation/Message/ToolCallLog data captured on every chat turn, and
+  a dashboard-only conversation inbox (`/conversations`, ADR 0015) to
+  view and filter it — see "Self-serve configurability" below.
 
 ## Self-serve configurability (Next — 2026-09-26 user directive)
 
@@ -60,10 +58,11 @@ marked with real status (not aspirational):
    keep it invisible and only improve it via `docs/ai-tech-radar.md`'s
    retrieval-quality upgrade (recommended — matches the simplicity bar
    better than a settings knob most users would misuse).
-5. **Conversation inbox + filters** — **not built**, biggest concrete
-   gap (see the corrected "Now" bullet above). The data (`Conversation`/
-   `Message`/`ToolCallLog`) already exists; this is a pure console UI +
-   filtering (by status/date/bot/handoff-triggered) build.
+5. **Conversation inbox + filters** — **built** (`/conversations`, ADR
+   0015): dashboard-only, filterable by bot/date/handoff-triggered.
+   Deliberately no `status`/"resolved" filter yet — see `docs/open-
+   questions.md` #7. No email/Slack push channel — that was the other
+   half of the open question ADR 0015 resolved, deferred by choice.
 6. **Nudges** — **not built at all**, not even in the schema. New
    concept beyond `docs/product-spec.md`'s original scope (the existing
    "Later" list only had a vague "proactive triggers (exit intent,
@@ -80,9 +79,9 @@ marked with real status (not aspirational):
 
 Sequencing once each open question above is answered: appearance editor
 and tool enable/disable's "nothing to do" make #2/#3 the fastest wins;
-conversation inbox (#5) is the highest-value build (data already
-exists); prompt templates (#1), nudges (#6), and model/pricing (#7)
-each need a scoping decision before they're buildable, not just time.
+the conversation inbox (#5) is done; prompt templates (#1), nudges (#6),
+and model/pricing (#7) each need a scoping decision before they're
+buildable, not just time.
 
 ## Next
 

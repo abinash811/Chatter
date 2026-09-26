@@ -46,3 +46,13 @@ export async function getOrCreateBotPublicKey(
   });
   return key.publicKey;
 }
+
+// Same bootstrapping problem as resolveBotPublicKey (need an orgId
+// before app.org_id can be set), just keyed by botId instead of the
+// public key — used by tests/e2e/helpers.ts's seedConversations to
+// scope a direct Prisma seed through withOrgContext, without a second
+// PrismaClient instance in the codebase (see check-tenant-isolation.mjs).
+export async function getOrgIdForBot(botId: string): Promise<string> {
+  const key = await prisma.botPublicKey.findUniqueOrThrow({ where: { botId } });
+  return key.orgId;
+}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MessageCircle, Bot as BotIcon, Settings, LogOut } from "lucide-react";
+import { MessageCircle, Bot as BotIcon, Inbox, Settings, LogOut } from "lucide-react";
 import {
   Sidebar,
   SidebarHeader,
@@ -22,6 +22,7 @@ import { logoutAction } from "@/app/(console)/actions";
 // the auth check stays server-side in the layout.
 const NAV_ITEMS = [
   { href: "/bots", label: "Bots", icon: BotIcon },
+  { href: "/conversations", label: "Conversations", icon: Inbox },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 

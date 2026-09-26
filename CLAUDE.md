@@ -643,6 +643,74 @@ make a meaningful change, update this before ending your turn.
   confirmed stable across two clean re-runs. `docs/design/design-
   system.md`'s component inventory updated to reflect these 2 as
   migrated, 16 still CARE-derived.
+- **Conversation inbox built (ADR 0015) — closes the single biggest
+  concrete gap from `docs/roadmap.md`'s "Self-serve configurability"
+  pillar #5.** `Conversation`/`Message`/`ToolCallLog` were written on
+  every chat turn since the chat loop first shipped but had no console
+  UI to view them; `/conversations` (filterable list — bot, date range,
+  handoff-triggered) and `/conversations/[conversationId]` (full
+  message transcript with tool calls rendered inline, guardrail #6
+  traceability actually surfaced in the UI) close it. Dashboard-only
+  for v1 — resolved `docs/open-questions.md` #2 via a new ADR 0015
+  rather than building it silently, since that question was
+  specifically about this feature and had sat open; no email/Slack
+  push channel in this pass, matching the question's own original
+  recommendation. Deliberately did **not** add a `status`/"resolved"
+  column — `docs/roadmap.md`'s "Resolution-rate analytics" already
+  flagged that as needing a real product definition first, so ADR 0015
+  left it open rather than quietly picking one while building the
+  inbox (tracked as the new `docs/open-questions.md` #7). Handoff-
+  triggered is derived, not stored: a conversation counts as
+  handoff-triggered if any of its `ToolCallLog` rows' `output` contains
+  `handoff_required` (the string every action tool already returns per
+  guardrail #4) — computed at query time (`lib/conversations.ts`), no
+  schema change or backfill needed. Added a `destructive` variant to
+  the hand-authored `Badge` primitive (only had `default`/`muted`
+  before) for the handoff indicator.
+
+  Caught two real bugs by actually running it, not trusting types:
+  (1) Base UI's `<Select.Value>` (first real usage anywhere in this
+  app — the bot/date-range filters) can only resolve a selected item's
+  label from an actually-mounted `<Select.Item>`, and its popup content
+  unmounts while closed — without passing an `items` list to
+  `Select.Root`, the trigger displayed the raw value (`"all"`) instead
+  of its label (`"All bots"`) until first opened. Caught by an actual
+  screenshot, fixed by passing `items`, re-verified by screenshot. (2)
+  While writing the verification scripts themselves (not the app):
+  `page.waitForLoadState("networkidle")` right after a Playwright click
+  that triggers a Next.js client-side (soft) navigation is unreliable —
+  it can resolve before the RSC transition completes, making a
+  correctly-working row-click look like a dead click. Confirmed by
+  direct `elementFromPoint` + timing diagnostics that the app's click
+  handler and navigation were correct the whole time; the flaw was in
+  the test script's own wait strategy. Documented in `tests/e2e/
+  conversations.spec.ts`'s own specs (which use `expect(page).
+  toHaveURL(...)` instead) so this doesn't get rediscovered later.
+
+  Verified: guardrails, `tsc`, a clean rebuild, `npm run test:unit` (89
+  passed — 7 new specs for the handoff-derivation logic, mocked at the
+  `withOrgContext` boundary same as `lib/ai/chat.ts`'s existing tests),
+  all 40 `tests/e2e/` specs (6 new — empty state, seeded-list rendering,
+  the handoff-only filter, the bot filter, the detail transcript, and a
+  real cross-org tenant-isolation check hitting another org's
+  conversation id directly), and 2 new `tests/visual/` baselines
+  (conversations list, conversation detail) plus the 5 existing
+  console-shell-dependent baselines regenerated for the new sidebar nav
+  item (an expected, correct diff — confirmed via the actual diff image
+  before regenerating, not assumed) — all stable across two clean
+  re-runs. Conversations can't be created through the console UI (only
+  the widget chat API, which needs a real `ANTHROPIC_API_KEY`, a
+  placeholder in this environment) — `tests/e2e/helpers.ts`'s new
+  `seedConversations` writes directly via Prisma through the same
+  `withOrgContext` + `BotPublicKey` bootstrap mechanism the app itself
+  uses, standing in for a real chat turn, same pattern already
+  established for the knowledge base's embeddings-call boundary.
+  `docs/design/preview/conversations.html` (new, added to `docs/design/
+  README.md`), `docs/business-logic.md`, `docs/features.md`,
+  `docs/roadmap.md`, and `docs/adr/0015-conversation-inbox-dashboard-
+  only.md` all added/updated; `docs/open-questions.md` #2 resolved and
+  removed (remaining entries renumbered), a new #7 added for the
+  deferred "resolved" status semantics.
 
 **Known gaps:**
 - 🔲 Design system tokens/infra and a real 18-component primitive layer

@@ -99,6 +99,16 @@ billing instead of our managed key. Off by default. **How**: `app/
 (console)/settings/`, `lib/ai/gateway.ts`'s `getModelGateway(apiKey?)`,
 `lib/crypto.ts` for encryption at rest. ADR 0012.
 
+### Conversation inbox
+**Who**: the business owner, for human handoff. **What**: `/conversations`
+— a filterable list (by bot, date, handoff-triggered) of every widget
+conversation, and `/conversations/[conversationId]` — the full message
+transcript with tool calls rendered inline. Dashboard-only for v1, no
+email/Slack push. **How**: `lib/conversations.ts`,
+`components/console/{ConversationsTable,ConversationFilters,
+ConversationThread}.tsx`. ADR 0015. No `status`/"resolved" concept yet —
+see `docs/open-questions.md` #7.
+
 ## Planned
 
 See `docs/roadmap.md` (Now/Next/Later). Notable near-term items: write-

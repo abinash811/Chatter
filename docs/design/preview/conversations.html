@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: #e5e7eb; }
+.page-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; padding: 8px 16px; background: #fff; border-bottom: 1px solid #e5e5e5; color: #065f46; }
+
+/* Note: this preview predates ADR 0014's token rewrite (neutral/
+   monochrome oklch palette) — kept on the older emerald palette to
+   match every sibling docs/design/preview/*.html file, a known,
+   accepted drift documented in docs/design/README.md. The real app
+   (app/globals.css) is the current source of truth for actual color
+   values. */
+
+/* ── Shell ─────────────────────────────────────────── */
+.shell { display: flex; height: 380px; background: #fff; }
+.sidebar { width: 224px; flex-shrink: 0; border-right: 1px solid #e5e5e5; padding: 16px 12px; }
+.brand-row { display: flex; align-items: center; gap: 8px; padding: 8px; margin-bottom: 8px; }
+.brand-icon { width: 22px; height: 22px; background: #065f46; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.brand-name { font-size: 13px; font-weight: 600; color: #0a0a0c; }
+.nav-item { height: 32px; display: flex; align-items: center; gap: 8px; padding: 0 8px; border-radius: 6px; font-size: 13px; color: #737373; }
+.nav-item.active { color: #0a0a0c; background: #f5f5f5; font-weight: 500; }
+
+.main { flex: 1; padding: 24px 32px; overflow: hidden; }
+.main-header { display: flex; align-items: center; justify-content: space-between; height: 40px; margin-bottom: 4px; }
+.page-title { font-size: 18px; font-weight: 600; color: #0a0a0c; }
+.conv-count { font-size: 12px; color: #737373; margin-left: 8px; font-weight: 400; }
+.filters { display: flex; align-items: center; gap: 12px; }
+.select { height: 32px; border: 1px solid #e5e5e5; border-radius: 6px; padding: 0 10px; font-size: 13px; color: #0a0a0c; display: flex; align-items: center; gap: 6px; }
+.checkbox-row { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #737373; }
+.checkbox { width: 14px; height: 14px; border: 1px solid #d4d4d4; border-radius: 3px; }
+
+.list { margin-top: 12px; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; }
+.thead-row { display: flex; align-items: center; height: 40px; padding: 0 8px; background: #fafafa; border-bottom: 1px solid #e5e5e5; font-size: 13px; font-weight: 500; color: #0a0a0c; }
+.th-bot { width: 130px; padding-left: 8px; }
+.th-last { flex: 1; }
+.th-messages { width: 90px; }
+.th-handoff { width: 90px; }
+.th-started { width: 90px; text-align: right; padding-right: 24px; }
+.row { display: flex; align-items: center; height: 40px; padding: 0 8px; border-bottom: 1px solid #e5e5e5; font-size: 13px; cursor: pointer; }
+.row:last-child { border-bottom: none; }
+.row:hover { background: #fafafa; }
+.row-bot { width: 130px; padding-left: 8px; font-weight: 500; color: #0a0a0c; }
+.row-last { flex: 1; color: #737373; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 12px; }
+.row-messages { width: 90px; color: #737373; }
+.row-handoff { width: 90px; }
+.badge-handoff { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 4px; background: #fef2f2; color: #dc2626; }
+.row-started { width: 66px; color: #a3a3a3; font-size: 12px; text-align: right; }
+.row-chevron { color: #d4d4d4; margin-left: 12px; width: 16px; }
+
+/* ── Detail scene ──────────────────────────────────── */
+.back-link { font-size: 13px; color: #737373; margin-bottom: 16px; display: flex; align-items: center; gap: 6px; }
+.detail-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.detail-title { font-size: 18px; font-weight: 600; color: #0a0a0c; }
+.detail-meta { font-size: 13px; color: #737373; }
+.thread { border: 1px solid #e5e5e5; border-radius: 8px; background: #fafafa; padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+.bubble-row { display: flex; flex-direction: column; gap: 4px; }
+.bubble-row.assistant { align-items: flex-end; }
+.bubble-meta { font-size: 11px; color: #a3a3a3; }
+.bubble { max-width: 320px; padding: 8px 12px; border-radius: 8px; font-size: 13px; }
+.bubble.user { background: #f5f5f5; color: #0a0a0c; }
+.bubble.assistant { background: #065f46; color: #fff; }
+.tool-call { border: 1px solid #e5e5e5; border-radius: 8px; background: #fff; padding: 8px 12px; font-family: ui-monospace, monospace; font-size: 11px; color: #525252; }
+.tool-call-name { font-weight: 600; color: #0a0a0c; }
+</style>
+</head><body>
+
+<div class="page-label">Conversations — Linear register: dense list, same Table pattern as /bots (ADR 0015)</div>
+<div class="shell">
+  <div class="sidebar">
+    <div class="brand-row">
+      <div class="brand-icon"><svg width="12" height="12" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12c0 4.418-4.03 8-9 8-1.17 0-2.29-.2-3.31-.56L3 21l1.56-4.69C3.57 15.06 3 13.58 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></div>
+      <div class="brand-name">Chatter</div>
+    </div>
+    <div class="nav-item">Bots</div>
+    <div class="nav-item active">Conversations</div>
+    <div class="nav-item">Settings</div>
+  </div>
+
+  <div class="main">
+    <div class="main-header">
+      <div class="page-title">Conversations<span class="conv-count">2</span></div>
+      <div class="filters">
+        <div class="select">All bots ▾</div>
+        <div class="select">All time ▾</div>
+        <div class="checkbox-row"><div class="checkbox"></div>Handoff triggered only</div>
+      </div>
+    </div>
+
+    <div class="list">
+      <div class="thead-row">
+        <div class="th-bot">Bot</div>
+        <div class="th-last">Last message</div>
+        <div class="th-messages">Messages</div>
+        <div class="th-handoff">Handoff</div>
+        <div class="th-started">Started</div>
+        <div style="width:16px;"></div>
+      </div>
+      <div class="row">
+        <div class="row-bot">Support bot</div>
+        <div class="row-last">Where is my order #1234?</div>
+        <div class="row-messages">2</div>
+        <div class="row-handoff"><span class="badge-handoff">Handoff</span></div>
+        <div class="row-started">4m ago</div>
+        <div class="row-chevron">›</div>
+      </div>
+      <div class="row">
+        <div class="row-bot">Support bot</div>
+        <div class="row-last">Do you sell blue widgets?</div>
+        <div class="row-messages">2</div>
+        <div class="row-handoff">—</div>
+        <div class="row-started">1h ago</div>
+        <div class="row-chevron">›</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page-label">Conversation detail — full transcript, tool calls inline (guardrail #6 traceability)</div>
+<div class="shell" style="height:420px;">
+  <div class="sidebar">
+    <div class="brand-row">
+      <div class="brand-icon"><svg width="12" height="12" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12c0 4.418-4.03 8-9 8-1.17 0-2.29-.2-3.31-.56L3 21l1.56-4.69C3.57 15.06 3 13.58 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></div>
+      <div class="brand-name">Chatter</div>
+    </div>
+    <div class="nav-item">Bots</div>
+    <div class="nav-item active">Conversations</div>
+    <div class="nav-item">Settings</div>
+  </div>
+
+  <div class="main">
+    <div class="back-link">‹ Conversations</div>
+    <div class="detail-header">
+      <div class="detail-title">Support bot</div>
+      <div class="detail-meta">Started 4m ago</div>
+    </div>
+
+    <div class="thread">
+      <div class="bubble-row">
+        <div class="bubble-meta">Visitor · 4m ago</div>
+        <div class="bubble user">Where is my order #1234?</div>
+      </div>
+      <div class="bubble-row assistant">
+        <div class="bubble-meta">Bot · 4m ago</div>
+        <div class="bubble assistant">I've collected your order number and will connect you with a human.</div>
+      </div>
+      <div class="bubble-row">
+        <div class="bubble-meta">Tool call · 4m ago <span class="badge-handoff">Handoff</span></div>
+        <div class="tool-call">
+          <div class="tool-call-name">check_order_status</div>
+          <div>in: {"orderNumber":"1234"}</div>
+          <div>out: {"status":"handoff_required", ...}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body></html>

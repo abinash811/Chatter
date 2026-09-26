@@ -217,6 +217,53 @@ question/answer fields a business owner just typed (`useActionState`'s
 failure, unless the action's returned state re-seeds them via
 `defaultValue`; same fix already shipped for `/login`'s email field).
 
+## Conversation inbox (`lib/conversations.ts`, ADR 0015)
+
+`Conversation`, `Message`, and `ToolCallLog` were written on every chat
+turn since `lib/ai/chat.ts`'s `sendMessage` first shipped, but no console
+route ever read them back — `/conversations` (list) and `/conversations/
+[conversationId]` (detail) close that gap. Dashboard-only for v1, per
+ADR 0015 (resolving the previously-open "human handoff channel" question):
+no email/Slack push in this pass.
+
+**List** (`listConversations`): one row per `Conversation`, joined to its
+bot's name and its most recent `Message` for a preview, filterable by
+`botId`, a `fromDate` (the console's date-range presets), and
+`handoffOnly`. **Handoff-triggered is derived, not stored** — a
+conversation counts as handoff-triggered if any of its `ToolCallLog` rows'
+`output` contains `handoff_required` (the string every action tool
+returns per guardrail #4 when it can't fulfill a request — see
+`lib/ai/tools/checkOrderStatus.ts`). This needed no schema change or
+backfill, computed at query time from data that already existed.
+
+**Detail** (`getConversationDetail`): the full message transcript and
+every `ToolCallLog` row for one conversation, merged into a single
+chronological timeline by the console (`ConversationThread.tsx`) — a
+tool call renders inline next to the messages around it, not in a
+separate tab a reviewer has to cross-reference by timestamp. This is
+guardrail #6 (traceability) actually surfaced in the UI, not just logged
+to a table nobody reads.
+
+**Deliberately not built**: a `status`/"resolved" concept. `docs/roadmap.
+md`'s "Resolution-rate analytics" already flagged this as needing a real
+product definition first (closed by visitor leaving satisfied? no
+handoff triggered? something else?) — ADR 0015 left it undefined rather
+than silently picking one while building the inbox; tracked as `docs/
+open-questions.md` #7.
+
+**Verification note**: conversations can't be created through the
+console UI — they're only ever written by the widget chat API
+(`app/api/chat/route.ts`), which needs a real `ANTHROPIC_API_KEY` (a
+placeholder in this environment, same class of gap as the knowledge
+base's embeddings call). `tests/e2e/helpers.ts`'s `seedConversations`
+writes directly via Prisma, scoped through the same `withOrgContext` +
+`BotPublicKey` mechanism the app itself uses to bootstrap an `orgId`
+from a `botId` — standing in for a real chat turn, same pattern
+`knowledge.spec.ts` already used for a directly-seeded knowledge entry.
+Every other part of the feature (list rendering, filters, the handoff
+derivation, the detail transcript, tenant isolation across orgs) was
+verified for real against a real Postgres instance and a real browser.
+
 ## Tenant isolation in practice
 
 Every tenant-scoped database query must go through `withOrgContext`

@@ -1,4 +1,5 @@
 import { type Page, expect } from "@playwright/test";
+import { withOrgContext, getOrgIdForBot } from "@/lib/db";
 
 // Shared across every e2e spec that needs a signed-up, onboarded user
 // with a first bot — extracted here (ADR 0012's onboarding change is
@@ -23,4 +24,68 @@ export async function signUpAndCreateBot(page: Page, botName: string, emailPrefi
   await page.fill("#botName", botName);
   await page.click('button:has-text("Continue")');
   await expect(page).toHaveURL(/\/bots\/[^/]+$/);
+}
+
+// ADR 0015: conversations are only ever created via the widget chat API
+// (app/api/chat/route.ts), which requires a real ANTHROPIC_API_KEY —
+// same placeholder-key gap documented for the knowledge base's
+// embeddings call (tests/e2e/knowledge.spec.ts). Seeding directly via
+// Prisma, scoped through the same RLS mechanism the app itself uses
+// (withOrgContext from lib/db.ts — never a second PrismaClient here,
+// see check-tenant-isolation.mjs), stands in for a real chat turn —
+// same pattern as knowledge.spec.ts's directly-seeded entry.
+// getOrgIdForBot (lib/db.ts) is how this resolves a bot's orgId before
+// app.org_id can be set, the same bootstrapping problem the app itself
+// solves via BotPublicKey, the one table exempt from RLS.
+export async function seedConversations(
+  botId: string,
+): Promise<{ normalConversationId: string; handoffConversationId: string }> {
+  const orgId = await getOrgIdForBot(botId);
+  const draft = await withOrgContext(orgId, (tx) => tx.botConfigVersion.findFirstOrThrow({ where: { botId } }));
+
+  const normal = await withOrgContext(orgId, (tx) =>
+    tx.conversation.create({ data: { orgId, botId, configVersionId: draft.id } }),
+  );
+  await withOrgContext(orgId, (tx) =>
+    tx.message.createMany({
+      data: [
+        { orgId, conversationId: normal.id, role: "user", content: "Do you sell blue widgets?" },
+        { orgId, conversationId: normal.id, role: "assistant", content: "Yes, in stock at $19.99." },
+      ],
+    }),
+  );
+
+  const handoff = await withOrgContext(orgId, (tx) =>
+    tx.conversation.create({ data: { orgId, botId, configVersionId: draft.id } }),
+  );
+  await withOrgContext(orgId, (tx) =>
+    tx.message.createMany({
+      data: [
+        { orgId, conversationId: handoff.id, role: "user", content: "Where is my order #ORD1234?" },
+        {
+          orgId,
+          conversationId: handoff.id,
+          role: "assistant",
+          content: "I've noted your order number and will connect you with a human.",
+        },
+      ],
+    }),
+  );
+  await withOrgContext(orgId, (tx) =>
+    tx.toolCallLog.create({
+      data: {
+        orgId,
+        conversationId: handoff.id,
+        toolName: "check_order_status",
+        input: { orderNumber: "1234" },
+        output: JSON.stringify({
+          status: "handoff_required",
+          reason: "No Shopify store connected for this bot yet.",
+          collected: { orderNumber: "1234" },
+        }),
+      },
+    }),
+  );
+
+  return { normalConversationId: normal.id, handoffConversationId: handoff.id };
 }

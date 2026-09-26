@@ -11,16 +11,13 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
 
 ## Product/scope questions
 
-2. **Human handoff channel for v1.** In-dashboard inbox only, or also push
-   to email/Slack? Recommend: dashboard inbox only for v1, add channels
-   later.
-3. **Compliance posture for regulated verticals**, healthcare especially.
+2. **Compliance posture for regulated verticals**, healthcare especially.
    Do we need real PII/PHI handling rules now, or explicitly scope v1's
    healthcare template as "not for PHI, informational only" and revisit?
-4. **Site crawling in v1 ingestion**, or manual upload/Q&A only for v1 with
+3. **Site crawling in v1 ingestion**, or manual upload/Q&A only for v1 with
    crawling added later? Crawling is high-value but adds real scope
    (crawler, dedup, refresh scheduling, respecting robots.txt, etc.).
-5. **Prompt/persona template scope** (`docs/roadmap.md`'s "Self-serve
+4. **Prompt/persona template scope** (`docs/roadmap.md`'s "Self-serve
    configurability" #1). Is this 2-3 use-case templates within v1's
    single ecommerce vertical (support/sales/lead-gen tone+goals), or a
    cross-vertical library? Affects whether it's small scope now or
@@ -28,7 +25,7 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
    meaningful. Recommend: 2-3 ecommerce use-case templates now — a
    library with only one vertical to draw from isn't really a library
    yet.
-6. **Nudges — scope and mechanism** (`docs/roadmap.md`'s "Self-serve
+5. **Nudges — scope and mechanism** (`docs/roadmap.md`'s "Self-serve
    configurability" #6). What triggers (exit-intent, time-on-page,
    scroll-depth, cart-abandonment)? Generic across verticals or
    ecommerce-specific to start? Where does the business owner configure
@@ -36,7 +33,7 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
    No recommendation yet — needs real scoping (and likely a small
    competitor check: how Intercom/Drift/Tidio actually expose this)
    before an ADR.
-7. **LLM model picker + pricing display** (`docs/roadmap.md`'s "Self-
+6. **LLM model picker + pricing display** (`docs/roadmap.md`'s "Self-
    serve configurability" #7). Does pricing display apply to BYOA users
    at all (they pay Anthropic directly) or only the managed-key path?
    What does "pricing" mean here — real per-token cost passed through,
@@ -44,6 +41,12 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
    option ties into the still-open billing/pricing model question below
    — a real per-token cost display only makes sense once that's
    answered.
+7. **`Conversation` "resolved" status semantics.** `docs/roadmap.md`'s
+   Next section ("Resolution-rate analytics") needs a real definition
+   of "resolved" before it's buildable — closed by visitor leaving
+   satisfied? no handoff triggered? something else? ADR 0015
+   deliberately left this undefined rather than picking a definition
+   while building the conversation inbox.
 
 ## Not yet asked
 
@@ -86,3 +89,5 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
   larger decision to move off CARE as both component source and visual
   reference entirely, replaced by shadcn/ui + Claude Console's real
   layout. See ADR 0014.
+- ~~Human handoff channel for v1~~ — dashboard inbox only, no email/
+  Slack push in this pass. See ADR 0015.
