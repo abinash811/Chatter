@@ -83,13 +83,12 @@ request was phrased.
    Claude Console gave us actual product screenshots, the thing ADR
    0011 could never get for CARE). `docs/design/design-system.md` has
    the actual current token values/component inventory — check it
-   before hand-picking a color or spacing value. The *token layer*
-   already applies everywhere (colors/radius are global CSS variables,
-   can't be phased per-screen); the *component* migration is new-
-   screens-first (`docs/roadmap.md`'s "Self-serve configurability"
-   pillars) — existing shipped screens' CARE-derived component files
-   stay as they are until each is deliberately migrated, not touched as
-   a side effect of building something else.
+   before hand-picking a color or spacing value. **All 18 primitives in
+   `components/ui/` are now on shadcn's real source (ADR 0017 completed
+   the migration ADR 0014 had originally phased new-screens-first) —
+   `@base-ui/react` is gone from `package.json` entirely.** A new
+   primitive follows the same real-source-pull rule below; there's no
+   more CARE-vs-shadcn source split to track per file.
    - **Layout/structure**: match Claude Console's actual patterns —
      collapsible sidebar sections with a subtle gray-pill active state,
      bordered-not-shadowed cards, solid-dark primary buttons vs.

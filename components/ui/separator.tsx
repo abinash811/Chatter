@@ -1,50 +1,36 @@
-"use client";
-
 /**
  * @name separator
  * @description Visually or semantically separates content.
- * @dependencies @base-ui/react class-variance-authority
+ * @dependencies radix-ui
  * @type registry:ui
  */
-import { cva, type VariantProps } from "class-variance-authority";
-import { Separator as SeparatorPrimitive } from "@base-ui/react/separator";
+// ADR 0014 + ADR 0017: real, current source from shadcn/ui's official
+// registry (github.com/shadcn-ui/ui, new-york-v4 style) via
+// scripts/pull-shadcn-component.mjs — not CARE's fork.
+"use client"
 
-import { cn } from "@/lib/utils";
-
-const separatorVariants = cva(
-  "shrink-0 data-horizontal:w-full data-vertical:self-stretch",
-  {
-    variants: {
-      variant: {
-        solid: "bg-border data-horizontal:h-px data-vertical:w-px",
-        dashed:
-          "border-border border-dashed data-horizontal:h-0 data-horizontal:border-t data-vertical:w-0 data-vertical:border-l",
-        inset:
-          "border-border border-t data-horizontal:h-0 data-horizontal:w-full data-horizontal:[box-shadow:0_1px_0_0_var(--background)] data-vertical:w-0 data-vertical:border-l data-vertical:[box-shadow:1px_0_0_0_var(--background)]",
-        dotted:
-          "[background:radial-gradient(circle,var(--border)_1px,transparent_1px)_0_0/8px_8px] data-horizontal:h-2 data-vertical:w-2",
-      },
-    },
-    defaultVariants: {
-      variant: "solid",
-    },
-  }
-);
+import * as React from "react"
+import { cn } from "@/lib/utils"
+import { Separator as SeparatorPrimitive } from "radix-ui"
 
 function Separator({
   className,
   orientation = "horizontal",
-  variant,
+  decorative = true,
   ...props
-}: SeparatorPrimitive.Props & VariantProps<typeof separatorVariants>) {
+}: React.ComponentProps<typeof SeparatorPrimitive.Root>) {
   return (
-    <SeparatorPrimitive
+    <SeparatorPrimitive.Root
       data-slot="separator"
+      decorative={decorative}
       orientation={orientation}
-      className={cn(separatorVariants({ variant }), className)}
+      className={cn(
+        "shrink-0 bg-border data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-px",
+        className
+      )}
       {...props}
     />
-  );
+  )
 }
 
-export { Separator, separatorVariants };
+export { Separator }

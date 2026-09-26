@@ -119,7 +119,7 @@ export {
   SidebarTrigger,
   useSidebar,
 } from "./sidebar";
-export { Alert, AlertTitle, AlertDescription, AlertAction } from "./alert";
+export { Alert, AlertTitle, AlertDescription } from "./alert";
 export { Switch } from "./switch";
 export { RadioGroup, RadioGroupItem } from "./radio-group";
 export {
@@ -128,7 +128,6 @@ export {
   SheetClose,
   SheetContent,
   SheetHeader,
-  SheetBody,
   SheetFooter,
   SheetTitle,
   SheetDescription,

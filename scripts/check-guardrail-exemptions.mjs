@@ -9,11 +9,12 @@
 // Two kinds of exemption exist:
 //  1. A few named, stable files (ALLOWLIST in a handful of scripts) —
 //     each has its own one-line reason below.
-//  2. Every components/ui/*.tsx pulled verbatim from CARE (ADR 0008,
-//     scripts/pull-care-component.mjs) — computed dynamically via the
-//     same helper the checks themselves use
-//     (scripts/lib/careExemption.mjs), so this report and the actual
-//     enforcement can never silently drift apart.
+//  2. Every components/ui/*.tsx pulled verbatim from an upstream
+//     registry (originally ADR 0008's CARE pulls; as of ADR 0017,
+//     shadcn's own official registry via scripts/pull-shadcn-
+//     component.mjs) — computed dynamically via the same helper the
+//     checks themselves use (scripts/lib/careExemption.mjs), so this
+//     report and the actual enforcement can never silently drift apart.
 
 import { readFileSync } from "fs";
 import { execSync } from "child_process";
@@ -50,8 +51,8 @@ for (const entry of NAMED_ALLOWLIST) {
 }
 
 console.log(
-  `CARE-pulled primitives (ADR 0008) — exempt from design-tokens, no-raw-buttons, and file-length together: ${careFiles.length} file(s)\n`,
+  `Verbatim registry pulls (all shadcn's official source as of ADR 0017) — exempt from design-tokens, no-raw-buttons, and file-length together: ${careFiles.length} file(s)\n`,
 );
 for (const f of careFiles) console.log(`  ${f}`);
 
-console.log(`\nTotal: ${NAMED_ALLOWLIST.length} named + ${careFiles.length} CARE-pulled = ${NAMED_ALLOWLIST.length + careFiles.length} files with at least one guardrail exemption.`);
+console.log(`\nTotal: ${NAMED_ALLOWLIST.length} named + ${careFiles.length} verbatim-pulled = ${NAMED_ALLOWLIST.length + careFiles.length} files with at least one guardrail exemption.`);

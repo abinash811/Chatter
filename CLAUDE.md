@@ -771,18 +771,82 @@ make a meaningful change, update this before ending your turn.
   new optional `Tool.describeForInbox`), `docs/business-logic.md`,
   `docs/features.md`, `docs/design/preview/conversations.html`, and
   `docs/design/README.md` all updated.
+- **Design system fully off CARE — all 18 primitives now on shadcn's
+  real official source, `@base-ui/react` removed entirely (ADR 0017).**
+  User's explicit instruction: "Remove all design dependencies and keep
+  only Shadcn" — overrides ADR 0014's new-screens-first phasing (which
+  had only migrated `Sidebar`/`Table` after 2 sessions) in favor of
+  finishing the whole set now. All 16 remaining primitives (`Button`,
+  `Dialog`, `AlertDialog`, `Tabs`, `DropdownMenu`, `Popover`, `Tooltip`,
+  `Select`, `Separator`, `Avatar`, `Skeleton`, `Alert`, `Switch`,
+  `RadioGroup`, `Sheet`, `ScrollArea`) pulled in one batch via the
+  existing `scripts/pull-shadcn-component.mjs` (real source from
+  `raw.githubusercontent.com`, never recalled/guessed) — 10 have real
+  screen usage (directly, or indirectly via `Sidebar`'s own internal
+  dependencies), 6 (`Popover`/`Avatar`/`Alert`/`Switch`/`RadioGroup`/
+  `ScrollArea`) had zero usage anywhere in the app even under CARE,
+  migrated anyway since the goal was dropping the dependency entirely,
+  not just fixing load-bearing screens — documented plainly that these
+  6 only got `tsc`/build verification, not real browser behavior, since
+  nothing renders them. `npm uninstall @base-ui/react` once nothing
+  imported it anymore; bundle size dropped measurably as a real,
+  incidental benefit (e.g. the bot editor page's First Load JS: 230kB
+  → 187kB).
+
+  `tsc` surfaced 5 real API differences between Base UI and radix-ui in
+  one pass (fixed, not guessed): `Tabs.Content`'s `keepMounted` →
+  `forceMount`; CARE's `destructive-solid` Button variant doesn't exist
+  on shadcn's real 6-variant set (→ `destructive`); `Select.Value`
+  needs no `items` workaround with real radix-ui (only Base UI's popup-
+  unmounts-while-closed behavior required that); `Sidebar`'s one-line
+  `TooltipProvider` `delay`→`delayDuration` adaptation from the ADR
+  0014 Sidebar-only migration reverted now that `Tooltip` is also real
+  shadcn; and CARE's extra `AlertAction`/`SheetBody` exports (unused
+  anywhere) dropped from `components/ui/index.ts`.
+
+  **Caught one real, non-cosmetic regression by actually clicking
+  through the app, not trusting `tsc`**: the knowledge base's delete
+  confirmation used a `<form action={deleteFormAction}>` submit button
+  nested inside `AlertDialogAction` — under real radix-ui, the dialog's
+  own close-on-click dismissal unmounts mid-click and corrupts React's
+  server-action wiring, so clicking "Delete" silently fired zero
+  network requests (confirmed via request/response logging) — the row
+  never actually got deleted, though the UI gave no visible sign
+  anything was wrong. This exact flow had only ever been "verified for
+  real" as a one-off manual check in an earlier session (ADR 0013's
+  knowledge base pass), never as a persistent spec, so nothing would
+  have caught this regression automatically. Fixed by calling the
+  `useActionState` dispatch directly with manually-built `FormData`
+  from `onClick` instead of relying on native form submission —
+  sidesteps the race entirely. Added a permanent
+  `tests/e2e/knowledge.spec.ts` regression spec (Cancel keeps the row,
+  confirming Delete removes it past a real reload) so this can't be
+  silently reintroduced, closing the exact kind of coverage gap
+  CLAUDE.md's own "never commit code that hasn't actually been run"
+  rule warns about.
+
+  Verified: guardrails, `tsc`, a clean rebuild, all 99 unit tests
+  (unchanged), all 41 `tests/e2e/` specs (40 + 1 new regression spec)
+  against a genuinely fresh server, and all 11 `tests/visual/`
+  baselines regenerated (every one changed, as expected — Button's real
+  shadcn styling differs subtly from CARE's, affecting every screen —
+  confirmed via real diff/actual images before regenerating, not
+  assumed) and stable across two clean re-runs. `docs/design/design-
+  system.md`'s component inventory rewritten (no more CARE-vs-shadcn
+  split to track), `docs/conventions.md`'s "Building a new feature"
+  step 2 updated, `docs/adr/0017-complete-shadcn-migration-drop-base-
+  ui.md` added.
 
 **Known gaps:**
 - 🔲 Design system tokens/infra and a real 18-component primitive layer
-  are done (ADR 0008), pulled under the mechanism ADR 0010 has since
-  moved away from for new work (see the Done bullet above). Bots list
-  (real CARE `Table`) and the bot editor (persistent top bar + `Tabs` +
-  `Dialog`, principles.md #10) are now rebuilt on these primitives —
-  not just recolored. Still open: the integrations page, using the same
-  already-pulled primitives where they fit (and, going forward,
-  principles.md #10's shape wherever it applies); any new primitive it
-  needs beyond those 18 follows ADR 0010 — reference CARE, hand-author,
-  don't pull. That's the agreed next step.
+  are done — **all 18 now on shadcn's real official source, ADR 0017**
+  (superseding the ADR 0008/CARE-pull mechanism entirely; see the Done
+  bullet below). Bots list (real `Table`) and the bot editor (persistent
+  top bar + `Tabs` + `Dialog`, principles.md #10) are rebuilt on these
+  primitives, not just recolored. Still open: the integrations page,
+  using the same primitives where they fit (and, going forward,
+  principles.md #10's shape wherever it applies) — a design/layout gap,
+  not a component-source gap anymore.
 - 🔲 The depth/polish pass (principles.md #5/#9 — real Card boundaries,
   centered layout, hover/shadow states on Input/Textarea/Checkbox) is
   done on the bot editor only, by deliberate scope choice (one screen

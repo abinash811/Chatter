@@ -35,16 +35,15 @@ export function ConversationFilters({ bots }: { bots: { id: string; name: string
   const range = searchParams.get("range") ?? "all";
   const issuesOnly = searchParams.get("issues") === "1";
 
-  // Base UI's <Select.Value> can only resolve the selected label from an
-  // actually-mounted <Select.Item> — its popup content is unmounted while
-  // closed, so without `items` here the trigger displays the raw value
-  // ("all") instead of its label ("All bots") until first opened. Caught
-  // by an actual screenshot, not assumed from the types.
+  // ADR 0017: radix-ui's real <Select.Value> resolves the selected
+  // item's label directly (registered internally, not dependent on the
+  // popup being mounted) — unlike Base UI, no `items` workaround needed
+  // here. Verified with a real screenshot after the migration.
   const botItems = [{ value: "all", label: "All bots" }, ...bots.map((bot) => ({ value: bot.id, label: bot.name }))];
 
   return (
     <div className="flex items-center gap-3">
-      <Select value={botId} onValueChange={(value) => setParam("botId", value)} items={botItems}>
+      <Select value={botId} onValueChange={(value) => setParam("botId", value)}>
         <SelectTrigger size="sm" className="w-40">
           <SelectValue />
         </SelectTrigger>
@@ -57,7 +56,7 @@ export function ConversationFilters({ bots }: { bots: { id: string; name: string
         </SelectContent>
       </Select>
 
-      <Select value={range} onValueChange={(value) => setParam("range", value)} items={RANGE_OPTIONS}>
+      <Select value={range} onValueChange={(value) => setParam("range", value)}>
         <SelectTrigger size="sm" className="w-36">
           <SelectValue />
         </SelectTrigger>

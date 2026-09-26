@@ -12,15 +12,16 @@ import { isVerbatimCareFile } from "./lib/careExemption.mjs";
 // entire root layout when triggered, so it can't assume the component
 // library (or anything else about the app's setup) still works.
 // components/ui/button.tsx no longer needs a named entry here — it's a
-// verbatim CARE pull now too (ADR 0008), already covered by
-// isVerbatimCareFile below. (Found via scripts/check-guardrail-
-// exemptions.mjs surfacing it as a redundant double-exemption.)
+// verbatim registry pull too (originally ADR 0008's CARE pull, now
+// ADR 0017's shadcn pull), already covered by isVerbatimCareFile below.
+// (Found via scripts/check-guardrail-exemptions.mjs surfacing it as a
+// redundant double-exemption.)
 const ALLOWLIST = new Set(["app/global-error.tsx"]);
-// ADR 0008: components/ui/*.tsx pulled verbatim from CARE (button.tsx
-// included) are themselves primitives — they may define their own raw
-// <button> internally (e.g. sidebar.tsx's trigger). App code (app/,
-// hand-authored components) still must always go through <Button>.
-// See scripts/lib/careExemption.mjs.
+// components/ui/*.tsx pulled verbatim from an upstream registry
+// (button.tsx included) are themselves primitives — they may define
+// their own raw <button> internally (e.g. sidebar.tsx's trigger). App
+// code (app/, hand-authored components) still must always go through
+// <Button>. See scripts/lib/careExemption.mjs.
 
 const files = execSync("git ls-files 'app/**/*.tsx' 'components/**/*.tsx'", { encoding: "utf8" })
   .trim()

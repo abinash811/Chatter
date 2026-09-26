@@ -135,7 +135,7 @@ export function BotEditorForm({
             <TabsTrigger value="appearance">Appearance</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="persona" keepMounted className="mt-4">
+          <TabsContent value="persona" forceMount className="mt-4">
             <Card>
               <CardHeader>
                 <CardTitle>Persona</CardTitle>
@@ -152,7 +152,7 @@ export function BotEditorForm({
             </Card>
           </TabsContent>
 
-          <TabsContent value="guardrails" keepMounted className="mt-4">
+          <TabsContent value="guardrails" forceMount className="mt-4">
             <Card>
               <CardHeader>
                 <CardTitle>Guardrails</CardTitle>
@@ -170,7 +170,7 @@ export function BotEditorForm({
             </Card>
           </TabsContent>
 
-          <TabsContent value="tools" keepMounted className="mt-4">
+          <TabsContent value="tools" forceMount className="mt-4">
             <Card>
               <CardHeader>
                 <CardTitle>Tools</CardTitle>
@@ -191,7 +191,7 @@ export function BotEditorForm({
             </Card>
           </TabsContent>
 
-          <TabsContent value="appearance" keepMounted className="mt-4 space-y-4">
+          <TabsContent value="appearance" forceMount className="mt-4 space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle>Appearance</CardTitle>

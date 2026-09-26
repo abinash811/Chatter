@@ -106,36 +106,59 @@ before ADR 0014, not a coincidence worth re-deriving.
 
 ## Component inventory
 
-18 primitives total in `components/ui/`. 2 are now on shadcn's real
-official registry source (ADR 0014); the remaining 16 are still on
-their original CARE-derived source (ADR 0008), being re-pulled
-screen by screen, not in one batch (ADR 0014's new-screens-first
-rollout — `Sidebar`/`Table` were a deliberate exception, since both
-are shared shell components every existing console screen already
-depends on, not a new screen; see this doc's own header comment
-convention on each file for which source it's really on):
+**All 18 primitives in `components/ui/` are now on shadcn's real
+official registry source (ADR 0014 + ADR 0017)** — the CARE-derived
+source (ADR 0008) is fully retired. `@base-ui/react` (CARE's underlying
+primitive library) has been removed from `package.json` entirely;
+`radix-ui` is the only headless-primitive dependency in the repo now.
+ADR 0014's original new-screens-first phasing (migrate one component
+whenever its screen is next touched) was itself superseded by ADR 0017
+— the user asked to finish the whole set in one pass rather than wait
+for each remaining screen to be touched organically.
 
-**Migrated to shadcn-official:**
+`Sidebar` and `Table` (the first 2, migrated under ADR 0014) needed no
+further changes. The remaining 16
+(`Button`, `Dialog`, `AlertDialog`, `Tabs`, `DropdownMenu`, `Popover`,
+`Tooltip`, `Select`, `Separator`, `Avatar`, `Skeleton`, `Alert`,
+`Switch`, `RadioGroup`, `Sheet`, `ScrollArea`) were migrated under ADR
+0017, surfacing a few real API differences between CARE's
+`@base-ui/react` and shadcn's real `radix-ui`:
 
-- `Sidebar` — one documented adaptation: our CARE-derived
-  `TooltipProvider` (`components/ui/tooltip.tsx`) names its zero-delay
-  prop `delay`, not shadcn's `delayDuration` — kept Tooltip on its
-  existing CARE-derived version rather than expanding the migration,
-  since `tsc` confirmed this was the only real incompatibility.
-- `Table` — one deliberate deviation from the verbatim source: kept
-  `TableHead`'s `bg-soft-background` tint (shadcn's own plain default
-  has none) — matches Claude Console's real screenshots, which do show
-  a tinted header row.
+- **`Tabs`**: `TabsContent`'s `keepMounted` (Base UI) renamed to
+  `forceMount` (radix-ui) — same semantics, different prop name.
+  Updated in `BotEditorForm.tsx`.
+- **`Button`**: CARE's 8-variant set (including `destructive-solid`)
+  doesn't exist on shadcn's real 6-variant `Button` — the one usage
+  (`KnowledgeForm.tsx`'s delete confirmation) uses `destructive`
+  instead, shadcn's own single solid-destructive variant.
+- **`Select`**: real `<Select.Value>` (radix-ui) resolves the selected
+  item's label directly — no `items` prop workaround needed (that was
+  specifically a Base UI requirement, since its popup unmounts while
+  closed; radix-ui's doesn't have that limitation).
+  `ConversationFilters.tsx` simplified accordingly.
+- **`Tooltip`**: now also real shadcn source, so `Sidebar`'s one-line
+  `delay={0}` adaptation (from the ADR 0014 Sidebar-only migration)
+  reverted to shadcn's own real prop, `delayDuration={0}`.
+- **`Alert`/`Sheet`**: CARE's extra `AlertAction`/`SheetBody` exports
+  don't exist in shadcn's real source (and weren't used anywhere in the
+  app) — dropped from `components/ui/index.ts`.
+- **A real bug, not just an API rename**: `AlertDialogAction`'s
+  `<form action={...}>` submit-button pattern (used by the knowledge
+  base's delete confirmation) raced with radix-ui's own close-on-click
+  dismissal — the dialog unmounting mid-click corrupted React's
+  server-action wiring, so clicking "Delete" never actually submitted
+  anything (confirmed: zero network requests fired). Fixed by calling
+  the `useActionState` dispatch directly with manually-built `FormData`
+  from `onClick` instead of relying on native form submission — see
+  `KnowledgeForm.tsx` and its own comment. Caught only by a real
+  click-through + checking for an actual network request, not by `tsc`
+  or the build; a persistent regression test
+  (`tests/e2e/knowledge.spec.ts`) now guards it.
 
-**Still CARE-derived (ADR 0008):**
-
-`Dialog`, `AlertDialog`, `Tabs`, `DropdownMenu`, `Popover`,
-`Tooltip`, `Select`, `Separator`, `Avatar`, `Skeleton`,
-`Alert`, `Switch`, `RadioGroup`, `Sheet`, `ScrollArea`, `Button`.
-
-Plus Chatter's own hand-authored primitives (never CARE-derived):
-`Input`, `Textarea`, `Label`, `Checkbox`, `Card`/`CardHeader`/
-`CardTitle`/`CardDescription`/`CardContent`, `Badge`, `Toaster`.
+Plus Chatter's own hand-authored primitives (never CARE- or
+shadcn-derived): `Input`, `Textarea`, `Label`, `Checkbox`, `Card`/
+`CardHeader`/`CardTitle`/`CardDescription`/`CardContent`, `Badge`,
+`Toaster`.
 
 To pull a fresh component from shadcn's real official source:
 `node scripts/pull-shadcn-component.mjs <name>` (stdout by default;
@@ -149,7 +172,6 @@ see ADR 0014's Consequences for why).
   toggles it yet — no live dark-mode contrast verification has been
   done (same unverified status as before ADR 0014, not a new gap this
   introduced).
-- 16 of the 18 CARE-derived primitives haven't been re-pulled yet
-  (`Sidebar`/`Table` are done — see the component inventory above).
-  Check a given file's own header comment for which source it's really
-  on.
+- ~~16 of the 18 CARE-derived primitives haven't been re-pulled yet~~
+  — resolved by ADR 0017: all 18 are now on shadcn's real source,
+  `@base-ui/react` removed entirely.

@@ -89,3 +89,20 @@ export async function seedConversations(
 
   return { normalConversationId: normal.id, issueConversationId: withIssue.id };
 }
+
+// Same class of gap as seedConversations: a real Q&A entry needs a
+// working embeddings call (VOYAGE_API_KEY is a placeholder here), so
+// this seeds a KnowledgeSource+KnowledgeChunk directly — a zero vector
+// stands in for a real embedding, matching lib/ai/knowledgeBase.ts's
+// own createQaEntry shape (chunk created via Prisma, embedding column
+// set via a separate $executeRaw since pgvector isn't in schema.prisma).
+export async function seedKnowledgeEntry(botId: string, question: string, answer: string): Promise<void> {
+  const orgId = await getOrgIdForBot(botId);
+  const zeroVector = `[${Array(1536).fill(0).join(",")}]`;
+
+  await withOrgContext(orgId, async (tx) => {
+    const source = await tx.knowledgeSource.create({ data: { orgId, botId, kind: "qa", title: question } });
+    const chunk = await tx.knowledgeChunk.create({ data: { orgId, sourceId: source.id, content: answer } });
+    await tx.$executeRaw`update knowledge_chunks set embedding = ${zeroVector}::vector where id = ${chunk.id}`;
+  });
+}

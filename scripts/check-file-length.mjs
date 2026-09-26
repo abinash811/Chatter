@@ -5,11 +5,13 @@
 // app/ and components/ only; lib/, scripts/, and generated files aren't
 // under this rule.
 //
-// ADR 0008 exception: components/ui/*.tsx pulled verbatim from CARE are
-// one file per upstream registry item, same as CARE ships them —
-// splitting one would diverge from their real source and break
-// re-pulling it later. Hand-authored app/component files still follow
-// the 300-line rule. See scripts/lib/careExemption.mjs.
+// Exception: components/ui/*.tsx pulled verbatim from an upstream
+// registry (originally ADR 0008's CARE pulls; as of ADR 0017, shadcn's
+// own official registry) are one file per upstream registry item, same
+// as that registry ships them — splitting one would diverge from its
+// real source and break re-pulling it later. Hand-authored app/
+// component files still follow the 300-line rule. See
+// scripts/lib/careExemption.mjs.
 
 import { readFileSync } from "fs";
 import { execSync } from "child_process";

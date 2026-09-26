@@ -139,15 +139,12 @@ function SidebarProvider({
 
   return (
     <SidebarContext.Provider value={contextValue}>
-      {/* Our CARE-derived TooltipProvider (components/ui/tooltip.tsx) names
-          this prop `delay`, not shadcn's `delayDuration` — same zero-delay
-          intent, different name. Verified via tsc (the only real
-          incompatibility this migration surfaced), not guessed; kept
-          Tooltip/Sheet/Button/Separator/Skeleton on their existing
-          CARE-derived versions rather than expanding this migration beyond
-          what was asked (Sidebar + Table) — everything else about their
-          APIs is already structurally compatible. */}
-      <TooltipProvider delay={0}>
+      {/* ADR 0017: Tooltip is now also real shadcn source (radix-ui),
+          so this reverts to shadcn's own real prop name (`delayDuration`)
+          — the one-line `delay` adaptation from the earlier Sidebar-only
+          migration (ADR 0014) is no longer needed now that both files
+          are on the same upstream. */}
+      <TooltipProvider delayDuration={0}>
         <div
           data-slot="sidebar-wrapper"
           style={

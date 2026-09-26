@@ -1,43 +1,43 @@
-"use client";
-
 /**
  * @name switch
  * @description A control that allows the user to toggle between checked and not checked.
- * @dependencies @base-ui/react
+ * @dependencies radix-ui
  * @type registry:ui
  */
-import { Switch as SwitchPrimitive } from "@base-ui/react/switch";
+// ADR 0014 + ADR 0017: real, current source from shadcn/ui's official
+// registry (github.com/shadcn-ui/ui, new-york-v4 style) via
+// scripts/pull-shadcn-component.mjs — not CARE's fork.
+"use client"
 
-import { CheckIcon, MinusIcon } from "lucide-react";
-
-import { cn } from "@/lib/utils";
+import * as React from "react"
+import { cn } from "@/lib/utils"
+import { Switch as SwitchPrimitive } from "radix-ui"
 
 function Switch({
   className,
   size = "default",
   ...props
-}: SwitchPrimitive.Root.Props & {
-  size?: "sm" | "default";
+}: React.ComponentProps<typeof SwitchPrimitive.Root> & {
+  size?: "sm" | "default"
 }) {
   return (
     <SwitchPrimitive.Root
       data-slot="switch"
       data-size={size}
       className={cn(
-        "peer group/switch hit-area-x-3 hit-area-y-2 focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 data-checked:bg-primary data-unchecked:bg-input dark:data-unchecked:bg-input/80 relative inline-flex shrink-0 items-center rounded-full border border-transparent shadow-2xs transition-all outline-hidden focus-visible:ring-3 aria-invalid:ring-3 data-disabled:cursor-not-allowed data-disabled:opacity-50 data-[size=default]:h-[31px] data-[size=default]:w-[53px] data-[size=sm]:h-5 data-[size=sm]:w-[36px] md:data-[size=default]:h-6 md:data-[size=default]:w-[42px] md:data-[size=sm]:h-4.5 md:data-[size=sm]:w-[32px]",
+        "peer group/switch inline-flex shrink-0 items-center rounded-full border border-transparent shadow-xs transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-[1.15rem] data-[size=default]:w-8 data-[size=sm]:h-3.5 data-[size=sm]:w-6 data-[state=checked]:bg-primary data-[state=unchecked]:bg-input dark:data-[state=unchecked]:bg-input/80",
         className
       )}
       {...props}
     >
       <SwitchPrimitive.Thumb
         data-slot="switch-thumb"
-        className="bg-background dark:data-checked:bg-primary-foreground dark:data-unchecked:bg-foreground/80 pointer-events-none relative flex items-center justify-center rounded-full shadow-md ring-0 transition-transform group-data-[size=default]/switch:size-[28px] group-data-[size=sm]/switch:size-4.5 data-checked:group-data-[size=default]/switch:translate-x-[calc(100%-5px)] data-checked:group-data-[size=sm]/switch:translate-x-[calc(100%-2px)] data-unchecked:group-data-[size=default]/switch:translate-x-0 data-unchecked:group-data-[size=sm]/switch:translate-x-0 md:group-data-[size=default]/switch:size-[22px] md:group-data-[size=sm]/switch:size-4 md:data-checked:group-data-[size=default]/switch:translate-x-[calc(100%-4px)]"
-      >
-        <CheckIcon className="text-primary-900 dark:text-primary-400 absolute transition-opacity duration-100 group-data-checked/switch:opacity-100 group-data-unchecked/switch:opacity-0 group-data-[size=default]/switch:size-3.5 group-data-[size=sm]/switch:size-3" />
-        <MinusIcon className="text-soft-foreground dark:text-placeholder-foreground absolute transition-opacity duration-100 group-data-checked/switch:opacity-0 group-data-unchecked/switch:opacity-100 group-data-[size=default]/switch:size-3.5 group-data-[size=sm]/switch:size-3" />
-      </SwitchPrimitive.Thumb>
+        className={cn(
+          "pointer-events-none block rounded-full bg-background ring-0 transition-transform group-data-[size=default]/switch:size-4 group-data-[size=sm]/switch:size-3 data-[state=checked]:translate-x-[calc(100%-2px)] data-[state=unchecked]:translate-x-0 dark:data-[state=checked]:bg-primary-foreground dark:data-[state=unchecked]:bg-foreground"
+        )}
+      />
     </SwitchPrimitive.Root>
-  );
+  )
 }
 
-export { Switch };
+export { Switch }

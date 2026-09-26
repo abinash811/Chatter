@@ -131,12 +131,26 @@ export function KnowledgeForm({ botId, entries }: { botId: string; entries: Know
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <form action={deleteFormAction}>
-              <input type="hidden" name="sourceId" value={deletingId ?? ""} />
-              <AlertDialogAction type="submit" variant="destructive-solid" disabled={isDeleting}>
-                {isDeleting ? "Deleting..." : "Delete"}
-              </AlertDialogAction>
-            </form>
+            {/* ADR 0017: a <form action={...}> submit button nested inside
+                AlertDialogAction races with Radix's own close-on-click
+                dismissal — the dialog unmounting mid-click corrupts React's
+                form-action wiring (a real bug this migration surfaced, not
+                present under Base UI's AlertDialog). Calling the
+                useActionState dispatch directly with manually-built
+                FormData sidesteps the native form-submission path
+                entirely; confirmed via a real click-to-delete round trip,
+                not just tsc. */}
+            <AlertDialogAction
+              variant="destructive"
+              disabled={isDeleting}
+              onClick={() => {
+                const formData = new FormData();
+                formData.set("sourceId", deletingId ?? "");
+                deleteFormAction(formData);
+              }}
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

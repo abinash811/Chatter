@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { signUpAndCreateBot } from "./helpers";
+import { signUpAndCreateBot, seedKnowledgeEntry } from "./helpers";
 
 // Coverage note: creating a real Q&A/file/URL entry requires a working
 // embeddings call (lib/ai/embeddings.ts, Voyage AI) — VOYAGE_API_KEY is
@@ -131,4 +131,36 @@ test("a bot's knowledge is reachable from the bot editor's top bar", async ({ pa
   await page.click('a:has-text("Knowledge")');
   await expect(page).toHaveURL(/\/knowledge$/);
   await expect(page.getByText("Knowledge base")).toBeVisible();
+});
+
+test("deleting an entry: Cancel keeps it, confirming Delete really removes it (ADR 0017 regression)", async ({
+  page,
+}) => {
+  // ADR 0017's shadcn migration surfaced a real bug here: a <form
+  // action={...}> submit button nested inside AlertDialogAction raced
+  // with Radix's own close-on-click dismissal, silently corrupting the
+  // form's server-action wiring (no network request ever fired) — only
+  // caught by a real click-through, not tsc or the build. This spec
+  // exists so that regression can never be reintroduced silently.
+  await signUpAndCreateBot(page, "Delete KB Bot");
+  const botId = page.url().split("/bots/")[1];
+  await seedKnowledgeEntry(botId, "What are your hours?", "9-5 Mon-Fri");
+
+  await page.goto(`/bots/${botId}/knowledge`);
+  await expect(page.getByText("What are your hours?")).toBeVisible();
+
+  // Cancel leaves the entry in place.
+  await page.click('button[aria-label="Delete"]');
+  await expect(page.getByText("Delete this entry?")).toBeVisible();
+  await page.click('button:has-text("Cancel")');
+  await expect(page.getByText("Delete this entry?")).not.toBeVisible();
+  await expect(page.getByText("What are your hours?")).toBeVisible();
+
+  // Confirming Delete actually removes it — verified past a reload, not
+  // just an optimistic UI update.
+  await page.click('button[aria-label="Delete"]');
+  await page.click('[role="alertdialog"] button:has-text("Delete")');
+  await expect(page.getByText("What are your hours?")).not.toBeVisible();
+  await page.reload();
+  await expect(page.getByText("What are your hours?")).not.toBeVisible();
 });
