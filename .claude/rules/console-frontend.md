@@ -21,6 +21,15 @@ depending on the model choosing to invoke it — see
    this at commit time. If the token you need doesn't exist, add it to
    `globals.css`, don't reach for a raw value.
 
+   **The subtler version of this mistake**: reusing an *existing* token
+   for a meaning it wasn't designed for, because the right one doesn't
+   exist yet — e.g. rendering "Published" with the same neutral badge
+   token as "Draft" because no `--success` color exists. That's a
+   system gap, not a screen bug. Check `docs/design/audit.md`'s "System
+   coverage" table before improvising; if the semantic color/variant you
+   need isn't there, add it at the token/primitive layer and log the row,
+   don't silently borrow the nearest neutral token as a stand-in.
+
 2. **Reuse `components/ui/` primitives** (`Button`, `Input`, `Textarea`,
    `Label`, `Checkbox`, `Badge`, `Card`/`CardHeader`/`CardTitle`/
    `CardDescription`/`CardContent`, `Toaster`, and whatever's added

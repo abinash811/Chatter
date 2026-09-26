@@ -15,6 +15,35 @@ checked instead of relying on someone noticing and asking.
   lost the moment context compacts.
 - ✅ done and verified · 🟡 partial/needs revisit · 🔲 not done · — n/a
 
+## System coverage (checked, not just per-screen)
+
+This section exists because of a real miss: the "Published" vs "Draft"
+badge problem wasn't a screen bug, it was a **system** gap — no
+`--success` token existed anywhere, so there was nothing correct to
+reach for. Per-screen audits above can't catch that kind of gap; only
+asking "does the token *set* cover what we need" does. Check this list
+whenever a screen needs a semantic meaning, before reusing the nearest
+existing token as a stand-in.
+
+| Coverage area | Status | Notes |
+|---|---|---|
+| Semantic colors (success/warning/destructive/info) | 🔲 | `--destructive` and `--warning` exist; **no `--success`/positive color** — the root cause of the badge issue. No `--info` either. |
+| `Badge` variants | 🔲 | `default`/`muted`/`destructive` only — no `success` variant even if the token existed. |
+| Per-item color variation (avatars, chips) | 🔲 | Single fixed token system-wide — no scheme for visually distinguishing items in a list. |
+| Dark mode | 🟡 | Tokens defined, never verified against a real rendered browser — every check done so far is light-mode only. |
+| Elevation/shadow scale | 🟡 | `shadow-xs` etc. applied ad hoc per component, not from a documented scale. |
+| `preview/*.html` vs. real tokens | 🔲 | Known-stale second source of truth (`docs/design/README.md`) — accepted, not fixed. |
+
+**Rule going forward:** if a screen needs to express a meaning (a
+positive/success state, an info callout, per-item visual distinction)
+and the token/variant for it doesn't exist, that's a system gap to fix
+at the token/primitive layer — add it here as a row, don't quietly reuse
+the nearest neutral token as a workaround. `.claude/rules/
+console-frontend.md`'s "never hardcode a color" rule already blocks the
+inline-hex version of this mistake; this table exists to block the
+subtler version, where a real token gets reused for a meaning it wasn't
+designed to carry.
+
 ## Depth/polish (principles.md #5/#9)
 
 | Screen | Hover | Focus | Active | Loading skeleton | Depth (Card/shadow) | Notes |
