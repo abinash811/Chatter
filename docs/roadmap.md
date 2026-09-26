@@ -1,5 +1,10 @@
 # Roadmap
 
+**Product phase (see `docs/north-star.md`):** Phase 1 — chat-based
+configurable agent platform, targeting Chatbase-level self-serve
+configurability plus our own product opinions. Voice (Phase 2) and other
+verticals/channels are explicitly deferred — do not scaffold them yet.
+
 Now / Next / Later, not dated quarters — priorities shift faster than
 dates hold at this stage. When something here ships, move it to
 `docs/features.md`'s "Built" list and delete it from here. Update this
