@@ -1014,6 +1014,25 @@ make a meaningful change, update this before ending your turn.
   explicit user request (mid-session) — flagged here rather than
   silently claimed as verified; both should be run and any resulting
   baseline updates committed before this is called fully shipped.
+- **`docs/design/audit.md` created — a living per-screen design-bar
+  scoreboard, docs-only.** User's explicit question: is design-audit
+  work like the bots-list review actually getting documented, and how
+  do we not miss this in future? Answer was honest, not reassuring:
+  every code *change* was already landing in this file's Done/Known-
+  gaps section, but a spoken-in-chat audit (hover/focus/loading-state
+  findings, functionality gaps like missing search) had nowhere
+  persistent to live — it would have been lost to context compaction.
+  `docs/design/audit.md` is the fix: one row per console screen
+  tracking hover/focus/active/loading/depth status against principles
+  #5/#9, plus a running list of open functionality gaps per screen.
+  `.claude/skills/ship-checklist/SKILL.md`'s design-bar self-check item
+  now explicitly points here — an audit finding gets logged in the same
+  turn it's found, not "in the next commit." First real content: the
+  bots-list audit from this session (badges indistinguishable, avatar
+  chips visually identical, empty state has no CTA, no search/sort/row-
+  actions/delete) logged as the file's first "open findings" entry
+  rather than left in scrollback. `docs/design/audit.md` added to this
+  file's "Where things live" list.
 
 **Known gaps:**
 - 🟡 `scripts/canary.mjs` can't run in this container as-is — the
@@ -1241,6 +1260,11 @@ make a meaningful change, update this before ending your turn.
   screen is checked against (component reuse, tokens, depth/polish,
   plain language, the Linear/Notion/Stripe register mapping). Read this
   before `docs/design/preview/`.
+- `docs/design/audit.md` — the living per-screen scoreboard against
+  that bar (hover/focus/active/loading states, plus open functionality
+  gaps like search or row actions). Update a screen's row in the same
+  turn you touch it or audit it — `ship-checklist`'s design-bar
+  self-check step points here so a finding never lives only in chat.
 - `docs/design/design-system.md` — the consolidated real reference:
   every current token value + its provenance, the component inventory
   and which source each primitive is actually on (shadcn-official vs.

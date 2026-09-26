@@ -70,7 +70,12 @@ Before saying a piece of work is done:
    bordered box? If any answer is no, say so explicitly to the user as
    a known gap — don't silently ship a screen that's flatter than the
    rest of the app and let it go unmentioned. This applies even to a
-   screen the user didn't explicitly ask to be polished.
+   screen the user didn't explicitly ask to be polished. **Update
+   `docs/design/audit.md`'s row for that screen in the same turn** —
+   a finding that only exists in chat is a finding that's gone the
+   moment context compacts. If a screen has no row yet, add one; if an
+   audit surfaces new findings (asked or self-initiated), log them
+   there immediately, not "in the next commit."
 14. **Open Dependabot PRs relevant to what you touched.** ADR 0009: the
    Tailwind v3/v4 mismatch wasn't a detection gap — Dependabot had
    already opened a PR for it — it was a triage gap, nobody looked.
