@@ -26,12 +26,12 @@ describe("search_knowledge_base tool", () => {
     expect(result).toBe("Q: What is your return policy?\nA: 30 days.");
   });
 
-  it("returns bare content for a non-qa chunk (file/url ingestion, once that exists)", async () => {
+  it("prefixes a file/url chunk with its source title (ADR 0013)", async () => {
     queryRaw.mockResolvedValue([{ content: "Our store is open 9-5.", kind: "file", title: "hours.pdf" }]);
 
     const result = await searchKnowledgeBaseTool.handle("org-1", "bot-1", { query: "hours" });
 
-    expect(result).toBe("Our store is open 9-5.");
+    expect(result).toBe('From "hours.pdf":\nOur store is open 9-5.');
   });
 
   it("joins multiple chunks with a separator", async () => {

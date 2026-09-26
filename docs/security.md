@@ -102,3 +102,13 @@ single instance's map can't see another instance's count.
   isolation is ever found broken in production).
 - Key-rotation tooling for `ENCRYPTION_KEY` (ADR 0012) — rotating it
   today means re-encrypting every stored secret by hand.
+- **URL knowledge ingestion's SSRF guard is partial, not complete**
+  (ADR 0013, `lib/ai/extraction.ts`'s `assertPublicHttpUrl`). It checks
+  the literal hostname a business owner types against `localhost`/
+  loopback/private/link-local ranges before fetching — it does not
+  resolve DNS and check the actual IP, so it doesn't stop DNS rebinding
+  or a redirect to a private address after the initial check passes.
+  Acceptable for v1 since this is an authenticated console feature (the
+  business owner fetching a URL on their own behalf), not a public
+  endpoint — worth hardening (resolve + pin the IP for the actual fetch)
+  before this trust boundary changes.

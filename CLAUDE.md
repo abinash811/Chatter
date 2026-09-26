@@ -375,6 +375,72 @@ make a meaningful change, update this before ending your turn.
   left in place, cheap to keep, reachable again once deletion ships.
   `tests/e2e/bots-list.spec.ts`'s old empty-state test was removed with
   a comment explaining why, not silently deleted.
+- **File/URL knowledge ingestion (ADR 0013) — closes the remaining MVP
+  ingestion scope from `docs/product-spec.md`** ("file upload and/or
+  manual Q&A at minimum for v1"; manual Q&A shipped separately). Real
+  library choices checked via `npm view`/WebSearch first, captured in
+  `docs/research/knowledge-ingestion-libraries.md`, not recalled: PDF
+  via `pdf-parse` v2.4.5, DOCX via `mammoth` v1.12.3 (added at the
+  user's explicit choice — the research note originally scoped only
+  PDF/txt/md, DOCX was flagged unresearched), `.txt`/`.md` read
+  directly, URL→readable-text via `jsdom` v30.1.1 +
+  `@mozilla/readability` v0.6.0. `lib/ai/extraction.ts` (pure
+  extraction + a basic SSRF guard on URL ingestion — literal-hostname
+  check against localhost/private/link-local ranges, not DNS-resolution-
+  based; documented as a partial guard in `docs/security.md`, not
+  silently assumed complete) and `lib/ai/chunking.ts` (a hand-rolled
+  recursive paragraph→sentence→hard-cutoff splitter, ~2000 chars/~10%
+  overlap, grounded in 2026 RAG chunking benchmarks — no LangChain/
+  LlamaIndex) are new, `lib/ai/knowledgeBase.ts` extended with
+  `createFileEntry`/`createUrlEntry` and a generalized
+  `listKnowledgeSources`/`deleteKnowledgeSource` (renamed from the
+  qa-only `listQaEntries`/`deleteQaEntry` — the delete logic was never
+  actually qa-specific, only its name was). Synchronous processing for
+  v1, not a background job (user's explicit choice, given no job queue
+  exists anywhere in this codebase yet) — bounded by `MAX_FILE_BYTES`
+  (5MB) and `MAX_CHUNKS` (200) so a request can't run away; `next.
+  config.js` raised `serverActions.bodySizeLimit` to `6mb` for headroom.
+  Embeddings for a multi-chunk file/URL entry are computed *before*
+  `withOrgContext`'s transaction opens, not inside it — sequentially
+  embedding every chunk inside `prisma.$transaction` would hold that
+  transaction (and its default timeout) open for as long as the
+  provider takes across every chunk; `createQaEntry` already had this
+  shape for its one chunk, this generalizes it. `KnowledgeIngestionError`
+  distinguishes expected user-facing failures (bad file type, oversized
+  upload, malformed/private URL, no extractable text, too many chunks —
+  shown as-is in a toast) from unexpected ones (logged server-side,
+  generic message), same "never surface a raw error" discipline as
+  every other action in this codebase. UI: `KnowledgeForm.tsx`'s single
+  "Add Q&A" button became a `DropdownMenu` (Add Q&A/Upload file/Add
+  URL) with each dialog split into its own file (`AddQaDialog.tsx`,
+  `AddFileDialog.tsx`, `AddUrlDialog.tsx`) and the list extracted to
+  `KnowledgeTable.tsx` — kept `KnowledgeForm.tsx` under the file-length
+  guardrail, caught for real by `check:filelength` failing at 313 lines
+  before the split. Table generalized from Question/Answer columns to
+  Title/Type/Chunks/Created, since a file/url source can have many
+  chunks, not one fixed answer. `searchKnowledgeBaseTool` now names the
+  source title for a file/url chunk (`From "<title>": ...`), matching
+  the qa case's existing `Q: .../A: ...` restatement. Verified for
+  real, not just type-checked: `pdf-parse` against a real hand-built
+  minimal PDF, `mammoth` against a real bundled `.docx` fixture,
+  `jsdom`+`@mozilla/readability` against real sample HTML (all three
+  smoke-tested by hand before being committed to unit tests), a
+  directly-seeded file/url source+chunk against a real Postgres+
+  pgvector instance confirming the generalized list/delete and that
+  `search_knowledge_base`'s raw query retrieves file/url chunks
+  identically to qa chunks, a real browser upload of that same hand-
+  built PDF through the full multipart→buffer→extraction server-action
+  pipeline (correctly reaching the embeddings-call boundary, not
+  erroring anywhere in extraction), and a real `localhost` URL rejected
+  by the SSRF guard end-to-end through the browser. Full guardrail
+  suite, `tsc`, 24 new/updated unit specs, `tests/e2e/knowledge.spec.ts`
+  rewritten (9 specs, up from 4 — the new dropdown, both new dialogs,
+  the real .txt upload, the real SSRF-guard rejection), and
+  `tests/visual/`'s knowledge baselines regenerated and confirmed
+  stable across two clean re-runs. `docs/adr/0013-file-url-knowledge-
+  ingestion.md`, `docs/business-logic.md`, `docs/security.md`,
+  `docs/features.md`, `docs/roadmap.md`, `docs/glossary.md`,
+  `docs/design/preview/knowledge.html`/`README.md` all updated.
 
 **Known gaps:**
 - 🔲 Design system tokens/infra and a real 18-component primitive layer
@@ -511,10 +577,12 @@ make a meaningful change, update this before ending your turn.
 - 🟡 No real end-to-end verified Claude reply yet — blocked on a real
   `ANTHROPIC_API_KEY` (everything up to that boundary is confirmed
   correct, see README's "Verified by a real run").
-- 🔲 Not yet built: password reset flow, file/URL knowledge ingestion
-  (manual Q&A is done — see the Done bullet above), teammate invites/
-  multi-org switcher (org naming is done — a real onboarding flow now
-  exists, see the Done bullet below), appearance/theming editor.
+- 🔲 Not yet built: password reset flow, site crawling for knowledge
+  ingestion (manual Q&A/file/URL ingestion is done — see the Done
+  bullet below; site crawling is `docs/open-questions.md` #4, still
+  separate/undecided), teammate invites/multi-org switcher (org naming
+  is done — a real onboarding flow now exists, see the Done bullet
+  below), appearance/theming editor.
 - 🟡 `lib/ai/` and other pure/mockable logic now has real unit tests
   (`tests/unit/`); React component rendering tests do not yet, though
   `@testing-library/react`/`jsdom` are installed and `vitest.config.mts`

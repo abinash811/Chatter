@@ -72,13 +72,16 @@ bots/`. Design pass done on bot list + bot editor (`docs/design/
 preview/bots-list.html`, `bot-editor.html`); integrations still open —
 see `docs/roadmap.md`.
 
-### Knowledge base ingestion (manual Q&A)
-**Who**: the business owner. **What**: add/remove question-and-answer
-pairs the bot can search when it needs a fact it doesn't already have —
-closes the one gap that was keeping `search_knowledge_base` unusable in
-practice (real retrieval, nothing to retrieve). **How**: `lib/ai/
-knowledgeBase.ts`, `app/(console)/bots/[botId]/knowledge/`. File/URL
-ingestion is separate, not-yet-built scope — see `docs/business-
+### Knowledge base ingestion (Q&A, file upload, URL)
+**Who**: the business owner. **What**: three ways to feed a bot's
+knowledge base — manual question-and-answer pairs, uploading a PDF/
+DOCX/`.txt`/`.md` file, or ingesting a single URL's readable article
+text (not a whole site — see `docs/open-questions.md` #4 on crawling).
+Closes `docs/product-spec.md`'s MVP ingestion scope. **How**: `lib/ai/
+knowledgeBase.ts` (source/chunk writes), `lib/ai/extraction.ts` (PDF via
+`pdf-parse`, DOCX via `mammoth`, URL via `jsdom`+`@mozilla/readability`),
+`lib/ai/chunking.ts` (hand-rolled recursive splitter for file/URL text),
+`app/(console)/bots/[botId]/knowledge/`. ADR 0013. See `docs/business-
 logic.md`'s "Knowledge base ingestion" section.
 
 ### Onboarding
@@ -100,5 +103,4 @@ billing instead of our managed key. Off by default. **How**: `app/
 
 See `docs/roadmap.md` (Now/Next/Later). Notable near-term items: write-
 capable action tools (refund, address update), resolution-rate
-analytics, image input, file/URL knowledge ingestion, a design pass on
-the integrations page.
+analytics, image input, a design pass on the integrations page.

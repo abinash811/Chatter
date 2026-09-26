@@ -12,33 +12,47 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
 .brand-name { font-size: 13px; font-weight: 600; color: #0a0a0c; }
 .nav-item { height: 32px; display: flex; align-items: center; padding: 0 8px; border-radius: 6px; font-size: 13px; color: #0a0a0c; background: #f5f5f5; font-weight: 500; }
 
-.main { flex: 1; padding: 24px 32px 48px; max-width: 900px; }
+.main { flex: 1; padding: 24px 32px 48px; max-width: 900px; position: relative; }
 .main-header { display: flex; align-items: center; justify-content: space-between; height: 40px; margin-bottom: 4px; }
 .page-title { font-size: 18px; font-weight: 600; color: #0a0a0c; }
 .entry-count { font-size: 12px; color: #737373; margin-left: 8px; font-weight: 400; }
-.btn-primary { height: 32px; padding: 0 14px; background: #065f46; color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 500; }
+.btn-primary { height: 32px; padding: 0 14px; background: #065f46; color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 4px; }
 .btn-outline { height: 32px; padding: 0 14px; border: 1px solid #e5e5e5; background: #fff; border-radius: 6px; font-size: 13px; font-weight: 500; color: #0a0a0c; }
 
+/* "Add" DropdownMenu (components/ui/dropdown-menu.tsx, ADR 0013) —
+   three entry points (Q&A/file/URL) behind one button instead of three
+   buttons crowding the header. */
+.menu { position: absolute; top: 44px; right: 32px; width: 160px; background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; box-shadow: 0 8px 20px rgba(0,0,0,0.12); padding: 4px; }
+.menu-item { height: 32px; display: flex; align-items: center; padding: 0 10px; border-radius: 6px; font-size: 13px; color: #0a0a0c; }
+.menu-item:hover { background: #f5f5f5; }
+
 /* Real CARE Table (components/ui/table.tsx, ADR 0008) via
-   KnowledgeForm.tsx — same list pattern as bots-list.html's real
+   KnowledgeTable.tsx — same list pattern as bots-list.html's real
    BotsTable, per docs/research/design-system-standards.md's own
-   Linear-list / Notion-compose split (ADR 0011). */
+   Linear-list / Notion-compose split (ADR 0011). Generalized from
+   Question/Answer to Title/Type/Chunks/Created (ADR 0013) — a file/url
+   source can have many chunks, not one fixed "answer". */
 .list { margin-top: 12px; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; }
 .thead-row { display: flex; align-items: center; height: 40px; padding: 0 16px; background: #fafafa; border-bottom: 1px solid #e5e5e5; font-size: 13px; font-weight: 500; color: #0a0a0c; }
-.th-question { flex: 1; }
-.th-answer { flex: 1; }
+.th-title { flex: 2; }
+.th-type { flex: 1; }
+.th-chunks { flex: 1; }
+.th-created { flex: 1; }
 .row { display: flex; align-items: center; height: 40px; padding: 0 16px; border-bottom: 1px solid #e5e5e5; font-size: 13px; }
 .row:last-child { border-bottom: none; }
-.row-question { font-weight: 500; color: #0a0a0c; flex: 1; padding-right: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.row-answer { color: #737373; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row-title { font-weight: 500; color: #0a0a0c; flex: 2; padding-right: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row-type { flex: 1; }
+.row-chunks { color: #737373; flex: 1; }
+.row-created { color: #737373; flex: 1; }
 .row-delete { width: 28px; color: #a3a3a3; }
+.badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; background: #f5f5f5; color: #404040; }
 
 .empty { padding: 56px 0; text-align: center; margin-top: 12px; border: 1px solid #e5e5e5; border-radius: 8px; }
 .empty-title { font-size: 13px; font-weight: 500; color: #0a0a0c; margin-bottom: 2px; }
 .empty-sub { font-size: 12px; color: #737373; }
 
-/* Dialog scene — same visual language as bot-editor.html's publish
-   dialog, reused for a compose surface here (Notion register: calm,
+/* Dialog scenes — same visual language as bot-editor.html's publish
+   dialog, reused for compose surfaces here (Notion register: calm,
    generous, per principles.md #4 and ADR 0011). */
 .dialog-overlay { position: relative; background: #fff; }
 .dialog-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; }
@@ -48,11 +62,12 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
 .field-label-sm { font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 5px; display: block; }
 .field-input { width: 100%; border: 1px solid #e5e5e5; border-radius: 6px; padding: 0 12px; height: 36px; font-size: 13px; margin-bottom: 12px; }
 .field-textarea { width: 100%; border: 1px solid #e5e5e5; border-radius: 6px; padding: 10px 12px; font-size: 13px; font-family: inherit; }
+.field-file { width: 100%; border: 1px dashed #d4d4d4; border-radius: 6px; padding: 10px 12px; font-size: 13px; color: #737373; margin-bottom: 12px; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 1px solid #e5e5e5; }
 </style>
 </head><body>
 
-<div class="page-label">Knowledge base — /bots/[botId]/knowledge (KnowledgeForm.tsx), reachable from the bot editor's top bar</div>
+<div class="page-label">Knowledge base — /bots/[botId]/knowledge (KnowledgeForm.tsx + KnowledgeTable.tsx), reachable from the bot editor's top bar</div>
 <div class="shell">
   <div class="sidebar">
     <div class="brand-row">
@@ -63,25 +78,60 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
   </div>
   <div class="main">
     <div class="main-header">
-      <div class="page-title">Knowledge base<span class="entry-count">2</span></div>
-      <button class="btn-primary">Add Q&amp;A</button>
+      <div class="page-title">Knowledge base<span class="entry-count">3</span></div>
+      <button class="btn-primary">Add ▾</button>
     </div>
     <div class="list">
       <div class="thead-row">
-        <div class="th-question">Question</div>
-        <div class="th-answer">Answer</div>
+        <div class="th-title">Title</div>
+        <div class="th-type">Type</div>
+        <div class="th-chunks">Chunks</div>
+        <div class="th-created">Created</div>
         <div style="width:28px;"></div>
       </div>
       <div class="row">
-        <div class="row-question">What is your return policy?</div>
-        <div class="row-answer">You can return any item within 30 days of delivery.</div>
+        <div class="row-title">What is your return policy?</div>
+        <div class="row-type"><span class="badge">Q&amp;A</span></div>
+        <div class="row-chunks">1</div>
+        <div class="row-created">2d ago</div>
         <div class="row-delete">🗑</div>
       </div>
       <div class="row">
-        <div class="row-question">Do you ship internationally?</div>
-        <div class="row-answer">Yes, to most countries — rates shown at checkout.</div>
+        <div class="row-title">employee-handbook.pdf</div>
+        <div class="row-type"><span class="badge">File</span></div>
+        <div class="row-chunks">14</div>
+        <div class="row-created">1d ago</div>
         <div class="row-delete">🗑</div>
       </div>
+      <div class="row">
+        <div class="row-title">Shipping &amp; Returns — Help Center</div>
+        <div class="row-type"><span class="badge">URL</span></div>
+        <div class="row-chunks">3</div>
+        <div class="row-created">just now</div>
+        <div class="row-delete">🗑</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page-label">Add menu open — three entry points (Q&amp;A/file/URL, ADR 0013) behind one DropdownMenu instead of three header buttons</div>
+<div class="shell" style="height:260px;">
+  <div class="sidebar">
+    <div class="brand-row">
+      <div class="brand-icon"><svg width="12" height="12" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12c0 4.418-4.03 8-9 8-1.17 0-2.29-.2-3.31-.56L3 21l1.56-4.69C3.57 15.06 3 13.58 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></div>
+      <div class="brand-name">Chatter</div>
+    </div>
+    <div class="nav-item">Bots</div>
+  </div>
+  <div class="main">
+    <div class="main-header">
+      <div class="page-title">Knowledge base<span class="entry-count">3</span></div>
+      <button class="btn-primary">Add ▾</button>
+    </div>
+    <div class="menu">
+      <div class="menu-item">Add Q&amp;A</div>
+      <div class="menu-item">Upload file</div>
+      <div class="menu-item">Add URL</div>
     </div>
   </div>
 </div>
@@ -98,11 +148,11 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
   <div class="main">
     <div class="main-header">
       <div class="page-title">Knowledge base</div>
-      <button class="btn-primary">Add Q&amp;A</button>
+      <button class="btn-primary">Add ▾</button>
     </div>
     <div class="empty">
       <div class="empty-title">No knowledge yet</div>
-      <div class="empty-sub">Add a question and answer above to get started.</div>
+      <div class="empty-sub">Add a Q&amp;A, file, or URL above to get started.</div>
     </div>
   </div>
 </div>
@@ -118,6 +168,42 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
         <input class="field-input" placeholder="What's your return policy?" readonly/>
         <label class="field-label-sm">Answer</label>
         <textarea class="field-textarea" rows="4" readonly placeholder="You can return any item within 30 days of delivery..."></textarea>
+        <div class="dialog-actions">
+          <button class="btn-outline">Cancel</button>
+          <button class="btn-primary">Add</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page-label">Upload file dialog (AddFileDialog.tsx, ADR 0013) — PDF/DOCX/.txt/.md, capped at 5MB before extraction ever runs</div>
+<div class="shell" style="height:360px;">
+  <div class="dialog-overlay" style="flex:1;">
+    <div class="dialog-backdrop">
+      <div class="dialog">
+        <div class="dialog-title">Upload a file</div>
+        <div class="dialog-desc">PDF, DOCX, .txt, or .md, up to 5MB. The bot searches this alongside everything else in its knowledge base.</div>
+        <label class="field-label-sm">File</label>
+        <div class="field-file">Choose file — no file chosen</div>
+        <div class="dialog-actions">
+          <button class="btn-outline">Cancel</button>
+          <button class="btn-primary">Upload</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page-label">Add URL dialog (AddUrlDialog.tsx, ADR 0013) — single page only, not a whole site; readable article text via jsdom+@mozilla/readability</div>
+<div class="shell" style="height:360px;">
+  <div class="dialog-overlay" style="flex:1;">
+    <div class="dialog-backdrop">
+      <div class="dialog">
+        <div class="dialog-title">Add a URL</div>
+        <div class="dialog-desc">A single page's article content — not a whole site. We'll pull the readable text and skip the navigation and footer clutter.</div>
+        <label class="field-label-sm">URL</label>
+        <input class="field-input" placeholder="https://example.com/returns-policy" readonly/>
         <div class="dialog-actions">
           <button class="btn-outline">Cancel</button>
           <button class="btn-primary">Add</button>

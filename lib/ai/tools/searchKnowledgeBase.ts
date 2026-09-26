@@ -42,9 +42,11 @@ export const searchKnowledgeBaseTool: Tool = {
     }
     // A manually-entered Q&A pair (lib/ai/knowledgeBase.ts) reads better
     // to the model with its question restated alongside the answer, not
-    // just the bare answer text.
+    // just the bare answer text. A file/URL chunk is one fragment of a
+    // larger document (ADR 0013) — naming its source title gives the
+    // model the same kind of context the qa case gets for free.
     return chunks
-      .map((c) => (c.kind === "qa" ? `Q: ${c.title}\nA: ${c.content}` : c.content))
+      .map((c) => (c.kind === "qa" ? `Q: ${c.title}\nA: ${c.content}` : `From "${c.title}":\n${c.content}`))
       .join("\n\n---\n\n");
   },
 };

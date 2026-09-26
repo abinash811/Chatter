@@ -1,27 +1,21 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
-import { createQaAction, deleteQaAction, type QaActionState } from "./actions";
+import { ChevronDown } from "lucide-react";
+import {
+  createQaAction,
+  createFileAction,
+  createUrlAction,
+  deleteEntryAction,
+  type KnowledgeActionState,
+} from "./actions";
+import { AddQaDialog } from "./AddQaDialog";
+import { AddFileDialog } from "./AddFileDialog";
+import { AddUrlDialog } from "./AddUrlDialog";
+import { KnowledgeTable, type KnowledgeSourceRow } from "./KnowledgeTable";
 import {
   Button,
-  Input,
-  Textarea,
-  Label,
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
   AlertDialog,
   AlertDialogContent,
   AlertDialogHeader,
@@ -30,40 +24,59 @@ import {
   AlertDialogFooter,
   AlertDialogAction,
   AlertDialogCancel,
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
 } from "@/components/ui";
 
-const qaIdleState: QaActionState = { status: "idle", message: null };
+const idleState: KnowledgeActionState = { status: "idle", message: null };
 
-function useActionToast(state: QaActionState) {
+function useActionToast(state: KnowledgeActionState) {
   useEffect(() => {
     if (state.status === "success" && state.message) toast.success(state.message);
     if (state.status === "error" && state.message) toast.error(state.message);
   }, [state]);
 }
 
-interface QaEntryRow {
-  id: string;
-  question: string;
-  answer: string;
-}
-
-// Notion register for the writing surface (Dialog + Textarea — calm,
+// Notion register for the writing surfaces (the three Add dialogs — calm,
 // generous, per docs/design/principles.md #4 and ADR 0011), Linear
-// register for the list (a real CARE Table, matching BotsTable.tsx) —
-// same split docs/research/design-system-standards.md itself describes
-// for Linear (dense list) vs. Notion (calm compose surface).
-export function KnowledgeForm({ botId, entries }: { botId: string; entries: QaEntryRow[] }) {
-  const [createState, createFormAction, isCreating] = useActionState(createQaAction.bind(null, botId), qaIdleState);
-  const [deleteState, deleteFormAction, isDeleting] = useActionState(deleteQaAction.bind(null, botId), qaIdleState);
-  const [addOpen, setAddOpen] = useState(false);
+// register for the list (KnowledgeTable, a real CARE Table matching
+// BotsTable.tsx) — same split docs/research/design-system-standards.md
+// itself describes for Linear (dense list) vs. Notion (calm compose
+// surface). Three entry points (Q&A/file/URL, ADR 0013) live behind one
+// "Add" DropdownMenu instead of three buttons crowding the header; each
+// dialog is its own component so this orchestrator stays under the
+// file-length guardrail (scripts/check-file-length.mjs).
+export function KnowledgeForm({ botId, entries }: { botId: string; entries: KnowledgeSourceRow[] }) {
+  const [qaState, qaFormAction, isAddingQa] = useActionState(createQaAction.bind(null, botId), idleState);
+  const [fileState, fileFormAction, isAddingFile] = useActionState(createFileAction.bind(null, botId), idleState);
+  const [urlState, urlFormAction, isAddingUrl] = useActionState(createUrlAction.bind(null, botId), idleState);
+  const [deleteState, deleteFormAction, isDeleting] = useActionState(deleteEntryAction.bind(null, botId), idleState);
+
+  const [qaOpen, setQaOpen] = useState(false);
+  const [fileOpen, setFileOpen] = useState(false);
+  const [urlOpen, setUrlOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  useActionToast(createState);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useActionToast(qaState);
+  useActionToast(fileState);
+  useActionToast(urlState);
   useActionToast(deleteState);
 
   useEffect(() => {
-    if (createState.status === "success") setAddOpen(false);
-  }, [createState]);
-
+    if (qaState.status === "success") setQaOpen(false);
+  }, [qaState]);
+  useEffect(() => {
+    if (fileState.status === "success") {
+      setFileOpen(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }, [fileState]);
+  useEffect(() => {
+    if (urlState.status === "success") setUrlOpen(false);
+  }, [urlState]);
   useEffect(() => {
     if (deleteState.status === "success") setDeletingId(null);
   }, [deleteState]);
@@ -75,94 +88,38 @@ export function KnowledgeForm({ botId, entries }: { botId: string; entries: QaEn
           Knowledge base
           {entries.length > 0 && <span className="text-sm font-normal text-muted-foreground">{entries.length}</span>}
         </h1>
-        <Dialog open={addOpen} onOpenChange={setAddOpen}>
-          <Button type="button" size="sm" onClick={() => setAddOpen(true)}>
-            Add Q&A
-          </Button>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add a question and answer</DialogTitle>
-              <DialogDescription>
-                Write it like you'd explain it to a customer — the bot searches this whenever it needs a fact
-                it doesn't already have.
-              </DialogDescription>
-            </DialogHeader>
-            <form id="add-qa-form" action={createFormAction} className="space-y-3">
-              <div>
-                <Label htmlFor="question">Question</Label>
-                <Input
-                  id="question"
-                  name="question"
-                  placeholder="What's your return policy?"
-                  defaultValue={createState.question ?? ""}
-                  className="mt-1"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="answer">Answer</Label>
-                <Textarea
-                  id="answer"
-                  name="answer"
-                  placeholder="You can return any item within 30 days of delivery..."
-                  defaultValue={createState.answer ?? ""}
-                  rows={4}
-                  className="mt-1"
-                  required
-                />
-              </div>
-            </form>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button type="button" variant="outline">
-                  Cancel
-                </Button>
-              </DialogClose>
-              <Button type="submit" form="add-qa-form" disabled={isCreating}>
-                {isCreating ? "Adding..." : "Add"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button type="button" size="sm">
+              Add
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setQaOpen(true)}>Add Q&A</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setFileOpen(true)}>Upload file</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setUrlOpen(true)}>Add URL</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
-      {entries.length === 0 ? (
-        <div className="mt-4 flex flex-col items-center gap-2 rounded-lg border border-border py-14 shadow-xs">
-          <p className="text-sm font-medium">No knowledge yet</p>
-          <p className="text-sm text-muted-foreground">Add a question and answer above to get started.</p>
-        </div>
-      ) : (
-        <div className="mt-4 rounded-lg border border-border shadow-xs">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Question</TableHead>
-                <TableHead>Answer</TableHead>
-                <TableHead className="w-8" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {entries.map((entry) => (
-                <TableRow key={entry.id} className="h-row">
-                  <TableCell className="max-w-xs truncate font-medium">{entry.question}</TableCell>
-                  <TableCell className="max-w-md truncate text-muted-foreground">{entry.answer}</TableCell>
-                  <TableCell>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-sm"
-                      aria-label="Delete"
-                      onClick={() => setDeletingId(entry.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+      <AddQaDialog open={qaOpen} onOpenChange={setQaOpen} formAction={qaFormAction} state={qaState} isPending={isAddingQa} />
+      <AddFileDialog
+        open={fileOpen}
+        onOpenChange={setFileOpen}
+        formAction={fileFormAction}
+        isPending={isAddingFile}
+        ref={fileInputRef}
+      />
+      <AddUrlDialog
+        open={urlOpen}
+        onOpenChange={setUrlOpen}
+        formAction={urlFormAction}
+        state={urlState}
+        isPending={isAddingUrl}
+      />
+
+      <KnowledgeTable entries={entries} onDelete={setDeletingId} />
 
       <AlertDialog open={deletingId !== null} onOpenChange={(open) => !open && setDeletingId(null)}>
         <AlertDialogContent>

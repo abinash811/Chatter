@@ -75,19 +75,23 @@ product spec, architecture, and decisions (ADRs).
   new draft seeded from what was just published. Bot creation is wired
   from `bots/page.tsx`'s "New bot" form.
 
-- Knowledge base ingestion (manual Q&A): `lib/ai/knowledgeBase.ts` and
-  `app/(console)/bots/[botId]/knowledge/` — the piece that was missing
-  before now, `searchKnowledgeBaseTool` had real retrieval but nothing
-  ever wrote a row to search. File/URL ingestion is still open.
+- Knowledge base ingestion (Q&A, file upload, URL): `lib/ai/
+  knowledgeBase.ts`, `lib/ai/extraction.ts`, `lib/ai/chunking.ts`, and
+  `app/(console)/bots/[botId]/knowledge/` — manual Q&A was the piece
+  that was missing before, `searchKnowledgeBaseTool` had real retrieval
+  but nothing ever wrote a row to search; file upload (PDF/DOCX/`.txt`/
+  `.md`) and single-URL ingestion (`jsdom`+`@mozilla/readability`) round
+  out `docs/product-spec.md`'s MVP scope. ADR 0013. Site crawling stays
+  separate, still open.
 
 - Onboarding + optional BYOA (bring your own Claude API key): `lib/
   onboarding.ts`, `app/onboarding/`, `app/(console)/settings/`,
   `lib/crypto.ts` (secrets encryption at rest — also closes the old
   plaintext-`Integration.accessToken` gap). ADR 0012.
 
-Not yet built: file/URL ingestion, teammate invites/multi-org switcher,
-the appearance/theming editor (persona + guardrails + tools only for
-now). Still blocked on the remaining items in `docs/open-questions.md`.
+Not yet built: site crawling, teammate invites/multi-org switcher, the
+appearance/theming editor (persona + guardrails + tools only for now).
+Still blocked on the remaining items in `docs/open-questions.md`.
 
 ## Local setup
 

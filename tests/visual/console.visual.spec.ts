@@ -65,7 +65,10 @@ test("knowledge base — empty state and Add Q&A dialog", async ({ page }) => {
   await expect(page).toHaveURL(/\/knowledge$/);
   await expect(page).toHaveScreenshot("knowledge-empty.png");
 
-  await page.click('button:has-text("Add Q&A")');
+  // Add Q&A/Upload file/Add URL (ADR 0013) now live behind one "Add"
+  // DropdownMenu instead of a single button.
+  await page.click('button:has-text("Add")');
+  await page.click('div[role="menu"] >> text="Add Q&A"');
   await expect(page.getByRole("heading", { name: "Add a question and answer" })).toBeVisible();
   await expect(page).toHaveScreenshot("knowledge-add-dialog.png");
 });

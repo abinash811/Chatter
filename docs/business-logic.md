@@ -132,28 +132,63 @@ to a human" — never a fabricated answer.
 ## Knowledge base ingestion
 
 `docs/product-spec.md`'s MVP scope: "file upload and/or manual Q&A at
-minimum for v1." Manual Q&A is what's built (`lib/ai/knowledgeBase.ts`,
-`/bots/[botId]/knowledge`) — file/URL ingestion is separate, larger
-scope (chunking strategy, dedup) `KnowledgeSource.kind` already leaves
-room for (`"file"`/`"url"`, see `docs/open-questions.md` #4 on
-crawling) but isn't built yet.
+minimum for v1" — now fully built, three ways in
+(`lib/ai/knowledgeBase.ts`, `/bots/[botId]/knowledge`). Site crawling
+(multi-page, link-following) stays separate, deferred scope
+(`docs/open-questions.md` #4) — everything here is single-Q&A/single-
+file/single-URL. ADR 0013 covers the file/URL decisions in full.
 
-One `KnowledgeSource` (`kind: "qa"`, `title` = the question) + one
-`KnowledgeChunk` (`content` = the answer) per Q&A pair — no multi-chunk
-splitting needed, a Q&A pair is already the right retrieval unit. The
-embedding is computed from the question *and* answer together (not just
-the question) so a visitor query phrased closer to either still
-matches. `KnowledgeChunk.embedding` (pgvector,
-`db/migrations/0002_pgvector.sql`) isn't in the Prisma schema — Prisma
-can't declare a `vector` column natively — so it's written via a raw
-SQL update after the Prisma-typed `create`, same pattern
-`searchKnowledgeBaseTool` already uses on the read side (pgvector
-cosine-distance `ORDER BY`).
+**Manual Q&A**: one `KnowledgeSource` (`kind: "qa"`, `title` = the
+question) + one `KnowledgeChunk` (`content` = the answer) per pair — no
+multi-chunk splitting needed, a Q&A pair is already the right retrieval
+unit. The embedding is computed from the question *and* answer together
+(not just the question) so a visitor query phrased closer to either
+still matches.
 
-`searchKnowledgeBaseTool` restates the question alongside the answer
-for a `kind: "qa"` chunk (`Q: ...\nA: ...`) rather than returning the
-bare answer — reads better to the model than an answer with no
-context for what it's answering.
+**File upload** (`lib/ai/extraction.ts`'s `extractFileText`): PDF via
+`pdf-parse`, DOCX via `mammoth`, `.txt`/`.md` read directly (no
+library). Capped at 5MB (`MAX_FILE_BYTES`) before extraction even runs.
+
+**URL ingestion** (`extractUrlText`): fetches the URL, builds a `JSDOM`
+document, and runs `@mozilla/readability`'s `Readability.parse()` to
+pull just the article content — not nav/footer/ad chrome. Guarded by
+`assertPublicHttpUrl` (a basic SSRF check: `http`/`https` only, and the
+literal hostname is rejected if it's `localhost`/loopback/private/link-
+local — see `docs/security.md` for what this guard does *not* cover).
+
+**Chunking** (`lib/ai/chunking.ts`'s `chunkText`, file/URL only — a Q&A
+pair never needs it): a hand-rolled recursive splitter, paragraph →
+sentence → hard character-cutoff fallback, ~2000 chars (~500 tokens) per
+chunk, ~200 char (~10%) overlap between consecutive chunks. Grounded in
+2026 RAG chunking benchmarks — see `docs/research/knowledge-ingestion-
+libraries.md`. `MAX_CHUNKS` (200) rejects a document that would expand
+into too many sequential embeddings calls for v1's synchronous
+processing model (no background job queue exists in this codebase).
+
+**Embeddings happen outside the DB transaction** for file/URL entries:
+`withOrgContext` wraps its callback in `prisma.$transaction`, so
+embedding every chunk *inside* it would hold that transaction open for
+as long as the embeddings provider takes across every chunk (`createQaEntry`
+has the same shape for its one chunk). All chunks are embedded first,
+then one transaction creates the source and writes every chunk + its
+raw-SQL vector update (`KnowledgeChunk.embedding`, pgvector,
+`db/migrations/0002_pgvector.sql` — not in the Prisma schema since
+Prisma can't declare a `vector` column natively, same pattern
+`searchKnowledgeBaseTool` uses on the read side).
+
+`searchKnowledgeBaseTool` restates the question alongside the answer for
+a `kind: "qa"` chunk (`Q: ...\nA: ...`), and names the source title for
+a `kind: "file"`/`"url"` chunk (`From "<title>": ...`) — a document
+fragment reads better to the model with its origin stated, same
+reasoning as the qa case.
+
+Errors a business owner might actually cause (unsupported file type, a
+file over 5MB, a malformed/private URL, a page with no extractable
+article content, a document too long to chunk) throw
+`KnowledgeIngestionError` and surface as-is in a toast; anything
+unexpected (a corrupt file crashing a library, a network failure) is
+logged server-side and shown as a generic message instead — never a raw
+error, per guardrail #4.
 
 **Verification note**: this environment's `VOYAGE_API_KEY` is a
 placeholder (same class of gap as the documented missing
@@ -161,16 +196,26 @@ placeholder (same class of gap as the documented missing
 exercised against the real Voyage API here. Everything up to that
 boundary — the raw SQL vector write/read, the RLS isolation specific to
 `knowledge_sources`/`knowledge_chunks`, the console UI's list/add/
-delete flow — was verified for real against a real Postgres+pgvector
-instance and a real browser (a directly-seeded entry, since creating
-one through the UI needs the embeddings call). `tests/e2e/
-knowledge.spec.ts` covers what's reachable without a real key: the
-empty state, the dialog, and — a real bug this caught — that a failed
-save doesn't silently wipe the question/answer fields a business owner
-just typed (`useActionState`'s `<form>` resets uncontrolled fields on
-any action completion, success or failure, unless the action's
-returned state re-seeds them via `defaultValue`; same fix already
-shipped for `/login`'s email field).
+delete flow, and (for file/URL) the real extraction libraries
+themselves — was verified for real: `pdf-parse` against a real hand-
+built PDF, `mammoth` against a real bundled `.docx` fixture, `jsdom`+
+`@mozilla/readability` against real sample HTML, a directly-seeded
+file/url source+chunk against a real Postgres+pgvector instance
+(confirming `listKnowledgeSources`/`deleteKnowledgeSource`'s generic-
+across-kinds behavior and that `search_knowledge_base`'s raw query
+retrieves file/url chunks the same way as qa chunks), and a real browser
+upload of that same hand-built PDF through the full server-action
+pipeline (multipart file → buffer → `extractFileText` → chunking),
+which correctly reached the embeddings-call boundary rather than
+erroring anywhere in extraction. `tests/e2e/knowledge.spec.ts` covers
+what's reachable without a real key: the empty states, all three Add
+dialogs, a real `.txt` upload's extraction+chunking, the SSRF guard
+rejecting a real `localhost` URL end-to-end, and — a real bug this
+caught, on the qa path — that a failed save doesn't silently wipe the
+question/answer fields a business owner just typed (`useActionState`'s
+`<form>` resets uncontrolled fields on any action completion, success or
+failure, unless the action's returned state re-seeds them via
+`defaultValue`; same fix already shipped for `/login`'s email field).
 
 ## Tenant isolation in practice
 
