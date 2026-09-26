@@ -26,13 +26,21 @@ function sidebarMasks(page: import("@playwright/test").Page) {
   return [page.getByTestId("sidebar-org-name"), page.getByTestId("sidebar-user-email")];
 }
 
+// Real flake found 2026-09-26: LoginForm/SignupForm's email field has
+// `autoFocus`, and fixing the focus ring's real visibility earlier this
+// session (it used to be invisible — see AuthShell's ring-accent bug)
+// means the resting-state screenshot now depends on whether the browser
+// has applied focus styling before the screenshot fires. Blur before
+// capturing so the baseline is the deliberate resting state, not a race.
 test("login page", async ({ page }) => {
   await page.goto("/login");
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
   await expect(page).toHaveScreenshot("login.png");
 });
 
 test("signup page", async ({ page }) => {
   await page.goto("/signup");
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
   await expect(page).toHaveScreenshot("signup.png");
 });
 
@@ -43,6 +51,10 @@ test("onboarding screen", async ({ page }) => {
   await page.fill('input[name="confirmPassword"]', PASSWORD);
   await page.click('button[type="submit"]');
   await expect(page).toHaveURL(/\/onboarding$/);
+  // Same autoFocus-ring flake as login/signup — blur before capturing.
+  // The mask alone doesn't cover this: a focus ring's box-shadow extends
+  // past the element's own bounding box, so it pokes out around the mask.
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
   await expect(page).toHaveScreenshot("onboarding.png", { mask: [page.locator("#orgName")] });
 });
 
@@ -80,6 +92,10 @@ test("knowledge base — empty state and Add Q&A dialog", async ({ page }) => {
   await page.click('button:has-text("Add")');
   await page.click('div[role="menu"] >> text="Add Q&A"');
   await expect(page.getByRole("heading", { name: "Add a question and answer" })).toBeVisible();
+  // Same autoFocus-ring flake — Radix Dialog focuses its first focusable
+  // field on open (correct, real a11y behavior); blur so the baseline
+  // captures the resting state, not a race against when the ring paints.
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
   await expect(page).toHaveScreenshot("knowledge-add-dialog.png", { mask: sidebarMasks(page) });
 });
 

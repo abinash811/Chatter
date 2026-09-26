@@ -217,7 +217,19 @@ export function BotEditorForm({
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <pre className="overflow-x-auto rounded bg-muted p-3 text-xs">{embedSnippet}</pre>
+                {/* tabIndex + role — a real axe-core scan
+                    (tests/e2e/accessibility.spec.ts) flagged this as a
+                    scrollable region with no keyboard access (WCAG
+                    2.1.1/2.1.3): overflow-x-auto content needs to be
+                    focusable so a keyboard user can actually scroll it. */}
+                <pre
+                  className="overflow-x-auto rounded bg-muted p-3 text-xs"
+                  tabIndex={0}
+                  role="region"
+                  aria-label="Embed snippet"
+                >
+                  {embedSnippet}
+                </pre>
               </CardContent>
             </Card>
           </TabsContent>

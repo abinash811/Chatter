@@ -58,9 +58,9 @@ for. This table is what closes that.
 
 | Screen | Checked <900px wide | Real keyboard-only pass | Screen-reader pass | Notes |
 |---|---|---|---|---|
-| Login/signup | 🔲 | 🔲 | 🔲 | Never checked below 1280px. |
-| Bots list | 🔲 | ✅ | 🔲 | Row keyboard-nav fixed 2026-09-26 (`tabIndex`/`role="link"`/`onKeyDown`); no narrow-viewport or SR check. |
-| Bot editor | 🔲 | 🔲 | 🔲 | Tabs/Dialog behavior not re-checked keyboard-only since the shadcn migration. |
+| Login/signup | ✅ | 🔲 | 🟡 | Mobile baseline added 2026-09-26; automated axe scan clean (`tests/e2e/accessibility.spec.ts`), no manual SR pass. |
+| Bots list | ✅ | ✅ | 🟡 | Row keyboard-nav + mobile baseline + axe scan all 2026-09-26; no manual SR pass. |
+| Bot editor | 🔲 | 🔲 | 🟡 | Axe scan clean 2026-09-26 — caught and fixed 2 real bugs first (switcher had no accessible name; embed snippet wasn't keyboard-focusable). No manual SR pass. |
 | Knowledge | 🔲 | 🔲 | 🔲 | |
 | Integrations | 🔲 | 🔲 | 🔲 | |
 | Settings | 🔲 | 🔲 | 🔲 | |

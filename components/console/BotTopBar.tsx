@@ -35,7 +35,18 @@ export function BotTopBar({ botId, bots }: { botId: string; bots: { id: string; 
           the name a second time on screen. */}
       <h1 className="sr-only">{currentBot?.name ?? "Bot"}</h1>
       <Select value={botId} onValueChange={(newBotId) => router.push(`/bots/${newBotId}${subpath}`)}>
-        <SelectTrigger size="sm" className="w-56 border-none bg-transparent px-1 text-base font-semibold shadow-none">
+        {/* aria-label, not just SelectValue's rendered text — a real
+            axe-core scan (tests/e2e/accessibility.spec.ts) flagged this
+            trigger as having no accessible name despite visible text
+            being present in innerText/textContent; shadcn's
+            line-clamp-1 + flex combo on the value span appears to
+            confuse accessible-name computation. An explicit label is
+            correct regardless of the exact cause. */}
+        <SelectTrigger
+          size="sm"
+          aria-label={`Switch bot (currently ${currentBot?.name ?? "unknown"})`}
+          className="w-56 border-none bg-transparent px-1 text-base font-semibold shadow-none"
+        >
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
