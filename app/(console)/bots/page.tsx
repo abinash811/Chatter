@@ -56,7 +56,10 @@ export default async function BotsPage() {
           <p className="text-sm text-muted-foreground">Create one above to get started.</p>
         </div>
       ) : (
-        <div className="mt-4 rounded-lg border border-border shadow-xs">
+        // overflow-hidden — without it, TableHead's bg-soft-background
+        // tint (a straight-cornered rect spanning the full row) visibly
+        // pokes past this wrapper's rounded-lg corners.
+        <div className="mt-4 overflow-hidden rounded-lg border border-border shadow-xs">
           <BotsTable
             bots={bots.map((bot) => ({
               id: bot.id,
