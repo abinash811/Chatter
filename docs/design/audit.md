@@ -128,6 +128,26 @@ Logged the same day they were found, per this file's own rule.
   open — genuinely needs more real content (recent activity, a stat),
   not a styling fix; the approved mockup doesn't solve this either.
 
+**Component-checklist audit (2026-09-27, `docs/design/component-checklist.md`):**
+- 🔲 **Item 1 (states)** — `NewBotDialog`'s "Create" button has no
+  pending/disabled state during the real create+redirect round-trip
+  (`createBotAction`). A user can double-click it and create two bots.
+  `RenameBotDialog`/`ArchiveBotDialog` both do this correctly
+  (`isPending` from `useActionState`); `NewBotDialog` is a plain form
+  action with nothing wired up.
+- 🔲 **Item 1 (states)** — the "Duplicate" menu item disables itself
+  while pending but shows no "Duplicating..." label or spinner — a
+  silent wait between click and redirect, unlike every other pending
+  action on this screen which says what's happening.
+- 🔲 **Item 6 (empty-state CTA)** — the "No bots match "X"." search
+  empty state is plain text with no way forward — no Clear-search
+  button. A dead end, the exact thing item 6 exists to catch.
+- 🟡 **Item 5 (error copy)** — Rename/Archive error toasts ("Couldn't
+  rename that bot. Please try again.") give *what* and *next* but never
+  *why* — acceptable for a generic transient failure, but worth a
+  real reason where one's knowable (e.g. a network error vs. a
+  validation error) rather than the same generic line for both.
+
 **Functionality (real product decisions — asked before building, per
 this file's own rule):**
 - ✅ Search/filter — shipped 2026-09-27, client-side (per-org bot lists
