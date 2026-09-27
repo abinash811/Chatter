@@ -55,9 +55,13 @@ reason.)
   persona picker (Support/Sales/Lead-gen), both in the bot editor.
 - RAG hardening pass (2026-09-27): fixed a real dead pgvector index
   (IVFFlat built on an empty table — now HNSW), batched ingestion
-  embeddings, and query rewriting via the retrieval tool's own
-  instructions. See `docs/ai-tech-radar.md`'s Retrieval & search
-  section — hybrid search, an eval harness, and reranking are next.
+  embeddings, query rewriting via the retrieval tool's own instructions,
+  and hybrid search (tsvector + pgvector via RRF, ADR 0021 — deliberately
+  not BM25). See `docs/ai-tech-radar.md`'s Retrieval & search section —
+  an eval harness and reranking are next.
+- Deploy target: AWS confirmed; database is AWS RDS for PostgreSQL (ADR
+  0021); app compute (App Runner/ECS/EC2) still open, `docs/open-
+  questions.md` #8.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.

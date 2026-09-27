@@ -282,9 +282,58 @@ Sources:
 - https://uk.finance.yahoo.com/news/catenai-backed-alludium-opens-ai-080036417.html
 - https://www.alludium.ai/news/news-welcome
 
+## Competitor vector search / hybrid search infrastructure (2026-09-27)
+
+Researched to inform ADR 0021 (database/hybrid-search decision) — what
+does the closest competition actually run, not just what's theoretically
+best.
+
+**Chatbase**: migrated *off* Pinecone *onto* Postgres+pgvector via
+Supabase as they matured — the opposite of "start on Postgres, need a
+real vector DB later." Chatbase's own description: chunks content,
+generates embeddings, stores them in a managed vector index with no
+separate vector database for the customer to run — consolidated
+infrastructure, not a specialized-tool sprawl. Directly validates our
+own Postgres+pgvector architecture (ADR 0002), not just a similar one.
+
+Supabase (Chatbase's infra layer) publishes its own official hybrid
+search pattern: plain `tsvector`/`ts_rank` (not BM25) combined with
+pgvector cosine search via Reciprocal Rank Fusion. Their published
+numbers: pure vector search ~62% retrieval precision; adding hybrid
+search (still plain `tsvector`, no BM25) ~84% precision, with
+near-perfect exact-match queries. The big quality jump is from combining
+lexical + semantic search *at all* — which ranking algorithm (BM25 vs.
+`ts_rank`) is a smaller, second-order refinement on top of that, not the
+source of the gain.
+
+**Gorgias**: uses Zilliz Cloud (managed Milvus), migrated there from an
+unnamed competing vector DB — cited reason was Milvus's metadata/
+filtering depth for Shopify's complex product variants (color/size/
+gender combinations), not search-quality dissatisfaction. Milvus has
+BM25 hybrid search built in natively, but this is a different
+architectural choice (a dedicated vector database) from a
+Postgres-extension decision — not directly comparable to our stack.
+
+**Zipchat**: no public infrastructure/vector-database details found —
+too small/closed to have published this.
+
+**Implication for us**: this is the deciding evidence behind ADR 0021 —
+build hybrid search as plain `tsvector` + pgvector + RRF (Supabase's
+documented, measured pattern) rather than reaching for a BM25 extension
+immediately. Real BM25 stays a deferred, evidence-gated upgrade behind
+the RAG eval harness (`docs/ai-tech-radar.md`), not a day-one build.
+
+Sources:
+- https://zilliz.com/customers/gorgias
+- https://supabase.com/customers/chatbase
+- https://supabase.com/docs/guides/ai/hybrid-search
+- https://www.tigerdata.com/newsroom/google-cloud-brings-native-bm25-full-text-search-to-alloydb-and-cloud-sql-via-tiger-datas-pg_textsearch
+- https://neon.com/docs/extensions/pg_search
+
 ## TODO — still need to research
 
 - RAG architecture best practices for multi-tenant SaaS specifically
-  (retrieval scoping, embedding refresh strategies, hybrid search).
+  (retrieval scoping, embedding refresh strategies) — hybrid search
+  itself is now covered above.
 - Embeddable widget engineering patterns (shadow DOM vs. iframe trade-offs,
   script-tag loading performance).

@@ -28,7 +28,11 @@ try {
   // already exported.
 }
 
-const MIGRATIONS = ["db/migrations/0001_init_rls.sql", "db/migrations/0002_pgvector.sql"];
+const MIGRATIONS = [
+  "db/migrations/0001_init_rls.sql",
+  "db/migrations/0002_pgvector.sql",
+  "db/migrations/0003_hybrid_search_fts.sql",
+];
 
 async function main() {
   if (!process.env.DATABASE_URL) {

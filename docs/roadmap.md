@@ -122,8 +122,14 @@ Validated by competitor research, not yet built:
      the full detail. Not verifiable end-to-end without a real
      `ANTHROPIC_API_KEY` — same documented gap as the rest of the
      engine.
-  2. **Hybrid search** — Postgres `tsvector`/`tsquery` alongside the
-     existing pgvector cosine search, no new infra.
+  2. **Hybrid search — built (2026-09-27).** Postgres `tsvector`/
+     `ts_rank` alongside the existing pgvector cosine search, fused via
+     Reciprocal Rank Fusion — deliberately not a BM25 extension (ADR
+     0021: AWS RDS doesn't support one, and the closest competitor's
+     own validated pattern, Chatbase via Supabase, uses plain tsvector
+     too). Verified against a real local Postgres: an exact keyword
+     match that ranked #2 in vector-only search correctly won the fused
+     ranking. See `docs/ai-tech-radar.md`.
   3. **RAG eval harness** — a labeled Q&A test set + scoring script,
      built *before* reranking so that decision (and every future
      tuning change) is measured, not guessed.

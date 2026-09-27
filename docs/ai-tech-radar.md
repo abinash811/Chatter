@@ -73,19 +73,43 @@ as each ships. Phase 1 shipped same day; phases 2-4 still ahead.
   in the schema — whether the model actually follows the instruction
   needs a real `ANTHROPIC_API_KEY` to observe, the same documented gap
   as the rest of the engine's end-to-end behavior.
+- **Hybrid retrieval** (`lib/ai/tools/searchKnowledgeBase.ts`,
+  `db/migrations/0003_hybrid_search_fts.sql`) — Postgres native
+  full-text search (a generated `tsvector` column + GIN index,
+  `ts_rank`/`websearch_to_tsquery`) combined with the existing pgvector
+  cosine search via Reciprocal Rank Fusion (`rrf_k = 50`, matching
+  Supabase's documented default). Deliberately plain `tsvector`, not a
+  BM25 extension — see ADR 0021 and the Hold entry below. Functionally
+  verified against a real local Postgres, not just read: applied the
+  migration twice (idempotent), confirmed `websearch_to_tsquery` never
+  throws on empty/malformed input (returns an empty tsquery instead,
+  matching nothing), and ran the real RRF query against three seeded
+  chunks where an exact keyword match ranked #2 in vector-only search
+  but correctly won the fused ranking — proving hybrid search actually
+  surfaces what vector-only search would have under-ranked, not just
+  that the query executes.
+
+Hybrid retrieval joined the Adopt list above — moved here since it
+shipped 2026-09-27, same day as the decision.
 
 **Trial** (prioritized, in this order — see `docs/roadmap.md`)
-1. **Hybrid retrieval** — Postgres native full-text search (`tsvector`/
-   `tsquery`, no new infra) combined with pgvector's existing cosine-
-   distance search. No dedicated search engine (Elasticsearch/Typesense)
-   needed at this scale.
-2. **RAG eval harness** — see Eval & ops below; built before reranking
+1. **RAG eval harness** — see Eval & ops below; built before reranking
    so that decision (and every future tuning change) is measured, not
    guessed.
-3. **Reranking** — re-score the top ~30–50 hybrid candidates down to the
+2. **Reranking** — re-score the top ~30–50 hybrid candidates down to the
    ~5–8 actually sent to the LLM. Vendor: see Assess above. Deliberately
    sequenced *after* the eval harness (user decision, 2026-09-27) —
    measure with real numbers instead of picking a vendor on reputation.
+
+**Hold**
+- **BM25 extension** (`pg_search`/`pg_textsearch`) — explicitly deferred
+  (ADR 0021, 2026-09-27), not rejected outright. AWS RDS for PostgreSQL
+  (the chosen DB host) doesn't support either; getting real BM25 would
+  mean self-managed Postgres, Neon, or Google Cloud SQL/AlloyDB instead,
+  each a bigger decision than the evidence currently justifies. Revisit
+  specifically once the RAG eval harness below can show `ts_rank`'s
+  weaker ranking is an actual bottleneck for real content and queries,
+  not before.
 
 **Assess**
 - **Parent-child / contextual retrieval** — search a small chunk,

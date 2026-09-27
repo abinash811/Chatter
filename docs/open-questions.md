@@ -39,16 +39,14 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
    satisfied? no handoff triggered? something else? ADR 0015
    deliberately left this undefined rather than picking a definition
    while building the conversation inbox.
-8. **Deploy/hosting platform** (reopened, ADR 0020 — supersedes ADR
-   0005's Render pick). Self-hosted Postgres (full control over
-   extensions, e.g. `pg_search`/`pg_textsearch` for real BM25 — see
-   `docs/ai-tech-radar.md`'s Retrieval & search section — but we own
-   patching/backups/uptime) vs. another managed host (Supabase, Neon,
-   RDS — less ops burden, same extension-availability question to
-   check per-host before assuming). No recommendation yet. Distinct
-   from #1 above (that's whether we ever offer self-hosting as a
-   *product* option to businesses; this is where *our own* managed
-   instance runs).
+8. **App compute platform** (narrowed 2026-09-27 — the database half is
+   resolved: AWS RDS for PostgreSQL, ADR 0021). Cloud provider is AWS;
+   still open is where the Next.js app itself runs — AWS App Runner
+   (closest to Render's simplicity), ECS Fargate (more control), or EC2
+   (full control, most ops burden). User said this is "decided later,"
+   not blocking anything today. Distinct from #1 above (that's whether
+   we ever offer self-hosting as a *product* option to businesses; this
+   is where *our own* managed instance runs).
 
 ## Not yet asked
 
