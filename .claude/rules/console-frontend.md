@@ -72,14 +72,18 @@ depending on the model choosing to invoke it — see
    it catches hydration/runtime errors a type-check can't. See
    `scripts/canary.mjs`.
 
-7. **Check the screen below ~900px wide and tab through it with a mouse
-   untouched, before calling it done.** Found 2026-09-26 as a total
-   blind spot — only 6 files in the app use any responsive Tailwind
-   prefix, every `tests/visual/` baseline is a fixed 1280×800, and only
-   one screen had ever had a real keyboard-only pass. Log the result in
-   `docs/design/audit.md`'s "Responsive & accessibility" table even when
-   it's "not checked" — see `ship-checklist` item 13 for the full
-   design-bar self-check this is part of.
+7. **The <900px responsive check is retired for console screens**
+   (2026-09-27 user decision, `docs/product-spec.md`'s "Explicitly out
+   of scope for v1" — the console is a desktop tool, not optimized for
+   phone/tablet). Don't resize-test or add responsive Tailwind prefixes
+   to new console work on the strength of this item alone. This does
+   **not** apply to the embeddable widget (`public/widget.js`) — that
+   renders on a visitor's own phone regardless of the console's target,
+   so it still needs to work at phone width. Keyboard-only navigation
+   (tab through with a mouse untouched) still applies regardless of
+   screen width — that's an accessibility requirement, not a responsive-
+   layout one. Log the keyboard-only result in `docs/design/audit.md`'s
+   "Responsive & accessibility" table — see `ship-checklist` item 13.
 
 8. **Take a real screenshot and critique it like a senior product
    designer before calling any touched screen done** — not just the

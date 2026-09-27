@@ -98,3 +98,13 @@ integrable) generalized past ecommerce.
 - Billing/subscription management
 - Pre-built third-party integrations (Shopify, Calendly, etc.) beyond a
   generic webhook mechanism — see `docs/open-questions.md`
+- **Mobile-responsive console** (2026-09-27 user decision) — the
+  business-owner console (`app/(console)/`) is a desktop tool; not
+  optimizing for phone/tablet widths. The embeddable widget itself
+  (`public/widget.js`) is unaffected — it already needs to render
+  correctly on a visitor's phone regardless of the console's own
+  target, since it's embedded on someone else's site. `.claude/rules/
+  console-frontend.md` item 7's "<900px" check and `docs/design/
+  audit.md`'s "Checked <900px wide" column are retired for console
+  screens by this decision — don't flag it as a gap on new console
+  work going forward.

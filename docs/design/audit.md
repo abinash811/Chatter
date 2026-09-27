@@ -84,14 +84,18 @@ for. This table is what closes that.
 | Onboarding | 🔲 | 🔲 | 🟡 | Axe scan added 2026-09-27, clean. No manual SR pass. |
 | Sidebar/top bar | 🔲 | 🟡 | 🔲 | Collapse toggle keyboard-reachable (native `<button>`); switcher/nav not re-checked. |
 
-**Rule going forward:** before calling any UI work done, add both to the
-design-bar self-check (`ship-checklist` item 13) — not just hover/focus/
-active/loading: (1) resize the real running app below ~900px and look
-at it, don't just assume Tailwind's defaults degrade gracefully; (2)
-actually tab through the screen with a mouse untouched. A full
-screen-reader pass isn't required per change, but note in this table
-whether one's ever been done for that screen — don't let "never
-checked" silently read as "fine."
+**Rule going forward (updated 2026-09-27):** the "Checked <900px wide"
+column is retired for console screens — the user decided the console is
+a desktop tool, not optimized for phone/tablet (`docs/product-spec.md`'s
+"Explicitly out of scope for v1"). Leave that column's existing values
+as historical record; don't add new resize checks on console work.
+Before calling any UI work done, still do the other two: (1) actually
+tab through the screen with a mouse untouched — a real keyboard-only
+pass, independent of screen width; (2) note in this table whether a
+screen-reader pass has ever been done — don't let "never checked"
+silently read as "fine." The embeddable widget (`public/widget.js`) is
+unaffected by the console decision and still needs phone-width checks
+if it's ever touched.
 
 ## Depth/polish (principles.md #5/#9)
 

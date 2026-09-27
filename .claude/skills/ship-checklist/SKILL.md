@@ -68,7 +68,9 @@ Before saying a piece of work is done:
    `.claude/rules/console-frontend.md` items 7-9, which auto-load for
    any `app/(console)/**`/`components/ui/**` touch, so it isn't opt-in.
    Confirm all three were actually done, not skimmed: hover/focus/active/
-   loading/depth + <900px + keyboard-only (item 7); the senior-
+   loading/depth + keyboard-only (item 7 — the <900px resize check is
+   retired for console screens, 2026-09-27 user decision, `docs/
+   product-spec.md`); the senior-
    designer critique against principles.md #9 — hierarchy, status/
    semantic color coverage, per-item visual distinction, density-vs-
    register match, interactive-affordance clarity (item 8); and every
