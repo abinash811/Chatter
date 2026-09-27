@@ -224,9 +224,10 @@ alone doesn't catch any of these (see "Verified by a real run" above):
   — the rules load automatically the moment Claude Code touches a
   matching file (no reliance on remembering to invoke them), so the
   patterns are followed on the way in, not just checked on the way out.
-- **`.githooks/pre-commit`** — `npm run check:all` + typecheck, before a
-  commit is even made. One-time setup per clone:
-  `git config core.hooksPath .githooks`.
+- **`.githooks/pre-commit`** — `npm run check:all` + typecheck + unit
+  tests, before a commit is even made. Installed automatically by
+  `npm install` (`package.json`'s `prepare` script sets
+  `core.hooksPath`) — nothing to configure by hand per clone anymore.
 - **`.github/workflows/ci.yml`** — the same checks plus the RLS
   verification and browser canary, against a real Postgres+pgvector
   service, on every push — the backstop for anything that reaches GitHub
