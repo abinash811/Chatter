@@ -330,6 +330,87 @@ Sources:
 - https://www.tigerdata.com/newsroom/google-cloud-brings-native-bm25-full-text-search-to-alloydb-and-cloud-sql-via-tiger-datas-pg_textsearch
 - https://neon.com/docs/extensions/pg_search
 
+## Update 2026-09-27: Chatbase's real dashboard UI (primary source — user-provided screenshots)
+
+Prompted by the user asking specifically whether Chatbase's "Actions"
+page uses a card-gallery layout, not a checkbox list like our Tools tab
+— `www.chatbase.co` is blocked by this environment's network egress
+policy (confirmed via two direct `WebFetch` attempts, both denied), so
+WebSearch was tried first and came back with marketing blog posts, not
+verified UI detail. The user then supplied 5 real screenshots of their
+own live Chatbase workspace (an "Eka.Care EMR App" project) — this
+section is grounded in those, not search-result speculation, per this
+project's own standing rule to read primary sources.
+
+**Confirmed: yes, both Actions and Data sources are card galleries.**
+- **Actions page**: a 2-column grid of cards, each with an icon, a bold
+  title, a one-line description, and one or more pill-shaped quick-start
+  buttons for that action's sub-modes — "Escalations" (create a ticket
+  on a connected system), "Custom actions" (Call API / Run client-side
+  code / Call API + show widget / Show widget), "Collect leads",
+  "Collect data", plus per-integration cards (Stripe: retrieve/display
+  invoices, change customer info, manage subscriptions; Shopify:
+  retrieve/display products, update cart, create order). A "Create
+  action" link sits above the grid, not a single "Add" button.
+- **Data sources page**: the same card-grid pattern for ingestion
+  entry points — Add files / Add website / Add text snippet / Add Q&A's
+  / Add Notion pages / Add tickets (the last shown as a locked/premium
+  card with a crown icon) — always visible upfront, not tucked behind a
+  dropdown. Sources already added are listed below as rows (title,
+  created date, link count, type badge, "..." menu), with search/filter/
+  sort/bulk-select and pagination controls.
+
+**Implication for us**: our bot editor's Tools tab (`BotEditorForm.tsx`)
+is a plain list of `Checkbox` + tool name + description, one per row —
+and Knowledge's "Add" entry point is a `DropdownMenu` (Add Q&A/Upload
+file/Add URL), not a card grid. Both should become a card gallery to
+match: each tool/source type gets a `Card` with an icon, title,
+description, and its own action button(s), laid out in a responsive
+grid. This is a presentation change to features we've already built
+(the 4 action tools, the 3 ingestion methods), not new backend work —
+scoped cleanly enough to build directly, matching `docs/design/
+component-checklist.md`'s existing primitive rules (`Card`, `Button`,
+`lucide-react` icons already in use elsewhere).
+
+**Other real findings from the same screenshots, each with its own
+implication:**
+- **A live "test the bot" pane, confirmed real** — the Overview screen
+  keeps a docked chat preview to the right of every config screen, with
+  "Chat as user" and "Preview" as separate top-bar actions and "Deploy"
+  as the (separately gated) publish action. This validates the "in-
+  console chat playground" feature already recommended in this
+  conversation (not yet built) — Chatbase's version is not a modal or a
+  separate page, it's a persistent split-pane next to whatever you're
+  editing.
+- **Suggested-reply chip buttons** under the bot's first message (seen
+  in the preview: "Create my ABHA", "Explore Eka.Care EMR", "Get
+  started") — a quick-reply/starter-prompt feature we don't have
+  anywhere (not in `lib/ai/appearanceOptions.ts` or the widget). Configured
+  per-bot, shown before the visitor types anything.
+- **Confidence score + "Revise answer" per logged reply** (seen in
+  Activity → Conversations → Playground: a score badge like "0.613"
+  next to each AI answer, with a "Revise answer" button) — this is
+  analytics-adjacent (the user has explicitly put analytics/sentiment on
+  hold) but distinct from a vanity metric: it's an actionable knowledge-
+  correction workflow tied to a real logged conversation, not a
+  dashboard number. Worth revisiting specifically when analytics comes
+  off hold, not folded into the general "confidence scoring" idea
+  without noting this UI detail.
+- **Model configuration sidebar** (Model: "Auto" dropdown + a
+  Temperature slider, Reserved↔Creative) shown alongside "Compare" and
+  "Save changes" on the Instructions screen — a concrete UI reference
+  for `docs/open-questions.md` #6 (LLM model picker + pricing
+  visibility), which had no UI precedent to point to before this.
+- **"Compare" button** next to "Save changes" on Instructions — implies
+  Chatbase supports diffing instruction versions before committing a
+  change, a version-history UX we don't have (we only have draft vs.
+  currently-published, no diff view).
+- **"Sync with global instructions" toggle** — implies an org-level
+  shared instruction set that individual bots can opt into or override.
+  Only relevant once a business runs multiple bots that should share
+  some base instructions — not urgent, no current open question covers
+  it; flagged here so it isn't rediscovered from scratch later.
+
 ## TODO — still need to research
 
 - RAG architecture best practices for multi-tenant SaaS specifically
@@ -337,3 +418,9 @@ Sources:
   itself is now covered above.
 - Embeddable widget engineering patterns (shadow DOM vs. iframe trade-offs,
   script-tag loading performance).
+- `www.chatbase.co` is blocked by this environment's network egress
+  policy — if unblocked in a future session, re-verify the above against
+  the real product directly (not just user-supplied screenshots) and
+  check the areas not covered here (Widgets, Procedures, Suggestions,
+  Guardrails, Integrations, Outbound, Helpdesk inbox — all visible as
+  sidebar items in the screenshots but not explored in this pass).

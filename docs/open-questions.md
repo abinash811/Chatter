@@ -32,7 +32,11 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
    a markup, or a simple tier label ("fast" vs. "smart")? The last
    option ties into the still-open billing/pricing model question below
    — a real per-token cost display only makes sense once that's
-   answered.
+   answered. A concrete UI reference now exists: Chatbase shows a
+   model dropdown ("Auto") + a Temperature slider in a sidebar next to
+   the instructions editor — see `docs/research/competitive-
+   landscape.md`'s 2026-09-27 update (real screenshots, not a guess).
+   Still doesn't resolve the pricing-display half of this question.
 7. **`Conversation` "resolved" status semantics.** `docs/roadmap.md`'s
    Next section ("Resolution-rate analytics") needs a real definition
    of "resolved" before it's buildable — closed by visitor leaving
