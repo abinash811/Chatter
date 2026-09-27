@@ -146,6 +146,12 @@ These hold regardless of what stack or framework we end up on.
 
 ## Process rules
 
+- **Any "is this well-designed / what's missing" question reads
+  `docs/design/audit.md`'s open findings first, then answers.** A chat
+  question isn't a file touch, so `.claude/rules/console-frontend.md`
+  doesn't auto-load for it — don't critique from visual impression alone
+  when a documented findings list already exists; check it before
+  answering, not just when writing code.
 - Record every hard-to-reverse decision (data model shape, storage choice,
   auth model, multi-tenancy strategy, vendor choice) as an ADR using the
   `new-adr` skill and `docs/adr/template.md`.
