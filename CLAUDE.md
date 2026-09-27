@@ -208,6 +208,20 @@ These hold regardless of what stack or framework we end up on.
 - **Check current practice, don't recall it.** Same failure mode as
   above, applied to patterns instead of version numbers — see
   `docs/research/current-practices.md`.
+- **For any RAG/AI work — embeddings, retrieval, ranking, chunking,
+  prompting, evals — read the primary source before writing
+  implementation code, not just a search-result summary of it.** A
+  WebSearch result or third-party blog post is a pointer to go find the
+  real source (the vendor's own docs, the maintainer's reference
+  implementation, the paper) — never the final thing to build against.
+  This isn't theoretical: the hybrid-search RRF query
+  (`lib/ai/tools/searchKnowledgeBase.ts`) was first built from WebSearch
+  summaries of Supabase's guide, and only differed from Supabase's real
+  reference implementation in 3 concrete ways (wrong ranking function,
+  wrong candidate-pool formula, a less efficient join) once someone
+  asked whether the primary source had actually been read — it hadn't.
+  Read primary/official sources before building, every time, not as a
+  fallback when something looks off.
 - **When a new technical pattern needs a real choice** (a library, a
   tool, an approach with tradeoffs) — not something with one obviously
   correct answer — explain it to the user before asking: what it is in
