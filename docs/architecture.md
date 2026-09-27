@@ -41,6 +41,15 @@ doc as ADRs land instead of letting decisions live only in chat history.
   plain-language summary and whether the call counts as an issue for the
   conversation inbox (`/conversations`) — each tool decides this for its
   own output shape, never a hardcoded case in the core engine.
+- **Custom (business-defined) tools are a second, parallel path, not
+  registry entries** (ADR 0022): a business owner can define their own
+  webhook action per bot (`CustomAction` model, `/bots/[botId]/actions`)
+  since its name/schema/URL are per-bot data, not code known at compile
+  time. `lib/ai/chat.ts` builds each turn's tool list by merging the
+  static registry's tools with that bot's enabled `CustomAction` rows
+  (built fresh via `buildCustomActionTool`, `lib/ai/tools/
+  customAction.ts`) — the static registry itself is untouched. Same
+  guardrail #4 fallback and an SSRF guard on the business-supplied URL.
 - Streamed responses back to the widget.
 - **BYOA (bring-your-own API key)**: optional, per-org, off by default —
   a business can plug in their own Anthropic key from `/settings`

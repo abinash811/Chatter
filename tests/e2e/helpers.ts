@@ -134,3 +134,26 @@ export async function seedLead(
   const orgId = await getOrgIdForBot(botId);
   await withOrgContext(orgId, (tx) => tx.lead.create({ data: { orgId, botId, ...fields } }));
 }
+
+// Custom action (ADR 0022) rows for a11y/visual specs that just need a
+// populated list, not the console's Add dialog round trip — same
+// bypass-the-UI precedent as seedLead above.
+export async function seedCustomAction(
+  botId: string,
+  fields: { name: string; description: string; method?: string; url?: string },
+): Promise<void> {
+  const orgId = await getOrgIdForBot(botId);
+  await withOrgContext(orgId, (tx) =>
+    tx.customAction.create({
+      data: {
+        orgId,
+        botId,
+        name: fields.name,
+        description: fields.description,
+        method: fields.method ?? "POST",
+        url: fields.url ?? "https://api.example.com/hook",
+        inputSchema: { type: "object", properties: {}, required: [], additionalProperties: false },
+      },
+    }),
+  );
+}

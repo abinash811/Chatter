@@ -26,10 +26,12 @@ The generic core plus one concrete vertical template — see
   scope complete. Site crawling is separate, still open
   (`docs/open-questions.md` #3).
 - RAG retrieval as a tool call, not a hardcoded prompt prepend
-- Three action tools: `search_knowledge_base`, `check_order_status`
+- Four action tools: `search_knowledge_base`, `check_order_status`
   (read-only — see Next), `collect_lead` (write, generic — 2026-09-27,
-  matches Chatbase's "Collect Leads"; see `/bots/[botId]/leads`). Every
-  new tool going forward is industry-agnostic by default, not just
+  matches Chatbase's "Collect Leads"; see `/bots/[botId]/leads`), and
+  custom (business-defined) webhook actions (generic — 2026-09-27, ADR
+  0022, matches Chatbase's Custom Actions; see `/bots/[botId]/actions`).
+  Every new tool going forward is industry-agnostic by default, not just
   ecommerce (scoping decision, 2026-09-27) — `check_order_status` stays
   the one vertical-specific exception.
 - Email + password auth (ADR 0006), tenant isolation via RLS (ADR 0003)
@@ -54,8 +56,11 @@ marked with real status (not aspirational):
    describe (now moot — ADR 0019 dropped that layer entirely). Adding a
    4th template later is a code change, not a migration.
 2. **Tool enable/disable** — **already built.** Bot editor's Tools tab,
-   per-tool checkboxes, `BotConfigVersion`. Nothing to do here beyond
-   adding new tools as they ship.
+   per-tool checkboxes, `BotConfigVersion`, for the three static tools.
+   Custom (business-defined) actions (ADR 0022) get their own per-action
+   enable/disable toggle on `/bots/[botId]/actions` instead, since each
+   one is its own object, not a fixed checkbox list. Nothing to do here
+   beyond adding new static tools as they ship.
 3. **Bot UI / appearance editor** — **built (2026-09-27).** Bot editor's
    Appearance tab: greeting + accent color (already existed) plus new
    avatar (curated emoji picker — no image upload/storage infra exists
@@ -151,7 +156,12 @@ Validated by competitor research, not yet built:
 - **Write-capable action tools** — issue a refund, update a shipping
   address, edit/cancel a booking — not just lookups. Gorgias treats
   these as core, not advanced; our tool registry (ADR 0002) already
-  supports adding them without engine changes.
+  supports adding them without engine changes. Partially unblocked by
+  the 2026-09-27 custom-action tool (ADR 0022): a business can already
+  wire a write-capable webhook (e.g. their own booking-cancellation
+  endpoint) themselves today — this item is now about built-in,
+  purpose-specific write tools for platforms we integrate with directly
+  (e.g. a real Shopify refund call), not the general capability.
 - **Resolution-rate analytics** — % of conversations resolved without
   human handoff. Intercom Fin's headline metric; we track nothing like
   it yet. Needs a definition of "resolved" first (closed by visitor

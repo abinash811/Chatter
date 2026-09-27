@@ -48,13 +48,24 @@ committed — `.env` is gitignored, `.env.example` documents the shape
 with empty values.
 
 **Secrets we store, at rest**: a business's own Claude API key (BYOA,
-optional per-org, `/settings`) and Shopify OAuth tokens
-(`Integration.accessToken`) are both encrypted with AES-256-GCM
-(`lib/crypto.ts`, keyed by `ENCRYPTION_KEY`, ADR 0012) — not plaintext.
-The decrypted API key is never sent back to the browser once saved;
-`/settings` shows only whether one is set. No key-rotation tooling
-exists yet (rotating `ENCRYPTION_KEY` means re-encrypting every stored
-secret by hand) — a known gap, tracked in ADR 0012, not a v1 blocker.
+optional per-org, `/settings`), Shopify OAuth tokens
+(`Integration.accessToken`), and a custom action's webhook headers
+(`CustomAction.headersEncrypted`, ADR 0022 — e.g. a bearer token for the
+business's own API) are all encrypted with AES-256-GCM (`lib/crypto.ts`,
+keyed by `ENCRYPTION_KEY`, ADR 0012) — not plaintext. The decrypted API
+key/headers are never sent back to the browser once saved; the console
+shows only whether one is set. No key-rotation tooling exists yet
+(rotating `ENCRYPTION_KEY` means re-encrypting every stored secret by
+hand, now three categories of row, not two) — a known gap, tracked in
+ADR 0012, not a v1 blocker.
+
+**SSRF**: a custom action's URL is business-supplied but our own server
+makes the outbound call, so it's checked against an SSRF guard
+(`lib/ai/tools/customAction.ts`'s `isBlockedActionUrl`) before every
+call — https-only, blocks loopback/private/link-local hostnames
+including the cloud instance metadata address (`169.254.169.254`).
+Same guardrail #4 fallback (handoff, never a silent failure) applies
+when a call is blocked or fails.
 
 **If a real secret is ever pasted into a chat session or committed by
 mistake, treat it as compromised and rotate it immediately** — this

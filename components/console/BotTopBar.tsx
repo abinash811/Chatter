@@ -19,6 +19,7 @@ const NAV_ITEMS = [
   { subpath: "", label: "Editor" },
   { subpath: "/knowledge", label: "Knowledge" },
   { subpath: "/leads", label: "Leads" },
+  { subpath: "/actions", label: "Actions" },
   { subpath: "/integrations", label: "Integrations" },
 ];
 

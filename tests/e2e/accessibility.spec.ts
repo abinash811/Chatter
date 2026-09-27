@@ -1,6 +1,14 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { signUpAndCreateBot, seedConversations, seedKnowledgeEntry, seedLead, uniqueEmail, PASSWORD } from "./helpers";
+import {
+  signUpAndCreateBot,
+  seedConversations,
+  seedKnowledgeEntry,
+  seedLead,
+  seedCustomAction,
+  uniqueEmail,
+  PASSWORD,
+} from "./helpers";
 
 // A real, mechanical accessibility check — replaces "remember to do a
 // screen-reader pass" with a test that fails on a real WCAG violation.
@@ -99,6 +107,15 @@ test("leads page has no serious/critical accessibility violations", async ({ pag
   await page.click('a:has-text("Leads")');
   await expect(page).toHaveURL(/\/leads$/);
   await assertNoSeriousViolations(page, page.getByText("jane@example.com"));
+});
+
+test("actions page has no serious/critical accessibility violations", async ({ page }) => {
+  await signUpAndCreateBot(page, "A11y Actions Bot", "a11y-actions");
+  const botId = page.url().split("/bots/")[1];
+  await seedCustomAction(botId, { name: "check_availability", description: "Check appointment availability." });
+  await page.click('a:has-text("Actions")');
+  await expect(page).toHaveURL(/\/actions$/);
+  await assertNoSeriousViolations(page, page.getByText("check_availability"));
 });
 
 test("integrations page has no serious/critical accessibility violations", async ({ page }) => {

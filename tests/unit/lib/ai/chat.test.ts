@@ -41,13 +41,25 @@ vi.mock("@/lib/ai/systemPrompt", () => ({
 }));
 
 const getToolsForNames = vi.fn().mockReturnValue([]);
+// The shared spy every mocked Tool's `handle` delegates to — kept as a
+// 4-arg (name, orgId, botId, input) signature so assertions read the
+// same as before chat.ts started calling tool.handle(...) directly
+// instead of registry.runTool(name, ...) (custom actions, ADR 0022,
+// aren't registry entries, so chat.ts now looks tools up from its own
+// merged list rather than through the registry for every call).
 const runTool = vi.fn();
-vi.mock("@/lib/ai/tools/registry", () => ({ getToolsForNames, runTool }));
+function mockTool(name: string) {
+  return { name, handle: (orgId: string, botId: string, input: unknown) => runTool(name, orgId, botId, input) };
+}
+vi.mock("@/lib/ai/tools/registry", () => ({ getToolsForNames }));
 vi.mock("@/lib/ai/tools", () => ({}));
+const getEnabledCustomActionTools = vi.fn().mockResolvedValue([]);
+vi.mock("@/lib/ai/tools/customAction", () => ({ getEnabledCustomActionTools }));
 
 beforeEach(() => {
   vi.clearAllMocks();
   getToolsForNames.mockReturnValue([]);
+  getEnabledCustomActionTools.mockResolvedValue([]);
   findFirstVersion.mockResolvedValue({ id: "version-1", tools: [] });
   createConversation.mockResolvedValue({ id: "conv-new", messages: [] });
   createMessage.mockResolvedValue({});
@@ -104,6 +116,7 @@ describe("sendMessage", () => {
         content: [{ type: "text", text: "We're open 9-5." }],
         stopReason: "end_turn",
       });
+    getToolsForNames.mockReturnValue([mockTool("search_knowledge_base")]);
     runTool.mockResolvedValue("Store hours: 9-5 daily.");
     const { sendMessage } = await import("@/lib/ai/chat");
 
@@ -133,6 +146,7 @@ describe("sendMessage", () => {
         stopReason: "tool_use",
       })
       .mockResolvedValueOnce({ content: [{ type: "text", text: "done" }], stopReason: "end_turn" });
+    getToolsForNames.mockReturnValue([mockTool("tool_a"), mockTool("tool_b")]);
     runTool.mockImplementation(async (name: string) => `${name} result`);
     const { sendMessage } = await import("@/lib/ai/chat");
 
@@ -147,6 +161,7 @@ describe("sendMessage", () => {
       content: [{ type: "tool_use", id: "call_x", name: "search_knowledge_base", input: {} }],
       stopReason: "tool_use",
     });
+    getToolsForNames.mockReturnValue([mockTool("search_knowledge_base")]);
     runTool.mockResolvedValue("some result");
     const { sendMessage } = await import("@/lib/ai/chat");
 
@@ -163,6 +178,23 @@ describe("sendMessage", () => {
     await sendMessage({ orgId: "org-1", botId: "bot-1", userMessage: "hi" });
 
     expect(getModelGateway).toHaveBeenCalledWith(undefined);
+  });
+
+  it("ADR 0022: merges enabled custom-action tools with the static registry's tools and can execute one", async () => {
+    getEnabledCustomActionTools.mockResolvedValue([mockTool("custom_check_availability")]);
+    generateReply
+      .mockResolvedValueOnce({
+        content: [{ type: "tool_use", id: "call_1", name: "custom_check_availability", input: { date: "2026-10-01" } }],
+        stopReason: "tool_use",
+      })
+      .mockResolvedValueOnce({ content: [{ type: "text", text: "10am is open." }], stopReason: "end_turn" });
+    runTool.mockResolvedValue('{"status":"ok"}');
+    const { sendMessage } = await import("@/lib/ai/chat");
+
+    const result = await sendMessage({ orgId: "org-1", botId: "bot-1", userMessage: "is 10am free" });
+
+    expect(result.reply).toBe("10am is open.");
+    expect(runTool).toHaveBeenCalledWith("custom_check_availability", "org-1", "bot-1", { date: "2026-10-01" });
   });
 
   it("BYOA (ADR 0012): decrypts and passes the org's own key when it has set one", async () => {

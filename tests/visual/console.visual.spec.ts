@@ -91,7 +91,22 @@ test("leads page — empty state", async ({ page }) => {
 
   await page.click('a:has-text("Leads")');
   await expect(page).toHaveURL(/\/leads$/);
+  // Real flake, found while adding the actions test below: without
+  // waiting for the settled empty-state content, this can race the
+  // Suspense boundary and capture loading.tsx's skeleton instead — same
+  // "URL changed but content hasn't" class of race documented at the top
+  // of tests/e2e/accessibility.spec.ts.
+  await expect(page.getByText("No leads yet")).toBeVisible();
   await expect(page).toHaveScreenshot("leads-empty.png", { mask: sidebarMasks(page) });
+});
+
+test("actions page — empty state", async ({ page }) => {
+  await signUpAndCreateBot(page, "Support bot", "visual-actions");
+
+  await page.click('a:has-text("Actions")');
+  await expect(page).toHaveURL(/\/actions$/);
+  await expect(page.getByText("No custom actions yet")).toBeVisible();
+  await expect(page).toHaveScreenshot("actions-empty.png", { mask: sidebarMasks(page) });
 });
 
 test("knowledge base — empty state and Add Q&A dialog", async ({ page }) => {

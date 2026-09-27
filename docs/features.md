@@ -29,11 +29,29 @@ prompt caching), `lib/ai/tools/registry.ts` (interface/connector split).
 info capture, matches Chatbase's "Collect Leads" — every new tool added
 going forward is industry-agnostic by default, per the 2026-09-27
 scoping decision; only `check_order_status` stays ecommerce-specific),
-and `check_order_status` (ecommerce, Shopify Admin API, falls back to
-human handoff per guardrail #4 if no integration is connected). Every
-tool is independently enable/disable-able per bot from the bot editor's
-Tools tab — new tools appear there automatically, no extra wiring.
-**How**: `lib/ai/tools/`.
+`check_order_status` (ecommerce, Shopify Admin API, falls back to
+human handoff per guardrail #4 if no integration is connected), and
+**custom (business-defined) webhook actions** — see "Custom actions"
+below. The first three are independently enable/disable-able per bot
+from the bot editor's Tools tab; custom actions have their own
+enable/disable toggle on their own page instead (ADR 0022). **How**:
+`lib/ai/tools/`.
+
+### Custom actions
+**Who**: the business owner. **What**: a per-bot "Actions" page
+(`/bots/[botId]/actions`) to define a business's own webhook (URL,
+method, headers, and what info to collect from the visitor) — matches
+Chatbase's Custom Actions. The bot decides when to call it based on the
+plain-language description the business owner writes; a failed or
+blocked call always degrades to human handoff (guardrail #4), never a
+guessed answer. Takes effect immediately on save/toggle, not gated
+behind the bot's draft/publish cycle. Headers are encrypted at rest
+(`lib/crypto.ts`); the URL is checked against an SSRF guard (https-only,
+blocks loopback/private/link-local addresses including the cloud
+metadata IP) before every call. No edit yet — delete and recreate.
+**How**: `lib/customActions.ts` (CRUD), `lib/ai/tools/customAction.ts`
+(the runtime `Tool` factory + SSRF guard), the `CustomAction` model.
+ADR 0022.
 
 ### Leads
 **Who**: the business owner. **What**: a per-bot "Leads" page

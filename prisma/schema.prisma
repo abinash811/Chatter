@@ -102,6 +102,7 @@ model Bot {
   integrations  Integration[]
   conversations Conversation[]
   leads         Lead[]
+  customActions CustomAction[]
   publicKey     BotPublicKey?
 
   @@index([orgId])
@@ -235,6 +236,34 @@ model Lead {
 
   @@index([orgId])
   @@map("leads")
+}
+
+// Business-defined webhook action (ADR 0022) — matches Chatbase's Custom
+// Actions. Per-bot, not a registry entry: name/description/schema/URL are
+// business-authored data, built into a `Tool` at request time
+// (lib/ai/tools/customAction.ts), not a compile-time addition to
+// lib/ai/tools/registry.ts. Takes effect immediately on save/toggle, same
+// precedent as Integration — not gated behind the bot's draft/publish
+// cycle (ADR 0022's "Consequences").
+model CustomAction {
+  id               String   @id @default(uuid())
+  orgId            String
+  botId            String
+  name             String // slug; the tool name Claude sees is `custom_<name>`
+  description      String
+  method           String // "GET" | "POST" | "PUT" | "PATCH"
+  url              String
+  headersEncrypted String? // AES-256-GCM (lib/crypto.ts), same as Integration.accessToken
+  inputSchema      Json // JSON Schema {properties, required} for what Claude collects
+  enabled          Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  bot Bot @relation(fields: [botId], references: [id])
+
+  @@unique([botId, name])
+  @@index([orgId])
+  @@map("custom_actions")
 }
 
 model Message {

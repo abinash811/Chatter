@@ -3,7 +3,8 @@ import { withOrgContext } from "@/lib/db";
 import { decrypt } from "@/lib/crypto";
 import { getModelGateway, type ModelMessage } from "@/lib/ai/gateway";
 import { buildSystemPrompt } from "@/lib/ai/systemPrompt";
-import { getToolsForNames, runTool } from "@/lib/ai/tools/registry";
+import { getToolsForNames } from "@/lib/ai/tools/registry";
+import { getEnabledCustomActionTools } from "@/lib/ai/tools/customAction";
 import "@/lib/ai/tools";
 
 // Per Claude Agent SDK guidance (docs/research/competitive-landscape.md):
@@ -68,7 +69,13 @@ export async function sendMessage(params: SendMessageParams): Promise<SendMessag
   // for which persona greets a returning visitor; revisit if that
   // distinction ever needs to be stricter.
   const systemPrompt = await buildSystemPrompt(orgId, botId);
-  const tools = getToolsForNames(publishedVersion.tools as string[]);
+  // Custom (business-defined) actions aren't in publishedVersion.tools —
+  // they're not registry entries and aren't draft/publish-gated (ADR
+  // 0022); every enabled one for this bot is always in the mix.
+  const staticTools = getToolsForNames(publishedVersion.tools as string[]);
+  const customTools = await getEnabledCustomActionTools(orgId, botId);
+  const tools = [...staticTools, ...customTools];
+  const toolsByName = new Map(tools.map((tool) => [tool.name, tool]));
 
   const history: ModelMessage[] = conversation.messages.map((m) => ({
     role: m.role,
@@ -113,7 +120,9 @@ export async function sendMessage(params: SendMessageParams): Promise<SendMessag
     const toolResults = await Promise.all(
       toolUseBlocks.map(async (block) => {
         if (block.type !== "tool_use") throw new Error("unreachable");
-        const content = await runTool(block.name, orgId, botId, block.input);
+        const tool = toolsByName.get(block.name);
+        if (!tool) throw new Error(`Unknown tool "${block.name}"`);
+        const content = await tool.handle(orgId, botId, block.input);
         await withOrgContext(orgId, (tx) =>
           tx.toolCallLog.create({
             data: {
