@@ -65,6 +65,7 @@ export default async function BotPage({
       accentColor={appearance.accentColor}
       avatarEmoji={appearance.avatarEmoji}
       position={appearance.position}
+      suggestedReplies={appearance.suggestedReplies}
       embedSnippet={embedSnippet}
     />
   );

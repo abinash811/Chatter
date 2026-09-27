@@ -97,12 +97,17 @@ model (`docs/architecture.md` §5).
 ### Widget appearance editor
 **Who**: the business owner. **What**: greeting text, accent color, an
 avatar (a curated emoji, not an uploaded image — no file-storage infra
-exists yet, see `docs/roadmap.md`), and widget position (bottom-right/
-bottom-left), all editable from the bot editor's Appearance tab and
-applied live in `public/widget.js` for every new visitor. **How**:
-`lib/ai/appearanceOptions.ts` (the option lists — split out from
-`botConfig.ts` so this client-facing form doesn't pull in server-only DB
-code), `GET /api/widget/config` (`docs/api.md`).
+exists yet, see `docs/roadmap.md`), widget position (bottom-right/
+bottom-left), and up to 3 suggested-reply buttons (2026-09-27, matches
+Chatbase's own reference UI — confirmed from real screenshots,
+`docs/research/competitive-landscape.md`) shown once, under the widget's
+first message, so a visitor has something to tap instead of a blank
+input — clicking one sends it exactly like typing it. All editable from
+the bot editor's Appearance tab and applied live in `public/widget.js`
+for every new visitor. **How**: `lib/ai/appearanceOptions.ts` (the
+option lists — split out from `botConfig.ts` so this client-facing form
+doesn't pull in server-only DB code), `GET /api/widget/config`
+(`docs/api.md`).
 
 ### Persona template picker
 **Who**: the business owner writing a bot's persona for the first time.

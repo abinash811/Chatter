@@ -12,7 +12,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui";
-import { AVATAR_EMOJI_OPTIONS, WIDGET_POSITIONS, type AvatarEmoji, type WidgetPosition } from "@/lib/ai/appearanceOptions";
+import {
+  AVATAR_EMOJI_OPTIONS,
+  WIDGET_POSITIONS,
+  MAX_SUGGESTED_REPLIES,
+  type AvatarEmoji,
+  type WidgetPosition,
+} from "@/lib/ai/appearanceOptions";
 
 // Split out of BotEditorForm.tsx (2026-09-27) purely to stay under
 // scripts/check-file-length.mjs's 300-line cap once the persona-template
@@ -25,12 +31,14 @@ export function AppearanceTabContent({
   accentColor,
   avatarEmoji,
   position,
+  suggestedReplies,
   embedSnippet,
 }: {
   greeting: string;
   accentColor: string;
   avatarEmoji: AvatarEmoji;
   position: WidgetPosition;
+  suggestedReplies: string[];
   embedSnippet: string;
 }) {
   return (
@@ -89,6 +97,31 @@ export function AppearanceTabContent({
               </Select>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Suggested replies</CardTitle>
+          <CardDescription>
+            Up to {MAX_SUGGESTED_REPLIES} buttons shown under your bot's first message, so a visitor has something
+            to tap instead of a blank box. Leave a row blank to skip it.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {Array.from({ length: MAX_SUGGESTED_REPLIES }, (_, i) => (
+            <div key={i}>
+              <Label htmlFor={`suggestedReply_${i}`} className="sr-only">
+                Suggested reply {i + 1}
+              </Label>
+              <Input
+                id={`suggestedReply_${i}`}
+                name={`suggestedReply_${i}`}
+                defaultValue={suggestedReplies[i] ?? ""}
+                placeholder={i === 0 ? "e.g. What are your hours?" : "e.g. Track my order"}
+              />
+            </div>
+          ))}
         </CardContent>
       </Card>
 

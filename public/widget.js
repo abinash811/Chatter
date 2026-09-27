@@ -36,6 +36,7 @@
     accentColor: "#065f46",
     avatarEmoji: "💬",
     position: "bottom-right",
+    suggestedReplies: [],
   };
 
   // Applies position to the host element itself (not just CSS inside the
@@ -72,10 +73,14 @@
     '  .composer { display: flex; border-top: 1px solid #eee; padding: 8px; gap: 6px; }' +
     '  .composer input { flex: 1; border: 1px solid #ddd; border-radius: 8px; padding: 8px; font: inherit; }' +
     '  .composer button { border: none; border-radius: 8px; padding: 8px 12px; color: white; cursor: pointer; }' +
+    '  .suggestions { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 12px; }' +
+    '  .suggestion { border: 1px solid #ddd; background: #fff; border-radius: 999px; padding: 6px 12px;' +
+    '    font: inherit; font-size: 13px; cursor: pointer; }' +
     '</style>' +
     '<div class="window" part="window">' +
     '  <div class="header" part="header"></div>' +
     '  <div class="messages" part="messages"></div>' +
+    '  <div class="suggestions" part="suggestions"></div>' +
     '  <form class="composer">' +
     '    <input type="text" placeholder="Type a message..." autocomplete="off" />' +
     '    <button type="submit" part="send">Send</button>' +
@@ -87,6 +92,7 @@
   var windowEl = root.querySelector(".window");
   var header = root.querySelector(".header");
   var messagesEl = root.querySelector(".messages");
+  var suggestionsEl = root.querySelector(".suggestions");
   var form = root.querySelector(".composer");
   var input = root.querySelector("input");
   var sendButton = root.querySelector("button[type=submit]");
@@ -100,6 +106,7 @@
     applyPosition();
     if (messagesEl.children.length === 0) {
       appendMessage("assistant", appearance.greeting);
+      renderSuggestions();
     }
   }
 
@@ -112,15 +119,27 @@
     messagesEl.scrollTop = messagesEl.scrollHeight;
   }
 
-  bubble.addEventListener("click", function () {
-    windowEl.classList.toggle("open");
-  });
+  // Shown once, under the greeting, so a first-time visitor has
+  // something to tap instead of a blank input — cleared the moment a
+  // real conversation starts (own click or typed message), same as the
+  // reference product's own suggested-reply chips.
+  function renderSuggestions() {
+    suggestionsEl.innerHTML = "";
+    appearance.suggestedReplies.forEach(function (reply) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "suggestion";
+      btn.textContent = reply;
+      btn.addEventListener("click", function () {
+        sendText(reply);
+      });
+      suggestionsEl.appendChild(btn);
+    });
+  }
 
-  form.addEventListener("submit", async function (e) {
-    e.preventDefault();
-    var text = input.value.trim();
+  async function sendText(text) {
     if (!text) return;
-    input.value = "";
+    suggestionsEl.innerHTML = "";
     appendMessage("user", text);
 
     try {
@@ -137,6 +156,18 @@
       console.error("[Chatter widget]", err);
       appendMessage("assistant", "Sorry, something went wrong. Please try again.");
     }
+  }
+
+  bubble.addEventListener("click", function () {
+    windowEl.classList.toggle("open");
+  });
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var text = input.value.trim();
+    if (!text) return;
+    input.value = "";
+    sendText(text);
   });
 
   fetch(apiOrigin + "/api/widget/config?botKey=" + encodeURIComponent(botKey))

@@ -11,7 +11,13 @@ describe("parseAppearance", () => {
   });
 
   it("passes through a fully valid stored appearance untouched", () => {
-    const stored = { greeting: "Yo!", accentColor: "#123456", avatarEmoji: "🤖", position: "bottom-left" }; // allow-raw-color — test fixture data, not rendered UI
+    const stored = {
+      greeting: "Yo!",
+      accentColor: "#123456", // allow-raw-color — test fixture data, not rendered UI
+      avatarEmoji: "🤖",
+      position: "bottom-left",
+      suggestedReplies: ["What are your hours?", "Track my order"],
+    };
     expect(parseAppearance(stored)).toEqual(stored);
   });
 
@@ -26,5 +32,17 @@ describe("parseAppearance", () => {
   it("falls back to the default position for an invalid value", () => {
     const result = parseAppearance({ position: "top-center" });
     expect(result.position).toBe(DEFAULT_APPEARANCE.position);
+  });
+
+  it("filters blank/non-string suggested replies and caps the list at MAX_SUGGESTED_REPLIES", () => {
+    const result = parseAppearance({
+      suggestedReplies: ["Real one", "  ", "", 42, "Second real one", "Third", "Fourth (dropped)"],
+    });
+    expect(result.suggestedReplies).toEqual(["Real one", "Second real one", "Third"]);
+  });
+
+  it("falls back to no suggested replies when the stored value isn't an array", () => {
+    const result = parseAppearance({ suggestedReplies: "not an array" });
+    expect(result.suggestedReplies).toEqual([]);
   });
 });

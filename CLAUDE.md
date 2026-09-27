@@ -47,7 +47,7 @@ reason.)
   `docs/design/audit.md` tracks per-screen compliance against the bar —
   check there before assuming a screen is finished.
 - Testing/guardrails: 9 static guardrail checks (`npm run check:all`,
-  runs in one process now — `scripts/check-all.mjs`), 150 unit tests, 82
+  runs in one process now — `scripts/check-all.mjs`), 152 unit tests, 83
   `tests/e2e/` specs, 18 `tests/visual/` baselines, gitleaks secret
   scanning + a CI coverage floor, all wired into CI. A few e2e specs
   around publishing intermittently fail under sustained local single-
@@ -57,6 +57,13 @@ reason.)
   back-to-back for hours, not a product bug; don't chase it further
   locally, and don't assume it reproduces in CI's fresh container. Run
   scoped test files during a session, not the full suite repeatedly.
+- Suggested-reply buttons (2026-09-27): up to 3 chip buttons, configured
+  in the Appearance tab (`MAX_SUGGESTED_REPLIES`,
+  `lib/ai/appearanceOptions.ts`), shown once under the widget's first
+  message (`public/widget.js`) — tapping one sends it exactly like
+  typing it. Matches Chatbase's own reference UI, confirmed from real
+  screenshots. Verified end-to-end against the real embedded widget, not
+  just the console form.
 - Test-your-bot preview (2026-09-27): a "Preview" button in the bot
   editor opens a slide-over chat (`PreviewSheet.tsx`) wired to the real
   chat loop (`sendMessage`) via `sendPreviewMessageAction` — degrades to

@@ -17,14 +17,27 @@ import { withOrgContext } from "@/lib/db";
 // Re-exported from appearanceOptions.ts (pure data, no server deps) so
 // existing server-side callers of botConfig.ts don't need a second
 // import path — see that file's header for why the split exists.
-export { AVATAR_EMOJI_OPTIONS, WIDGET_POSITIONS, type AvatarEmoji, type WidgetPosition } from "./appearanceOptions";
-import { AVATAR_EMOJI_OPTIONS, WIDGET_POSITIONS, type AvatarEmoji, type WidgetPosition } from "./appearanceOptions";
+export {
+  AVATAR_EMOJI_OPTIONS,
+  WIDGET_POSITIONS,
+  MAX_SUGGESTED_REPLIES,
+  type AvatarEmoji,
+  type WidgetPosition,
+} from "./appearanceOptions";
+import {
+  AVATAR_EMOJI_OPTIONS,
+  WIDGET_POSITIONS,
+  MAX_SUGGESTED_REPLIES,
+  type AvatarEmoji,
+  type WidgetPosition,
+} from "./appearanceOptions";
 
 export interface BotAppearance {
   greeting: string;
   accentColor: string;
   avatarEmoji: AvatarEmoji;
   position: WidgetPosition;
+  suggestedReplies: string[];
 }
 
 // Exported so callers (e.g. the sidebar's "Getting started" checklist)
@@ -35,6 +48,7 @@ export const DEFAULT_APPEARANCE: BotAppearance = {
   accentColor: "#065f46", // allow-raw-color — business-customizable default, not console UI (matches ADR 0008's emerald, not left over from ADR 0007's violet)
   avatarEmoji: "💬",
   position: "bottom-right",
+  suggestedReplies: [],
 };
 
 export function parseAppearance(value: Prisma.JsonValue): BotAppearance {
@@ -44,6 +58,9 @@ export function parseAppearance(value: Prisma.JsonValue): BotAppearance {
     accentColor: v.accentColor ?? DEFAULT_APPEARANCE.accentColor,
     avatarEmoji: v.avatarEmoji && AVATAR_EMOJI_OPTIONS.includes(v.avatarEmoji) ? v.avatarEmoji : DEFAULT_APPEARANCE.avatarEmoji,
     position: v.position && WIDGET_POSITIONS.includes(v.position) ? v.position : DEFAULT_APPEARANCE.position,
+    suggestedReplies: Array.isArray(v.suggestedReplies)
+      ? v.suggestedReplies.filter((r): r is string => typeof r === "string" && r.trim().length > 0).slice(0, MAX_SUGGESTED_REPLIES)
+      : DEFAULT_APPEARANCE.suggestedReplies,
   };
 }
 

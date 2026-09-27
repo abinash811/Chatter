@@ -79,6 +79,7 @@ export function BotEditorForm({
   accentColor,
   avatarEmoji,
   position,
+  suggestedReplies,
   embedSnippet,
 }: {
   botId: string;
@@ -90,6 +91,7 @@ export function BotEditorForm({
   accentColor: string;
   avatarEmoji: AvatarEmoji;
   position: WidgetPosition;
+  suggestedReplies: string[];
   embedSnippet: string;
 }) {
   const [saveState, saveFormAction, isSaving] = useActionState(saveDraftAction.bind(null, botId), idleState);
@@ -248,6 +250,7 @@ export function BotEditorForm({
               accentColor={accentColor}
               avatarEmoji={avatarEmoji}
               position={position}
+              suggestedReplies={suggestedReplies}
               embedSnippet={embedSnippet}
             />
           </TabsContent>

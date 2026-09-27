@@ -113,6 +113,25 @@ test("avatar and position selects (Appearance tab) save and survive a reload", a
   await expect(page.getByRole("combobox", { name: "Widget position" })).toHaveText("Bottom left");
 });
 
+test("suggested reply chips save, survive a reload, and skip blank rows", async ({ page }) => {
+  await signUpAndCreateBot(page, "Suggested Replies Bot");
+  await page.click('button[role="tab"]:has-text("Appearance")');
+
+  await page.fill('input[name="suggestedReply_0"]', "What are your hours?");
+  await page.fill('input[name="suggestedReply_1"]', "  "); // blank/whitespace row, should be dropped
+  await page.fill('input[name="suggestedReply_2"]', "Track my order");
+
+  await page.click('button:has-text("Save draft")');
+  await expect(page.getByText("Draft saved.")).toBeVisible();
+
+  await page.reload();
+  await page.click('button[role="tab"]:has-text("Appearance")');
+  await expect(page.locator('input[name="suggestedReply_0"]')).toHaveValue("What are your hours?");
+  // The blank row was dropped, so "Track my order" shifts into slot 1.
+  await expect(page.locator('input[name="suggestedReply_1"]')).toHaveValue("Track my order");
+  await expect(page.locator('input[name="suggestedReply_2"]')).toHaveValue("");
+});
+
 // Regression check: passing lib/ai tool objects (which include a
 // `handle` function) from the server component into this client
 // component used to crash with "Functions cannot be passed directly to

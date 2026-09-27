@@ -3,7 +3,14 @@
 import { revalidatePath } from "next/cache";
 import Anthropic from "@anthropic-ai/sdk";
 import { getCurrentSession } from "@/lib/auth";
-import { saveDraft, publishDraft, AVATAR_EMOJI_OPTIONS, WIDGET_POSITIONS, DEFAULT_APPEARANCE } from "@/lib/ai/botConfig";
+import {
+  saveDraft,
+  publishDraft,
+  AVATAR_EMOJI_OPTIONS,
+  WIDGET_POSITIONS,
+  MAX_SUGGESTED_REPLIES,
+  DEFAULT_APPEARANCE,
+} from "@/lib/ai/botConfig";
 import { listAllTools } from "@/lib/ai/tools/registry";
 import { sendMessage } from "@/lib/ai/chat";
 import "@/lib/ai/tools";
@@ -40,6 +47,9 @@ export async function saveDraftAction(
         position: (WIDGET_POSITIONS as readonly string[]).includes(String(formData.get("position")))
           ? (formData.get("position") as (typeof WIDGET_POSITIONS)[number])
           : DEFAULT_APPEARANCE.position,
+        suggestedReplies: Array.from({ length: MAX_SUGGESTED_REPLIES }, (_, i) =>
+          String(formData.get(`suggestedReply_${i}`) ?? "").trim(),
+        ).filter(Boolean),
       },
     });
     revalidatePath(`/bots/${botId}`);

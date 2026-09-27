@@ -48,6 +48,10 @@ The generic core plus one concrete vertical template — see
   the bot editor opens a chat that talks to the real, published bot —
   matches Chatbase's own docked "Chat as user" preview, confirmed from
   real screenshots. See `docs/features.md`'s "Test your bot" entry.
+- Suggested-reply buttons — **built (2026-09-27).** Up to 3 chip buttons
+  shown under the widget's first message, configured in the Appearance
+  tab — matches Chatbase's own reference UI (confirmed from real
+  screenshots). See `docs/features.md`'s "Widget appearance editor" entry.
 - Card-gallery redesign — **built (2026-09-27).** Tools tab and
   Knowledge's ingestion picker both moved from a checkbox list/dropdown
   to a card grid, matching Chatbase's own reused Actions/Data sources
