@@ -34,10 +34,11 @@ reason.)
 - Core engine: tenant isolation (RLS, ADR 0003), model gateway + tool
   registry + chat loop, widget CORS/botKey resolution, Shopify connect.
 - Console: auth (email+password, ADR 0006), onboarding + BYOA + secrets
-  encryption (ADR 0012), bots list + editor (draft/publish), a
-  bot-scoped top bar with a bot switcher, knowledge base ingestion
-  (Q&A/file/URL, ADR 0013), integrations page, conversation inbox with
-  plain-language issue detection (ADR 0015/0016), settings.
+  encryption (ADR 0012), bots list (search/sort/rename/duplicate/archive
+  — archive not delete, ADR 0018) + editor (draft/publish), a bot-scoped
+  top bar with a bot switcher, knowledge base ingestion (Q&A/file/URL,
+  ADR 0013), integrations page, conversation inbox with plain-language
+  issue detection (ADR 0015/0016), settings.
 - Design system: shadcn/ui official source for all 18 primitives, no
   CARE dependency left (ADR 0017); monochrome tokens; sidebar + top bar
   built against real Chatbase/Claude Console screenshots; depth/polish
@@ -46,7 +47,7 @@ reason.)
   `docs/design/audit.md` tracks per-screen compliance against the bar —
   check there before assuming a screen is finished.
 - Testing/guardrails: 7 static guardrail checks (`npm run check:all`),
-  99 unit tests, 47 `tests/e2e/` specs, 11 `tests/visual/` baselines,
+  99 unit tests, 55 `tests/e2e/` specs, 14 `tests/visual/` baselines,
   all wired into CI.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
@@ -55,9 +56,9 @@ reason.)
 **Known gaps** (detail: `docs/changelog.md`, design gaps:
 `docs/design/audit.md`):
 - Depth/polish pass not yet done on: integrations content, settings,
-  knowledge, conversations, the sidebar itself. Bots list has open
-  findings of its own (status-badge contrast, avatar variety, no
-  search/sort/row-actions/delete) — see `docs/design/audit.md`.
+  knowledge, conversations, the sidebar itself. Bots list still has
+  open polish findings (status-badge contrast, avatar variety) — see
+  `docs/design/audit.md`. No restore-from-archive UI for bots yet.
 - No real end-to-end verified Claude reply yet — blocked on a real
   `ANTHROPIC_API_KEY`.
 - Not built: password reset, site crawling for ingestion

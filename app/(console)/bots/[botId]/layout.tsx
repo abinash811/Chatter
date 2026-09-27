@@ -20,7 +20,11 @@ export default async function BotLayout({
   const { botId } = await params;
 
   const bots = await withOrgContext(session.orgId, (tx) =>
-    tx.bot.findMany({ select: { id: true, name: true }, orderBy: { createdAt: "asc" } }),
+    tx.bot.findMany({
+      where: { archivedAt: null }, // ADR 0018: an archived bot is "not found" here too
+      select: { id: true, name: true },
+      orderBy: { createdAt: "asc" },
+    }),
   );
   if (!bots.some((bot) => bot.id === botId)) {
     // Matches the pre-existing behavior of each page's own

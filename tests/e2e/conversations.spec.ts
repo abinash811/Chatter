@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { signUpAndCreateBot, seedConversations } from "./helpers";
+import { signUpAndCreateBot, seedConversations, createSecondBot } from "./helpers";
 
 // ADR 0015: the conversation inbox is dashboard-only for v1, no email/
 // Slack channel. Conversations can't be created through the console UI
@@ -47,9 +47,7 @@ test("bot filter narrows the list to only the selected bot's conversations", asy
   await seedConversations(botIdA);
 
   // A second bot in the same org, with no conversations of its own.
-  await page.goto("/bots");
-  await page.fill('input[name="name"]', "Bot Without Conversations");
-  await Promise.all([page.waitForURL(/\/bots\/[^/]+$/), page.click('button:has-text("New bot")')]);
+  await createSecondBot(page, "Bot Without Conversations");
 
   await page.goto("/conversations");
   await expect(page.locator("table tbody tr")).toHaveCount(2);

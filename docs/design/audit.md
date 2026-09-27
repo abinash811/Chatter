@@ -59,7 +59,7 @@ for. This table is what closes that.
 | Screen | Checked <900px wide | Real keyboard-only pass | Screen-reader pass | Notes |
 |---|---|---|---|---|
 | Login/signup | ✅ | 🔲 | 🟡 | Mobile baseline added 2026-09-26; automated axe scan clean (`tests/e2e/accessibility.spec.ts`), no manual SR pass. |
-| Bots list | ✅ | ✅ | 🟡 | Row keyboard-nav + mobile baseline + axe scan all 2026-09-26; no manual SR pass. |
+| Bots list | ✅ | ✅ | 🟡 | Row keyboard-nav + mobile baseline + axe scan 2026-09-26; search/sort/row-actions UI re-verified <900px and keyboard-only 2026-09-27 after shipping them — caught and fixed a real regression (sort headers pushed the row actions menu off-screen at 390px) and a real touch-usability gap (hover-to-reveal actions button was never visible on touch). No manual SR pass. |
 | Bot editor | 🔲 | 🔲 | 🟡 | Axe scan clean 2026-09-26 — caught and fixed 2 real bugs first (switcher had no accessible name; embed snippet wasn't keyboard-focusable). No manual SR pass. |
 | Knowledge | 🔲 | 🔲 | 🔲 | |
 | Integrations | 🔲 | 🔲 | 🔲 | |
@@ -81,7 +81,7 @@ checked" silently read as "fine."
 | Screen | Hover | Focus | Active | Loading skeleton | Depth (Card/shadow) | Notes |
 |---|---|---|---|---|---|---|
 | Login/signup | ✅ | ✅ | — | — (static form) | ✅ | Fixed 2026-09-26 (card was flat, eyebrow/link text near-invisible). |
-| Bots list | ✅ | ✅ | ✅ | ✅ | ✅ | See "Bots list — open findings" below for what's still missing. |
+| Bots list | ✅ | ✅ | ✅ | ✅ | ✅ | Search/sort/row-actions/archive shipped 2026-09-27 — see "Bots list — open findings" below for what's still missing. |
 | Bot editor | ✅ | ✅ | 🟡 | ✅ | ✅ | Original polish-pass screen; active state on Save/Publish not re-verified since. |
 | Knowledge | 🔲 | 🔲 | 🔲 | ✅ | 🔲 | Loading skeleton added 2026-09-26; no depth/hover pass yet. |
 | Integrations | 🔲 | 🔲 | 🔲 | ✅ | 🔲 | Shares the polished `BotTopBar`; own content (provider list) untouched. |
@@ -97,21 +97,28 @@ Logged the same day they were found, per this file's own rule.
 **Polish (no new functionality decision needed):**
 - 🔲 "Draft only" vs "Published" badges are nearly indistinguishable —
   both render as the same gray pill. The single most important status
-  signal on the screen doesn't stand out.
+  signal on the screen doesn't stand out. Still open — needs a
+  `--success` token first (see "System coverage" above), not solvable
+  by reusing an existing token.
 - 🔲 Every avatar chip is visually identical (same gray, same color) —
-  fine at 2 bots, a wall of sameness past ~10.
-- 🔲 Empty state has no CTA of its own — says "Create one above"
-  instead of a real button inside the empty box.
+  fine at 2 bots, a wall of sameness past ~10. Still open.
+- ✅ Empty state has no CTA of its own — fixed 2026-09-27: a real
+  `NewBotDialog` trigger now lives inside the empty box.
 - 🔲 Page feels thin for its hierarchy — one header row, a table, then
-  unstructured white space; no supporting copy under "Bots".
+  unstructured white space; no supporting copy under "Bots". Still
+  open.
 
-**Functionality (real product decisions — ask before building):**
-- 🔲 No search/filter on the list — breaks down past ~15 bots.
-- 🔲 No per-row actions (rename/duplicate/delete) — no bot-delete
-  feature exists anywhere in the product yet.
-- 🔲 No column sort.
-- 🔲 Bot creation is an inline text input, not a dialog — much thinner
-  than a real "name it, maybe pick a template" flow.
+**Functionality (real product decisions — asked before building, per
+this file's own rule):**
+- ✅ Search/filter — shipped 2026-09-27, client-side (per-org bot lists
+  are small; a server round-trip would be over-engineering).
+- ✅ Column sort (Name/Status/Created) — shipped 2026-09-27.
+- ✅ Per-row rename/duplicate — shipped 2026-09-27.
+- ✅ Per-row removal — shipped 2026-09-27 as **archive**, not hard
+  delete (ADR 0018, user's explicit choice when asked). No restore UI
+  yet — only directly against the database.
+- ✅ Bot creation is a dialog (`NewBotDialog`), not an inline input —
+  shipped 2026-09-27.
 
 ## Process note
 

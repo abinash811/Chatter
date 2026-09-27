@@ -85,10 +85,16 @@ model UserOrgAccess {
 }
 
 model Bot {
-  id        String   @id @default(uuid())
-  orgId     String
-  name      String
-  createdAt DateTime @default(now())
+  id         String    @id @default(uuid())
+  orgId      String
+  name       String
+  createdAt  DateTime  @default(now())
+  // Soft delete (ADR 0018) — never hard-deleted. Set when a business
+  // archives a bot from the console; null for a live bot. Every
+  // bot-fetching query in the app must filter archivedAt: null, or an
+  // archived bot silently reappears somewhere (no structural enforcement
+  // for this, unlike withOrgContext for tenant isolation — see the ADR).
+  archivedAt DateTime?
 
   org           Org                @relation(fields: [orgId], references: [id])
   versions      BotConfigVersion[]

@@ -5,7 +5,10 @@ import { getCurrentSession, getUserEmail } from "@/lib/auth";
 import { withOrgContext } from "@/lib/db";
 import { DEFAULT_APPEARANCE } from "@/lib/ai/botConfig";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui";
-import { AppSidebar, type GettingStartedStep } from "@/components/console/AppSidebar";
+import {
+  AppSidebar,
+  type GettingStartedStep,
+} from "@/components/console/AppSidebar";
 
 // Console shell — Linear register (docs/architecture.md §7): dense,
 // minimal chrome, no per-screen layout variation. Auth check lives here
@@ -13,7 +16,11 @@ import { AppSidebar, type GettingStartedStep } from "@/components/console/AppSid
 // the hand-rolled <nav> — same collapse-state cookie CARE's own
 // component reads/writes, so the expanded/collapsed choice survives a
 // reload without a client-side flash.
-export default async function ConsoleLayout({ children }: { children: React.ReactNode }) {
+export default async function ConsoleLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   let orgId: string;
   try {
     orgId = (await getCurrentSession()).orgId;
@@ -24,7 +31,9 @@ export default async function ConsoleLayout({ children }: { children: React.Reac
   // ADR 0012: onboardedAt is null until app/onboarding/ completes.
   // /onboarding itself lives outside this route group, so this can
   // never redirect-loop against itself.
-  const org = await withOrgContext(orgId, (tx) => tx.org.findUniqueOrThrow({ where: { id: orgId } }));
+  const org = await withOrgContext(orgId, (tx) =>
+    tx.org.findUniqueOrThrow({ where: { id: orgId } }),
+  );
   if (!org.onboardedAt) {
     redirect("/onboarding");
   }
@@ -36,42 +45,71 @@ export default async function ConsoleLayout({ children }: { children: React.Reac
   // stored flag, so it can't drift from what's actually true. First-bot
   // links point at the org's first bot; onboarding (ADR 0012) guarantees
   // at least one exists here.
-  const { firstBotId, hasKnowledge, hasAppearance, hasPublished, hasIntegration } = await withOrgContext(
-    orgId,
-    async (tx) => {
-      const bots = await tx.bot.findMany({ select: { id: true }, orderBy: { createdAt: "asc" }, take: 1 });
-      const firstBotId = bots[0]?.id ?? null;
-      const [knowledgeCount, appearanceCount, publishedCount, integrationCount] = await Promise.all([
+  const {
+    firstBotId,
+    hasKnowledge,
+    hasAppearance,
+    hasPublished,
+    hasIntegration,
+  } = await withOrgContext(orgId, async (tx) => {
+    // archivedAt: null (ADR 0018) — archiving an org's only bot
+    // shouldn't count as "you have a bot" for this checklist.
+    const bots = await tx.bot.findMany({
+      where: { archivedAt: null },
+      select: { id: true },
+      orderBy: { createdAt: "asc" },
+      take: 1,
+    });
+    const firstBotId = bots[0]?.id ?? null;
+    const [knowledgeCount, appearanceCount, publishedCount, integrationCount] =
+      await Promise.all([
         tx.knowledgeSource.count(),
         // getOrCreateDraft (lib/ai/botConfig.ts) seeds every new draft
         // with DEFAULT_APPEARANCE, not an empty object — comparing
         // against {} would mark this step "done" the moment the editor
         // is opened, before a business ever touches it.
         tx.botConfigVersion.count({
-          where: { NOT: { appearance: { equals: DEFAULT_APPEARANCE as unknown as Prisma.InputJsonValue } } },
+          where: {
+            NOT: {
+              appearance: {
+                equals: DEFAULT_APPEARANCE as unknown as Prisma.InputJsonValue,
+              },
+            },
+          },
         }),
         tx.botConfigVersion.count({ where: { status: "published" } }),
         tx.integration.count(),
       ]);
-      return {
-        firstBotId,
-        hasKnowledge: knowledgeCount > 0,
-        hasAppearance: appearanceCount > 0,
-        hasPublished: publishedCount > 0,
-        hasIntegration: integrationCount > 0,
-      };
-    },
-  );
+    return {
+      firstBotId,
+      hasKnowledge: knowledgeCount > 0,
+      hasAppearance: appearanceCount > 0,
+      hasPublished: publishedCount > 0,
+      hasIntegration: integrationCount > 0,
+    };
+  });
 
   const gettingStartedSteps: GettingStartedStep[] = [
-    { label: "Create your first bot", done: firstBotId !== null, href: "/bots" },
+    {
+      label: "Create your first bot",
+      done: firstBotId !== null,
+      href: "/bots",
+    },
     {
       label: "Add knowledge to your bot",
       done: hasKnowledge,
       href: firstBotId ? `/bots/${firstBotId}/knowledge` : "/bots",
     },
-    { label: "Customize its appearance", done: hasAppearance, href: firstBotId ? `/bots/${firstBotId}` : "/bots" },
-    { label: "Publish your bot", done: hasPublished, href: firstBotId ? `/bots/${firstBotId}` : "/bots" },
+    {
+      label: "Customize its appearance",
+      done: hasAppearance,
+      href: firstBotId ? `/bots/${firstBotId}` : "/bots",
+    },
+    {
+      label: "Publish your bot",
+      done: hasPublished,
+      href: firstBotId ? `/bots/${firstBotId}` : "/bots",
+    },
     {
       label: "Connect an integration",
       done: hasIntegration,
@@ -84,7 +122,11 @@ export default async function ConsoleLayout({ children }: { children: React.Reac
 
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
-      <AppSidebar orgName={org.name} userEmail={userEmail} gettingStartedSteps={gettingStartedSteps} />
+      <AppSidebar
+        orgName={org.name}
+        userEmail={userEmail}
+        gettingStartedSteps={gettingStartedSteps}
+      />
       <SidebarInset>
         <div className="flex h-row items-center border-b border-border px-4">
           <SidebarTrigger />

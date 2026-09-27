@@ -24,7 +24,14 @@ export default async function ConversationsPage({
   const params = await searchParams;
 
   const bots = await withOrgContext(session.orgId, (tx) =>
-    tx.bot.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
+    // archivedAt: null (ADR 0018) — the filter dropdown only offers live
+    // bots; conversations already logged against an archived bot stay
+    // visible in the unfiltered "All bots" view, only the picker shrinks.
+    tx.bot.findMany({
+      where: { archivedAt: null },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
   );
 
   const rangeMs = params.range ? RANGE_TO_MS[params.range] : undefined;
@@ -40,7 +47,9 @@ export default async function ConversationsPage({
         <h1 className="flex items-center gap-2 text-lg font-semibold">
           Conversations
           {conversations.length > 0 && (
-            <span className="text-sm font-normal text-muted-foreground">{conversations.length}</span>
+            <span className="text-sm font-normal text-muted-foreground">
+              {conversations.length}
+            </span>
           )}
         </h1>
         <ConversationFilters bots={bots} />

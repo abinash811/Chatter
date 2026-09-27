@@ -23,12 +23,35 @@ separate, larger scope with no design done yet. Submitting sets
 straight into that bot's editor — a brand-new account never sees an
 empty `/bots` list.
 
-**Known side effect**: since onboarding always creates a first bot and
-no bot-delete feature exists yet, `app/(console)/bots/page.tsx`'s "No
-bots yet" empty state is real code with no real user journey that
-reaches it anymore. Left in place — cheap to keep, and reachable again
-the moment bot deletion (or a skippable onboarding path) ships. See
-`tests/e2e/bots-list.spec.ts`'s note.
+A brand-new account never sees the empty `/bots` list at signup — but
+archiving that first (and only) bot reaches it again; see "Bot archiving"
+below.
+
+## Bot archiving (`app/(console)/bots/actions.ts`, ADR 0018)
+
+Removing a bot from the console sets `Bot.archivedAt`, never a real
+`DELETE` — see ADR 0018 for why (a business's conversation history is
+exactly the data guardrail #6's traceability requirement exists to keep
+around). An archived bot: disappears from `/bots` and every bot picker
+(top-bar switcher, conversations filter), 404s via the plain-language
+error boundary if its console URL is visited directly, and stops
+resolving via the widget's `botKey` (`lib/db.ts`'s
+`resolveBotPublicKey` now checks `archivedAt` after resolving the key,
+returning the same "invalid botKey" response as a key that never
+existed). Its config versions, knowledge sources, integrations, and
+conversations are untouched.
+
+There is no restore path in the console yet — only directly against the
+database. Every bot-fetching query in the app must filter
+`archivedAt: null`; there's no structural enforcement for this the way
+`withOrgContext` enforces tenant isolation, so a new query that forgets
+the filter is a real, silent way for an archived bot to reappear.
+
+**Duplicate** (`duplicateBotAction`) clones a bot's latest persona/
+guardrails/tools/appearance into a brand-new bot and redirects into its
+editor. It deliberately does not copy conversations, knowledge sources,
+or integrations — those belong to the source bot's own history/
+connections, not to "what this bot is configured to do."
 
 ## BYOA — bring your own Anthropic API key (`/settings`, ADR 0012)
 

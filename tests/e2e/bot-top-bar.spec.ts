@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { signUpAndCreateBot } from "./helpers";
+import { signUpAndCreateBot, createSecondBot } from "./helpers";
 
 // Shared bot-scoped top bar (components/console/BotTopBar.tsx,
 // app/(console)/bots/[botId]/layout.tsx, 2026-09-26) — a bot switcher +
@@ -7,12 +7,6 @@ import { signUpAndCreateBot } from "./helpers";
 // pages, replacing each page's own separate header. Matches the
 // Chatbase reference screenshot's bot switcher; switching bots
 // preserves the current page rather than always landing on the editor.
-
-async function createSecondBot(page: import("@playwright/test").Page, name: string): Promise<void> {
-  await page.goto("/bots");
-  await page.fill('input[name="name"]', name);
-  await Promise.all([page.waitForURL(/\/bots\/[^/]+$/), page.click('button:has-text("New bot")')]);
-}
 
 test("the switcher lists every org bot and switching preserves the current page", async ({ page }) => {
   await signUpAndCreateBot(page, "Alpha bot", "topbar-switch");

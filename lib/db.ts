@@ -26,10 +26,25 @@ export async function withOrgContext<T>(
 export async function resolveBotPublicKey(
   publicKey: string,
 ): Promise<{ orgId: string; botId: string } | null> {
-  return prisma.botPublicKey.findUnique({
+  const key = await prisma.botPublicKey.findUnique({
     where: { publicKey },
     select: { orgId: true, botId: true },
   });
+  if (!key) return null;
+
+  // ADR 0018: an archived bot's embed snippet must go dead immediately,
+  // the same "invalid key" response as one that never existed — no
+  // special-cased error path the widget or an attacker could use to
+  // distinguish "archived" from "never existed."
+  const bot = await withOrgContext(key.orgId, (tx) =>
+    tx.bot.findUnique({
+      where: { id: key.botId },
+      select: { archivedAt: true },
+    }),
+  );
+  if (!bot || bot.archivedAt) return null;
+
+  return key;
 }
 
 // Every bot needs exactly one public key to ever be embeddable. Called

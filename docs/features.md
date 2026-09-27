@@ -66,11 +66,21 @@ not just application code. **How**: Postgres Row-Level Security,
 0001_init_rls.sql`. ADR 0003. See `docs/security.md`.
 
 ### Console: bot list + bot editor + integrations page
-**Who**: the business owner. **What**: list all bots, edit one bot's
+**Who**: the business owner. **What**: list all bots (search, sort by
+name/status/created, rename/duplicate/archive per row), edit one bot's
 full config, connect/disconnect integrations. **How**: `app/(console)/
 bots/`. Design pass done on bot list + bot editor (`docs/design/
 preview/bots-list.html`, `bot-editor.html`); integrations still open —
 see `docs/roadmap.md`.
+
+### Bot archiving
+**Who**: the business owner. **What**: removes a bot from the list and
+kills its embed snippet without deleting its conversations, knowledge
+base, or integrations — soft delete, not hard delete (ADR 0018, a
+user-confirmed decision, not silently picked). No restore UI yet, only
+directly against the database. **How**: `app/(console)/bots/actions.ts`'s
+`archiveBotAction`, `Bot.archivedAt`. See `docs/business-logic.md`'s
+"Bot archiving" section.
 
 ### Knowledge base ingestion (Q&A, file upload, URL)
 **Who**: the business owner. **What**: three ways to feed a bot's

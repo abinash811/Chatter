@@ -26,6 +26,21 @@ export async function signUpAndCreateBot(page: Page, botName: string, emailPrefi
   await expect(page).toHaveURL(/\/bots\/[^/]+$/);
 }
 
+// Creates an additional bot from the /bots list once onboarding is
+// already done — the dialog-based flow (NewBotDialog.tsx, 2026-09-27,
+// docs/design/audit.md's "Bots list — open findings") replacing the old
+// inline name-input + button. Extracted here after that change broke
+// three different specs' own copies of this same sequence.
+export async function createSecondBot(page: Page, name: string): Promise<void> {
+  await page.goto("/bots");
+  await page.getByRole("button", { name: "New bot", exact: true }).click();
+  await page.getByRole("dialog").getByLabel("Name", { exact: true }).fill(name);
+  await Promise.all([
+    page.waitForURL(/\/bots\/[^/]+$/),
+    page.getByRole("button", { name: "Create", exact: true }).click(),
+  ]);
+}
+
 // ADR 0015: conversations are only ever created via the widget chat API
 // (app/api/chat/route.ts), which requires a real ANTHROPIC_API_KEY —
 // same placeholder-key gap documented for the knowledge base's

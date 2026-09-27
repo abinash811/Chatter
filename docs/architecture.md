@@ -84,6 +84,9 @@ connector built once.
 ### 5. Admin dashboard
 - Setup wizard: pick template → configure knowledge → customize appearance
   → get embed snippet.
+- Bot list: search, sort, rename/duplicate/archive. Archiving is a soft
+  delete (`Bot.archivedAt`, ADR 0018) — kills the embed snippet and hides
+  the bot everywhere, but keeps its conversations/knowledge/integrations.
 - Knowledge base management: add/edit/remove sources, see what's indexed.
 - Live conversation inbox for human handoff.
 - Analytics: volume, resolution rate, handoff rate, topics.

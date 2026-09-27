@@ -21,11 +21,22 @@ import { BotEditorForm } from "./BotEditorForm";
 // instead of the clean "not found" the layout throws. This existsOrThrow
 // is cheap (no fields needed beyond confirming the row exists) and is
 // what actually determines which error message a real visitor sees.
-export default async function BotPage({ params }: { params: Promise<{ botId: string }> }) {
+export default async function BotPage({
+  params,
+}: {
+  params: Promise<{ botId: string }>;
+}) {
   const session = await getCurrentSession();
   const { botId } = await params;
 
-  await withOrgContext(session.orgId, (tx) => tx.bot.findUniqueOrThrow({ where: { id: botId }, select: { id: true } }));
+  // archivedAt: null (ADR 0018) — an archived bot's editor is "not
+  // found" the same as one that never existed.
+  await withOrgContext(session.orgId, (tx) =>
+    tx.bot.findFirstOrThrow({
+      where: { id: botId, archivedAt: null },
+      select: { id: true },
+    }),
+  );
   const draft = await getOrCreateDraft(session.orgId, botId);
   const publishedVersion = await withOrgContext(session.orgId, (tx) =>
     tx.botConfigVersion.findFirst({
