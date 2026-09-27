@@ -158,6 +158,31 @@ request was phrased.
 7. **Ship checklist.** Run the `ship-checklist` skill before calling it
    done.
 
+## Running verification efficiently
+
+"Never commit code that hasn't actually been run" (CLAUDE.md) doesn't
+mean rerun everything after every change — that burns time and context
+for no extra safety. A 2026-09-27 session shipped one feature but reran
+the full e2e/visual suite five separate times, most of them after a fix
+that only touched one file. Instead:
+
+- Fix in batches. When a run surfaces multiple failures, diagnose and
+  fix all of them before rerunning — don't rerun after each individual
+  fix.
+- While iterating, rerun only the affected spec file(s), not the full
+  suite. The full suite is for the final check, not every intermediate
+  one.
+- Run the full combined pass (unit + e2e + visual + `tsc` + guardrails)
+  once, right before committing — not once per category of fix.
+- Skip writing a throwaway debug script when the failure's own output
+  (error message, screenshot, stack trace) already answers the
+  question. Reach for one only when the cause is genuinely ambiguous
+  from what a normal run already gives you.
+
+None of this loosens the bar: every changed code path still gets
+exercised at least once before commit, and the final pass before
+committing is always comprehensive.
+
 ## Review checklist
 
 Before calling a page or feature done — whether reviewing your own work
