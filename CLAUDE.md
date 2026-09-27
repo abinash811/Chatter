@@ -46,7 +46,7 @@ reason.)
   login/signup; Skeleton loading states on 7 routes.
   `docs/design/audit.md` tracks per-screen compliance against the bar —
   check there before assuming a screen is finished.
-- Testing/guardrails: 7 static guardrail checks (`npm run check:all`),
+- Testing/guardrails: 8 static guardrail checks (`npm run check:all`),
   99 unit tests, 55 `tests/e2e/` specs, 14 `tests/visual/` baselines,
   all wired into CI.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
@@ -78,7 +78,9 @@ reason.)
 - `docs/north-star.md` — long-term product direction (the "why")
 - `docs/changelog.md` — detailed session-by-session build history (real
   bugs caught, what was verified). New detailed entries go here, not
-  back into this file's "Current state."
+  back into this file's "Current state." Archives its oldest entries
+  into `docs/changelog/` once it crosses ~500 lines — check there for
+  older history this file's own pointer doesn't cover.
 - `docs/product-spec.md` — MVP scope and product decisions so far
 - `docs/glossary.md` — domain terms; add a term in the same PR that
   introduces it

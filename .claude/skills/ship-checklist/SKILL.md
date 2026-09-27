@@ -7,10 +7,10 @@ description: Final gate before calling any slice of Chatter "done" — run befor
 
 Before saying a piece of work is done:
 
-1. **`npm run check:all`** — the seven guardrail checks (tenant
+1. **`npm run check:all`** — the eight guardrail checks (tenant
    isolation, no vertical logic, no client secrets, design tokens, no
-   raw `<button>`, barrel-only component imports, no file over 300
-   lines).
+   raw `<button>`, barrel-only component imports, no code file over 300
+   lines, no living doc over 500 lines).
 2. **`npx tsc --noEmit`**.
 3. **`npm run test:unit`** (`tests/unit/`, Vitest) — always, it's fast
    (~3s). Touched `lib/ai/` (the chat loop, gateway, tool registry,
