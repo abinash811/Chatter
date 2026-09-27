@@ -411,6 +411,45 @@ implication:**
   some base instructions — not urgent, no current open question covers
   it; flagged here so it isn't rediscovered from scratch later.
 
+**Follow-up, same session — 4 more screenshots (Channels, Integrations,
+Backstage, the Deploy dropdown):**
+
+- **The card-gallery pattern is systemic, not a one-off.** Channels
+  (Chat bubble / Help page / Center Stage / Email / Shopify / Phone,
+  each "Manage" or "Start free trial to enable") and Integrations
+  (Slack / Shopify / Twilio / Calendly / Stripe / Zendesk / Sunshine /
+  Salesforce / Intercom) use the *exact same* card shape as Actions and
+  Data sources — icon, title, one-line description, one action button.
+  This raises the implication above from "redesign the Tools tab" to
+  "build one reusable card-gallery layout and reuse it everywhere a
+  screen lists a fixed set of typed options" — matches this project's
+  own `components/ui/` barrel-reuse convention (`.claude/rules/
+  console-frontend.md` item 2), not a per-screen one-off each time.
+- **Channels vs. Integrations is a real conceptual split we don't have.**
+  Channels = *where the agent talks to people* (embed surface, email,
+  phone). Integrations = *what systems it can read/write* (helpdesks,
+  CRM, payments, scheduling). We currently conflate both into a single
+  `/bots/[botId]/integrations` page holding just Shopify connect.
+  Relevant to `docs/roadmap.md`'s "Design pass on `/bots/[botId]/
+  integrations`" Next item and ADR 0015's deferred "no email/Slack push
+  channel" decision — both were open before this; now there's a named
+  pattern (a separate Channels concept) to weigh against just growing
+  the existing Integrations page.
+- **Deploy is a dropdown of embed targets, not one script tag.**
+  Website widget (floating bubble), Website iframe (inline embed),
+  plus one-click Shopify and WordPress plugin installs. We only offer
+  the floating-bubble script tag today (`public/widget.js`). A WordPress/
+  Shopify one-click install (vs. copy-pasting a script tag) is a real
+  self-serve improvement for non-technical users specifically — same
+  audience this whole demo-data/self-serve push has been targeting.
+- **Backstage — an AI copilot for managing the agent itself**, separate
+  from the Playground (which chats *as* the agent). Prompts like "Review
+  and improve my agent's instructions" and "Audit my agent's
+  configuration for improvements" — the AI helps configure the AI.
+  Genuinely a different, bigger feature (meta-agent tooling) than
+  anything else in this note — flagged for `docs/roadmap.md`'s Later
+  section, not proposed as a near-term build.
+
 ## TODO — still need to research
 
 - RAG architecture best practices for multi-tenant SaaS specifically
@@ -422,5 +461,6 @@ implication:**
   policy — if unblocked in a future session, re-verify the above against
   the real product directly (not just user-supplied screenshots) and
   check the areas not covered here (Widgets, Procedures, Suggestions,
-  Guardrails, Integrations, Outbound, Helpdesk inbox — all visible as
-  sidebar items in the screenshots but not explored in this pass).
+  Guardrails, Outbound, Helpdesk inbox, Contacts, Backstage's full
+  capability set — all visible as sidebar items in the screenshots but
+  not explored in this pass).
