@@ -47,9 +47,18 @@ reason.)
   `docs/design/audit.md` tracks per-screen compliance against the bar —
   check there before assuming a screen is finished.
 - Testing/guardrails: 9 static guardrail checks (`npm run check:all`,
-  runs in one process now — `scripts/check-all.mjs`), 109 unit tests, 66
-  `tests/e2e/` specs, 15 `tests/visual/` baselines, gitleaks secret
+  runs in one process now — `scripts/check-all.mjs`), 124 unit tests, 68
+  `tests/e2e/` specs, 16 `tests/visual/` baselines, gitleaks secret
   scanning + a CI coverage floor, all wired into CI.
+- Leads (2026-09-27): third action tool, `collect_lead` — generic
+  contact-info capture (name/email/phone/note), matches Chatbase's
+  "Collect Leads." New per-bot `/bots/[botId]/leads` console page.
+  Every tool added from here on is industry-agnostic by default —
+  `check_order_status` stays the one deliberate ecommerce exception
+  (2026-09-27 scoping decision, see `docs/roadmap.md`). Custom webhook/
+  API action (the other approved tool from the same directive) is not
+  yet built — needs its own design pass for how a per-bot, dynamically-
+  defined tool integrates with the static `Tool` registry.
 - Self-serve config (roadmap "Self-serve configurability"): widget
   appearance editor (greeting/accent/avatar/position) and a 3-template
   persona picker (Support/Sales/Lead-gen), both in the bot editor.

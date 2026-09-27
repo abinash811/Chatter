@@ -26,8 +26,12 @@ The generic core plus one concrete vertical template — see
   scope complete. Site crawling is separate, still open
   (`docs/open-questions.md` #3).
 - RAG retrieval as a tool call, not a hardcoded prompt prepend
-- Two action tools: `search_knowledge_base`, `check_order_status`
-  (both read-only — see Next)
+- Three action tools: `search_knowledge_base`, `check_order_status`
+  (read-only — see Next), `collect_lead` (write, generic — 2026-09-27,
+  matches Chatbase's "Collect Leads"; see `/bots/[botId]/leads`). Every
+  new tool going forward is industry-agnostic by default, not just
+  ecommerce (scoping decision, 2026-09-27) — `check_order_status` stays
+  the one vertical-specific exception.
 - Email + password auth (ADR 0006), tenant isolation via RLS (ADR 0003)
 - Conversation/Message/ToolCallLog data captured on every chat turn, and
   a dashboard-only conversation inbox (`/conversations`, ADR 0015) to

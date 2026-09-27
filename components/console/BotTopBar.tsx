@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 const NAV_ITEMS = [
   { subpath: "", label: "Editor" },
   { subpath: "/knowledge", label: "Knowledge" },
+  { subpath: "/leads", label: "Leads" },
   { subpath: "/integrations", label: "Integrations" },
 ];
 

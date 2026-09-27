@@ -25,9 +25,22 @@ prompt caching), `lib/ai/tools/registry.ts` (interface/connector split).
 
 ### Action tools
 **Who**: the bot, mid-conversation. **What**: `search_knowledge_base`
-(generic RAG retrieval, every vertical) and `check_order_status`
-(ecommerce, Shopify Admin API, falls back to human handoff per
-guardrail #4 if no integration is connected). **How**: `lib/ai/tools/`.
+(generic RAG retrieval, every vertical), `collect_lead` (generic contact-
+info capture, matches Chatbase's "Collect Leads" — every new tool added
+going forward is industry-agnostic by default, per the 2026-09-27
+scoping decision; only `check_order_status` stays ecommerce-specific),
+and `check_order_status` (ecommerce, Shopify Admin API, falls back to
+human handoff per guardrail #4 if no integration is connected). Every
+tool is independently enable/disable-able per bot from the bot editor's
+Tools tab — new tools appear there automatically, no extra wiring.
+**How**: `lib/ai/tools/`.
+
+### Leads
+**Who**: the business owner. **What**: a per-bot "Leads" page
+(`/bots/[botId]/leads`) listing contact info the `collect_lead` tool
+captured — name/email/phone/note, most recent first. Matches Chatbase's
+Leads dashboard; no CSV export yet. **How**: `lib/leads.ts`, the `Lead`
+model (`prisma/schema.prisma`).
 
 ### Tool-call traceability
 **Who**: whoever's debugging a bad answer. **What**: every tool call

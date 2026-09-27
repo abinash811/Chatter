@@ -121,3 +121,16 @@ export async function seedKnowledgeEntry(botId: string, question: string, answer
     await tx.$executeRaw`update knowledge_chunks set embedding = ${zeroVector}::vector where id = ${chunk.id}`;
   });
 }
+
+// collect_lead (lib/ai/tools/collectLead.ts) is only ever called by the
+// bot mid-conversation, which needs a real ANTHROPIC_API_KEY — same
+// placeholder-key gap as seedConversations/seedKnowledgeEntry above.
+// Seeds a Lead row directly through the same withOrgContext path the
+// tool itself uses.
+export async function seedLead(
+  botId: string,
+  fields: { name?: string; email?: string; phone?: string; note?: string },
+): Promise<void> {
+  const orgId = await getOrgIdForBot(botId);
+  await withOrgContext(orgId, (tx) => tx.lead.create({ data: { orgId, botId, ...fields } }));
+}

@@ -17,9 +17,13 @@
 // forgotten) without needing a database at all, so it can run in the
 // same guardrail pass as everything else in check:all.
 
-import { readFileSync } from "fs";
+import { readFileSync, readdirSync } from "fs";
 
-const RLS_SQL_PATH = "db/migrations/0001_init_rls.sql";
+// Every db/migrations/*.sql file, not just 0001 — 0004_leads_rls.sql
+// established a real precedent (RLS for a new table added in its own
+// file, matching 0002/0003's per-feature-file convention) that this
+// check would otherwise silently miss, since it only ever read 0001.
+const RLS_SQL_DIR = "db/migrations";
 
 // Deliberately RLS-exempt, per db/migrations/0001_init_rls.sql's own
 // comment and prisma/schema.prisma's per-model documentation: both
@@ -28,7 +32,10 @@ const RLS_SQL_PATH = "db/migrations/0001_init_rls.sql";
 const EXEMPT_TABLES = new Set(["bot_public_keys", "user_org_access"]);
 
 const schema = readFileSync("prisma/schema.prisma", "utf8");
-const rlsSql = readFileSync(RLS_SQL_PATH, "utf8");
+const rlsSql = readdirSync(RLS_SQL_DIR)
+  .filter((f) => f.endsWith(".sql"))
+  .map((f) => readFileSync(`${RLS_SQL_DIR}/${f}`, "utf8"))
+  .join("\n");
 
 // One pass per `model ... { ... }` block: does it declare an `orgId`
 // field, and what's its @@map table name? Deliberately simple line-
@@ -82,7 +89,7 @@ for (const block of modelBlocks) {
       .filter(Boolean)
       .join(" and ");
     console.error(
-      `FAIL: table "${table}" has an orgId column but ${RLS_SQL_PATH} is missing ${missing} for it — ` +
+      `FAIL: table "${table}" has an orgId column but no file in ${RLS_SQL_DIR}/ has ${missing} for it — ` +
         `add it, or add "${table}" to EXEMPT_TABLES in this script with the same documented reasoning as the existing two.`,
     );
     failed = true;

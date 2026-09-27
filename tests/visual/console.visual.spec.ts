@@ -86,6 +86,14 @@ test("bot editor — publish confirmation dialog (docs/design/principles.md #10)
   await expect(page).toHaveScreenshot("bot-editor-publish-dialog.png", { mask: sidebarMasks(page) });
 });
 
+test("leads page — empty state", async ({ page }) => {
+  await signUpAndCreateBot(page, "Support bot", "visual-leads");
+
+  await page.click('a:has-text("Leads")');
+  await expect(page).toHaveURL(/\/leads$/);
+  await expect(page).toHaveScreenshot("leads-empty.png", { mask: sidebarMasks(page) });
+});
+
 test("knowledge base — empty state and Add Q&A dialog", async ({ page }) => {
   await signUpAndCreateBot(page, "Support bot", "visual-knowledge");
 

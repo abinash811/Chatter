@@ -101,6 +101,7 @@ model Bot {
   sources       KnowledgeSource[]
   integrations  Integration[]
   conversations Conversation[]
+  leads         Lead[]
   publicKey     BotPublicKey?
 
   @@index([orgId])
@@ -211,6 +212,29 @@ model Conversation {
 
   @@index([orgId])
   @@map("conversations")
+}
+
+// collect_lead tool (lib/ai/tools/collectLead.ts) — generic across every
+// vertical (guardrail #2), not ecommerce-specific: any business wants a
+// visitor's contact info captured when the bot can't fully help. At
+// least one of name/email/phone is expected to be present (enforced by
+// the tool's input schema, not here) — all nullable at the DB level
+// since a visitor may give only one.
+model Lead {
+  id             String   @id @default(uuid())
+  orgId          String
+  botId          String
+  conversationId String?
+  name           String?
+  email          String?
+  phone          String?
+  note           String?
+  createdAt      DateTime @default(now())
+
+  bot Bot @relation(fields: [botId], references: [id])
+
+  @@index([orgId])
+  @@map("leads")
 }
 
 model Message {

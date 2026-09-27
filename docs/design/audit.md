@@ -77,6 +77,7 @@ for. This table is what closes that.
 | Bot editor | 🔲 | 🔲 | 🟡 | Axe scan clean 2026-09-26 — caught and fixed 2 real bugs first (switcher had no accessible name; embed snippet wasn't keyboard-focusable). No manual SR pass. |
 | Knowledge | 🔲 | 🔲 | 🟡 | Axe scan added 2026-09-27, clean. No manual SR pass. |
 | Integrations | 🔲 | 🔲 | 🟡 | Axe scan added 2026-09-27, clean. No manual SR pass. |
+| Leads | 🔲 | 🔲 | 🟡 | Axe scan added 2026-09-27, clean. No manual SR pass. |
 | Settings | 🔲 | 🔲 | 🟡 | Axe scan added 2026-09-27, clean. No manual SR pass. |
 | Conversations list/detail | 🔲 | 🔲 | 🟡 | Axe scan added 2026-09-27 for both — caught and fixed a real critical "button-name" violation (`ConversationFilters`'s bot/date-range `Select` triggers intermittently rendered with no accessible name at all, ~40% reproduction rate, same root cause as the bot-editor switcher bug: `SelectValue`'s label resolves after the trigger itself is accessible-name-checkable). No manual SR pass. |
 | Onboarding | 🔲 | 🔲 | 🟡 | Axe scan added 2026-09-27, clean. No manual SR pass. |
@@ -100,6 +101,7 @@ checked" silently read as "fine."
 | Bot editor | ✅ | ✅ | 🟡 | ✅ | ✅ | Original polish-pass screen; active state on Save/Publish not re-verified since. Appearance tab's avatar/position Selects added 2026-09-27 (screenshotted, reads clean); same real bug found and fixed in this pass: every `TabsContent` used `forceMount` (needed so all tabs' form fields stay mounted for one shared `<form>`) with no `data-[state=inactive]:hidden`, so all four tabs' content had always rendered stacked/visible simultaneously, not just the active one — confirmed via a real screenshot, not assumed. Persona tab's "Start from a template" dropdown added same day, screenshotted clean. |
 | Knowledge | 🔲 | 🔲 | 🔲 | ✅ | 🔲 | Loading skeleton added 2026-09-26; no depth/hover pass yet. |
 | Integrations | 🔲 | 🔲 | 🔲 | ✅ | 🔲 | Shares the polished `BotTopBar`; own content (provider list) untouched. |
+| Leads | 🔲 | 🔲 | 🔲 | ✅ | 🟡 | New 2026-09-27, real screenshot checked — reuses Table/empty-state pattern from Knowledge/Conversations (already `border`+`shadow-xs`), so it inherits their depth; no dedicated hover/focus/active pass done (no interactive rows yet, view-only). |
 | Settings | 🔲 | 🔲 | 🔲 | ✅ | 🟡 | Already Card-wrapped; hover/focus/active on its inputs not re-verified. |
 | Conversations list | 🔲 | 🔲 | 🔲 | ✅ | 🔲 | Table row click affordance not audited. |
 | Conversation detail | — | — | — | ✅ | 🟡 | Read-only screen, less interactive surface to check. |

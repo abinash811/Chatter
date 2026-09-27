@@ -32,6 +32,7 @@ const MIGRATIONS = [
   "db/migrations/0001_init_rls.sql",
   "db/migrations/0002_pgvector.sql",
   "db/migrations/0003_hybrid_search_fts.sql",
+  "db/migrations/0004_leads_rls.sql",
 ];
 
 async function main() {
