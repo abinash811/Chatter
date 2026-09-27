@@ -49,12 +49,40 @@ jobs:
       APP_BASE_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
       - run: npm ci
+
+      - name: Secret scan (gitleaks)
+        # Full history (fetch-depth: 0 above) so this catches a secret
+        # committed and then "removed" in a later commit, not just what's
+        # in the current tree — check:secrets (below) only checks
+        # client-facing code for *references*, this checks the whole
+        # git history for the *values* themselves.
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get installed Playwright version
+        id: playwright-version
+        run: echo "version=$(node -p "require('./package.json').devDependencies['@playwright/test'] || require('./package.json').dependencies['@playwright/test']")" >> "$GITHUB_OUTPUT"
+      - name: Cache Playwright browsers
+        # Keyed on the exact playwright version — a bump always gets a
+        # fresh cache instead of silently reusing a stale/mismatched
+        # browser build.
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
       - run: npx playwright install chromium --with-deps
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+      - run: npx playwright install-deps chromium
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
 
       - name: Guardrail checks (tenant isolation, no vertical logic, no client secrets, design tokens)
         run: npm run check:all
