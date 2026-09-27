@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { unstable_rethrow } from "next/navigation";
 import { toast } from "sonner";
-import { ChevronsUpDown } from "lucide-react";
+import { ChevronsUpDown, Search } from "lucide-react";
 import {
   Table,
   TableHeader,
@@ -101,19 +101,27 @@ export function BotsTable({ bots }: { bots: BotRow[] }) {
 
   return (
     <div>
-      <Input
-        placeholder="Search bots..."
-        value={search}
-        onChange={(event) => setSearch(event.target.value)}
-        aria-label="Search bots"
-        className="mb-3 h-row-sm max-w-xs"
-      />
+      {/* Attached directly to the table below it — no gap, shared border,
+          a leading icon — instead of a bare bordered input floating
+          alone with nothing anchoring it to what it filters (critiqued
+          2026-09-27 as having "no reason to exist visually"; the fix is
+          in docs/design/preview/bots-list.html too, not just here). */}
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder="Search bots..."
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          aria-label="Search bots"
+          className="h-row-sm rounded-b-none border-b-0 pl-8 shadow-none"
+        />
+      </div>
 
       {/* overflow-hidden — without it, TableHead's bg-soft-background tint
           (a straight-cornered rect spanning the full row) visibly pokes
-          past this wrapper's rounded-lg corners. Owned here, not the page,
-          now that the search box above it needs to sit outside the box. */}
-      <div className="overflow-hidden rounded-lg border border-border shadow-xs">
+          past this wrapper's rounded-lg corners. rounded-t-none — the
+          search input above owns the top corners now that it's attached. */}
+      <div className="overflow-hidden rounded-lg rounded-t-none border border-border shadow-xs">
         {sorted.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
             No bots match &ldquo;{search}&rdquo;.

@@ -48,10 +48,14 @@ export function BotTableRow({
     >
       <TableCell>
         <div className="flex items-center gap-3">
-          {/* text-foreground, not text-accent — same near-invisible-
-              text bug as AuthShell's eyebrow label (--accent is a
-              pale background tint post-ADR-0014, not a text color). */}
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-accent/10 text-xs font-semibold text-foreground shadow-xs transition-shadow group-hover:shadow-sm">
+          {/* bg-primary/10, not bg-accent/10 — the mockup's row-icon
+              chip used a visibly tinted fill (its pre-monochrome
+              emerald), not a plain gray smudge; --accent is oklch(97%)
+              post-ADR-0014, so bg-accent/10 blended into the white row
+              and was effectively invisible. text-foreground, not
+              text-accent, for the same reason (--accent is a
+              background tint, not a text color). */}
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-xs font-semibold text-foreground shadow-xs transition-shadow group-hover:shadow-sm">
             {bot.name.slice(0, 2).toUpperCase()}
           </div>
           <span className="font-medium">{bot.name}</span>

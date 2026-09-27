@@ -16,19 +16,26 @@ depending on the model choosing to invoke it — see
 
 1. **Never hardcode a color.** No hex codes, no Tailwind arbitrary color
    classes (`bg-red-500`, `text-blue-600`). Use a token —
-   `bg-accent`, `text-muted-foreground`, `border-border`, etc. — defined
+   `bg-primary`, `text-muted-foreground`, `border-border`, etc. — defined
    once in `app/globals.css`. `scripts/check-design-tokens.mjs` enforces
    this at commit time. If the token you need doesn't exist, add it to
    `globals.css`, don't reach for a raw value.
 
-   **The subtler version of this mistake**: reusing an *existing* token
-   for a meaning it wasn't designed for, because the right one doesn't
-   exist yet — e.g. rendering "Published" with the same neutral badge
-   token as "Draft" because no `--success` color exists. That's a
-   system gap, not a screen bug. Check `docs/design/audit.md`'s "System
-   coverage" table before improvising; if the semantic color/variant you
-   need isn't there, add it at the token/primitive layer and log the row,
-   don't silently borrow the nearest neutral token as a stand-in.
+   **The subtler version of this mistake**: using a token for a meaning
+   it wasn't designed for, because it *sounds* right, without checking
+   what it actually resolves to. `--accent` is a real, correct token for
+   a hover-tint background (`hover:bg-accent`) — but ADR 0014 redefined
+   it to `oklch(97%)`, a pale near-white, and it was then reused as a
+   *fill/text* color in `Badge`'s `default` variant, an avatar chip, and
+   the sidebar's brand-icon chip — all three nearly invisible as a
+   result, not caught until a real screenshot was checked by hand
+   (`docs/design/audit.md`'s "System coverage" table, 2026-09-27
+   correction). The fix in all three cases was `bg-primary` — a token
+   already existed, it just needed to be the *right* one, not a new one
+   invented for the occasion. Check what a token's current value
+   actually is (`app/globals.css`) before reusing it for a new purpose,
+   and check `docs/design/audit.md`'s "System coverage" table before
+   assuming a semantic meaning has nothing to reach for at all.
 
 2. **Reuse `components/ui/` primitives** (`Button`, `Input`, `Textarea`,
    `Label`, `Checkbox`, `Badge`, `Card`/`CardHeader`/`CardTitle`/

@@ -18,21 +18,33 @@ checked instead of relying on someone noticing and asking.
 ## System coverage (checked, not just per-screen)
 
 This section exists because of a real miss: the "Published" vs "Draft"
-badge problem wasn't a screen bug, it was a **system** gap — no
-`--success` token existed anywhere, so there was nothing correct to
-reach for. Per-screen audits above can't catch that kind of gap; only
-asking "does the token *set* cover what we need" does. Check this list
-whenever a screen needs a semantic meaning, before reusing the nearest
-existing token as a stand-in.
+badge problem looked like it needed a new `--success` token — it
+didn't. **Corrected 2026-09-27**: the actual root cause was `Badge`'s
+`default` variant using `bg-accent`, and `--accent` was redefined by
+ADR 0014 to `oklch(97%)` — a pale near-white *background hover tint*,
+not a visible fill color. `docs/design/preview/bots-list.html` (the
+approved mockup) had always specified a solid, high-contrast fill for
+"Published"; `default` just never got fixed to use `--primary`
+(the monochrome system's solid color) the way `Input`/`Textarea`/
+`Checkbox`'s focus rings already were on 2026-09-26. **The lesson isn't
+"missing token," it's "check the approved mockup before shipping a
+screen"** — principle #3 exists exactly for this and wasn't followed
+when bots-list search/sort/archive shipped.
+
+Per-screen audits above can't catch a token bug that's silent until
+someone actually reads the rendered pixels — only checking the token
+*set* against real screenshots does. Check this list whenever a screen
+needs a semantic meaning, before reusing the nearest existing token as
+a stand-in.
 
 | Coverage area | Status | Notes |
 |---|---|---|
-| Semantic colors (success/warning/destructive/info) | 🔲 | `--destructive` and `--warning` exist; **no `--success`/positive color** — the root cause of the badge issue. No `--info` either. |
-| `Badge` variants | 🔲 | `default`/`muted`/`destructive` only — no `success` variant even if the token existed. |
-| Per-item color variation (avatars, chips) | 🔲 | Single fixed token system-wide — no scheme for visually distinguishing items in a list. |
+| `Badge` `default` variant contrast | ✅ | Fixed 2026-09-27: `bg-accent` → `bg-primary` (see above). Also fixed the same bug in `BotTableRow`'s avatar chip (`bg-accent/10` → `bg-primary/10`) and `AppSidebar`'s brand-icon chip (`bg-accent` blended into `--sidebar`, a 1.5%-lightness gap). |
+| **`--muted` and `--accent` are the literal same value** (`oklch(97%)`) | 🔲 | Found 2026-09-27 auditing the badge bug's blast radius. `ConversationThread.tsx`'s visitor bubble (`bg-muted`) and bot bubble (`bg-accent`) render as the *same color* — the transcript's two speakers are visually indistinguishable. Needs a real decision (which speaker gets which treatment), not a mechanical token swap like the badge fix — flagged here, not silently picked. |
+| Per-item color variation (avatars, chips) | 🔲 | Single fixed token system-wide — no scheme for visually distinguishing items in a list (e.g. a deterministic per-bot hash → palette). |
 | Dark mode | 🟡 | Tokens defined, never verified against a real rendered browser — every check done so far is light-mode only. |
 | Elevation/shadow scale | 🟡 | `shadow-xs` etc. applied ad hoc per component, not from a documented scale. |
-| `preview/*.html` vs. real tokens | 🔲 | Known-stale second source of truth (`docs/design/README.md`) — accepted, not fixed. |
+| `preview/*.html` vs. real tokens | 🟡 | `bots-list.html` updated 2026-09-27 to match what actually shipped (search/sort/dialog-creation/archive, corrected badge/avatar colors) — the rest of `preview/` is still the known-stale second source of truth (`docs/design/README.md`). |
 
 **Rule going forward:** if a screen needs to express a meaning (a
 positive/success state, an info callout, per-item visual distinction)
@@ -95,18 +107,24 @@ checked" silently read as "fine."
 Logged the same day they were found, per this file's own rule.
 
 **Polish (no new functionality decision needed):**
-- 🔲 "Draft only" vs "Published" badges are nearly indistinguishable —
-  both render as the same gray pill. The single most important status
-  signal on the screen doesn't stand out. Still open — needs a
-  `--success` token first (see "System coverage" above), not solvable
-  by reusing an existing token.
-- 🔲 Every avatar chip is visually identical (same gray, same color) —
-  fine at 2 bots, a wall of sameness past ~10. Still open.
+- ✅ "Draft only" vs "Published" badges were nearly indistinguishable —
+  fixed 2026-09-27, and it wasn't a missing-token problem (see "System
+  coverage" above's correction): `Badge`'s `default` variant was using
+  the wrong token (`bg-accent`, redefined to a near-invisible pale tint
+  by ADR 0014) instead of `bg-primary`, the same class of bug already
+  fixed elsewhere in the app. "Published" is now a solid, high-contrast
+  pill; "Draft only" stays the muted gray one.
+- ✅ Every avatar chip was visually identical *and* washed out (same
+  bug: `bg-accent/10` blended into white) — the wash-out is fixed
+  (`bg-primary/10`, now a real visible chip). Per-bot color *variety*
+  (distinguishing bot A's chip from bot B's) is a separate, still-open
+  enhancement — see "System coverage" above.
 - ✅ Empty state has no CTA of its own — fixed 2026-09-27: a real
   `NewBotDialog` trigger now lives inside the empty box.
 - 🔲 Page feels thin for its hierarchy — one header row, a table, then
   unstructured white space; no supporting copy under "Bots". Still
-  open.
+  open — genuinely needs more real content (recent activity, a stat),
+  not a styling fix; the approved mockup doesn't solve this either.
 
 **Functionality (real product decisions — asked before building, per
 this file's own rule):**

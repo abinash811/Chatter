@@ -69,8 +69,15 @@ export function AppSidebar({
             a visual-regression mask (tests/visual/console.visual.spec.ts)
             a different size on every run and never actually stabilize. */}
         <div data-testid="sidebar-org-name" className="flex items-center gap-2 px-2 py-2">
-          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-accent">
-            <MessageCircle className="h-3.5 w-3.5 text-accent-foreground" />
+          {/* bg-primary, not bg-accent — same near-invisible-tint bug as
+              Badge's default variant: --accent (oklch(97%)) sits almost
+              on top of --sidebar (oklch(98.5%)), a 1.5% lightness gap
+              that reads as no chip at all against the sidebar
+              background. Every visual-regression baseline masks this
+              exact element (its testid), which is exactly why nobody
+              caught it until a real screenshot was checked by hand. */}
+          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary">
+            <MessageCircle className="h-3.5 w-3.5 text-primary-foreground" />
           </div>
           <span className="truncate text-sm font-semibold group-data-[collapsible=icon]:hidden">{orgName}</span>
         </div>
