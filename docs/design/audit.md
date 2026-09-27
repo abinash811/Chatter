@@ -75,10 +75,11 @@ for. This table is what closes that.
 | Login/signup | ✅ | 🔲 | 🟡 | Mobile baseline added 2026-09-26; automated axe scan clean (`tests/e2e/accessibility.spec.ts`), no manual SR pass. |
 | Bots list | ✅ | ✅ | 🟡 | Row keyboard-nav + mobile baseline + axe scan 2026-09-26; search/sort/row-actions UI re-verified <900px and keyboard-only 2026-09-27 after shipping them — caught and fixed a real regression (sort headers pushed the row actions menu off-screen at 390px) and a real touch-usability gap (hover-to-reveal actions button was never visible on touch). No manual SR pass. |
 | Bot editor | 🔲 | 🔲 | 🟡 | Axe scan clean 2026-09-26 — caught and fixed 2 real bugs first (switcher had no accessible name; embed snippet wasn't keyboard-focusable). No manual SR pass. |
-| Knowledge | 🔲 | 🔲 | 🔲 | |
-| Integrations | 🔲 | 🔲 | 🔲 | |
-| Settings | 🔲 | 🔲 | 🔲 | |
-| Conversations list/detail | 🔲 | 🔲 | 🔲 | |
+| Knowledge | 🔲 | 🔲 | 🟡 | Axe scan added 2026-09-27, clean. No manual SR pass. |
+| Integrations | 🔲 | 🔲 | 🟡 | Axe scan added 2026-09-27, clean. No manual SR pass. |
+| Settings | 🔲 | 🔲 | 🟡 | Axe scan added 2026-09-27, clean. No manual SR pass. |
+| Conversations list/detail | 🔲 | 🔲 | 🟡 | Axe scan added 2026-09-27 for both — caught and fixed a real critical "button-name" violation (`ConversationFilters`'s bot/date-range `Select` triggers intermittently rendered with no accessible name at all, ~40% reproduction rate, same root cause as the bot-editor switcher bug: `SelectValue`'s label resolves after the trigger itself is accessible-name-checkable). No manual SR pass. |
+| Onboarding | 🔲 | 🔲 | 🟡 | Axe scan added 2026-09-27, clean. No manual SR pass. |
 | Sidebar/top bar | 🔲 | 🟡 | 🔲 | Collapse toggle keyboard-reachable (native `<button>`); switcher/nav not re-checked. |
 
 **Rule going forward:** before calling any UI work done, add both to the

@@ -46,8 +46,8 @@ reason.)
   login/signup; Skeleton loading states on 7 routes.
   `docs/design/audit.md` tracks per-screen compliance against the bar —
   check there before assuming a screen is finished.
-- Testing/guardrails: 8 static guardrail checks (`npm run check:all`),
-  99 unit tests, 55 `tests/e2e/` specs, 14 `tests/visual/` baselines,
+- Testing/guardrails: 9 static guardrail checks (`npm run check:all`),
+  99 unit tests, 63 `tests/e2e/` specs, 14 `tests/visual/` baselines,
   all wired into CI.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,

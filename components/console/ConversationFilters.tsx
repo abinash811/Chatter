@@ -44,7 +44,15 @@ export function ConversationFilters({ bots }: { bots: { id: string; name: string
   return (
     <div className="flex items-center gap-3">
       <Select value={botId} onValueChange={(value) => setParam("botId", value)}>
-        <SelectTrigger size="sm" className="w-40">
+        {/* aria-label, not just SelectValue's rendered text — same fix
+            as BotTopBar.tsx's switcher: a real axe-core scan
+            (tests/e2e/accessibility.spec.ts) caught this trigger
+            intermittently rendering with no accessible name at all
+            (critical "button-name" violation, ~40% reproduction rate)
+            before SelectValue's child label finishes resolving. An
+            explicit label removes the race instead of just working
+            around it in the test. */}
+        <SelectTrigger size="sm" aria-label="Filter by bot" className="w-40">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -57,7 +65,7 @@ export function ConversationFilters({ bots }: { bots: { id: string; name: string
       </Select>
 
       <Select value={range} onValueChange={(value) => setParam("range", value)}>
-        <SelectTrigger size="sm" className="w-36">
+        <SelectTrigger size="sm" aria-label="Filter by date range" className="w-36">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
