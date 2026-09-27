@@ -26,7 +26,13 @@ import {
   DialogDescription,
   DialogFooter,
   DialogClose,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui";
+import { AVATAR_EMOJI_OPTIONS, WIDGET_POSITIONS, type AvatarEmoji, type WidgetPosition } from "@/lib/ai/appearanceOptions";
 
 const idleState: SaveDraftState = { status: "idle", message: null };
 
@@ -54,6 +60,8 @@ export function BotEditorForm({
   tools,
   greeting,
   accentColor,
+  avatarEmoji,
+  position,
   embedSnippet,
 }: {
   botId: string;
@@ -63,6 +71,8 @@ export function BotEditorForm({
   tools: { name: string; description: string; enabled: boolean }[];
   greeting: string;
   accentColor: string;
+  avatarEmoji: AvatarEmoji;
+  position: WidgetPosition;
   embedSnippet: string;
 }) {
   const [saveState, saveFormAction, isSaving] = useActionState(saveDraftAction.bind(null, botId), idleState);
@@ -127,7 +137,7 @@ export function BotEditorForm({
             <TabsTrigger value="appearance">Appearance</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="persona" forceMount className="mt-4">
+          <TabsContent value="persona" forceMount className="mt-4 data-[state=inactive]:hidden">
             <Card>
               <CardHeader>
                 <CardTitle>Persona</CardTitle>
@@ -144,7 +154,7 @@ export function BotEditorForm({
             </Card>
           </TabsContent>
 
-          <TabsContent value="guardrails" forceMount className="mt-4">
+          <TabsContent value="guardrails" forceMount className="mt-4 data-[state=inactive]:hidden">
             <Card>
               <CardHeader>
                 <CardTitle>Guardrails</CardTitle>
@@ -162,7 +172,7 @@ export function BotEditorForm({
             </Card>
           </TabsContent>
 
-          <TabsContent value="tools" forceMount className="mt-4">
+          <TabsContent value="tools" forceMount className="mt-4 data-[state=inactive]:hidden">
             <Card>
               <CardHeader>
                 <CardTitle>Tools</CardTitle>
@@ -183,7 +193,7 @@ export function BotEditorForm({
             </Card>
           </TabsContent>
 
-          <TabsContent value="appearance" forceMount className="mt-4 space-y-4">
+          <TabsContent value="appearance" forceMount className="mt-4 space-y-4 data-[state=inactive]:hidden">
             <Card>
               <CardHeader>
                 <CardTitle>Appearance</CardTitle>
@@ -196,15 +206,47 @@ export function BotEditorForm({
                   <Label htmlFor="greeting">Greeting</Label>
                   <Input id="greeting" name="greeting" defaultValue={greeting} className="mt-1" />
                 </div>
-                <div>
-                  <Label htmlFor="accentColor">Accent color</Label>
-                  <input
-                    id="accentColor"
-                    type="color"
-                    name="accentColor"
-                    defaultValue={accentColor}
-                    className="mt-1 block h-row-sm w-16 rounded border border-border bg-transparent shadow-xs transition-colors hover:border-strong-border"
-                  />
+                <div className="flex gap-6">
+                  <div>
+                    <Label htmlFor="accentColor">Accent color</Label>
+                    <input
+                      id="accentColor"
+                      type="color"
+                      name="accentColor"
+                      defaultValue={accentColor}
+                      className="mt-1 block h-row-sm w-16 rounded border border-border bg-transparent shadow-xs transition-colors hover:border-strong-border"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="avatarEmoji">Avatar</Label>
+                    <Select name="avatarEmoji" defaultValue={avatarEmoji}>
+                      <SelectTrigger id="avatarEmoji" className="mt-1 w-20" aria-label="Widget avatar">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {AVATAR_EMOJI_OPTIONS.map((emoji) => (
+                          <SelectItem key={emoji} value={emoji}>
+                            {emoji}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="position">Position on page</Label>
+                    <Select name="position" defaultValue={position}>
+                      <SelectTrigger id="position" className="mt-1 w-40" aria-label="Widget position">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {WIDGET_POSITIONS.map((pos) => (
+                          <SelectItem key={pos} value={pos}>
+                            {pos === "bottom-right" ? "Bottom right" : "Bottom left"}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </CardContent>
             </Card>

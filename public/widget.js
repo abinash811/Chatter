@@ -20,7 +20,6 @@
   host.id = "chatter-widget-host";
   host.style.position = "fixed";
   host.style.bottom = "20px";
-  host.style.right = "20px";
   host.style.zIndex = "2147483647";
   document.body.appendChild(host);
   var root = host.attachShadow({ mode: "open" });
@@ -32,16 +31,37 @@
   // Matches lib/ai/botConfig.ts's DEFAULT_APPEARANCE (ADR 0008's emerald,
   // not left over from ADR 0007's violet) — this is only the fallback
   // before /api/widget/config responds with the business's real value.
-  var appearance = { greeting: "Hi! How can I help you today?", accentColor: "#065f46" };
+  var appearance = {
+    greeting: "Hi! How can I help you today?",
+    accentColor: "#065f46",
+    avatarEmoji: "💬",
+    position: "bottom-right",
+  };
+
+  // Applies position to the host element itself (not just CSS inside the
+  // shadow root) since it controls which side of the *page* the bubble
+  // sits on, not anything inside the widget's own isolated window.
+  function applyPosition() {
+    if (appearance.position === "bottom-left") {
+      host.style.left = "20px";
+      host.style.right = "";
+      windowEl.style.right = "";
+      windowEl.style.left = "0";
+    } else {
+      host.style.right = "20px";
+      host.style.left = "";
+      windowEl.style.left = "";
+      windowEl.style.right = "0";
+    }
+  }
 
   root.innerHTML =
     '<style>' +
     '  :host { all: initial; }' +
     '  .bubble { width: 56px; height: 56px; border-radius: 50%; border: none; cursor: pointer;' +
-    '    display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,.2); }' +
-    '  .bubble svg { width: 26px; height: 26px; fill: white; }' +
+    '    display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,.2); font-size: 26px; line-height: 1; }' +
     '  .window { display: none; flex-direction: column; width: 320px; height: 440px; border-radius: 12px;' +
-    '    box-shadow: 0 4px 24px rgba(0,0,0,.25); background: #fff; overflow: hidden; position: absolute; bottom: 68px; right: 0;' +
+    '    box-shadow: 0 4px 24px rgba(0,0,0,.25); background: #fff; overflow: hidden; position: absolute; bottom: 68px;' +
     '    font-family: system-ui, sans-serif; font-size: 14px; }' +
     '  .window.open { display: flex; }' +
     '  .header { padding: 12px 16px; color: white; font-weight: 600; }' +
@@ -61,9 +81,7 @@
     '    <button type="submit" part="send">Send</button>' +
     '  </form>' +
     '</div>' +
-    '<button class="bubble" part="bubble" aria-label="Open chat">' +
-    '  <svg viewBox="0 0 24 24"><path d="M2 3h20v14H6l-4 4V3z"/></svg>' +
-    '</button>';
+    '<button class="bubble" part="bubble" aria-label="Open chat"></button>';
 
   var bubble = root.querySelector(".bubble");
   var windowEl = root.querySelector(".window");
@@ -75,9 +93,11 @@
 
   function applyAppearance() {
     bubble.style.background = appearance.accentColor;
+    bubble.textContent = appearance.avatarEmoji;
     header.style.background = appearance.accentColor;
     header.textContent = "Chat";
     sendButton.style.background = appearance.accentColor;
+    applyPosition();
     if (messagesEl.children.length === 0) {
       appendMessage("assistant", appearance.greeting);
     }

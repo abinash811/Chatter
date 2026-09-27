@@ -72,6 +72,12 @@ test("bot editor page (embed snippet masked — it embeds a random public key)",
   await expect(page).toHaveScreenshot("bot-editor.png", { mask: [page.locator("pre"), ...sidebarMasks(page)] });
 });
 
+test("bot editor — Appearance tab (avatar + position selects)", async ({ page }) => {
+  await signUpAndCreateBot(page, "Support bot", "visual-appearance");
+  await page.click('button[role="tab"]:has-text("Appearance")');
+  await expect(page).toHaveScreenshot("bot-editor-appearance.png", { mask: [page.locator("pre"), ...sidebarMasks(page)] });
+});
+
 test("bot editor — publish confirmation dialog (docs/design/principles.md #10)", async ({ page }) => {
   await signUpAndCreateBot(page, "Support bot", "visual-publish-dialog");
   await page.click('button:has-text("Publish")');

@@ -60,6 +60,27 @@ test("a tool Checkbox (on the Tools tab) toggles and its state survives a save",
   await expect(page.locator('input[name="tool_search_knowledge_base"]')).toBeChecked();
 });
 
+test("avatar and position selects (Appearance tab) save and survive a reload", async ({ page }) => {
+  await signUpAndCreateBot(page, "Appearance Test Bot");
+  await page.click('button[role="tab"]:has-text("Appearance")');
+
+  // Radix Select renders a hidden native <select> for form participation
+  // when given a `name` — this confirms that actually works end-to-end
+  // through the server action, not just that the UI looks right.
+  await page.getByRole("combobox", { name: "Widget avatar" }).click();
+  await page.getByRole("option", { name: "🤖" }).click();
+  await page.getByRole("combobox", { name: "Widget position" }).click();
+  await page.getByRole("option", { name: "Bottom left" }).click();
+
+  await page.click('button:has-text("Save draft")');
+  await expect(page.getByText("Draft saved.")).toBeVisible();
+
+  await page.reload();
+  await page.click('button[role="tab"]:has-text("Appearance")');
+  await expect(page.getByRole("combobox", { name: "Widget avatar" })).toHaveText("🤖");
+  await expect(page.getByRole("combobox", { name: "Widget position" })).toHaveText("Bottom left");
+});
+
 // Regression check: passing lib/ai tool objects (which include a
 // `handle` function) from the server component into this client
 // component used to crash with "Functions cannot be passed directly to

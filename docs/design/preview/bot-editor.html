@@ -193,14 +193,24 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     <div class="card">
       <div class="card-title">Appearance</div>
       <div class="section-sub">What visitors see before they've sent a message, and the widget's accent color.</div>
-      <div class="field-row">
-        <div class="field-col" style="flex:3;">
+      <div class="field-row" style="margin-bottom:12px;">
+        <div class="field-col" style="flex:1;">
           <label class="field-label-sm">Greeting</label>
           <input class="field-input" value="Hi! How can we help today?" readonly/>
         </div>
+      </div>
+      <div class="field-row">
         <div class="field-col" style="flex:0 0 auto;">
-          <label class="field-label-sm">Accent</label>
+          <label class="field-label-sm">Accent color</label>
           <div class="color-swatch"></div>
+        </div>
+        <div class="field-col" style="flex:0 0 auto;">
+          <label class="field-label-sm">Avatar</label>
+          <input class="field-input" value="&#128172; &#9662;" readonly style="width:70px; text-align:center;"/>
+        </div>
+        <div class="field-col" style="flex:0 0 auto;">
+          <label class="field-label-sm">Position on page</label>
+          <input class="field-input" value="Bottom right &#9662;" readonly style="width:150px;"/>
         </div>
       </div>
     </div>

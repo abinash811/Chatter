@@ -63,6 +63,8 @@ export default async function BotPage({
       }))}
       greeting={appearance.greeting}
       accentColor={appearance.accentColor}
+      avatarEmoji={appearance.avatarEmoji}
+      position={appearance.position}
       embedSnippet={embedSnippet}
     />
   );

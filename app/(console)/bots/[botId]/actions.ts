@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentSession } from "@/lib/auth";
-import { saveDraft, publishDraft } from "@/lib/ai/botConfig";
+import { saveDraft, publishDraft, AVATAR_EMOJI_OPTIONS, WIDGET_POSITIONS, DEFAULT_APPEARANCE } from "@/lib/ai/botConfig";
 import { listAllTools } from "@/lib/ai/tools/registry";
 import "@/lib/ai/tools";
 
@@ -32,6 +32,12 @@ export async function saveDraftAction(
       appearance: {
         greeting: String(formData.get("greeting") ?? ""),
         accentColor: String(formData.get("accentColor") ?? "#065f46"), // allow-raw-color — form fallback, not console UI (matches lib/ai/botConfig.ts's DEFAULT_APPEARANCE)
+        avatarEmoji: (AVATAR_EMOJI_OPTIONS as readonly string[]).includes(String(formData.get("avatarEmoji")))
+          ? (formData.get("avatarEmoji") as (typeof AVATAR_EMOJI_OPTIONS)[number])
+          : DEFAULT_APPEARANCE.avatarEmoji,
+        position: (WIDGET_POSITIONS as readonly string[]).includes(String(formData.get("position")))
+          ? (formData.get("position") as (typeof WIDGET_POSITIONS)[number])
+          : DEFAULT_APPEARANCE.position,
       },
     });
     revalidatePath(`/bots/${botId}`);

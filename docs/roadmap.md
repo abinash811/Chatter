@@ -50,11 +50,17 @@ marked with real status (not aspirational):
 2. **Tool enable/disable** — **already built.** Bot editor's Tools tab,
    per-tool checkboxes, `BotConfigVersion`. Nothing to do here beyond
    adding new tools as they ship.
-3. **Bot UI / appearance editor** — **known gap**, already tracked
-   (widget theming fields — color/avatar/greeting/position — exist in
-   the data model per `docs/product-spec.md`, but no console UI edits
-   them yet). Promoted from a vague "Later" item to explicit v1-
-   completion scope.
+3. **Bot UI / appearance editor** — **built (2026-09-27).** Bot editor's
+   Appearance tab: greeting + accent color (already existed) plus new
+   avatar (curated emoji picker — no image upload/storage infra exists
+   anywhere in this app yet, so an image avatar is explicitly deferred,
+   not silently dropped) and position (bottom-right/bottom-left)
+   controls. Flows end-to-end: form -> `saveDraftAction` ->
+   `BotConfigVersion.appearance` (JSON) -> `/api/widget/config` ->
+   `public/widget.js` actually renders the emoji and repositions the
+   bubble/window. Verified with a real e2e spec
+   (`tests/e2e/bot-editor.spec.ts`) that saves, reloads, and confirms
+   both fields persisted — not just that the UI renders.
 4. **RAG setup, user-facing** — ingestion (Q&A/file/URL) is built (ADR
    0013); retrieval *tuning* is not exposed at all — `search_knowledge_
    base`'s top-5 result cap and similarity behavior are hardcoded, not

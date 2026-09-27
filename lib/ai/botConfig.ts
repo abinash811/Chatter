@@ -14,9 +14,17 @@ import { withOrgContext } from "@/lib/db";
 // contrast against a business's chosen accentColor is not yet enforced
 // (docs/research/design-system-standards.md's open TODO) — v1 trusts
 // the default, doesn't validate a custom one.
+// Re-exported from appearanceOptions.ts (pure data, no server deps) so
+// existing server-side callers of botConfig.ts don't need a second
+// import path — see that file's header for why the split exists.
+export { AVATAR_EMOJI_OPTIONS, WIDGET_POSITIONS, type AvatarEmoji, type WidgetPosition } from "./appearanceOptions";
+import { AVATAR_EMOJI_OPTIONS, WIDGET_POSITIONS, type AvatarEmoji, type WidgetPosition } from "./appearanceOptions";
+
 export interface BotAppearance {
   greeting: string;
   accentColor: string;
+  avatarEmoji: AvatarEmoji;
+  position: WidgetPosition;
 }
 
 // Exported so callers (e.g. the sidebar's "Getting started" checklist)
@@ -25,6 +33,8 @@ export interface BotAppearance {
 export const DEFAULT_APPEARANCE: BotAppearance = {
   greeting: "Hi! How can I help you today?",
   accentColor: "#065f46", // allow-raw-color — business-customizable default, not console UI (matches ADR 0008's emerald, not left over from ADR 0007's violet)
+  avatarEmoji: "💬",
+  position: "bottom-right",
 };
 
 export function parseAppearance(value: Prisma.JsonValue): BotAppearance {
@@ -32,6 +42,8 @@ export function parseAppearance(value: Prisma.JsonValue): BotAppearance {
   return {
     greeting: v.greeting ?? DEFAULT_APPEARANCE.greeting,
     accentColor: v.accentColor ?? DEFAULT_APPEARANCE.accentColor,
+    avatarEmoji: v.avatarEmoji && AVATAR_EMOJI_OPTIONS.includes(v.avatarEmoji) ? v.avatarEmoji : DEFAULT_APPEARANCE.avatarEmoji,
+    position: v.position && WIDGET_POSITIONS.includes(v.position) ? v.position : DEFAULT_APPEARANCE.position,
   };
 }
 
