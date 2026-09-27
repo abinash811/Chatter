@@ -1,0 +1,58 @@
+name: Dependabot triage
+
+# ADR 0009's own lesson: the Tailwind v3/v4 mismatch wasn't a detection
+# gap — Dependabot had already opened a PR for it — it was a triage gap,
+# nobody looked. This closes that mechanically instead of relying on
+# someone remembering to check the PR list: fails loudly (and GitHub
+# emails repo watchers on a scheduled-workflow failure by default) once
+# any open Dependabot PR has sat untriaged past a real threshold,
+# instead of silently aging until it causes a real bug like ADR 0009's.
+
+on:
+  schedule:
+    # Mondays, well after Dependabot's own weekly run (dependabot.yml) —
+    # gives it a day to actually open the week's PRs first.
+    - cron: "0 9 * * 1"
+  workflow_dispatch: {}
+
+permissions:
+  pull-requests: read
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if any Dependabot PR has sat untriaged past 14 days
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          THRESHOLD_DAYS=14
+          NOW=$(date +%s)
+          STALE=0
+
+          PRS=$(gh pr list --repo "$GITHUB_REPOSITORY" --author "app/dependabot" --state open \
+            --json number,title,createdAt,url)
+
+          echo "$PRS" | jq -c '.[]' | while read -r pr; do
+            number=$(echo "$pr" | jq -r '.number')
+            title=$(echo "$pr" | jq -r '.title')
+            created=$(echo "$pr" | jq -r '.createdAt')
+            url=$(echo "$pr" | jq -r '.url')
+            created_epoch=$(date -d "$created" +%s)
+            age_days=$(( (NOW - created_epoch) / 86400 ))
+
+            if [ "$age_days" -gt "$THRESHOLD_DAYS" ]; then
+              echo "::error::Dependabot PR #$number has sat open $age_days days (> $THRESHOLD_DAYS): $title — $url"
+              echo "STALE" >> /tmp/stale_marker
+            else
+              echo "ok: PR #$number is $age_days days old (within $THRESHOLD_DAYS): $title"
+            fi
+          done
+
+          if [ -f /tmp/stale_marker ]; then
+            echo ""
+            echo "One or more Dependabot PRs need real triage (merge, close as not-applicable," \
+                 "or note in docs/roadmap.md why it's deliberately deferred — see ADR 0009)."
+            exit 1
+          fi
+          echo "ok: no open Dependabot PR older than $THRESHOLD_DAYS days"

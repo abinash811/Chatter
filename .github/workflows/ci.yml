@@ -62,12 +62,14 @@ jobs:
       - name: Type check
         run: npx tsc --noEmit
 
-      - name: Unit tests (tests/unit/ — lib/ai/'s engine logic, schemas, utils)
+      - name: Unit tests + coverage threshold (tests/unit/ — lib/ai/'s engine logic, schemas, utils)
         # Fast, isolated, no real database or Claude API call — runs
         # before the slower DB/build/E2E steps below so a regression in
         # the engine itself (the chat loop, tool registry, the Anthropic
         # SDK request/response mapping) fails in seconds, not minutes.
-        run: npm run test:unit
+        # :coverage (not plain test:unit) so vitest.config.mts's real
+        # coverage floor is actually enforced here, not just locally.
+        run: npm run test:unit:coverage
 
       - name: Create non-superuser app role and hand it the database
         run: |
