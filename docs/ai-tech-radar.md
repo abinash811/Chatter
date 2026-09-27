@@ -75,19 +75,30 @@ as each ships. Phase 1 shipped same day; phases 2-4 still ahead.
   as the rest of the engine's end-to-end behavior.
 - **Hybrid retrieval** (`lib/ai/tools/searchKnowledgeBase.ts`,
   `db/migrations/0003_hybrid_search_fts.sql`) — Postgres native
-  full-text search (a generated `tsvector` column + GIN index,
-  `ts_rank`/`websearch_to_tsquery`) combined with the existing pgvector
-  cosine search via Reciprocal Rank Fusion (`rrf_k = 50`, matching
-  Supabase's documented default). Deliberately plain `tsvector`, not a
-  BM25 extension — see ADR 0021 and the Hold entry below. Functionally
-  verified against a real local Postgres, not just read: applied the
-  migration twice (idempotent), confirmed `websearch_to_tsquery` never
-  throws on empty/malformed input (returns an empty tsquery instead,
-  matching nothing), and ran the real RRF query against three seeded
-  chunks where an exact keyword match ranked #2 in vector-only search
-  but correctly won the fused ranking — proving hybrid search actually
-  surfaces what vector-only search would have under-ranked, not just
-  that the query executes.
+  full-text search (a generated `tsvector` column + GIN index) combined
+  with the existing pgvector cosine search via Reciprocal Rank Fusion.
+  Matched precisely against Supabase's own reference implementation
+  (`supabase/supabase`'s `hybrid-search.mdx`, read directly — not just
+  summarized from search results, after an initial pass that only used
+  search snippets missed 3 real details): `ts_rank_cd` (cover density —
+  accounts for term proximity), not plain `ts_rank`; the candidate-pool
+  formula `least(match_count, 30) * 2` (10 here, for our match_count of
+  5), not an arbitrary round number; and their exact join structure
+  (`full_text FULL OUTER JOIN semantic`, then one join to the base
+  table) rather than a less efficient left-join-from-the-base-table
+  version. `rrf_k = 50` and equal `full_text_weight`/`semantic_weight`
+  (both 1, not yet exposed as tunable) match their defaults. Kept as a
+  deliberate divergence: cosine distance (`<=>`, matching our existing
+  `vector_cosine_ops` HNSW index and Voyage embeddings, which aren't
+  guaranteed pre-normalized), not their inner-product example. Deliberately
+  plain `tsvector`, not a BM25 extension — see ADR 0021 and the Hold
+  entry below. Functionally verified against a real local Postgres:
+  applied the migration twice (idempotent), confirmed
+  `websearch_to_tsquery` never throws on empty/malformed input, ran the
+  real corrected query through the actual Prisma `$queryRaw` code path
+  (not just raw psql) confirming the numeric candidate-limit/match-count
+  parameters interpolate correctly, and confirmed an exact keyword match
+  ranked #2 in vector-only search correctly wins the fused ranking.
 
 Hybrid retrieval joined the Adopt list above — moved here since it
 shipped 2026-09-27, same day as the decision.

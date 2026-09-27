@@ -36,45 +36,54 @@ export const searchKnowledgeBaseTool: Tool = {
     const vectorLiteral = `[${embedding.join(",")}]`;
 
     // Hybrid search (ADR 0021): combines pgvector's semantic search with
-    // Postgres native full-text search (tsvector/ts_rank, not a BM25
-    // extension — see the ADR for why) via Reciprocal Rank Fusion,
-    // matching the pattern Supabase documents and Chatbase's own
-    // infrastructure validates. Each candidate set is capped at 30
-    // before fusing down to the top 5 actually returned — RRF needs a
-    // wider candidate pool than the final result count to have anything
-    // meaningful to fuse. rrf_k = 50 matches Supabase's documented
-    // default. withOrgContext sets app.org_id for this transaction, so
-    // RLS already scopes this query to orgId — the botId filter narrows
-    // further to this specific bot's sources within that org.
+    // Postgres native full-text search via Reciprocal Rank Fusion — the
+    // exact pattern from Supabase's own reference implementation
+    // (supabase/supabase's hybrid-search.mdx `hybrid_search()` function,
+    // read directly, not just summarized), adapted here since our
+    // embedding index uses cosine distance (vector_cosine_ops, matching
+    // Voyage embeddings which aren't guaranteed pre-normalized) instead
+    // of their inner-product example. Matched precisely, not just "close
+    // enough": ts_rank_cd (cover density — accounts for term proximity,
+    // not plain ts_rank), the candidate-pool formula
+    // least(match_count, 30) * 2 (10 here, for our match_count of 5, not
+    // an arbitrary round number), full_text_weight/semantic_weight = 1
+    // (implicit, no tuning surface yet), and rrf_k = 50 — all their
+    // documented defaults. withOrgContext sets app.org_id for this
+    // transaction, so RLS already scopes this query to orgId — the botId
+    // filter narrows further to this specific bot's sources within that
+    // org.
+    const MATCH_COUNT = 5;
+    const CANDIDATE_LIMIT = Math.min(MATCH_COUNT, 30) * 2;
     const chunks = await withOrgContext(orgId, (tx) =>
       tx.$queryRaw<{ content: string; kind: string; title: string }[]>(Prisma.sql`
-        with vector_search as (
-          select kc.id, row_number() over (order by kc.embedding <=> ${vectorLiteral}::vector) as rank
-          from knowledge_chunks kc
-          join knowledge_sources ks on ks.id = kc."sourceId"
-          where ks."botId" = ${botId}
-          order by kc.embedding <=> ${vectorLiteral}::vector
-          limit 30
-        ),
-        fulltext_search as (
+        with full_text as (
           select kc.id, row_number() over (
-            order by ts_rank(kc.content_tsv, websearch_to_tsquery('english', ${query})) desc
-          ) as rank
+            order by ts_rank_cd(kc.content_tsv, websearch_to_tsquery('english', ${query})) desc
+          ) as rank_ix
           from knowledge_chunks kc
           join knowledge_sources ks on ks.id = kc."sourceId"
           where ks."botId" = ${botId}
             and kc.content_tsv @@ websearch_to_tsquery('english', ${query})
-          limit 30
+          order by rank_ix
+          limit ${CANDIDATE_LIMIT}
+        ),
+        semantic as (
+          select kc.id, row_number() over (order by kc.embedding <=> ${vectorLiteral}::vector) as rank_ix
+          from knowledge_chunks kc
+          join knowledge_sources ks on ks.id = kc."sourceId"
+          where ks."botId" = ${botId}
+          order by rank_ix
+          limit ${CANDIDATE_LIMIT}
         )
-        select kc.content, ks.kind, ks.title,
-          coalesce(1.0 / (50 + v.rank), 0.0) + coalesce(1.0 / (50 + f.rank), 0.0) as score
-        from knowledge_chunks kc
+        select kc.content, ks.kind, ks.title
+        from full_text
+        full outer join semantic on full_text.id = semantic.id
+        join knowledge_chunks kc on coalesce(full_text.id, semantic.id) = kc.id
         join knowledge_sources ks on ks.id = kc."sourceId"
-        left join vector_search v on v.id = kc.id
-        left join fulltext_search f on f.id = kc.id
-        where v.id is not null or f.id is not null
-        order by score desc
-        limit 5
+        order by
+          coalesce(1.0 / (50 + full_text.rank_ix), 0.0) +
+          coalesce(1.0 / (50 + semantic.rank_ix), 0.0) desc
+        limit ${MATCH_COUNT}
       `),
     );
 
