@@ -111,3 +111,14 @@ depending on the model choosing to invoke it — see
    deliberately not fixing one (out of scope, needs a product decision),
    say so explicitly to the user in the same turn, don't let it pass by
    omission. Log the outcome in `docs/design/audit.md` either way.
+
+9. **Check every interactive component you use against
+   `docs/design/component-checklist.md`** — item 8 above is "does this
+   *look* right," this is "does every component have its required
+   mechanical parts" (real states incl. disabled/loading, elevation
+   from a defined scale, purposeful bounded motion, color-independent
+   status signaling, three-part error copy, a CTA in every empty state,
+   keyboard+ARIA via the same `data-state` attributes driving the
+   style). Derived 2026-09-27 from Apple HIG/Material Design 3/Ant
+   Design/Radix's own documented completeness standards — see
+   `docs/research/design-system-standards.md`.

@@ -64,17 +64,21 @@ Before saying a piece of work is done:
    (tenant isolation, traceability, graceful tool fallback) is not done
    even if it compiles and runs.
 13. **Explicit design-bar self-check for any UI change** — this is
-   `.claude/rules/console-frontend.md` items 7-8, which auto-load for
+   `.claude/rules/console-frontend.md` items 7-9, which auto-load for
    any `app/(console)/**`/`components/ui/**` touch, so it isn't opt-in.
-   Confirm both were actually done, not skimmed: hover/focus/active/
-   loading/depth + <900px + keyboard-only (item 7), and the senior-
+   Confirm all three were actually done, not skimmed: hover/focus/active/
+   loading/depth + <900px + keyboard-only (item 7); the senior-
    designer critique against principles.md #9 — hierarchy, status/
    semantic color coverage, per-item visual distinction, density-vs-
-   register match, interactive-affordance clarity (item 8). If the
-   screen already had open findings in `docs/design/audit.md`, item 8
-   requires fixing them in this pass or explicitly telling the user
-   why not — never silent. **Update `docs/design/audit.md`'s row for
-   that screen in the same turn** — a finding that only exists in chat
+   register match, interactive-affordance clarity (item 8); and every
+   interactive component checked against
+   `docs/design/component-checklist.md`'s completeness bar — states,
+   elevation, motion, color-independent signaling, error/empty copy
+   structure, keyboard+ARIA (item 9). If the screen already had open
+   findings in `docs/design/audit.md`, item 8 requires fixing them in
+   this pass or explicitly telling the user why not — never silent.
+   **Update `docs/design/audit.md`'s row for that screen in the same
+   turn** — a finding that only exists in chat
    is a finding that's gone the moment context compacts.
 14. **Open Dependabot PRs relevant to what you touched.** ADR 0009: the
    Tailwind v3/v4 mismatch wasn't a detection gap — Dependabot had

@@ -43,7 +43,9 @@ a stand-in.
 | **`--muted` and `--accent` are the literal same value** (`oklch(97%)`) | 🔲 | Found 2026-09-27 auditing the badge bug's blast radius. `ConversationThread.tsx`'s visitor bubble (`bg-muted`) and bot bubble (`bg-accent`) render as the *same color* — the transcript's two speakers are visually indistinguishable. Needs a real decision (which speaker gets which treatment), not a mechanical token swap like the badge fix — flagged here, not silently picked. |
 | Per-item color variation (avatars, chips) | 🔲 | Single fixed token system-wide — no scheme for visually distinguishing items in a list (e.g. a deterministic per-bot hash → palette). |
 | Dark mode | 🟡 | Tokens defined, never verified against a real rendered browser — every check done so far is light-mode only. |
-| Elevation/shadow scale | 🟡 | `shadow-xs` etc. applied ad hoc per component, not from a documented scale. |
+| Elevation/shadow scale | 🟡 | `shadow-xs` etc. applied ad hoc per component, not from a documented scale — see `docs/design/component-checklist.md` item 2 (Ant Design's 3-layer model is the reference point, not the answer we've adopted yet). |
+| Motion/animation policy | 🔲 | No documented duration/easing standard or "when not to animate" rule — `docs/design/component-checklist.md` item 3. |
+| Copy structure for errors/empty states | 🟡 | `principles.md` #6 sets tone; no documented structural rule (3-part errors, always a CTA in empty states) — `docs/design/component-checklist.md` items 5-6. |
 | `preview/*.html` vs. real tokens | 🟡 | `bots-list.html` updated 2026-09-27 to match what actually shipped (search/sort/dialog-creation/archive, corrected badge/avatar colors) — the rest of `preview/` is still the known-stale second source of truth (`docs/design/README.md`). |
 
 **Rule going forward:** if a screen needs to express a meaning (a

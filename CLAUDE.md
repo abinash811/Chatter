@@ -104,6 +104,11 @@ reason.)
   hand-verified browser flow becomes a spec here, not a throwaway script
 - `docs/design/principles.md` — the design bar every screen is checked
   against; read before `docs/design/preview/`
+- `docs/design/component-checklist.md` — per-component completeness bar
+  (states, elevation, motion, color-independent signaling, error/empty
+  copy structure, keyboard+ARIA), derived from Apple HIG/Material
+  Design 3/Ant Design/Radix's own documented standards — check before
+  adding a primitive or touching a screen's interactive components
 - `docs/design/audit.md` — living per-screen scoreboard against that
   bar; update a screen's row the same turn you touch or audit it
 - `docs/design/design-system.md` — current token values + component
