@@ -60,6 +60,28 @@ test("a tool Checkbox (on the Tools tab) toggles and its state survives a save",
   await expect(page.locator('input[name="tool_search_knowledge_base"]')).toBeChecked();
 });
 
+test("persona template picker fills the persona textarea, replacing existing text", async ({ page }) => {
+  await signUpAndCreateBot(page, "Persona Template Test Bot");
+  await page.fill("#persona", "some text the picker should overwrite");
+
+  await page.getByRole("combobox", { name: "Start from a template" }).click();
+  await page.getByRole("option", { name: "Sales assistant" }).click();
+
+  await expect(page.locator("#persona")).toHaveValue(/upbeat, helpful shopping assistant/);
+
+  // Picking a template must not touch anything outside the persona
+  // textarea (decoupled, per docs/open-questions.md's resolved scope) —
+  // guardrails stays whatever it already was (empty for a fresh bot).
+  await page.click('button[role="tab"]:has-text("Guardrails")');
+  await expect(page.locator("#guardrails")).toHaveValue("");
+
+  await page.click('button[role="tab"]:has-text("Persona")');
+  await page.click('button:has-text("Save draft")');
+  await expect(page.getByText("Draft saved.")).toBeVisible();
+  await page.reload();
+  await expect(page.locator("#persona")).toHaveValue(/upbeat, helpful shopping assistant/);
+});
+
 test("avatar and position selects (Appearance tab) save and survive a reload", async ({ page }) => {
   await signUpAndCreateBot(page, "Appearance Test Bot");
   await page.click('button[role="tab"]:has-text("Appearance")');

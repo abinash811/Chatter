@@ -40,13 +40,15 @@ use it" — maximum self-serve control at the console, all real
 complexity (RAG, gateway, tools) hidden behind it. Six pillars, each
 marked with real status (not aspirational):
 
-1. **Prompt/persona templates** — pick a starting system prompt instead
-   of writing one from scratch. **Not built.** Distinct from ADR 0001's
-   *vertical* template (ecommerce/healthcare defaults + tool subset +
-   compliance notes) — this is a use-case template *within* a vertical
-   (support vs. sales vs. lead-gen tone/goals). Needs a decision: is
-   this v1's single ecommerce vertical getting 2-3 use-case templates,
-   or a cross-vertical template library? See `docs/open-questions.md`.
+1. **Prompt/persona templates** — **built (2026-09-27).** A "Start from
+   a template" dropdown in the bot editor's Persona tab, above the
+   persona textarea (`lib/ai/personaTemplates.ts`, 3 hardcoded ecommerce
+   use cases: Support, Sales, Lead-gen). Picking one only replaces the
+   persona text — deliberately decoupled from guardrails and the Tools
+   tab, matching Chatbase's real UX (`docs/research/persona-template-
+   ux.md`) rather than the vertical-template concept ADR 0001 used to
+   describe (now moot — ADR 0019 dropped that layer entirely). Adding a
+   4th template later is a code change, not a migration.
 2. **Tool enable/disable** — **already built.** Bot editor's Tools tab,
    per-tool checkboxes, `BotConfigVersion`. Nothing to do here beyond
    adding new tools as they ship.

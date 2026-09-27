@@ -1,11 +1,10 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { saveDraftAction, publishAction, type SaveDraftState } from "./actions";
 import {
   Button,
-  Input,
   Textarea,
   Label,
   Checkbox,
@@ -32,7 +31,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui";
-import { AVATAR_EMOJI_OPTIONS, WIDGET_POSITIONS, type AvatarEmoji, type WidgetPosition } from "@/lib/ai/appearanceOptions";
+import type { AvatarEmoji, WidgetPosition } from "@/lib/ai/appearanceOptions";
+import { PERSONA_TEMPLATES } from "@/lib/ai/personaTemplates";
+import { AppearanceTabContent } from "./AppearanceTabContent";
 
 const idleState: SaveDraftState = { status: "idle", message: null };
 
@@ -81,6 +82,7 @@ export function BotEditorForm({
     idleState,
   );
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
+  const personaRef = useRef<HTMLTextAreaElement>(null);
   useActionToast(saveState);
   useActionToast(publishState);
 
@@ -145,11 +147,36 @@ export function BotEditorForm({
                   How should your bot introduce itself and talk to visitors? Write it in your own words.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <Label htmlFor="persona" className="sr-only">
-                  Persona
-                </Label>
-                <Textarea id="persona" name="persona" defaultValue={persona} rows={6} />
+              <CardContent className="space-y-3">
+                <div>
+                  <Label htmlFor="personaTemplate">Start from a template</Label>
+                  <Select
+                    onValueChange={(templateId) => {
+                      const template = PERSONA_TEMPLATES.find((t) => t.id === templateId);
+                      if (template && personaRef.current) {
+                        personaRef.current.value = template.persona;
+                      }
+                    }}
+                  >
+                    <SelectTrigger id="personaTemplate" className="mt-1 w-56" aria-label="Start from a template">
+                      <SelectValue placeholder="Choose a starting point..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PERSONA_TEMPLATES.map((template) => (
+                        <SelectItem key={template.id} value={template.id}>
+                          {template.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="mt-1 text-xs text-muted-foreground">Replaces the text below — edit freely after.</p>
+                </div>
+                <div>
+                  <Label htmlFor="persona" className="sr-only">
+                    Persona
+                  </Label>
+                  <Textarea id="persona" name="persona" defaultValue={persona} rows={6} ref={personaRef} />
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -194,86 +221,13 @@ export function BotEditorForm({
           </TabsContent>
 
           <TabsContent value="appearance" forceMount className="mt-4 space-y-4 data-[state=inactive]:hidden">
-            <Card>
-              <CardHeader>
-                <CardTitle>Appearance</CardTitle>
-                <CardDescription>
-                  What visitors see before they've sent a message, and the widget's accent color.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <Label htmlFor="greeting">Greeting</Label>
-                  <Input id="greeting" name="greeting" defaultValue={greeting} className="mt-1" />
-                </div>
-                <div className="flex gap-6">
-                  <div>
-                    <Label htmlFor="accentColor">Accent color</Label>
-                    <input
-                      id="accentColor"
-                      type="color"
-                      name="accentColor"
-                      defaultValue={accentColor}
-                      className="mt-1 block h-row-sm w-16 rounded border border-border bg-transparent shadow-xs transition-colors hover:border-strong-border"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="avatarEmoji">Avatar</Label>
-                    <Select name="avatarEmoji" defaultValue={avatarEmoji}>
-                      <SelectTrigger id="avatarEmoji" className="mt-1 w-20" aria-label="Widget avatar">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {AVATAR_EMOJI_OPTIONS.map((emoji) => (
-                          <SelectItem key={emoji} value={emoji}>
-                            {emoji}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="position">Position on page</Label>
-                    <Select name="position" defaultValue={position}>
-                      <SelectTrigger id="position" className="mt-1 w-40" aria-label="Widget position">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {WIDGET_POSITIONS.map((pos) => (
-                          <SelectItem key={pos} value={pos}>
-                            {pos === "bottom-right" ? "Bottom right" : "Bottom left"}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Embed on your site</CardTitle>
-                <CardDescription>
-                  Paste this before the closing <code>&lt;/body&gt;</code> tag on any page.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {/* tabIndex + role — a real axe-core scan
-                    (tests/e2e/accessibility.spec.ts) flagged this as a
-                    scrollable region with no keyboard access (WCAG
-                    2.1.1/2.1.3): overflow-x-auto content needs to be
-                    focusable so a keyboard user can actually scroll it. */}
-                <pre
-                  className="overflow-x-auto rounded bg-muted p-3 text-xs"
-                  tabIndex={0}
-                  role="region"
-                  aria-label="Embed snippet"
-                >
-                  {embedSnippet}
-                </pre>
-              </CardContent>
-            </Card>
+            <AppearanceTabContent
+              greeting={greeting}
+              accentColor={accentColor}
+              avatarEmoji={avatarEmoji}
+              position={position}
+              embedSnippet={embedSnippet}
+            />
           </TabsContent>
         </Tabs>
       </form>

@@ -17,14 +17,6 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
 3. **Site crawling in v1 ingestion**, or manual upload/Q&A only for v1 with
    crawling added later? Crawling is high-value but adds real scope
    (crawler, dedup, refresh scheduling, respecting robots.txt, etc.).
-4. **Prompt/persona template scope** (`docs/roadmap.md`'s "Self-serve
-   configurability" #1). Is this 2-3 use-case templates within v1's
-   single ecommerce vertical (support/sales/lead-gen tone+goals), or a
-   cross-vertical library? Affects whether it's small scope now or
-   waits until a second vertical exists to make "cross-vertical"
-   meaningful. Recommend: 2-3 ecommerce use-case templates now — a
-   library with only one vertical to draw from isn't really a library
-   yet.
 5. **Nudges — scope and mechanism** (`docs/roadmap.md`'s "Self-serve
    configurability" #6). What triggers (exit-intent, time-on-page,
    scroll-depth, cart-abandonment)? Generic across verticals or
@@ -91,3 +83,8 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
   layout. See ADR 0014.
 - ~~Human handoff channel for v1~~ — dashboard inbox only, no email/
   Slack push in this pass. See ADR 0015.
+- ~~Prompt/persona template scope~~ (2026-09-27) — 3 hardcoded ecommerce
+  templates (Support, Sales, Lead-gen), persona text only (decoupled
+  from tools, matching Chatbase's real UX per `docs/research/persona-
+  template-ux.md`), picked from a dropdown in the bot editor's Persona
+  tab. See `docs/features.md`.

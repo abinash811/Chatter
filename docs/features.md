@@ -52,6 +52,16 @@ applied live in `public/widget.js` for every new visitor. **How**:
 `botConfig.ts` so this client-facing form doesn't pull in server-only DB
 code), `GET /api/widget/config` (`docs/api.md`).
 
+### Persona template picker
+**Who**: the business owner writing a bot's persona for the first time.
+**What**: a "Start from a template" dropdown above the Persona tab's
+textarea, 3 hardcoded ecommerce use cases (Support, Sales, Lead-gen).
+Picking one replaces the persona text only — guardrails and enabled tools
+are untouched (decoupled, not a bundle; see `docs/research/persona-
+template-ux.md` for why). **How**: `lib/ai/personaTemplates.ts` (pure
+data, same zero-dependency pattern as `appearanceOptions.ts`), an
+uncontrolled-textarea ref in `BotEditorForm.tsx`.
+
 ### Shopify connect flow
 **Who**: an ecommerce business. **What**: self-serve OAuth "Connect
 Shopify" from the console; once connected, `check_order_status` can look
