@@ -12,7 +12,19 @@ export const searchKnowledgeBaseTool: Tool = {
   inputSchema: {
     type: "object",
     properties: {
-      query: { type: "string", description: "What to search for." },
+      query: {
+        type: "string",
+        // Query rewriting (docs/ai-tech-radar.md's Retrieval & search
+        // section): the query is embedded and searched on its own, with
+        // no other conversation context — a bare follow-up like "what
+        // about international ones?" embeds and matches poorly on its
+        // own. Since this model already sees the full conversation when
+        // deciding to call this tool, the fix costs no new model call —
+        // just instructing it to resolve context into the query text
+        // itself before searching.
+        description:
+          "What to search for — a fully self-contained question, not a bare follow-up. Resolve any pronouns or implicit topic from earlier in the conversation into the query text itself. For example, if the visitor previously asked about the refund policy and then says \"what about international orders?\", search for \"refund policy for international orders\", not \"international orders\" alone.",
+      },
     },
     required: ["query"],
     additionalProperties: false,

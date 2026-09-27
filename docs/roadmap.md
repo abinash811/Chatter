@@ -100,13 +100,38 @@ buildable, not just time.
 
 Validated by competitor research, not yet built:
 
-- **RAG retrieval-quality upgrade** — hybrid search (Postgres full-text
-  + vector), reranking, and query rewriting (folding conversation
-  history into the retrieval query). See `docs/ai-tech-radar.md`'s
-  Retrieval & search section for the full detail and the still-open
-  reranker vendor choice (Voyage vs. Cohere). Prioritized first among
-  the RAG-architecture gaps since it improves every chunk already
-  ingested, with no re-ingestion needed.
+- **RAG retrieval-quality upgrade** — scoped and sequenced 2026-09-27
+  (see `docs/ai-tech-radar.md`'s Retrieval & search section for full
+  detail). Two real bugs found while scoping this, fixed as phase 1
+  below: the pgvector index was IVFFlat, built while the table was
+  empty — IVFFlat's clusters are computed from whatever data exists at
+  build time, so it's been silently degenerate since (`db/migrations/
+  0002_pgvector.sql`'s own comment already flagged this as a
+  placeholder); and `lib/ai/knowledgeBase.ts`'s ingestion embeds one
+  chunk per HTTP call in a loop, when Voyage's embeddings endpoint
+  accepts a batch of up to 128 texts per request (confirmed via
+  WebSearch, not recalled).
+  1. **Free fixes, no new decisions — built (2026-09-27).** HNSW index
+     (verified against a real local Postgres: applied twice for
+     idempotency, then ran the tool's exact retrieval query against
+     real 1536-dim vectors and confirmed correct ranking), batched
+     ingestion embedding calls (`embedBatch`, one call per document
+     instead of one per chunk), query rewriting (the tool's `query`
+     field now instructs Claude to resolve conversational context into
+     a self-contained search query). See `docs/ai-tech-radar.md` for
+     the full detail. Not verifiable end-to-end without a real
+     `ANTHROPIC_API_KEY` — same documented gap as the rest of the
+     engine.
+  2. **Hybrid search** — Postgres `tsvector`/`tsquery` alongside the
+     existing pgvector cosine search, no new infra.
+  3. **RAG eval harness** — a labeled Q&A test set + scoring script,
+     built *before* reranking so that decision (and every future
+     tuning change) is measured, not guessed.
+  4. **Reranking** — Voyage `rerank-2` vs. Cohere Rerank v3.5,
+     explicitly deferred (user decision, 2026-09-27) until the eval
+     harness in step 3 exists to decide it with real numbers.
+  Prioritized first among the RAG-architecture gaps since it improves
+  every chunk already ingested, with no re-ingestion needed.
 - **Write-capable action tools** — issue a refund, update a shipping
   address, edit/cancel a booking — not just lookups. Gorgias treats
   these as core, not advanced; our tool registry (ADR 0002) already

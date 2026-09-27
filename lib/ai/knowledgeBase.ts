@@ -100,15 +100,12 @@ async function createChunkedEntry(
   }
 
   // Embed before opening the transaction below — withOrgContext runs
-  // inside prisma.$transaction, and a sequential embeddings call per
-  // chunk would otherwise hold that transaction (and Prisma's default
-  // transaction timeout) open for however long the embeddings provider
-  // takes across every chunk. createQaEntry has the same shape for the
-  // same reason, just with a single chunk.
-  const embeddings: number[][] = [];
-  for (const content of chunks) {
-    embeddings.push(await getEmbeddingsProvider().embed(content));
-  }
+  // inside prisma.$transaction, and holding it open for however long the
+  // embeddings call takes would risk Prisma's default transaction
+  // timeout. createQaEntry has the same shape for the same reason, just
+  // with a single chunk. embedBatch (not a per-chunk embed() loop) — one
+  // provider round trip per up-to-128 chunks instead of one per chunk.
+  const embeddings = await getEmbeddingsProvider().embedBatch(chunks);
 
   await withOrgContext(orgId, async (tx) => {
     const source = await tx.knowledgeSource.create({ data: { orgId, botId, kind, title } });

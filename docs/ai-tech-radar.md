@@ -39,18 +39,53 @@ Each entry names the real thing (library/vendor/technique, checked via
 
 ## Retrieval & search
 
-**Trial** (prioritized — see `docs/roadmap.md`)
-- **Hybrid retrieval** — Postgres native full-text search (`tsvector`/
-  `tsquery`, no new infra) combined with pgvector's existing cosine-
-  distance search. No dedicated search engine (Elasticsearch/Typesense)
-  needed at this scale.
-- **Reranking** — re-score the top ~30–50 hybrid candidates down to the
-  ~5–8 actually sent to the LLM. Vendor: see Assess above.
-- **Query rewriting** — fold recent conversation turns into a
-  standalone retrieval query before searching (e.g. "what about
-  international orders?" → "refund policy for international orders"),
-  using the existing Claude call already in the loop — no new model
-  needed.
+Sequenced 2026-09-27 into 4 phases (`docs/roadmap.md` has the full
+write-up); rings below reflect where each phase actually stands, updated
+as each ships. Phase 1 shipped same day; phases 2-4 still ahead.
+
+**Adopt**
+- **HNSW index** (`db/migrations/0002_pgvector.sql`) — replaced a real
+  bug, not a straight upgrade: the index used to be IVFFlat, built while
+  the table was empty. IVFFlat's clusters are computed from whatever
+  data exists at build time — building on zero rows makes it silently
+  degenerate, and it doesn't self-correct as data is added (needs a
+  manual `REINDEX`, which nothing here ever ran). HNSW has no
+  training-data requirement, so it doesn't have this empty-table failure
+  mode. Confirmed supported by the pgvector extension version actually
+  installed locally (0.6.0 via `pg_available_extensions`; HNSW has
+  shipped since 0.5.0), not assumed — and functionally verified against
+  a real local Postgres: applied the migration twice (idempotent, one
+  index survives), then ran the exact `ORDER BY embedding <=>` query
+  `searchKnowledgeBase.ts` uses against two real 1536-dim vectors and
+  confirmed the closer one ranks first.
+- **Batched ingestion embeddings** (`lib/ai/embeddings.ts`) —
+  `EmbeddingsProvider` gained `embedBatch()`; ingestion
+  (`lib/ai/knowledgeBase.ts`) now embeds all of a document's chunks in
+  one call (auto-split at Voyage's 128-texts-per-request limit,
+  confirmed via WebSearch not recalled) instead of one HTTP round trip
+  per chunk in a loop.
+- **Query rewriting** (`lib/ai/tools/searchKnowledgeBase.ts`) — no new
+  model call: the tool's `query` parameter description now instructs
+  Claude (which already sees the full conversation when it decides to
+  call this tool) to resolve pronouns/implicit topic into a
+  self-contained query before searching, instead of passing a bare
+  follow-up straight to the embedder. Verifiable only up to what shipped
+  in the schema — whether the model actually follows the instruction
+  needs a real `ANTHROPIC_API_KEY` to observe, the same documented gap
+  as the rest of the engine's end-to-end behavior.
+
+**Trial** (prioritized, in this order — see `docs/roadmap.md`)
+1. **Hybrid retrieval** — Postgres native full-text search (`tsvector`/
+   `tsquery`, no new infra) combined with pgvector's existing cosine-
+   distance search. No dedicated search engine (Elasticsearch/Typesense)
+   needed at this scale.
+2. **RAG eval harness** — see Eval & ops below; built before reranking
+   so that decision (and every future tuning change) is measured, not
+   guessed.
+3. **Reranking** — re-score the top ~30–50 hybrid candidates down to the
+   ~5–8 actually sent to the LLM. Vendor: see Assess above. Deliberately
+   sequenced *after* the eval harness (user decision, 2026-09-27) —
+   measure with real numbers instead of picking a vendor on reputation.
 
 **Assess**
 - **Parent-child / contextual retrieval** — search a small chunk,
@@ -95,10 +130,13 @@ Each entry names the real thing (library/vendor/technique, checked via
 
 **Assess**
 - **RAG eval harness** — no test-set/regression check exists today.
-  Plan: adopt an open-source framework rather than hand-roll (e.g.
-  RAGAS, DeepEval, TruLens — none evaluated yet, re-check current
-  practice before picking, per CLAUDE.md) once a real labeled Q&A test
-  set exists to run it against.
+  Promoted to a real blocker (2026-09-27): the Retrieval & search
+  section's reranker vendor choice is now deliberately gated on this
+  existing first, not just "nice to have alongside it." Plan: adopt an
+  open-source framework rather than hand-roll (e.g. RAGAS, DeepEval,
+  TruLens — none evaluated yet, re-check current practice before
+  picking, per CLAUDE.md) once a real labeled Q&A test set exists to
+  run it against.
 - **Production feedback loop** (👍/👎 → gap analysis) — no signal
   capture exists yet; depends on the eval harness's data shape being
   settled first so both share one schema.

@@ -46,9 +46,18 @@ reason.)
   login/signup; Skeleton loading states on 7 routes.
   `docs/design/audit.md` tracks per-screen compliance against the bar —
   check there before assuming a screen is finished.
-- Testing/guardrails: 9 static guardrail checks (`npm run check:all`),
-  99 unit tests, 63 `tests/e2e/` specs, 14 `tests/visual/` baselines,
-  all wired into CI.
+- Testing/guardrails: 9 static guardrail checks (`npm run check:all`,
+  runs in one process now — `scripts/check-all.mjs`), 109 unit tests, 66
+  `tests/e2e/` specs, 15 `tests/visual/` baselines, gitleaks secret
+  scanning + a CI coverage floor, all wired into CI.
+- Self-serve config (roadmap "Self-serve configurability"): widget
+  appearance editor (greeting/accent/avatar/position) and a 3-template
+  persona picker (Support/Sales/Lead-gen), both in the bot editor.
+- RAG hardening pass (2026-09-27): fixed a real dead pgvector index
+  (IVFFlat built on an empty table — now HNSW), batched ingestion
+  embeddings, and query rewriting via the retrieval tool's own
+  instructions. See `docs/ai-tech-radar.md`'s Retrieval & search
+  section — hybrid search, an eval harness, and reranking are next.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.
@@ -62,8 +71,7 @@ reason.)
 - No real end-to-end verified Claude reply yet — blocked on a real
   `ANTHROPIC_API_KEY`.
 - Not built: password reset, site crawling for ingestion
-  (`docs/open-questions.md` #4), teammate invites/multi-org switcher,
-  appearance/theming editor.
+  (`docs/open-questions.md` #3), teammate invites/multi-org switcher.
 - `scripts/canary.mjs` can't run in this container as-is (Playwright
   browser version mismatch) — `tests/e2e/`/`tests/visual/` already
   work around it, only the standalone script is affected.
