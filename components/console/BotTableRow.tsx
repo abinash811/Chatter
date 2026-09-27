@@ -102,7 +102,11 @@ export function BotTableRow({
               disabled={isDuplicating}
               onSelect={() => onDuplicate(bot.id)}
             >
-              Duplicate
+              {/* A silent disabled wait between click and redirect —
+                  every other pending action on this screen (rename,
+                  archive) says what's happening; this one didn't
+                  (component-checklist.md item 1 audit, 2026-09-27). */}
+              {isDuplicating ? "Duplicating..." : "Duplicate"}
             </DropdownMenuItem>
             <DropdownMenuItem
               variant="destructive"

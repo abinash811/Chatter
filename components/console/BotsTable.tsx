@@ -123,9 +123,15 @@ export function BotsTable({ bots }: { bots: BotRow[] }) {
           search input above owns the top corners now that it's attached. */}
       <div className="overflow-hidden rounded-lg rounded-t-none border border-border shadow-xs">
         {sorted.length === 0 ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            No bots match &ldquo;{search}&rdquo;.
-          </p>
+          // A dead end with no way forward (component-checklist.md item
+          // 6, 2026-09-27 audit) — a real Clear button, not just text
+          // explaining why the list is empty.
+          <div className="flex flex-col items-center gap-2 py-8">
+            <p className="text-sm text-muted-foreground">No bots match &ldquo;{search}&rdquo;.</p>
+            <Button type="button" variant="outline" size="sm" onClick={() => setSearch("")}>
+              Clear search
+            </Button>
+          </div>
         ) : (
           <Table>
             <TableHeader>

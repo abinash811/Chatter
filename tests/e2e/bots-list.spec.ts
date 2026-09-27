@@ -28,6 +28,23 @@ test("new bot appears in the table and its row navigates to the editor", async (
   await expect(page).toHaveURL(/\/bots\/[^/]+$/);
 });
 
+// component-checklist.md item 1 audit (2026-09-27) caught this for
+// real: nothing disabled "Create" while the create+redirect round-trip
+// was in flight, so a double-click could create two bots.
+test("Create button disables and relabels while the create request is in flight", async ({ page }) => {
+  await signUpAndCreateBot(page, "First bot", "botspending");
+  await page.goto("/bots");
+  await page.getByRole("button", { name: "New bot", exact: true }).click();
+  await page.getByRole("dialog").getByLabel("Name", { exact: true }).fill("Second bot");
+
+  await Promise.all([
+    page.waitForRequest((req) => req.method() === "POST"),
+    page.getByRole("button", { name: "Create", exact: true }).click(),
+  ]);
+  await expect(page.getByRole("button", { name: "Creating...", exact: true })).toBeDisabled();
+  await expect(page).toHaveURL(/\/bots\/[^/]+$/);
+});
+
 test("a second bot can be created from the bots list once onboarding is done", async ({
   page,
 }) => {
@@ -110,4 +127,18 @@ test("archiving the only bot returns the list to its empty state", async ({
   await expect(
     page.getByRole("button", { name: "Create your first bot" }),
   ).toBeVisible();
+});
+
+// component-checklist.md item 6 audit (2026-09-27): a zero-results
+// search was a dead end with no way forward.
+test("Clear search resets the empty search-results state", async ({ page }) => {
+  await signUpAndCreateBot(page, "Alpha bot", "botsclearsearch");
+  await page.goto("/bots");
+
+  await page.getByLabel("Search bots").fill("zzz-no-match");
+  await expect(page.getByRole("button", { name: "Clear search", exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "Clear search", exact: true }).click();
+  await expect(page.getByLabel("Search bots")).toHaveValue("");
+  await expect(page.locator('[data-slot="table-row"]', { hasText: "Alpha bot" })).toBeVisible();
 });

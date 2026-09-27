@@ -129,24 +129,25 @@ Logged the same day they were found, per this file's own rule.
   not a styling fix; the approved mockup doesn't solve this either.
 
 **Component-checklist audit (2026-09-27, `docs/design/component-checklist.md`):**
-- 🔲 **Item 1 (states)** — `NewBotDialog`'s "Create" button has no
-  pending/disabled state during the real create+redirect round-trip
-  (`createBotAction`). A user can double-click it and create two bots.
-  `RenameBotDialog`/`ArchiveBotDialog` both do this correctly
-  (`isPending` from `useActionState`); `NewBotDialog` is a plain form
-  action with nothing wired up.
-- 🔲 **Item 1 (states)** — the "Duplicate" menu item disables itself
-  while pending but shows no "Duplicating..." label or spinner — a
-  silent wait between click and redirect, unlike every other pending
-  action on this screen which says what's happening.
-- 🔲 **Item 6 (empty-state CTA)** — the "No bots match "X"." search
-  empty state is plain text with no way forward — no Clear-search
-  button. A dead end, the exact thing item 6 exists to catch.
-- 🟡 **Item 5 (error copy)** — Rename/Archive error toasts ("Couldn't
-  rename that bot. Please try again.") give *what* and *next* but never
-  *why* — acceptable for a generic transient failure, but worth a
-  real reason where one's knowable (e.g. a network error vs. a
-  validation error) rather than the same generic line for both.
+- ✅ **Item 1 (states)** — `NewBotDialog`'s "Create" button had no
+  pending/disabled state during the real create+redirect round-trip. A
+  double-click could create two bots. Fixed: `onSubmit` + `useTransition`
+  disables it and relabels "Creating..." while in flight — not
+  `useFormStatus`, which doesn't work here (the button is associated
+  with the `<form>` only via the HTML `form=` attribute, not React
+  nesting; a real Playwright run confirmed it never fired). Verified
+  with a real test (`tests/e2e/bots-list.spec.ts`) that catches the
+  in-flight POST and asserts the disabled/relabeled state, not just a
+  screenshot.
+- ✅ **Item 1 (states)** — the "Duplicate" menu item now shows
+  "Duplicating..." while pending instead of just disabling silently.
+- ✅ **Item 6 (empty-state CTA)** — the zero-results search state now
+  has a real "Clear search" button, verified end-to-end.
+- ✅ **Item 5 (error copy)** — Rename/Archive error toasts now name a
+  reason ("the change didn't save") instead of jumping straight from
+  *what* to *next*. Still a generic reason, not a specific diagnosed
+  cause — there isn't a more specific one available for a plain DB
+  update failure — but the three-part structure is there.
 
 **Functionality (real product decisions — asked before building, per
 this file's own rule):**

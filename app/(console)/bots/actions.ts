@@ -51,9 +51,12 @@ export async function renameBotAction(
     return { status: "success", message: "Renamed." };
   } catch (err) {
     console.error("[renameBotAction]", err);
+    // what + why + next (component-checklist.md item 5) — "why" here is
+    // genuinely just "the save didn't go through"; there's no more
+    // specific cause worth surfacing for a plain DB update like this.
     return {
       status: "error",
-      message: "Couldn't rename that bot. Please try again.",
+      message: "Couldn't rename that bot — the change didn't save. Please try again.",
       name,
     };
   }
@@ -79,7 +82,7 @@ export async function archiveBotAction(
     console.error("[archiveBotAction]", err);
     return {
       status: "error",
-      message: "Couldn't archive that bot. Please try again.",
+      message: "Couldn't archive that bot — the change didn't save. Please try again.",
     };
   }
 }
