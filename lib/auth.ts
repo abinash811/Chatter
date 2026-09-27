@@ -24,7 +24,7 @@ const rawClient = new PrismaClient();
 const { handlers, auth: nextAuth, signIn, signOut } = NextAuth({
   // Auth.js refuses to trust a Host header it hasn't verified (Host
   // header injection protection) unless told to — needed for any
-  // deployment behind a reverse proxy (Render) and for localhost dev,
+  // deployment behind any reverse proxy and for localhost dev,
   // neither of which Auth.js trusts automatically. Caught by actually
   // running the login/signup flow: signIn() silently failed with
   // UntrustedHost until this was added.

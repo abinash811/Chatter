@@ -3,8 +3,8 @@
 // base schema, not RLS or pgvector (Prisma can't express either).
 //
 // Uses the `pg` driver directly rather than shelling out to `psql`,
-// since the deploy image (Render's Node build environment, or any
-// other host) isn't guaranteed to have the psql binary installed.
+// since a deploy image's Node build environment isn't guaranteed to
+// have the psql binary installed.
 //
 // Both migration files are idempotent by design (confirmed by running
 // each twice locally, 2026-09-24) — safe to run on every deploy, not
@@ -17,13 +17,15 @@ import { Client } from "pg";
 // this, running this script locally silently got DATABASE_URL as
 // undefined and failed with a cryptic pg error ("no PostgreSQL user
 // name specified") instead of a clear one — caught by actually running
-// it, not by reading the code. Render injects env vars directly (no
-// .env file there), so this is a local-dev convenience only —
-// loadEnvFile throws if the file doesn't exist, which we want to ignore.
+// it, not by reading the code. A deploy host typically injects env vars
+// directly (no .env file there), so this is a local-dev convenience
+// only — loadEnvFile throws if the file doesn't exist, which we want to
+// ignore.
 try {
   process.loadEnvFile();
 } catch {
-  // no .env file — fine on Render, or if vars are already exported.
+  // no .env file — fine in most deploy environments, or if vars are
+  // already exported.
 }
 
 const MIGRATIONS = ["db/migrations/0001_init_rls.sql", "db/migrations/0002_pgvector.sql"];

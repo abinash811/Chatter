@@ -90,9 +90,10 @@ running server: exactly the limit's worth of requests succeed, the next
 one gets a 429 with CORS headers still attached (the CORS-masking bug
 this codebase already hit once, checked again here).
 
-In-memory is correct for Chatter's actual deployment (Render, one
-long-running process) — not the serverless/edge case where in-memory
-state doesn't persist across invocations. **If this ever scales to
+In-memory is correct as long as Chatter deploys as one long-running
+process (deploy host TBD — ADR 0020, `docs/open-questions.md` #8) — not
+the serverless/edge case where in-memory state doesn't persist across
+invocations. **If this ever scales to
 multiple instances, it needs to move to a shared store (Redis)** — a
 single instance's map can't see another instance's count.
 

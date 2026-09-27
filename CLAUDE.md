@@ -78,8 +78,12 @@ reason.)
 - React component render tests not yet added (infra ready, unblocked).
 - 4 Dependabot majors deliberately deferred: Next.js 15→16, Prisma 5→7
   (client+CLI), TypeScript 5→7 — each needs its own migration pass.
-- CI verifying an actual Render deploy is explicitly out of scope
-  (user decision), not just deferred.
+- CI verifying an actual deploy is explicitly out of scope (user
+  decision), not just deferred.
+- No deploy target chosen — Render dropped (ADR 0020, 2026-09-27,
+  supersedes ADR 0005): building on a host whose extension support
+  (real BM25 for hybrid search — `docs/ai-tech-radar.md`) couldn't be
+  confirmed was the wrong call. See `docs/open-questions.md` #8.
 
 ## Where things live
 

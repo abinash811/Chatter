@@ -109,9 +109,10 @@ jobs:
         run: npx prisma migrate deploy
 
       - name: Apply RLS + pgvector migrations
-        # Same command Render's preDeployCommand runs (render.yaml,
-        # ADR 0005) — CI exercises the identical deploy path, not a
-        # separate psql-based approximation of it.
+        # The same idempotent script any future deploy pipeline will run
+        # (ADR 0020 — deploy host TBD, docs/open-questions.md #8) — CI
+        # exercises the real migration path, not a separate psql-based
+        # approximation of it.
         run: node scripts/apply-sql-migrations.mjs
 
       - name: Verify tenant isolation (guardrail #1)
