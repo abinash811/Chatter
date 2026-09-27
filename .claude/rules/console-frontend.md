@@ -73,3 +73,34 @@ depending on the model choosing to invoke it — see
    `docs/design/audit.md`'s "Responsive & accessibility" table even when
    it's "not checked" — see `ship-checklist` item 13 for the full
    design-bar self-check this is part of.
+
+8. **Take a real screenshot and critique it like a senior product
+   designer before calling any touched screen done** — not just the
+   hover/focus/active/loading checklist above, the whole bar from
+   `docs/design/principles.md` #9 ("would this ship at Linear, Stripe,
+   or Notion"). Added 2026-09-27 after shipping bots-list search/sort/
+   archive without re-checking a screen that already had open findings
+   against it: functionality can be fully correct and tested while the
+   screen still reads as unfinished. Look specifically for:
+   - **Hierarchy** — does the eye know what to read first, or do name/
+     status/metadata all carry equal visual weight?
+   - **Status/semantic signaling** — does a badge, color, or icon that's
+     supposed to distinguish states (published vs. draft, error vs. ok)
+     actually read as different at a glance, not just in the DOM?
+   - **Per-item visual distinction** — in a list, can items be told
+     apart by anything other than reading the text (avatar color,
+     icon, accent)?
+   - **Content density vs. register** — does whitespace match the
+     Linear/Notion/Stripe register chosen in item 3, or does a mostly-
+     empty card/page suggest no deliberate density decision was made?
+   - **Interactive-affordance clarity** — does a clickable control
+     (sort header, filter, menu trigger) visibly invite the interaction
+     at rest, or does a user have to discover it exists?
+
+   **If the screen you're touching already has open findings logged in
+   `docs/design/audit.md`, fixing them is part of this pass by
+   default** — don't ship new functionality next to a known-broken
+   visual element and leave it silently unaddressed. If you're
+   deliberately not fixing one (out of scope, needs a product decision),
+   say so explicitly to the user in the same turn, don't let it pass by
+   omission. Log the outcome in `docs/design/audit.md` either way.

@@ -63,29 +63,19 @@ Before saying a piece of work is done:
    feature that silently degrades below what a guardrail requires
    (tenant isolation, traceability, graceful tool fallback) is not done
    even if it compiles and runs.
-13. **Explicit design-bar self-check for any UI change** (2026-09-26
-   user directive) — before calling a screen done, name it out loud
-   against `docs/design/principles.md` #5/#9 (the Linear/Stripe/Notion
-   bar): does it have a real hover state, a real focus state, a real
-   active/pressed state, and a considered loading state (`Skeleton`,
-   not a blank flash)? Is depth/elevation deliberate, not just a flat
-   bordered box? **Also resize the real running app below ~900px and
-   look at it, and actually tab through it with a mouse untouched** —
-   these were a total blind spot until 2026-09-26 (zero screens ever
-   checked below 1280px, zero real keyboard-only passes except one),
-   found only by asking "what haven't we even thought to check," not by
-   a screen-by-screen review. Note the result in `docs/design/audit.md`'s
-   "Responsive & accessibility" table even when the answer is "not
-   checked" — that's real information, don't let it read as "fine" by
-   omission. If any answer is no, say so explicitly to the user as
-   a known gap — don't silently ship a screen that's flatter than the
-   rest of the app and let it go unmentioned. This applies even to a
-   screen the user didn't explicitly ask to be polished. **Update
-   `docs/design/audit.md`'s row for that screen in the same turn** —
-   a finding that only exists in chat is a finding that's gone the
-   moment context compacts. If a screen has no row yet, add one; if an
-   audit surfaces new findings (asked or self-initiated), log them
-   there immediately, not "in the next commit."
+13. **Explicit design-bar self-check for any UI change** — this is
+   `.claude/rules/console-frontend.md` items 7-8, which auto-load for
+   any `app/(console)/**`/`components/ui/**` touch, so it isn't opt-in.
+   Confirm both were actually done, not skimmed: hover/focus/active/
+   loading/depth + <900px + keyboard-only (item 7), and the senior-
+   designer critique against principles.md #9 — hierarchy, status/
+   semantic color coverage, per-item visual distinction, density-vs-
+   register match, interactive-affordance clarity (item 8). If the
+   screen already had open findings in `docs/design/audit.md`, item 8
+   requires fixing them in this pass or explicitly telling the user
+   why not — never silent. **Update `docs/design/audit.md`'s row for
+   that screen in the same turn** — a finding that only exists in chat
+   is a finding that's gone the moment context compacts.
 14. **Open Dependabot PRs relevant to what you touched.** ADR 0009: the
    Tailwind v3/v4 mismatch wasn't a detection gap — Dependabot had
    already opened a PR for it — it was a triage gap, nobody looked.
