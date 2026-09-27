@@ -24,7 +24,7 @@ The generic core plus one concrete vertical template — see
 - Knowledge ingestion: manual Q&A, file upload (PDF/DOCX/txt/md), and
   single-URL ingestion all done (`docs/features.md`, ADR 0013) — MVP
   scope complete. Site crawling is separate, still open
-  (`docs/open-questions.md` #4).
+  (`docs/open-questions.md` #3).
 - RAG retrieval as a tool call, not a hardcoded prompt prepend
 - Two action tools: `search_knowledge_base`, `check_order_status`
   (both read-only — see Next)
@@ -113,7 +113,7 @@ Validated by competitor research, not yet built:
 - **Design pass on `/bots/[botId]/integrations`** — bot list and bot
   editor got theirs (`docs/design/preview/bots-list.html`,
   `bot-editor.html`); integrations is the one console page left.
-- **Site crawling for ingestion** — `docs/open-questions.md` #4.
+- **Site crawling for ingestion** — `docs/open-questions.md` #3.
   Tidio's positioning (the closest match to our own SMB/self-serve
   target, per the research) treats this as table stakes for a fast
   setup, which is a real point in favor of prioritizing it, not proof
@@ -152,13 +152,14 @@ scope for v1" for the full list. Notable additions from research:
   different design philosophy (author a flow graph) from our current
   RAG+tool-calling approach, not a gap to close for v1 — see that
   section for when it'd actually be worth revisiting
-- **Second vertical template: healthcare** — explicit user sequencing
-  (2026-09-26): prove the generic core solid on ecommerce (this
-  roadmap's "Self-serve configurability" pillars) before adding a
-  second template. `docs/product-spec.md`'s phasing already calls this
-  out (generic core always, one concrete template first); this just
-  records the healthcare-next intent plainly. Guardrail #3 applies in
-  full once started — explicit diagnosis/PHI-advice refusal baked into
-  the template's default system prompt, not bolted on after. Blocked on
-  `docs/open-questions.md` #3 (compliance posture for regulated
+- **Second vertical: healthcare** — explicit user sequencing (2026-09-26):
+  prove the generic core solid on ecommerce (this roadmap's "Self-serve
+  configurability" pillars) before starting a second vertical. Per ADR
+  0019 (2026-09-27, supersedes ADR 0001), there is no template layer to
+  build this against — when healthcare work actually starts, it's a
+  direct code/config change to the engine (new default copy, new tools),
+  not "author a template." Guardrail #3 applies in full once started —
+  explicit diagnosis/PHI-advice refusal baked into the bot's default
+  system prompt from the start, not bolted on after. Blocked on
+  `docs/open-questions.md` #2 (compliance posture for regulated
   verticals) being answered first.

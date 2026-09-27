@@ -20,20 +20,21 @@ doc as ADRs land instead of letting decisions live only in chat history.
 ### 2. Bot engine (Claude-powered)
 - System prompt assembled per-bot at request time from that bot's current
   **published config version** (see design rule in section 5) — base
-  persona + vertical template defaults + business-level overrides +
-  guardrails.
+  persona + business-level overrides + guardrails. No vertical-template
+  layer in the assembly (ADR 0019 — dropped; each bot's persona/tools/
+  guardrails are just that bot's own config).
 - RAG retrieval exposed as a **tool call**, not a hardcoded context prepend
   — lets the model decide when it actually needs to look something up.
-- **Prompt caching**: the assembled system prompt (persona + template +
+- **Prompt caching**: the assembled system prompt (persona +
   guardrails) is marked with `cache_control` and placed first in the
   request, since it's identical across every message to that bot until
   republished — the published-version design (§5) makes cache
   invalidation automatic and correct. RAG results and conversation
   history go after, uncached. Cuts per-message cost ~90% on the cached
   portion.
-- Vertical action tools: a small per-template registry (e.g.
-  `check_order_status`, `book_appointment`, `check_vehicle_availability`).
-  Each tool either calls a business-configured webhook/integration, or
+- Action tools live in one shared registry (`lib/ai/tools/`), not scoped
+  per vertical (ADR 0019). Each tool either calls a business-configured
+  webhook/integration, or
   falls back to "collect info + hand off to human" (guardrail #4 in
   CLAUDE.md — this is not optional). A tool may also implement an
   optional `describeForInbox(input, output)` (ADR 0016), returning a
@@ -60,20 +61,23 @@ specific connectors" an additive change instead of a rewrite — see
 this separation now and that option gets expensive to add back later.
 
 **Design rule: integrations are self-serve, not our team configuring per
-business.** Each vertical template declares a short menu of "Connect X"
-options (e.g. Connect Shopify, Connect WooCommerce, Connect your FHIR
-EMR, generic webhook as a fallback), each a standard OAuth-style flow
-(Shopify OAuth, SMART on FHIR for healthcare, etc.) the business owner
-completes themselves from the console — no developer, no engineering
-work on our side per business. New businesses on an already-supported
-platform cost us zero engineering; only a genuinely new platform needs a
-connector built once.
+business.** The console offers a short menu of "Connect X" options (e.g.
+Connect Shopify, Connect WooCommerce, generic webhook as a fallback),
+each a standard OAuth-style flow the business owner completes themselves
+— no developer, no engineering work on our side per business. New
+businesses on an already-supported platform cost us zero engineering;
+only a genuinely new platform needs a connector built once.
 
-### 3. Vertical templates
-- A template = default persona/tone + suggested KB structure + curated
-  subset of action tools + suggested guardrails/compliance notes.
-- Lives entirely in config/data, not in core engine code (guardrail #2).
-- A business starts from a template and can diverge freely afterward.
+### 3. Verticals (ADR 0019 — no template layer)
+There is no vertical-template abstraction. The generic bot config
+(persona, guardrails, enabled tools) is the whole model; ecommerce
+defaults today are just that config, not a distinct "template" concept.
+A future vertical (e.g. healthcare) is built as a direct code/config
+change to the engine when actually needed — new default copy, new
+guardrail prompts (CLAUDE.md guardrail #3), new tools — not authored
+against a generic template schema. Guardrail #2 (no `if industry ==`
+branches in shared engine code) still applies on its own merits, kept
+for reviewability, independent of any template mechanism.
 
 ### 4. Embeddable widget
 - Single script tag; renders in a shadow DOM so host-site CSS can't leak in
@@ -82,7 +86,7 @@ connector built once.
 - Talks only to our backend API — never holds secrets (guardrail #5).
 
 ### 5. Admin dashboard
-- Setup wizard: pick template → configure knowledge → customize appearance
+- Setup wizard: create bot → configure knowledge → customize appearance
   → get embed snippet.
 - Bot list: search, sort, rename/duplicate/archive. Archiving is a soft
   delete (`Bot.archivedAt`, ADR 0018) — kills the embed snippet and hides
@@ -132,8 +136,8 @@ applied here to every future setting.
   everywhere, split into a fixed structural layer (component behavior/
   layout) and a thin theme layer (the only thing that varies). Same
   generic-core-plus-thin-configurable-layer pattern used elsewhere in this
-  architecture (vertical templates, tool interface/connector split),
-  applied to design instead of code.
+  architecture (the tool interface/connector split), applied to design
+  instead of code.
 - Foundation: **shadcn/ui's official registry** (Radix-based via the
   unified `radix-ui` package, accessible by default, ships with a token
   system) — locked in as of ADR 0014, after an intermediate detour
@@ -182,7 +186,7 @@ applied here to every future setting.
 Visitor → Widget (script tag, shadow DOM)
         → Backend API (auth'd to a specific business/bot)
         → Bot engine
-            ├─ system prompt = persona + template + overrides + guardrails
+            ├─ system prompt = persona + overrides + guardrails
             ├─ RAG retrieval tool → knowledge store (scoped to business_id)
             └─ action tools → business webhook, or → handoff queue
         → Claude (streamed)

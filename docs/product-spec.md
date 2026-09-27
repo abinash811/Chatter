@@ -7,20 +7,21 @@ Status: draft, informed by decisions made so far. Update as things firm up.
 An embeddable AI chat agent that any business — not just ecommerce — can
 train on its own knowledge and deploy on its site to answer visitors, act on
 their behalf (look things up, book things, collect leads), and hand off to a
-human when it can't. Inspired by Zipchat AI's ecommerce playbook, generalized
-across industries via a template layer instead of hardcoded vertical logic.
+human when it can't. Inspired by Zipchat AI's ecommerce playbook. Generalized
+across industries by building each vertical as a direct code/config change
+when it's actually needed (ADR 0019), not through a template abstraction.
 
 ## Core loop
 
 1. **Ingest** — business feeds in its knowledge (docs, site content, catalog/
    service data, policies, FAQs).
 2. **Configure** — business defines the bot's persona, tone, guardrails, and
-   which action tools it's allowed to use, starting from a vertical template.
+   which action tools it's allowed to use.
 3. **Embed** — a widget goes on the business's site and talks to visitors,
    grounded in that business's knowledge only.
 4. **Act** — beyond answering questions, the bot performs actions via tool
    calls (order status, appointment booking, inventory check, etc.), scoped
-   to what the template + business config allow.
+   to what the business's own config allows.
 5. **Escalate** — when the bot can't handle something, it hands off to a
    human and captures the lead/context so nothing is lost.
 6. **Learn** — the business reviews analytics, spots knowledge gaps, and
@@ -31,7 +32,7 @@ across industries via a template layer instead of hardcoded vertical logic.
 - **Embeddable chat widget** — single script tag, shadow-DOM isolated so
   host-site CSS can't clobber it, per-business theming (colors, avatar,
   greeting, position), streamed responses.
-- **Admin dashboard** — setup wizard (pick template → configure knowledge →
+- **Admin dashboard** — setup wizard (create bot → configure knowledge →
   customize appearance → get embed snippet), knowledge base management,
   live conversation inbox for handoff, basic analytics.
 - **Knowledge ingestion + RAG** — file upload and/or manual Q&A at minimum
@@ -41,40 +42,35 @@ across industries via a template layer instead of hardcoded vertical logic.
 - **Conversation analytics & handoff** — chat history, basic volume/topic
   analytics, human handoff flow, lead/contact capture.
 
-## Multi-vertical model (decided — see ADR 0001)
+## Multi-vertical model (decided — see ADR 0019, supersedes ADR 0001)
 
 Every business has the same generic knowledge base (documents, URLs, Q&A
-pairs, structured records) and the same generic bot configuration shape. On
-top of that, **vertical templates** provide sane defaults for a given
-industry:
+pairs, structured records) and the same generic bot configuration shape
+(persona, guardrails, enabled tools). There is no vertical-template layer
+on top of it — ecommerce's defaults today are just that generic config, not
+a distinct template concept.
 
-- Default persona/tone and system-prompt guardrails
-- A curated subset of action tools relevant to that vertical
-- Suggested knowledge base structure (e.g. product catalog fields vs.
-  service listings vs. vehicle inventory)
-- Compliance notes where relevant (e.g. healthcare's "no diagnosis" rule)
-
-A business picks a template as a starting point and can diverge from it
-freely — the template is not a locked schema, and the core engine has no
-knowledge of "verticals" as a concept baked into its code.
+A future vertical (healthcare, automotive, ...) is built as a direct
+code/config change to the engine when it's actually needed: new default
+copy, new guardrail prompts (CLAUDE.md guardrail #3's diagnosis/legal/
+financial-advice refusals baked in at that point, not bolted on later),
+new tools. Guardrail #2 (no `if industry == "..."` branches in shared
+engine code) still applies on its own merits — it keeps a new vertical's
+changes contained and reviewable — independent of any template mechanism.
 
 ## Phasing: one vertical first, generic core always
 
 We build the core (knowledge base, bot engine, tool-calling framework,
 widget, dashboard) fully generic from the start — that's not deferred work,
 it's just not allowed to contain vertical-specific shortcuts (CLAUDE.md
-guardrail #2). On top of that generic core, **only one vertical template
-ships concretely for v1: ecommerce.** It's the proven playbook (see Zipchat
+guardrail #2). On top of that generic core, **only one vertical ships
+concretely for v1: ecommerce.** It's the proven playbook (see Zipchat
 reference below), has the clearest action-tool set, and we already have
 research on it.
 
-Healthcare, automotive, and any other vertical are template additions for
-later phases — they should require writing a new template (config/data),
-not modifying the engine. Before finalizing the KB schema and action-tool
-registry interface, we sketch (on paper, not in code) what a second
-template like healthcare or automotive would need from them, specifically
-to catch a schema that's secretly ecommerce-shaped — without actually
-building that second vertical before it's needed.
+Healthcare, automotive, and any other vertical are real feature work for
+later phases — built directly against the engine when they're actually
+needed, not pre-designed as a generic mechanism now (ADR 0019).
 
 ## Reference: what Zipchat AI actually does (ecommerce-specific inspiration)
 

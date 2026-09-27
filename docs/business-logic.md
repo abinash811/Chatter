@@ -15,10 +15,9 @@ page to `/onboarding` until that's set — there's no way to reach `/bots`
 (or any other console page) with an unnamed org and zero bots.
 
 `/onboarding` is a single combined screen (workspace name + first bot's
-name), deliberately not a multi-step wizard: only one vertical template
-exists concretely (`docs/product-spec.md`'s phasing), so a template
-picker with one option would be premature UI, and inviting teammates is
-separate, larger scope with no design done yet. Submitting sets
+name), deliberately not a multi-step wizard: there's no template picker
+step at all (ADR 0019 — no vertical-template layer), and inviting
+teammates is separate, larger scope with no design done yet. Submitting sets
 `org.name` + `org.onboardedAt`, creates the first bot, and redirects
 straight into that bot's editor — a brand-new account never sees an
 empty `/bots` list.
