@@ -18,6 +18,18 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./tests/unit/setup.ts"],
     include: ["tests/unit/**/*.test.{ts,tsx}"],
+    // Deliberately NOT tuning pool/isolate despite vitest's own "jsdom
+    // created 14 times" warning. Tried both documented options and both
+    // broke real correctness, not just perf:
+    //   - pool: "vmThreads" — broke module resolution for an
+    //     ESM-shipped-as-CJS transitive dep (@exodus/bytes, via
+    //     Prisma/crypto) inside the VM context; 2 files failed outright.
+    //   - isolate: false — shares module registry across files in a
+    //     worker; multiple specs here mock "@/lib/db" differently
+    //     (chat.test.ts, conversations.test.ts, knowledgeBase.test.ts,
+    //     etc.), and that mock state bled across files. Passed 3/5 runs,
+    //     failed 2/5 with real assertion failures — a flaky suite is
+    //     worse than a slow one. See docs/research/current-practices.md.
     coverage: {
       provider: "v8",
       include: ["lib/**/*.ts"],

@@ -19,7 +19,7 @@
     "check:filelength": "node scripts/check-file-length.mjs",
     "check:doclength": "node scripts/check-doc-length.mjs",
     "check:rls": "node scripts/check-rls-coverage.mjs",
-    "check:all": "npm run check:isolation && npm run check:vertical && npm run check:secrets && npm run check:tokens && npm run check:buttons && npm run check:imports && npm run check:filelength && npm run check:doclength && npm run check:rls",
+    "check:all": "node scripts/check-all.mjs",
     "check:exemptions": "node scripts/check-guardrail-exemptions.mjs",
     "canary": "node scripts/canary.mjs",
     "test:e2e": "playwright test",
