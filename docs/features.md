@@ -33,9 +33,13 @@ scoping decision; only `check_order_status` stays ecommerce-specific),
 human handoff per guardrail #4 if no integration is connected), and
 **custom (business-defined) webhook actions** — see "Custom actions"
 below. The first three are independently enable/disable-able per bot
-from the bot editor's Tools tab; custom actions have their own
-enable/disable toggle on their own page instead (ADR 0022). **How**:
-`lib/ai/tools/`.
+from the bot editor's Tools tab (a card gallery — icon, name,
+description, an enable/disable `Switch` per card, added 2026-09-27 to
+match Chatbase's own Actions-page card layout, confirmed from real
+screenshots, `docs/research/competitive-landscape.md`); custom actions
+have their own enable/disable toggle on their own page instead (ADR
+0022). **How**: `lib/ai/tools/`, `components/console/OptionCard.tsx`
+(the shared card shape, reused by Knowledge's ingestion picker too).
 
 ### Custom actions
 **Who**: the business owner. **What**: a per-bot "Actions" page
@@ -155,7 +159,10 @@ directly against the database. **How**: `app/(console)/bots/actions.ts`'s
 knowledge base — manual question-and-answer pairs, uploading a PDF/
 DOCX/`.txt`/`.md` file, or ingesting a single URL's readable article
 text (not a whole site — see `docs/open-questions.md` #4 on crawling).
-Closes `docs/product-spec.md`'s MVP ingestion scope. **How**: `lib/ai/
+Closes `docs/product-spec.md`'s MVP ingestion scope. The three entry
+points are always-visible `OptionCard`s (2026-09-27, replaced a
+DropdownMenu, matching Chatbase's Data sources page — see `docs/
+research/competitive-landscape.md`), not a menu you open first. **How**: `lib/ai/
 knowledgeBase.ts` (source/chunk writes), `lib/ai/extraction.ts` (PDF via
 `pdf-parse`, DOCX via `mammoth`, URL via `jsdom`+`@mozilla/readability`),
 `lib/ai/chunking.ts` (hand-rolled recursive splitter for file/URL text),

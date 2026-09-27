@@ -45,19 +45,22 @@ test("Cancel in the publish dialog leaves the bot unpublished", async ({ page })
   await expect(page.getByText("Never published")).toBeVisible();
 });
 
-test("a tool Checkbox (on the Tools tab) toggles and its state survives a save", async ({ page }) => {
-  await signUpAndCreateBot(page, "Checkbox Test Bot");
+test("a tool's Switch (on the Tools tab) toggles and its state survives a save", async ({ page }) => {
+  await signUpAndCreateBot(page, "Toggle Test Bot");
   await page.click('button[role="tab"]:has-text("Tools")');
 
-  const checkbox = page.locator('input[name="tool_search_knowledge_base"]');
-  await checkbox.check();
-  await expect(checkbox).toBeChecked();
+  // Each tool is an OptionCard with a Switch (2026-09-27, matches
+  // Chatbase's card-gallery pattern) — its hidden bubble <input
+  // name="tool_..."> is what actually submits with the form.
+  const toggle = page.getByRole("switch", { name: "Enable search_knowledge_base" });
+  await toggle.click();
+  await expect(toggle).toBeChecked();
 
   await page.click('button:has-text("Save draft")');
   await expect(page.getByText("Draft saved.")).toBeVisible();
   await page.reload();
   await page.click('button[role="tab"]:has-text("Tools")');
-  await expect(page.locator('input[name="tool_search_knowledge_base"]')).toBeChecked();
+  await expect(page.getByRole("switch", { name: "Disable search_knowledge_base" })).toBeChecked();
 });
 
 test("persona template picker fills the persona textarea, replacing existing text", async ({ page }) => {

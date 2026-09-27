@@ -14,12 +14,10 @@ import { signUpAndCreateBot, seedKnowledgeEntry } from "./helpers";
 // behavior, not just that the error path is hit.
 
 async function openAddMenu(page: import("@playwright/test").Page, item: "Add Q&A" | "Upload file" | "Add URL") {
-  // Exact-name role query, not `:has-text` — the bot switcher (BotTopBar,
-  // 2026-09-26 top-bar change) is itself a <button> whose visible text
-  // is the bot's own name, e.g. "Add Menu KB Bot" would otherwise
-  // substring-match a plain CSS `button:has-text("Add")` selector.
-  await page.getByRole("button", { name: "Add", exact: true }).click();
-  await page.click(`div[role="menu"] >> text="${item}"`);
+  // Exact-name role query — each entry point is its own always-visible
+  // OptionCard button now (2026-09-27, matches Chatbase's Data sources
+  // page card gallery), not a menu item behind a shared "Add" trigger.
+  await page.getByRole("button", { name: item, exact: true }).click();
 }
 
 test("knowledge page shows the empty state before any entry exists", async ({ page }) => {
@@ -28,14 +26,13 @@ test("knowledge page shows the empty state before any entry exists", async ({ pa
   await expect(page.getByText("No knowledge yet")).toBeVisible();
 });
 
-test("the Add menu offers Q&A, file, and URL entry points", async ({ page }) => {
+test("the knowledge page offers Q&A, file, and URL entry points as cards", async ({ page }) => {
   await signUpAndCreateBot(page, "Add Menu KB Bot");
   await page.goto(page.url() + "/knowledge");
 
-  await page.getByRole("button", { name: "Add", exact: true }).click();
-  await expect(page.getByRole("menuitem", { name: "Add Q&A" })).toBeVisible();
-  await expect(page.getByRole("menuitem", { name: "Upload file" })).toBeVisible();
-  await expect(page.getByRole("menuitem", { name: "Add URL" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add Q&A", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Upload file", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add URL", exact: true })).toBeVisible();
 });
 
 test("Add Q&A dialog opens with Question/Answer fields and Cancel closes it without saving", async ({ page }) => {

@@ -114,12 +114,13 @@ test("knowledge base — empty state and Add Q&A dialog", async ({ page }) => {
 
   await page.click('a:has-text("Knowledge")');
   await expect(page).toHaveURL(/\/knowledge$/);
+  await expect(page.getByText("No knowledge yet")).toBeVisible();
   await expect(page).toHaveScreenshot("knowledge-empty.png", { mask: sidebarMasks(page) });
 
-  // Add Q&A/Upload file/Add URL (ADR 0013) now live behind one "Add"
-  // DropdownMenu instead of a single button.
-  await page.click('button:has-text("Add")');
-  await page.click('div[role="menu"] >> text="Add Q&A"');
+  // Add Q&A/Upload file/Add URL (ADR 0013) are each their own always-
+  // visible OptionCard button now (2026-09-27, matches Chatbase's Data
+  // sources page), not a menu item behind a shared "Add" trigger.
+  await page.getByRole("button", { name: "Add Q&A", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Add a question and answer" })).toBeVisible();
   // Same autoFocus-ring flake — Radix Dialog focuses its first focusable
   // field on open (correct, real a11y behavior); blur so the baseline

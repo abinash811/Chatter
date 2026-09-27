@@ -50,6 +50,18 @@ reason.)
   runs in one process now — `scripts/check-all.mjs`), 150 unit tests, 78
   `tests/e2e/` specs, 17 `tests/visual/` baselines, gitleaks secret
   scanning + a CI coverage floor, all wired into CI.
+- Card-gallery redesign (2026-09-27): the bot editor's Tools tab
+  (checkbox list → `OptionCard` grid + `Switch`) and Knowledge's ingestion
+  picker (DropdownMenu → 3 always-visible `OptionCard`s) both redesigned
+  to match Chatbase's own card-gallery pattern (icon/title/description/
+  action), confirmed real via user-supplied screenshots — see `docs/
+  research/competitive-landscape.md`. New shared component:
+  `components/console/OptionCard.tsx`. Real bug caught and fixed before
+  shipping: tool descriptions are model-facing instructions of varying
+  length, so cards had wildly uneven heights until `line-clamp-2` was
+  added. `www.chatbase.co` itself stays blocked by this environment's
+  network egress policy — everything here is grounded in the user's own
+  screenshots, not a live fetch.
 - Demo data (2026-09-27): a one-click "Load sample data" button on
   `/bots` (`lib/demoData.ts`) creates a fully populated example bot —
   persona, published config, 3 knowledge Q&A entries, 2 leads, one

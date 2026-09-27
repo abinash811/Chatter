@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ChevronDown } from "lucide-react";
+import { HelpCircle, FileText, Link as LinkIcon } from "lucide-react";
 import {
   createQaAction,
   createFileAction,
@@ -14,6 +14,7 @@ import { AddQaDialog } from "./AddQaDialog";
 import { AddFileDialog } from "./AddFileDialog";
 import { AddUrlDialog } from "./AddUrlDialog";
 import { KnowledgeTable, type KnowledgeSourceRow } from "./KnowledgeTable";
+import { OptionCard } from "@/components/console/OptionCard";
 import {
   Button,
   AlertDialog,
@@ -24,10 +25,6 @@ import {
   AlertDialogFooter,
   AlertDialogAction,
   AlertDialogCancel,
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
 } from "@/components/ui";
 
 const idleState: KnowledgeActionState = { status: "idle", message: null };
@@ -44,10 +41,13 @@ function useActionToast(state: KnowledgeActionState) {
 // register for the list (KnowledgeTable, a real CARE Table matching
 // BotsTable.tsx) — same split docs/research/design-system-standards.md
 // itself describes for Linear (dense list) vs. Notion (calm compose
-// surface). Three entry points (Q&A/file/URL, ADR 0013) live behind one
-// "Add" DropdownMenu instead of three buttons crowding the header; each
-// dialog is its own component so this orchestrator stays under the
-// file-length guardrail (scripts/check-file-length.mjs).
+// surface). The three entry points (Q&A/file/URL, ADR 0013) were behind
+// one "Add" DropdownMenu; now a row of OptionCards, matching Chatbase's
+// Data sources page (docs/research/competitive-landscape.md's 2026-09-27
+// update) — each type is a persistent, always-visible card instead of a
+// menu item you have to open first. Each dialog is its own component so
+// this orchestrator stays under the file-length guardrail
+// (scripts/check-file-length.mjs).
 export function KnowledgeForm({ botId, entries }: { botId: string; entries: KnowledgeSourceRow[] }) {
   const [qaState, qaFormAction, isAddingQa] = useActionState(createQaAction.bind(null, botId), idleState);
   const [fileState, fileFormAction, isAddingFile] = useActionState(createFileAction.bind(null, botId), idleState);
@@ -90,19 +90,39 @@ export function KnowledgeForm({ botId, entries }: { botId: string; entries: Know
           Knowledge base
           {entries.length > 0 && <span className="text-sm font-normal text-muted-foreground">{entries.length}</span>}
         </h2>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button type="button" size="sm">
-              Add
-              <ChevronDown className="h-4 w-4" />
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <OptionCard
+          icon={HelpCircle}
+          title="Q&A"
+          description="Manually write question-and-answer pairs."
+          action={
+            <Button type="button" size="sm" variant="outline" onClick={() => setQaOpen(true)}>
+              Add Q&A
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setQaOpen(true)}>Add Q&A</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setFileOpen(true)}>Upload file</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setUrlOpen(true)}>Add URL</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+          }
+        />
+        <OptionCard
+          icon={FileText}
+          title="File"
+          description="Upload a PDF, DOCX, .txt, or .md file."
+          action={
+            <Button type="button" size="sm" variant="outline" onClick={() => setFileOpen(true)}>
+              Upload file
+            </Button>
+          }
+        />
+        <OptionCard
+          icon={LinkIcon}
+          title="URL"
+          description="Ingest one page's readable article text."
+          action={
+            <Button type="button" size="sm" variant="outline" onClick={() => setUrlOpen(true)}>
+              Add URL
+            </Button>
+          }
+        />
       </div>
 
       <AddQaDialog open={qaOpen} onOpenChange={setQaOpen} formAction={qaFormAction} state={qaState} isPending={isAddingQa} />
