@@ -99,18 +99,34 @@ as each ships. Phase 1 shipped same day; phases 2-4 still ahead.
   (not just raw psql) confirming the numeric candidate-limit/match-count
   parameters interpolate correctly, and confirmed an exact keyword match
   ranked #2 in vector-only search correctly wins the fused ranking.
-
-Hybrid retrieval joined the Adopt list above — moved here since it
-shipped 2026-09-27, same day as the decision.
+- **RAG eval harness** (`scripts/eval-retrieval.ts`, `lib/eval/`) — hand-
+  rolled, not a framework: RAGAS/DeepEval/TruLens are all Python-only
+  (checked their real repos directly, not summaries — DeepEval has
+  native Claude support and the closest-fit metrics, but Python is still
+  a second language/toolchain this all-TypeScript project doesn't have);
+  LangSmith has a real TS SDK but requires a LangSmith account/cloud
+  service (self-hosting is Enterprise-only). Precision@K/Recall@K/MRR
+  are unambiguous, decades-old IR metrics, not something a vendor API
+  can drift on — `lib/eval/retrievalMetrics.ts` is under 40 lines.
+  `lib/ai/retrieval.ts` was extracted out of `search_knowledge_base` so
+  the harness calls the *exact* production hybrid-search query
+  (`retrieveKnowledgeChunks`) instead of a second copy that could drift
+  from it. Scores against a hand-written 8-query labeled test set
+  (`lib/eval/retrievalDataset.ts` — no real production data exists yet).
+  Real limitation, stated in the tool's own output every run: with
+  `VOYAGE_API_KEY` still a placeholder, semantic search can't be
+  measured for real — the script detects this and falls back to a
+  crude hash-based mock embedding so the full pipeline (seed → query →
+  score) still runs end-to-end, loudly labeled as not a real quality
+  signal. Full-text scores are real either way. Verified: ran twice
+  (deterministic, same result both times), confirmed no leftover rows
+  after cleanup.
 
 **Trial** (prioritized, in this order — see `docs/roadmap.md`)
-1. **RAG eval harness** — see Eval & ops below; built before reranking
-   so that decision (and every future tuning change) is measured, not
-   guessed.
-2. **Reranking** — re-score the top ~30–50 hybrid candidates down to the
+1. **Reranking** — re-score the top ~30–50 hybrid candidates down to the
    ~5–8 actually sent to the LLM. Vendor: see Assess above. Deliberately
-   sequenced *after* the eval harness (user decision, 2026-09-27) —
-   measure with real numbers instead of picking a vendor on reputation.
+   sequenced *after* the eval harness — measure with real numbers
+   instead of picking a vendor on reputation.
 
 **Hold**
 - **BM25 extension** (`pg_search`/`pg_textsearch`) — explicitly deferred
@@ -163,15 +179,13 @@ shipped 2026-09-27, same day as the decision.
 
 ## Eval & ops
 
+**Adopt**
+- **RAG eval harness** (`npm run eval:retrieval`) — built 2026-09-27; see
+  the Retrieval & search section above for the full writeup (why
+  hand-rolled instead of RAGAS/DeepEval/TruLens/LangSmith, the
+  placeholder-key fallback, verification done).
+
 **Assess**
-- **RAG eval harness** — no test-set/regression check exists today.
-  Promoted to a real blocker (2026-09-27): the Retrieval & search
-  section's reranker vendor choice is now deliberately gated on this
-  existing first, not just "nice to have alongside it." Plan: adopt an
-  open-source framework rather than hand-roll (e.g. RAGAS, DeepEval,
-  TruLens — none evaluated yet, re-check current practice before
-  picking, per CLAUDE.md) once a real labeled Q&A test set exists to
-  run it against.
 - **Production feedback loop** (👍/👎 → gap analysis) — no signal
   capture exists yet; depends on the eval harness's data shape being
   settled first so both share one schema.

@@ -1,6 +1,4 @@
-import { Prisma } from "@prisma/client";
-import { withOrgContext } from "@/lib/db";
-import { getEmbeddingsProvider } from "@/lib/ai/embeddings";
+import { retrieveKnowledgeChunks } from "@/lib/ai/retrieval";
 import { registerTool, type Tool } from "@/lib/ai/tools/registry";
 
 // Generic across every vertical (guardrail #2) — RAG retrieval as a tool
@@ -32,60 +30,7 @@ export const searchKnowledgeBaseTool: Tool = {
 
   async handle(orgId, botId, input) {
     const query = input.query as string;
-    const embedding = await getEmbeddingsProvider().embed(query);
-    const vectorLiteral = `[${embedding.join(",")}]`;
-
-    // Hybrid search (ADR 0021): combines pgvector's semantic search with
-    // Postgres native full-text search via Reciprocal Rank Fusion — the
-    // exact pattern from Supabase's own reference implementation
-    // (supabase/supabase's hybrid-search.mdx `hybrid_search()` function,
-    // read directly, not just summarized), adapted here since our
-    // embedding index uses cosine distance (vector_cosine_ops, matching
-    // Voyage embeddings which aren't guaranteed pre-normalized) instead
-    // of their inner-product example. Matched precisely, not just "close
-    // enough": ts_rank_cd (cover density — accounts for term proximity,
-    // not plain ts_rank), the candidate-pool formula
-    // least(match_count, 30) * 2 (10 here, for our match_count of 5, not
-    // an arbitrary round number), full_text_weight/semantic_weight = 1
-    // (implicit, no tuning surface yet), and rrf_k = 50 — all their
-    // documented defaults. withOrgContext sets app.org_id for this
-    // transaction, so RLS already scopes this query to orgId — the botId
-    // filter narrows further to this specific bot's sources within that
-    // org.
-    const MATCH_COUNT = 5;
-    const CANDIDATE_LIMIT = Math.min(MATCH_COUNT, 30) * 2;
-    const chunks = await withOrgContext(orgId, (tx) =>
-      tx.$queryRaw<{ content: string; kind: string; title: string }[]>(Prisma.sql`
-        with full_text as (
-          select kc.id, row_number() over (
-            order by ts_rank_cd(kc.content_tsv, websearch_to_tsquery('english', ${query})) desc
-          ) as rank_ix
-          from knowledge_chunks kc
-          join knowledge_sources ks on ks.id = kc."sourceId"
-          where ks."botId" = ${botId}
-            and kc.content_tsv @@ websearch_to_tsquery('english', ${query})
-          order by rank_ix
-          limit ${CANDIDATE_LIMIT}
-        ),
-        semantic as (
-          select kc.id, row_number() over (order by kc.embedding <=> ${vectorLiteral}::vector) as rank_ix
-          from knowledge_chunks kc
-          join knowledge_sources ks on ks.id = kc."sourceId"
-          where ks."botId" = ${botId}
-          order by rank_ix
-          limit ${CANDIDATE_LIMIT}
-        )
-        select kc.content, ks.kind, ks.title
-        from full_text
-        full outer join semantic on full_text.id = semantic.id
-        join knowledge_chunks kc on coalesce(full_text.id, semantic.id) = kc.id
-        join knowledge_sources ks on ks.id = kc."sourceId"
-        order by
-          coalesce(1.0 / (50 + full_text.rank_ix), 0.0) +
-          coalesce(1.0 / (50 + semantic.rank_ix), 0.0) desc
-        limit ${MATCH_COUNT}
-      `),
-    );
+    const chunks = await retrieveKnowledgeChunks(orgId, botId, query);
 
     if (chunks.length === 0) {
       return "No relevant information found in the knowledge base.";

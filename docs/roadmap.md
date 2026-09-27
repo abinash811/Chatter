@@ -130,9 +130,15 @@ Validated by competitor research, not yet built:
      too). Verified against a real local Postgres: an exact keyword
      match that ranked #2 in vector-only search correctly won the fused
      ranking. See `docs/ai-tech-radar.md`.
-  3. **RAG eval harness** — a labeled Q&A test set + scoring script,
-     built *before* reranking so that decision (and every future
-     tuning change) is measured, not guessed.
+  3. **RAG eval harness — built (2026-09-27).** `npm run eval:retrieval`
+     — hand-rolled Precision@K/Recall@K/MRR against an 8-query labeled
+     test set, calling the exact production hybrid-search query (not a
+     duplicate). Checked RAGAS/DeepEval/TruLens/LangSmith's real repos
+     directly first (all Python-only, or need a cloud account) before
+     deciding to hand-roll — see `docs/ai-tech-radar.md`. Real caveat:
+     semantic scores aren't meaningful until a real `VOYAGE_API_KEY`
+     exists (the script falls back to a labeled mock embedding so the
+     pipeline still runs end-to-end); full-text scores are real today.
   4. **Reranking** — Voyage `rerank-2` vs. Cohere Rerank v3.5,
      explicitly deferred (user decision, 2026-09-27) until the eval
      harness in step 3 exists to decide it with real numbers.
