@@ -53,6 +53,23 @@ metadata IP) before every call. No edit yet — delete and recreate.
 (the runtime `Tool` factory + SSRF guard), the `CustomAction` model.
 ADR 0022.
 
+### Demo data ("Load sample data")
+**Who**: a new or non-technical user, or anyone demoing the product.
+**What**: a one-click "Load sample data" button (`/bots`, next to "New
+bot", and in the empty state) that creates a fully populated example
+bot — a real persona, a published config, 3 knowledge Q&A entries, 2
+leads, one custom action (disabled by default — its URL is a
+placeholder), and 2 sample conversations (one flagged as an issue) —
+so every console screen has real content to look at without a live
+`ANTHROPIC_API_KEY`/`VOYAGE_API_KEY`. Every write goes through the same
+tables and the same `withOrgContext` path a real chat turn or console
+action would use — it's fake content, not a fake data path — except
+where a step needs a live external call (embeddings, Claude), which
+uses the same bypass `tests/e2e/helpers.ts` already used per-feature
+(a placeholder embedding vector, direct `Conversation`/`Message`/
+`ToolCallLog` writes). **How**: `lib/demoData.ts`, `loadSampleDataAction`
+(`app/(console)/bots/actions.ts`).
+
 ### Leads
 **Who**: the business owner. **What**: a per-bot "Leads" page
 (`/bots/[botId]/leads`) listing contact info the `collect_lead` tool

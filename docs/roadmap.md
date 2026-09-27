@@ -34,6 +34,12 @@ The generic core plus one concrete vertical template — see
   Every new tool going forward is industry-agnostic by default, not just
   ecommerce (scoping decision, 2026-09-27) — `check_order_status` stays
   the one vertical-specific exception.
+- Demo data — **built (2026-09-27).** A one-click "Load sample data"
+  button (`/bots`) creates a fully populated example bot (persona,
+  knowledge, leads, a custom action, sample conversations) — see
+  `docs/features.md`'s "Demo data" entry. Resolves the earlier "how
+  broad should seeding be" open item from the 2026-09-27 directive: a
+  real in-app feature, not just narrow per-test helpers.
 - Email + password auth (ADR 0006), tenant isolation via RLS (ADR 0003)
 - Conversation/Message/ToolCallLog data captured on every chat turn, and
   a dashboard-only conversation inbox (`/conversations`, ADR 0015) to

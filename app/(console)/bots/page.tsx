@@ -3,6 +3,7 @@ import { getCurrentSession } from "@/lib/auth";
 import { withOrgContext } from "@/lib/db";
 import { BotsTable } from "@/components/console/BotsTable";
 import { NewBotDialog } from "./NewBotDialog";
+import { LoadSampleDataButton } from "./LoadSampleDataButton";
 
 // First real console screen. Linear register: dense list, one row
 // height (docs/architecture.md §7), no decoration beyond what's needed
@@ -32,7 +33,10 @@ export default async function BotsPage() {
             </span>
           )}
         </h1>
-        <NewBotDialog />
+        <div className="flex items-center gap-2">
+          <LoadSampleDataButton />
+          <NewBotDialog />
+        </div>
       </div>
 
       {bots.length === 0 ? (
@@ -45,9 +49,12 @@ export default async function BotsPage() {
           </div>
           <p className="text-sm font-medium">No bots yet</p>
           <p className="text-sm text-muted-foreground">
-            Create one to get started.
+            Create one to get started, or load sample data to see how it all works first.
           </p>
-          <NewBotDialog triggerLabel="Create your first bot" />
+          <div className="flex items-center gap-2">
+            <LoadSampleDataButton label="Load sample data" />
+            <NewBotDialog triggerLabel="Create your first bot" />
+          </div>
         </div>
       ) : (
         <div className="mt-4">

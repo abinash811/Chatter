@@ -6,6 +6,7 @@ import type { Prisma } from "@prisma/client";
 import { getCurrentSession } from "@/lib/auth";
 import { withOrgContext, getOrCreateBotPublicKey } from "@/lib/db";
 import { DEFAULT_APPEARANCE } from "@/lib/ai/botConfig";
+import { createDemoBot } from "@/lib/demoData";
 
 export interface BotActionState {
   status: "idle" | "success" | "error";
@@ -30,6 +31,18 @@ export async function createBotAction(formData: FormData) {
   );
   await getOrCreateBotPublicKey(session.orgId, bot.id);
   redirect(`/bots/${bot.id}`);
+}
+
+// "Load sample data" (2026-09-27 user directive) — creates a fully
+// populated example bot (lib/demoData.ts) so a new or non-technical user
+// sees every screen with real content instead of empty states, without
+// needing a live ANTHROPIC_API_KEY/VOYAGE_API_KEY. Same redirect-on-
+// success shape as createBotAction; no error state to carry since a
+// failure here would be a genuine bug, not a bad input.
+export async function loadSampleDataAction() {
+  const session = await getCurrentSession();
+  const botId = await createDemoBot(session.orgId);
+  redirect(`/bots/${botId}`);
 }
 
 export async function renameBotAction(

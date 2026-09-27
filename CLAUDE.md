@@ -47,9 +47,16 @@ reason.)
   `docs/design/audit.md` tracks per-screen compliance against the bar —
   check there before assuming a screen is finished.
 - Testing/guardrails: 9 static guardrail checks (`npm run check:all`,
-  runs in one process now — `scripts/check-all.mjs`), 143 unit tests, 76
+  runs in one process now — `scripts/check-all.mjs`), 150 unit tests, 78
   `tests/e2e/` specs, 17 `tests/visual/` baselines, gitleaks secret
   scanning + a CI coverage floor, all wired into CI.
+- Demo data (2026-09-27): a one-click "Load sample data" button on
+  `/bots` (`lib/demoData.ts`) creates a fully populated example bot —
+  persona, published config, 3 knowledge Q&A entries, 2 leads, one
+  (disabled-by-default) custom action, 2 sample conversations — so any
+  user sees every screen with real content without a live Claude/Voyage
+  key. Resolves the "how broad should seeding be" open item from the
+  2026-09-27 directive.
 - Leads (2026-09-27): third action tool, `collect_lead` — generic
   contact-info capture (name/email/phone/note), matches Chatbase's
   "Collect Leads." New per-bot `/bots/[botId]/leads` console page.
