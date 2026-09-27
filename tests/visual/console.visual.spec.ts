@@ -86,6 +86,14 @@ test("bot editor — publish confirmation dialog (docs/design/principles.md #10)
   await expect(page).toHaveScreenshot("bot-editor-publish-dialog.png", { mask: sidebarMasks(page) });
 });
 
+test("bot editor — test-your-bot preview sheet, not-published state", async ({ page }) => {
+  await signUpAndCreateBot(page, "Support bot", "visual-preview");
+  await page.getByRole("button", { name: "Preview", exact: true }).click();
+  await expect(page.getByText("Not published yet")).toBeVisible();
+
+  await expect(page).toHaveScreenshot("bot-editor-preview-sheet.png", { mask: sidebarMasks(page) });
+});
+
 test("leads page — empty state", async ({ page }) => {
   await signUpAndCreateBot(page, "Support bot", "visual-leads");
 

@@ -47,9 +47,33 @@ reason.)
   `docs/design/audit.md` tracks per-screen compliance against the bar —
   check there before assuming a screen is finished.
 - Testing/guardrails: 9 static guardrail checks (`npm run check:all`,
-  runs in one process now — `scripts/check-all.mjs`), 150 unit tests, 78
-  `tests/e2e/` specs, 17 `tests/visual/` baselines, gitleaks secret
-  scanning + a CI coverage floor, all wired into CI.
+  runs in one process now — `scripts/check-all.mjs`), 150 unit tests, 82
+  `tests/e2e/` specs, 18 `tests/visual/` baselines, gitleaks secret
+  scanning + a CI coverage floor, all wired into CI. A few e2e specs
+  around publishing intermittently fail under sustained local single-
+  worker runs in this dev container (confirmed 2026-09-27: different
+  tests fail each run, all pass instantly alone, a fresh server restart
+  didn't help) — real resource contention from running the whole suite
+  back-to-back for hours, not a product bug; don't chase it further
+  locally, and don't assume it reproduces in CI's fresh container. Run
+  scoped test files during a session, not the full suite repeatedly.
+- Test-your-bot preview (2026-09-27): a "Preview" button in the bot
+  editor opens a slide-over chat (`PreviewSheet.tsx`) wired to the real
+  chat loop (`sendMessage`) via `sendPreviewMessageAction` — degrades to
+  a plain-language message if the bot isn't published or no Claude key
+  is configured. Matches Chatbase's own docked preview, confirmed from
+  real screenshots.
+- Card-gallery redesign (2026-09-27): the bot editor's Tools tab
+  (checkbox list → `OptionCard` grid + `Switch`) and Knowledge's ingestion
+  picker (DropdownMenu → 3 always-visible `OptionCard`s) both redesigned
+  to match Chatbase's own card-gallery pattern (icon/title/description/
+  action), confirmed real via user-supplied screenshots — see `docs/
+  research/competitive-landscape.md`. New shared component:
+  `components/console/OptionCard.tsx`. Real bug caught and fixed before
+  shipping: tool descriptions are model-facing instructions of varying
+  length, so cards had wildly uneven heights until `line-clamp-2` was
+  added. `www.chatbase.co` itself stays blocked by this environment's
+  network egress policy — everything here is grounded in the user's own
 - Card-gallery redesign (2026-09-27): the bot editor's Tools tab
   (checkbox list → `OptionCard` grid + `Switch`) and Knowledge's ingestion
   picker (DropdownMenu → 3 always-visible `OptionCard`s) both redesigned

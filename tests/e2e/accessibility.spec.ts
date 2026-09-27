@@ -67,6 +67,12 @@ test("bot editor has no serious/critical accessibility violations", async ({ pag
   await assertNoSeriousViolations(page);
 });
 
+test("the test-your-bot preview sheet has no serious/critical accessibility violations", async ({ page }) => {
+  await signUpAndCreateBot(page, "A11y Preview Bot", "a11y-preview");
+  await page.getByRole("button", { name: "Preview", exact: true }).click();
+  await assertNoSeriousViolations(page, page.getByText("Not published yet"));
+});
+
 // Expanded 2026-09-27 — only 4 of the app's screens had any automated
 // a11y coverage; docs/design/audit.md's "Responsive & accessibility"
 // table had Knowledge/Integrations/Settings/Conversations/Onboarding

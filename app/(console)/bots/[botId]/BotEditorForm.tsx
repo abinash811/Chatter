@@ -36,6 +36,7 @@ import { OptionCard } from "@/components/console/OptionCard";
 import type { AvatarEmoji, WidgetPosition } from "@/lib/ai/appearanceOptions";
 import { PERSONA_TEMPLATES } from "@/lib/ai/personaTemplates";
 import { AppearanceTabContent } from "./AppearanceTabContent";
+import { PreviewSheet } from "./PreviewSheet";
 
 const idleState: SaveDraftState = { status: "idle", message: null };
 
@@ -113,6 +114,7 @@ export function BotEditorForm({
             what's specific to the editor: publish status and actions. */}
         <Badge variant="muted">{publishedVersion ? `Published v${publishedVersion}` : "Never published"}</Badge>
         <div className="flex items-center gap-3">
+          <PreviewSheet botId={botId} published={publishedVersion !== null} />
           <Button type="submit" form="bot-editor-form" variant="outline" size="sm" disabled={isSaving}>
             {isSaving ? "Saving..." : "Save draft"}
           </Button>

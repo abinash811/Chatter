@@ -184,6 +184,21 @@ billing instead of our managed key. Off by default. **How**: `app/
 (console)/settings/`, `lib/ai/gateway.ts`'s `getModelGateway(apiKey?)`,
 `lib/crypto.ts` for encryption at rest. ADR 0012.
 
+### Test your bot (preview)
+**Who**: the business owner, before sharing the embed snippet with
+anyone. **What**: a "Preview" button in the bot editor opens a slide-
+over chat (matches Chatbase's own "Chat as user"/docked preview,
+confirmed from real screenshots — `docs/research/competitive-
+landscape.md`) that talks to the bot's actual published config through
+the real chat loop — not a mock. Requires the bot to be published first
+(a real visitor never sees a draft either); shows a plain-language
+message instead of an error if it isn't, or if no Claude API key is
+configured yet. Preview conversations are written to the same tables a
+real visitor's are, so they show up in `/conversations` too — same
+behavior as the reference product's own Playground. **How**:
+`PreviewSheet.tsx`, `sendPreviewMessageAction` (`app/(console)/bots/
+[botId]/actions.ts`), calling `lib/ai/chat.ts`'s `sendMessage` directly.
+
 ### Conversation inbox
 **Who**: the business owner — a non-technical reviewer, not a developer.
 **What**: `/conversations` — a filterable list (by bot, date, "has an

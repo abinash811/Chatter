@@ -44,6 +44,18 @@ The generic core plus one concrete vertical template — see
 - Conversation/Message/ToolCallLog data captured on every chat turn, and
   a dashboard-only conversation inbox (`/conversations`, ADR 0015) to
   view and filter it — see "Self-serve configurability" below.
+- Test-your-bot preview — **built (2026-09-27).** A "Preview" button in
+  the bot editor opens a chat that talks to the real, published bot —
+  matches Chatbase's own docked "Chat as user" preview, confirmed from
+  real screenshots. See `docs/features.md`'s "Test your bot" entry.
+- Card-gallery redesign — **built (2026-09-27).** Tools tab and
+  Knowledge's ingestion picker both moved from a checkbox list/dropdown
+  to a card grid, matching Chatbase's own reused Actions/Data sources
+  pattern (confirmed from real screenshots, `docs/research/competitive-
+  landscape.md`). New shared `components/console/OptionCard.tsx`.
+- **Mobile-responsive console — explicitly out of scope** (2026-09-27
+  user decision). The console targets desktop only; see
+  `docs/product-spec.md`. Does not affect the embeddable widget itself.
 
 ## Self-serve configurability (Next — 2026-09-26 user directive)
 

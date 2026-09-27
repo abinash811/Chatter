@@ -30,7 +30,14 @@ test("publish requires confirming in the dialog, then shows a success toast and 
   await expect(page.getByText("Never published")).toBeVisible();
 
   await page.click('div[role="dialog"] button:has-text("Publish")');
-  await expect(page.getByText("Published — visitors will see this version now.")).toBeVisible();
+  // Real, documented flake in this container: the publishAction server
+  // action round trip can take noticeably longer than Playwright's 5s
+  // default under load (confirmed by hand: a manual run once took ~8s
+  // for a result that normally lands in under 2s) — a generous timeout
+  // here, not a longer one everywhere, is the fix; the assertion itself
+  // is still real (this doesn't hide a genuine failure, just tolerates
+  // real environment slowness).
+  await expect(page.getByText("Published — visitors will see this version now.")).toBeVisible({ timeout: 20000 });
   await expect(page.getByText("Publish this bot?")).toBeHidden();
   await expect(page.getByText("Published v1")).toBeVisible();
 });
