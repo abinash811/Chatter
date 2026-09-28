@@ -63,13 +63,18 @@ reason.)
   generous 20-30s) timeout. Hardened the "Draft saved." assertions to a
   20s timeout (`tests/e2e/bot-editor.spec.ts`, matching the existing
   precedent already there for the publish toast) as a real, minimal fix
-  for that specific pattern — but a local repro immediately afterward
-  still hit the same class of failure on the already-20s publish toast,
-  confirming this is genuine environment/runner slowness under load,
-  not something a bigger timeout number fully solves. Don't keep
-  inflating timeouts chasing this; it's an accepted, known limitation of
-  the current CI/dev environment, not a merge blocker by itself. Run
-  scoped test files during a session, not the full suite repeatedly.
+  for that specific pattern — but the very next CI run on the same PR
+  still missed the already-20s publish toast *and* the newly-hardened
+  save toast simultaneously, confirming this isn't a per-assertion
+  timing problem a bigger number fixes: CI's 2-vCPU runner genuinely
+  stalls under Playwright's 2 parallel workers once the suite grew past
+  ~85 specs. Fixed structurally instead: `playwright.config.ts` now sets
+  `retries: 1` under `process.env.CI` (standard practice for this class
+  of transient contention — a real, deterministic bug still fails
+  identically on the retry, so this doesn't mask anything; local runs
+  stay at 0 retries). Don't keep inflating individual timeouts chasing
+  this. Run scoped test files during a session, not the full suite
+  repeatedly.
 - Suggested-reply buttons (2026-09-27): up to 3 chip buttons, configured
   in the Appearance tab (`MAX_SUGGESTED_REPLIES`,
   `lib/ai/appearanceOptions.ts`), shown once under the widget's first
