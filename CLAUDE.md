@@ -282,6 +282,21 @@ reason.)
   10 `check:all` guardrails, full unit suite, the integrations a11y scan
   (clean, now covers the labeled input), and the full 19-test visual
   suite (18 unchanged + 1 new, stable across two runs).
+- Settings depth/polish pass (2026-09-28): `docs/design/audit.md`'s row
+  upgraded from mostly 🔲 to Hover/Focus/Loading/Depth ✅, Active 🟡. No
+  code-level bugs here, unlike Integrations — this screen already used
+  the shared `Input`/`Label`/`Card` primitives correctly (real
+  `htmlFor`/`id` pairing) since it was first built. `Card` already
+  earns Depth (`rounded-lg border shadow-xs`) — credited, was 🟡. Real
+  screenshot review of rest/focus/hover/"key set" states confirmed
+  clear hierarchy and working focus rings on both inputs. Considered
+  whether "Remove" (API key) needs a `destructive` variant or confirm
+  dialog like Knowledge's delete — deliberately not flagged: removing a
+  BYOA key is fully reversible (falls back to the managed key, no data
+  loss), unlike an unrecoverable knowledge-entry delete, so the
+  existing plain `outline` button with no confirm step is an already-
+  calibrated decision, not an oversight. No code changed this pass —
+  audit-only.
 - Self-serve config (roadmap "Self-serve configurability"): widget
   appearance editor (greeting/accent/avatar/position) and a 3-template
   persona picker (Support/Sales/Lead-gen), both in the bot editor.
