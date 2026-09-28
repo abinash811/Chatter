@@ -20,6 +20,7 @@
     "sheet.tsx",
     "sidebar.tsx",
     "skeleton.tsx",
+    "slider.tsx",
     "switch.tsx",
     "table.tsx",
     "tabs.tsx",

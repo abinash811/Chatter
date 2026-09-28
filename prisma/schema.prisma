@@ -149,6 +149,15 @@ model BotConfigVersion {
   guardrails  String
   tools       Json         @default("[]")
   appearance  Json         @default("{}")
+  // Chatbase's "Build > Instructions" model picker + temperature slider
+  // (docs/research/competitive-landscape.md's 2026-09-28 update). Only a
+  // same-vendor Claude tier, not a multi-provider picker (ADR 0002 scoped
+  // Claude as the only real ModelGateway implementation) — see the new
+  // ADR for this feature. Defaults match what lib/ai/gateway.ts already
+  // hardcoded before this migration, so existing published bots keep
+  // their exact current behavior with no data backfill needed.
+  model       String       @default("claude-sonnet-5")
+  temperature Float        @default(1)
   publishedAt DateTime?
   createdAt   DateTime     @default(now())
 
