@@ -204,6 +204,19 @@ reason.)
   suite (isolated every ambiguous failure — all were the pre-existing
   toast-timeout flake, no real regressions), full a11y scan, all 18
   visual baselines regenerated and stable across two runs.
+- `--muted`/`--accent` conversation-bubble collision fixed (2026-09-28):
+  a real, previously-flagged bug (`docs/design/audit.md`'s "System
+  coverage" table) — `ConversationThread.tsx`'s visitor and bot message
+  bubbles used `bg-muted`/`bg-accent`, which are the literal same
+  monochrome token value, so the two speakers were visually
+  indistinguishable. Fixed with a real decision, not a mechanical
+  token swap: the bot/business voice now gets `bg-primary` (solid
+  black), matching the same high-contrast/active pairing already
+  established for `Badge`'s `default` vs `muted` variants; the visitor
+  keeps the existing muted gray. Verified via a real screenshot and the
+  `conversation-detail.png` visual baseline regenerated + confirmed
+  stable across two runs; e2e and a11y suites for both conversation
+  screens re-run clean.
 - Self-serve config (roadmap "Self-serve configurability"): widget
   appearance editor (greeting/accent/avatar/position) and a 3-template
   persona picker (Support/Sales/Lead-gen), both in the bot editor.
