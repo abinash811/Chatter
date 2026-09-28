@@ -155,6 +155,28 @@ reason.)
   environment's network egress policy for the `orderCancel` mutation
   shape — pieced together via WebSearch instead of the primary source,
   flagged as unverified against a live store in ADR 0023.
+- Table library pilot (2026-09-28, ADR 0024): `@tanstack/react-table`
+  (row-model logic only, not rendering) + `nuqs` (URL-persisted state)
+  adopted on the bots list first, before any wider rollout to leads/
+  conversations/actions/approvals — sourced from a user-requested review
+  of popular Next.js/shadcn starter templates. Real finding worth
+  remembering: npm's `latest` tag now points to TanStack Table v9, a
+  genuinely different, barely-documented API (`ReactTable`/
+  `createCoreRowModel`) — deliberately pinned to v8.21.3 instead, since
+  shadcn's own documented Data Table pattern and every mainstream
+  tutorial/starter are still written against v8, and the whole point of
+  this adoption was matching a proven pattern, not chasing `latest`.
+  Real, measured cost: `/bots`'s First Load JS grew ~4.9kB → ~23.6kB
+  (confirmed via a real build). Verified: `tsc` clean, all 9
+  `check:all` guardrails, full unit suite, a new real e2e test proving
+  sort order changes and survives a page reload (`tests/e2e/
+  bots-list.spec.ts`), all 8 existing bots-list specs pass unmodified,
+  a11y scan clean, and all 18 `tests/visual/` baselines pixel-identical
+  to before — confirms this changed only the state-management layer,
+  not the rendered UI. Also evaluated and explicitly declined adopting
+  Clerk/Supabase for auth from the same template review — Chatter's own
+  RLS-backed multi-tenancy (ADR 0003) + custom auth (ADR 0006) is
+  already stronger and a costly reversal for no gain.
 - Self-serve config (roadmap "Self-serve configurability"): widget
   appearance editor (greeting/accent/avatar/position) and a 3-template
   persona picker (Support/Sales/Lead-gen), both in the bot editor.

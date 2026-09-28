@@ -109,6 +109,10 @@ for reviewability, independent of any template mechanism.
 - Bot list: search, sort, rename/duplicate/archive. Archiving is a soft
   delete (`Bot.archivedAt`, ADR 0018) — kills the embed snippet and hides
   the bot everywhere, but keeps its conversations/knowledge/integrations.
+  Search/sort on this screen uses `@tanstack/react-table` (row-model
+  logic only, not rendering) with state persisted to the URL via `nuqs`
+  (ADR 0024) — the pattern every future list screen should follow,
+  piloted here before any wider rollout.
 - Knowledge base management: add/edit/remove sources, see what's indexed.
 - Live conversation inbox for human handoff.
 - Analytics: volume, resolution rate, handoff rate, topics.

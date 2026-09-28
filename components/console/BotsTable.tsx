@@ -1,9 +1,18 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useMemo } from "react";
 import { unstable_rethrow } from "next/navigation";
 import { toast } from "sonner";
+import { useQueryState, parseAsString, parseAsStringLiteral } from "nuqs";
 import { ChevronsUpDown, Search } from "lucide-react";
+import {
+  type ColumnDef,
+  type SortingState,
+  useReactTable,
+  getCoreRowModel,
+  getSortedRowModel,
+  getFilteredRowModel,
+} from "@tanstack/react-table";
 import {
   Table,
   TableHeader,
@@ -26,44 +35,47 @@ export interface BotRow {
   published: boolean;
 }
 
-type SortKey = "name" | "status" | "createdAt";
+const SORT_KEYS = ["name", "status", "createdAt"] as const;
+type SortKey = (typeof SORT_KEYS)[number];
 
-// Real CARE Table (components/ui/table.tsx, ADR 0008) replacing the
-// hand-rolled div-list. Whole row navigates, not just the name cell —
-// matches the prior list's click affordance and Linear's own table
-// behavior (docs/architecture.md §7's register mapping). A client
-// component only for that row-click handler; everything else about
-// this page stays server-rendered.
-//
-// Depth/polish pass (principles.md #5/#9, 2026-09-26 rollout to this
-// screen): a plain `onClick` on a `<tr>` looks fine but isn't actually
-// keyboard-reachable — principle #8 is "no exceptions," and this was
-// one. `tabIndex`/`role="link"`/`onKeyDown` plus a real focus ring
-// fixes that for real, not just visually — verified with a real
-// Tab+Enter keyboard-only navigation, not just a screenshot. Also
-// caught a real, separate bug in the process: `ring-accent` (what
-// Input/Textarea/Checkbox all used) is near-invisible on white —
-// ADR 0014's token swap redefined `--accent` as a pale neutral-100
-// background tint, not a ring color. `ring-ring` (shadcn's own real
-// convention, matching Button's `focus-visible:ring-ring/50`) is
-// fixed here and in those 3 primitives in the same pass.
-//
-// 2026-09-27 (docs/design/audit.md's "Bots list — open findings"):
-// added client-side search + sort (dataset is per-org bot lists, small
-// enough that a server round-trip would be over-engineering) and a
-// per-row actions menu (rename/duplicate/archive — ADR 0018: archive,
-// never a hard delete).
+const columns: ColumnDef<BotRow>[] = [
+  { id: "name", accessorFn: (bot) => bot.name },
+  { id: "status", accessorFn: (bot) => bot.published },
+  { id: "createdAt", accessorFn: (bot) => bot.createdAt },
+];
+
+// TanStack Table (headless — shadcn's own documented pairing for its
+// Table primitive, ADR-pending "table pattern" pilot) replacing this
+// screen's hand-rolled filter/sort state, with search+sort persisted to
+// the URL via nuqs instead of plain useState — a refresh, back button,
+// or shared link now keeps what you were looking at. Row rendering
+// (whole-row click nav, the actions menu) stays bespoke in
+// BotTableRow.tsx; TanStack only owns the filtered/sorted row order
+// here, not the markup — this dataset (per-org bots) is small enough
+// that client-side filtering/sorting, not a server round trip, is still
+// the right call (unchanged from the original decision).
 export function BotsTable({ bots }: { bots: BotRow[] }) {
-  const [search, setSearch] = useState("");
-  const [sortKey, setSortKey] = useState<SortKey>("createdAt");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [search, setSearch] = useQueryState("q", parseAsString.withDefault(""));
+  const [sortKey, setSortKey] = useQueryState(
+    "sort",
+    parseAsStringLiteral(SORT_KEYS).withDefault("createdAt"),
+  );
+  const [sortDir, setSortDir] = useQueryState(
+    "dir",
+    parseAsStringLiteral(["asc", "desc"] as const).withDefault("desc"),
+  );
   const [renameTarget, setRenameTarget] = useState<BotRow | null>(null);
   const [archiveTarget, setArchiveTarget] = useState<BotRow | null>(null);
   const [isDuplicating, startDuplicate] = useTransition();
 
+  const sorting: SortingState = useMemo(
+    () => [{ id: sortKey, desc: sortDir === "desc" }],
+    [sortKey, sortDir],
+  );
+
   function toggleSort(key: SortKey) {
     if (key === sortKey) {
-      setSortDir((dir) => (dir === "asc" ? "desc" : "asc"));
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
     } else {
       setSortKey(key);
       setSortDir("asc");
@@ -87,17 +99,19 @@ export function BotsTable({ bots }: { bots: BotRow[] }) {
     });
   }
 
-  const filtered = bots.filter((bot) =>
-    bot.name.toLowerCase().includes(search.trim().toLowerCase()),
-  );
-  const sorted = [...filtered].sort((a, b) => {
-    let cmp = 0;
-    if (sortKey === "name") cmp = a.name.localeCompare(b.name);
-    else if (sortKey === "status")
-      cmp = Number(a.published) - Number(b.published);
-    else cmp = a.createdAt.getTime() - b.createdAt.getTime();
-    return sortDir === "asc" ? cmp : -cmp;
+  const table = useReactTable({
+    data: bots,
+    columns,
+    state: { sorting, globalFilter: search },
+    getRowId: (bot) => bot.id,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    globalFilterFn: (row, _columnId, filterValue: string) =>
+      row.original.name.toLowerCase().includes(filterValue.trim().toLowerCase()),
   });
+
+  const sortedRows = table.getRowModel().rows.map((row) => row.original);
 
   return (
     <div>
@@ -111,7 +125,7 @@ export function BotsTable({ bots }: { bots: BotRow[] }) {
         <Input
           placeholder="Search bots..."
           value={search}
-          onChange={(event) => setSearch(event.target.value)}
+          onChange={(event) => setSearch(event.target.value || null)}
           aria-label="Search bots"
           className="h-row-sm rounded-b-none border-b-0 pl-8 shadow-none"
         />
@@ -122,13 +136,13 @@ export function BotsTable({ bots }: { bots: BotRow[] }) {
           past this wrapper's rounded-lg corners. rounded-t-none — the
           search input above owns the top corners now that it's attached. */}
       <div className="overflow-hidden rounded-lg rounded-t-none border border-border shadow-xs">
-        {sorted.length === 0 ? (
+        {sortedRows.length === 0 ? (
           // A dead end with no way forward (component-checklist.md item
           // 6, 2026-09-27 audit) — a real Clear button, not just text
           // explaining why the list is empty.
           <div className="flex flex-col items-center gap-2 py-8">
             <p className="text-sm text-muted-foreground">No bots match &ldquo;{search}&rdquo;.</p>
-            <Button type="button" variant="outline" size="sm" onClick={() => setSearch("")}>
+            <Button type="button" variant="outline" size="sm" onClick={() => setSearch(null)}>
               Clear search
             </Button>
           </div>
@@ -170,7 +184,7 @@ export function BotsTable({ bots }: { bots: BotRow[] }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sorted.map((bot) => (
+              {sortedRows.map((bot) => (
                 <BotTableRow
                   key={bot.id}
                   bot={bot}

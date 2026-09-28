@@ -129,6 +129,34 @@ test("archiving the only bot returns the list to its empty state", async ({
   ).toBeVisible();
 });
 
+// TanStack Table pilot (research-note/2026-09-28-table-library-
+// evaluation.md, ADR pending): search + sort now persist to the URL via
+// nuqs instead of plain useState — a refresh or shared link keeps what
+// you were looking at, which a bare useState version never could.
+test("sorting by name changes row order and survives a page reload (URL-persisted)", async ({
+  page,
+}) => {
+  await signUpAndCreateBot(page, "Zebra bot", "botssort");
+  await createSecondBot(page, "Alpha bot");
+
+  await page.goto("/bots");
+  const rows = page.locator('[data-slot="table-body"] [data-slot="table-row"]');
+  // Default sort is newest-first — Alpha bot (created second) leads.
+  await expect(rows.first()).toContainText("Alpha bot");
+
+  await page.getByRole("button", { name: /^Sort by Name/ }).click();
+  await expect(page).toHaveURL(/[?&]sort=name/);
+  await expect(page).toHaveURL(/[?&]dir=asc/);
+  await expect(rows.first()).toContainText("Alpha bot");
+  await expect(rows.last()).toContainText("Zebra bot");
+
+  // The sort survives a real reload, not just client-side state —
+  // the whole reason for moving it to the URL via nuqs.
+  await page.reload();
+  await expect(rows.first()).toContainText("Alpha bot");
+  await expect(rows.last()).toContainText("Zebra bot");
+});
+
 // component-checklist.md item 6 audit (2026-09-27): a zero-results
 // search was a dead end with no way forward.
 test("Clear search resets the empty search-results state", async ({ page }) => {
