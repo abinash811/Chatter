@@ -81,7 +81,7 @@ export function ConversationFilters({ bots }: { bots: { id: string; name: string
         <Checkbox
           id="issues-only"
           checked={issuesOnly}
-          onChange={(e) => setParam("issues", e.target.checked ? "1" : null)}
+          onCheckedChange={(checked) => setParam("issues", checked ? "1" : null)}
         />
         <Label htmlFor="issues-only" className="text-sm font-normal text-muted-foreground">
           Has an issue

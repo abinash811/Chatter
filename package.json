@@ -19,6 +19,7 @@
     "check:filelength": "node scripts/check-file-length.mjs",
     "check:doclength": "node scripts/check-doc-length.mjs",
     "check:rls": "node scripts/check-rls-coverage.mjs",
+    "check:shadcn": "node scripts/check-shadcn-only-primitives.mjs",
     "check:all": "node scripts/check-all.mjs",
     "check:exemptions": "node scripts/check-guardrail-exemptions.mjs",
     "canary": "node scripts/canary.mjs",

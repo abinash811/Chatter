@@ -1,20 +1,26 @@
+/**
+ * @name textarea
+ * @description Displays a form textarea or a component that looks like a textarea.
+ * @dependencies (none)
+ * @type registry:ui
+ */
+// ADR 0014 + ADR 0017: rebased onto shadcn/ui's real official source —
+// see components/ui/input.tsx's header comment for why and the same
+// `ring-ring`/`hover:border-strong-border` deltas kept here.
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-// Matches components/ui/input.tsx's pattern — every multi-line text
-// field in the console goes through this, not a raw <textarea>. Same
-// `ring-accent` → `ring-ring` fix as Input (2026-09-26) — see its
-// comment for why `--accent` was the wrong token for a focus ring.
-export const Textarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>(
-  ({ className, ...props }, ref) => (
+function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
+  return (
     <textarea
+      data-slot="textarea"
       className={cn(
-        "w-full rounded border border-border bg-background p-3 text-sm shadow-xs outline-hidden transition-colors hover:border-strong-border focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+        "flex w-full rounded border border-border bg-background px-3 py-2 text-sm shadow-xs outline-hidden transition-colors placeholder:text-muted-foreground hover:border-strong-border focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20",
         className,
       )}
-      ref={ref}
       {...props}
     />
-  ),
-);
-Textarea.displayName = "Textarea";
+  );
+}
+
+export { Textarea };

@@ -1,4 +1,4 @@
-// Runs all 9 guardrail checks in one Node process instead of npm's
+// Runs all 10 guardrail checks in one Node process instead of npm's
 // previous `check:isolation && check:vertical && ...` chain, which spawned
 // a fresh `node` process per check (9 process starts, each paying Node's
 // own startup cost). Behavior is identical, not just faster: each
@@ -23,6 +23,7 @@ const CHECKS = [
   "./check-file-length.mjs",
   "./check-doc-length.mjs",
   "./check-rls-coverage.mjs",
+  "./check-shadcn-only-primitives.mjs",
 ];
 
 for (const check of CHECKS) {

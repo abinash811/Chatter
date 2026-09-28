@@ -46,8 +46,8 @@ reason.)
   login/signup; Skeleton loading states on 7 routes.
   `docs/design/audit.md` tracks per-screen compliance against the bar —
   check there before assuming a screen is finished.
-- Testing/guardrails: 9 static guardrail checks (`npm run check:all`,
-  runs in one process now — `scripts/check-all.mjs`), 166 unit tests, 86
+- Testing/guardrails: 10 static guardrail checks (`npm run check:all`,
+  runs in one process now — `scripts/check-all.mjs`), 166 unit tests, 87
   `tests/e2e/` specs, 20 `tests/visual/` baselines, gitleaks secret
   scanning + a CI coverage floor, all wired into CI. A few e2e specs
   around publishing/saving intermittently fail under sustained single-
@@ -168,7 +168,8 @@ reason.)
   this adoption was matching a proven pattern, not chasing `latest`.
   Real, measured cost: `/bots`'s First Load JS grew ~4.9kB → ~23.6kB
   (confirmed via a real build). Verified: `tsc` clean, all 9
-  `check:all` guardrails, full unit suite, a new real e2e test proving
+  `check:all` guardrails (9 at the time — see the shadcn-primitives
+  entry below for the 10th), full unit suite, a new real e2e test proving
   sort order changes and survives a page reload (`tests/e2e/
   bots-list.spec.ts`), all 8 existing bots-list specs pass unmodified,
   a11y scan clean, and all 18 `tests/visual/` baselines pixel-identical
@@ -177,6 +178,32 @@ reason.)
   Clerk/Supabase for auth from the same template review — Chatter's own
   RLS-backed multi-tenancy (ADR 0003) + custom auth (ADR 0006) is
   already stronger and a costly reversal for no gain.
+- Shadcn-only primitives, mechanically enforced (2026-09-28, ADR 0025):
+  found and closed a real gap — 7 of 25 `components/ui/` files (`Input`,
+  `Textarea`, `Label`, `Checkbox`, `Card`, `Badge`, `Toaster`) were
+  hand-authored *imitating* shadcn's style but never actually pulled
+  from its real source (unlike the other 18, ADR 0014/0017). User
+  directive: "There shouldn't be any hand rolled in the product... how
+  do we make sure in future we don't miss this." All 7 rebased onto
+  shadcn's real source with deliberate customizations kept as
+  documented deltas, never a blind overwrite (`Card`'s Notion-register
+  tuning, `Badge`'s app-wide variant names, etc.) — `Checkbox` is a real
+  behavior change too, now radix-ui's real primitive
+  (`onChange`→`onCheckedChange` at its 2 call sites). New guardrail,
+  `scripts/check-shadcn-only-primitives.mjs` (`check:all` is now 10
+  checks), backed by `scripts/shadcn-manifest.json` — an explicit,
+  human-verified list, not header-sniffing (shadcn's own `@type
+  registry:` header turned out absent from most of its real source,
+  confirmed by pulling 7 files for real — a check built on it would
+  have missed this exact gap). Real bug caught only by an actual
+  screenshot, not any test: the generic `rounded` utility resolves to
+  this app's 10px `--radius`, which on a 16px checkbox rendered as a
+  full circle indistinguishable from a radio button — fixed to match
+  shadcn's real `rounded-[4px]`. Verified: `tsc` clean, all 10
+  `check:all` guardrails, full unit suite, the complete `tests/e2e/`
+  suite (isolated every ambiguous failure — all were the pre-existing
+  toast-timeout flake, no real regressions), full a11y scan, all 18
+  visual baselines regenerated and stable across two runs.
 - Self-serve config (roadmap "Self-serve configurability"): widget
   appearance editor (greeting/accent/avatar/position) and a 3-template
   persona picker (Support/Sales/Lead-gen), both in the bot editor.

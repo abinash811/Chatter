@@ -106,11 +106,50 @@ before ADR 0014, not a coincidence worth re-deriving.
 
 ## Component inventory
 
-**All 18 primitives in `components/ui/` are now on shadcn's real
-official registry source (ADR 0014 + ADR 0017)** — the CARE-derived
-source (ADR 0008) is fully retired. `@base-ui/react` (CARE's underlying
-primitive library) has been removed from `package.json` entirely;
-`radix-ui` is the only headless-primitive dependency in the repo now.
+**All 25 primitives in `components/ui/` are now verified shadcn/ui
+sources (ADR 0014 + ADR 0017 + 2026-09-28's provenance closure)** — no
+hand-rolled primitive exists anywhere in the product, and
+`scripts/check-shadcn-only-primitives.mjs` (part of `check:all`)
+enforces this mechanically: any new `components/ui/*.tsx` file must be
+listed in `scripts/shadcn-manifest.json`, added only after actually
+pulling and diffing the real source, never by assumption. The
+CARE-derived source (ADR 0008) is fully retired; `@base-ui/react`
+(CARE's underlying primitive library) has been removed from
+`package.json` entirely — `radix-ui` is the only headless-primitive
+dependency in the repo now.
+
+**18 were migrated first** (ADR 0014 + ADR 0017's original pass). **7
+more (Input, Textarea, Label, Checkbox, Card, Badge, Toaster) were
+found 2026-09-28 to have been hand-authored from scratch in shadcn's
+*style* — same `cn()` pattern, similar prop shapes — but never actually
+pulled from shadcn's real upstream source**, a gap the header-sniffing
+check (`@type registry:`, `scripts/lib/careExemption.mjs`) couldn't
+catch since that header isn't present on every real shadcn source file
+(confirmed by pulling `input`/`textarea`/`label`/`checkbox`/`badge`/
+`card`/`sonner` for real — none of the 7 carry it). All 7 were rebased
+onto shadcn's real source with deliberate customizations kept as
+documented deltas (never a blind overwrite — see each file's own header
+comment): `Card`'s Notion-register soft-fill/spacing/title-size tuning,
+`Input`/`Textarea`/`Checkbox`'s `hover:border-strong-border` and
+`ring-ring` focus treatment, `Badge`'s `default`/`muted`/`destructive`
+variant names (kept, not shadcn's `secondary`/`outline`/`ghost`/`link`
+— every call site already depends on them), `Toaster`'s hardcoded
+`theme="light"` (no `next-themes` — this app has no theme provider).
+
+`Checkbox` is a real behavior change, not just styling: it's now
+radix-ui's `Checkbox` primitive instead of a styled native
+`<input type="checkbox">`, which changed its event API
+(`onChange`/`e.target.checked` → `onCheckedChange`) at both real call
+sites (`ConversationFilters.tsx`, `AddActionDialog.tsx`). A real bug
+was caught and fixed in the same pass, only visible in an actual
+rendered screenshot: the generic `rounded` utility resolves to this
+app's `--radius` (10px), which on a 16px checkbox reads as a full
+circle, not a checkbox — shadcn's real source avoids this with an
+explicit `rounded-[4px]`, which this file now matches. `Label` picked
+up a real accessibility improvement from its real source too: radix-ui's
+`Label` correctly forwards a click to an associated Radix control
+(Switch/Checkbox/RadioGroup) the way a plain `<label htmlFor>` can't.
+
 ADR 0014's original new-screens-first phasing (migrate one component
 whenever its screen is next touched) was itself superseded by ADR 0017
 — the user asked to finish the whole set in one pass rather than wait
