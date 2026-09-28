@@ -241,6 +241,24 @@ reason.)
   conversations a11y scan, and all 18 visual baselines confirmed
   unchanged (the new focus/active classes only apply on interaction,
   not the resting state the visual suite captures).
+- Knowledge depth/polish pass (2026-09-28): `docs/design/audit.md`'s row
+  upgraded from mostly 🔲 to Hover/Focus/Loading/Depth ✅, Active 🟡.
+  Depth was already earned (same `rounded-lg border border-border
+  shadow-xs` wrap as Conversations/Leads/Actions) but never credited.
+  Real screenshot review (using "Load sample data" to get a populated
+  screen without a live embeddings call, since Q&A/file/URL ingestion
+  all require a real `ANTHROPIC_API_KEY`) flagged the delete button's
+  hover as visually almost imperceptible — `--accent` (`oklch(97%)`)
+  against a near-white `oklch(100%)` page background. `getComputedStyle()`
+  confirmed the hover genuinely applies (not broken), and the same
+  `ghost`-variant subtlety is already accepted and credited ✅ on the
+  Bots list's row-action button, so this was documented as a real,
+  cross-cutting `--accent`-on-white contrast question (affects `ghost`
+  buttons in 5 files total: `ActionsTable.tsx`, `KnowledgeTable.tsx`,
+  `BotTableRow.tsx`, `BotsTable.tsx`, `sidebar.tsx`) rather than
+  unilaterally redesigned for one screen — flagged to the user since
+  fixing it would touch several already-audited screens' visual
+  baselines at once, not committed to yet.
 - Self-serve config (roadmap "Self-serve configurability"): widget
   appearance editor (greeting/accent/avatar/position) and a 3-template
   persona picker (Support/Sales/Lead-gen), both in the bot editor.
