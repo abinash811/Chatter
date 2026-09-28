@@ -7,7 +7,15 @@ test("save draft shows a success toast with a working close button", async ({ pa
   await page.click('button:has-text("Save draft")');
 
   const toast = page.getByText("Draft saved.");
-  await expect(toast).toBeVisible();
+  // Same documented flake as the publish toast below: the
+  // saveDraftAction round trip can take longer than Playwright's 5s
+  // default under load — confirmed in CI 2026-09-28, where this exact
+  // "Draft saved." wait timed out on 3 separate runs in this file, each
+  // time on a different test, never the same one twice — real
+  // environment slowness, not a broken save. A generous timeout on
+  // every "Draft saved." wait in this file, not a longer one
+  // everywhere, is the fix.
+  await expect(toast).toBeVisible({ timeout: 20000 });
 
   await page.locator("[data-close-button]").first().click();
   await expect(toast).toBeHidden();
@@ -64,7 +72,7 @@ test("a tool's Switch (on the Tools tab) toggles and its state survives a save",
   await expect(toggle).toBeChecked();
 
   await page.click('button:has-text("Save draft")');
-  await expect(page.getByText("Draft saved.")).toBeVisible();
+  await expect(page.getByText("Draft saved.")).toBeVisible({ timeout: 20000 }); // see the comment in the first test above
   await page.reload();
   await page.click('button[role="tab"]:has-text("Tools")');
   await expect(page.getByRole("switch", { name: "Disable search_knowledge_base" })).toBeChecked();
@@ -87,7 +95,7 @@ test("persona template picker fills the persona textarea, replacing existing tex
 
   await page.click('button[role="tab"]:has-text("Persona")');
   await page.click('button:has-text("Save draft")');
-  await expect(page.getByText("Draft saved.")).toBeVisible();
+  await expect(page.getByText("Draft saved.")).toBeVisible({ timeout: 20000 }); // see the comment in the first test above
   await page.reload();
   await expect(page.locator("#persona")).toHaveValue(/upbeat, helpful shopping assistant/);
 });
@@ -105,7 +113,7 @@ test("avatar and position selects (Appearance tab) save and survive a reload", a
   await page.getByRole("option", { name: "Bottom left" }).click();
 
   await page.click('button:has-text("Save draft")');
-  await expect(page.getByText("Draft saved.")).toBeVisible();
+  await expect(page.getByText("Draft saved.")).toBeVisible({ timeout: 20000 }); // see the comment in the first test above
 
   await page.reload();
   await page.click('button[role="tab"]:has-text("Appearance")');
@@ -122,7 +130,7 @@ test("suggested reply chips save, survive a reload, and skip blank rows", async 
   await page.fill('input[name="suggestedReply_2"]', "Track my order");
 
   await page.click('button:has-text("Save draft")');
-  await expect(page.getByText("Draft saved.")).toBeVisible();
+  await expect(page.getByText("Draft saved.")).toBeVisible({ timeout: 20000 }); // see the comment in the first test above
 
   await page.reload();
   await page.click('button[role="tab"]:has-text("Appearance")');

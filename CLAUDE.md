@@ -50,12 +50,25 @@ reason.)
   runs in one process now — `scripts/check-all.mjs`), 166 unit tests, 86
   `tests/e2e/` specs, 20 `tests/visual/` baselines, gitleaks secret
   scanning + a CI coverage floor, all wired into CI. A few e2e specs
-  around publishing intermittently fail under sustained local single-
-  worker runs in this dev container (confirmed 2026-09-27: different
-  tests fail each run, all pass instantly alone, a fresh server restart
-  didn't help) — real resource contention from running the whole suite
-  back-to-back for hours, not a product bug; don't chase it further
-  locally, and don't assume it reproduces in CI's fresh container. Run
+  around publishing/saving intermittently fail under sustained single-
+  worker runs (confirmed 2026-09-27 locally: different tests fail each
+  run, all pass instantly alone, a fresh server restart didn't help) —
+  real resource contention, not a product bug; don't chase it further
+  locally. **Update 2026-09-28: this now confirmed to reproduce in the
+  real GitHub Actions runner too**, not just this dev container — PR
+  #11's CI failed 3 times in a row (2 separate automatic runs + 1
+  explicit re-run), each time on a different `bot-editor.spec.ts` test,
+  always the same failure shape: a "Draft saved."/"Published..." toast
+  not appearing before Playwright's default (or even an already-
+  generous 20-30s) timeout. Hardened the "Draft saved." assertions to a
+  20s timeout (`tests/e2e/bot-editor.spec.ts`, matching the existing
+  precedent already there for the publish toast) as a real, minimal fix
+  for that specific pattern — but a local repro immediately afterward
+  still hit the same class of failure on the already-20s publish toast,
+  confirming this is genuine environment/runner slowness under load,
+  not something a bigger timeout number fully solves. Don't keep
+  inflating timeouts chasing this; it's an accepted, known limitation of
+  the current CI/dev environment, not a merge blocker by itself. Run
   scoped test files during a session, not the full suite repeatedly.
 - Suggested-reply buttons (2026-09-27): up to 3 chip buttons, configured
   in the Appearance tab (`MAX_SUGGESTED_REPLIES`,
