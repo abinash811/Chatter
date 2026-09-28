@@ -6,11 +6,12 @@ import { registerTool, type Tool } from "@/lib/ai/tools/registry";
 // couldn't fully answer, or the visitor wants a human to follow up, so
 // it captures contact info instead of losing the visitor entirely.
 //
-// conversationId is deliberately not recorded — Tool.handle(orgId,
-// botId, input) doesn't currently receive it (lib/ai/chat.ts's runTool
-// call doesn't pass one), and widening that shared interface for every
-// tool just for this one isn't justified yet. See lib/leads.ts's Lead
-// row shape.
+// conversationId is deliberately not recorded here — Tool.handle's 4th
+// parameter (added 2026-09-28, ADR 0023, for pending-action tools that
+// need to point back at their conversation) is optional and this tool
+// has no use for it; a lead's own console page doesn't need conversation
+// context the way an approval queue does. See lib/leads.ts's Lead row
+// shape.
 export const collectLeadTool: Tool = {
   name: "collect_lead",
   description:

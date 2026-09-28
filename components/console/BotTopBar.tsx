@@ -20,6 +20,7 @@ const NAV_ITEMS = [
   { subpath: "/knowledge", label: "Knowledge" },
   { subpath: "/leads", label: "Leads" },
   { subpath: "/actions", label: "Actions" },
+  { subpath: "/approvals", label: "Approvals" },
   { subpath: "/integrations", label: "Integrations" },
 ];
 

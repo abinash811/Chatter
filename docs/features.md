@@ -30,9 +30,11 @@ info capture, matches Chatbase's "Collect Leads" — every new tool added
 going forward is industry-agnostic by default, per the 2026-09-27
 scoping decision; only `check_order_status` stays ecommerce-specific),
 `check_order_status` (ecommerce, Shopify Admin API, falls back to
-human handoff per guardrail #4 if no integration is connected), and
+human handoff per guardrail #4 if no integration is connected),
+`request_order_cancellation` (ecommerce, write-capable, queues for
+human approval — see "Order cancellation (approval-gated)" below), and
 **custom (business-defined) webhook actions** — see "Custom actions"
-below. The first three are independently enable/disable-able per bot
+below. The first four are independently enable/disable-able per bot
 from the bot editor's Tools tab (a card gallery — icon, name,
 description, an enable/disable `Switch` per card, added 2026-09-27 to
 match Chatbase's own Actions-page card layout, confirmed from real
@@ -56,6 +58,26 @@ metadata IP) before every call. No edit yet — delete and recreate.
 **How**: `lib/customActions.ts` (CRUD), `lib/ai/tools/customAction.ts`
 (the runtime `Tool` factory + SSRF guard), the `CustomAction` model.
 ADR 0022.
+
+### Order cancellation (approval-gated)
+**Who**: the bot proposes it, the business owner decides. **What**: a
+write-capable action tool — the first one, and a new risk category
+(ADR 0023). `request_order_cancellation` never calls Shopify itself: it
+validates the order exists and isn't already cancelled, then queues a
+`PendingAction` and tells the visitor a human will review it — it never
+claims the order is cancelled. The business owner reviews and
+approves/rejects from a new per-bot "Approvals" page
+(`/bots/[botId]/approvals`); only approving actually calls Shopify's
+`orderCancel` GraphQL mutation. A failed approved-execution (e.g. no
+Shopify integration connected, or Shopify's own `userErrors`) shows the
+real failure reason on the row, never a false success. Requires the
+`write_orders` OAuth scope — a store connected before this change must
+reconnect. **How**: `lib/ai/tools/cancelOrder.ts` (the tool + the
+separately-exported `executeOrderCancellation`), `lib/pendingActions.ts`
+(the generic queue, deliberately with no knowledge of any specific
+tool), `app/(console)/bots/[botId]/approvals/` (the console page + the
+one place that maps a toolName to its executor), the `PendingAction`
+model. ADR 0023.
 
 ### Demo data ("Load sample data")
 **Who**: a new or non-technical user, or anyone demoing the product.

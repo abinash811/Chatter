@@ -1,4 +1,5 @@
 import { type Page, expect } from "@playwright/test";
+import type { Prisma } from "@prisma/client";
 import { withOrgContext, getOrgIdForBot } from "@/lib/db";
 
 // Shared across every e2e spec that needs a signed-up, onboarded user
@@ -153,6 +154,28 @@ export async function seedCustomAction(
         method: fields.method ?? "POST",
         url: fields.url ?? "https://api.example.com/hook",
         inputSchema: { type: "object", properties: {}, required: [], additionalProperties: false },
+      },
+    }),
+  );
+}
+
+// A write-capable tool's (request_order_cancellation, ADR 0023) queued
+// request — bypasses calling the real tool, same precedent as seedLead,
+// since there's no live Shopify integration connectable in this
+// environment either.
+export async function seedPendingAction(
+  botId: string,
+  fields: { toolName: string; input: Record<string, unknown>; conversationId?: string },
+): Promise<void> {
+  const orgId = await getOrgIdForBot(botId);
+  await withOrgContext(orgId, (tx) =>
+    tx.pendingAction.create({
+      data: {
+        orgId,
+        botId,
+        conversationId: fields.conversationId ?? "conv-seed-1",
+        toolName: fields.toolName,
+        input: fields.input as Prisma.InputJsonValue,
       },
     }),
   );

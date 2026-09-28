@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { signUpAndCreateBot, seedConversations, uniqueEmail, PASSWORD } from "../e2e/helpers";
+import { signUpAndCreateBot, seedConversations, seedPendingAction, uniqueEmail, PASSWORD } from "../e2e/helpers";
 
 // Visual regression layer (playwright.config.ts's toHaveScreenshot,
 // see playwright.visual.config.ts for the known cross-environment
@@ -135,6 +135,28 @@ test("knowledge base — empty state and Add Q&A dialog", async ({ page }) => {
   // captures the resting state, not a race against when the ring paints.
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
   await expect(page).toHaveScreenshot("knowledge-add-dialog.png", { mask: sidebarMasks(page) });
+});
+
+test("approvals page — empty state and a waiting request (ADR 0023)", async ({ page }) => {
+  await signUpAndCreateBot(page, "Support bot", "visual-approvals");
+  const botId = page.url().split("/bots/")[1];
+
+  await page.click('a:has-text("Approvals")');
+  await expect(page).toHaveURL(/\/approvals$/);
+  await expect(page.getByText("Nothing waiting on you")).toBeVisible();
+  await expect(page).toHaveScreenshot("approvals-empty.png", { mask: sidebarMasks(page) });
+
+  await seedPendingAction(botId, {
+    toolName: "request_order_cancellation",
+    input: { orderNumber: "1001", reason: "Ordered the wrong size" },
+  });
+  await page.reload();
+  await expect(page.getByText(/Cancel order/)).toBeVisible();
+  // "Requested" is a relative timestamp ("just now") — same masking
+  // rationale as conversations-list.png's Started column.
+  await expect(page).toHaveScreenshot("approvals-pending.png", {
+    mask: [page.locator('[data-slot="table-body"] tr td:nth-child(3)'), ...sidebarMasks(page)],
+  });
 });
 
 test("settings page", async ({ page }) => {

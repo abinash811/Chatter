@@ -50,6 +50,15 @@ doc as ADRs land instead of letting decisions live only in chat history.
   (built fresh via `buildCustomActionTool`, `lib/ai/tools/
   customAction.ts`) — the static registry itself is untouched. Same
   guardrail #4 fallback and an SSRF guard on the business-supplied URL.
+- **Write-capable tools never execute directly — they queue a
+  `PendingAction` for human approval** (ADR 0023). A tool like
+  `request_order_cancellation` validates the request and writes a
+  `pending` row instead of calling the external API itself; the actual
+  write happens only when a business owner approves it from
+  `/bots/[botId]/approvals` (`lib/pendingActions.ts`). Read-only and
+  low-stakes-write tools (lookups, `collect_lead`, custom actions) are
+  unaffected — this only applies to a tool whose effect can't be undone
+  by "the AI was wrong."
 - Streamed responses back to the widget.
 - **BYOA (bring-your-own API key)**: optional, per-org, off by default —
   a business can plug in their own Anthropic key from `/settings`

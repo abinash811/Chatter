@@ -34,6 +34,7 @@ const MIGRATIONS = [
   "db/migrations/0003_hybrid_search_fts.sql",
   "db/migrations/0004_leads_rls.sql",
   "db/migrations/0005_custom_actions_rls.sql",
+  "db/migrations/0006_pending_actions_rls.sql",
 ];
 
 async function main() {

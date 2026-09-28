@@ -21,14 +21,14 @@ enum MembershipRole {
 }
 
 model Org {
-  id        String   @id @default(uuid())
-  name      String
-  createdAt DateTime @default(now())
+  id                       String    @id @default(uuid())
+  name                     String
+  createdAt                DateTime  @default(now())
   // Null until the onboarding flow (app/onboarding/) completes — see
   // ADR 0012. app/(console)/layout.tsx redirects here on every request
   // until this is set, so a brand-new org can never reach the console
   // shell without naming itself and creating its first bot.
-  onboardedAt DateTime?
+  onboardedAt              DateTime?
   // Optional BYOA (ADR 0012): null means "use our managed
   // ANTHROPIC_API_KEY"; set means this org's bots call Claude with
   // their own key instead. AES-256-GCM via lib/crypto.ts, never the
@@ -96,14 +96,15 @@ model Bot {
   // for this, unlike withOrgContext for tenant isolation — see the ADR).
   archivedAt DateTime?
 
-  org           Org                @relation(fields: [orgId], references: [id])
-  versions      BotConfigVersion[]
-  sources       KnowledgeSource[]
-  integrations  Integration[]
-  conversations Conversation[]
-  leads         Lead[]
-  customActions CustomAction[]
-  publicKey     BotPublicKey?
+  org            Org                @relation(fields: [orgId], references: [id])
+  versions       BotConfigVersion[]
+  sources        KnowledgeSource[]
+  integrations   Integration[]
+  conversations  Conversation[]
+  leads          Lead[]
+  customActions  CustomAction[]
+  pendingActions PendingAction[]
+  publicKey      BotPublicKey?
 
   @@index([orgId])
   @@map("bots")
@@ -114,13 +115,13 @@ model Bot {
 // here. Tool handlers (lib/ai/tools/) read this to know whether a real
 // integration exists or they must fall back to handoff (guardrail #4).
 model Integration {
-  id           String   @id @default(uuid())
-  orgId        String
-  botId        String
-  provider     String // "shopify" for v1; more as platforms are added
-  shopDomain   String?
-  accessToken  String // AES-256-GCM via lib/crypto.ts (ADR 0012) — never the raw token
-  connectedAt  DateTime @default(now())
+  id          String   @id @default(uuid())
+  orgId       String
+  botId       String
+  provider    String // "shopify" for v1; more as platforms are added
+  shopDomain  String?
+  accessToken String // AES-256-GCM via lib/crypto.ts (ADR 0012) — never the raw token
+  connectedAt DateTime @default(now())
 
   bot Bot @relation(fields: [botId], references: [id])
 
@@ -314,4 +315,36 @@ model ToolCallLog {
 
   @@index([orgId])
   @@map("tool_call_logs")
+}
+
+// A write-capable tool's proposed action, queued for human approval
+// (ADR 0023) — never executed by the model directly. `toolName` +
+// `input` are what the model proposed (e.g. "request_order_cancellation",
+// {orderNumber}); `result` is set once resolved (the real API's outcome
+// on approve, or null on reject). No relation to Conversation, same
+// precedent as ToolCallLog above — this is an append-mostly audit-style
+// table, not something joined against conversations in a query today.
+enum PendingActionStatus {
+  pending
+  approved
+  rejected
+  failed
+}
+
+model PendingAction {
+  id             String              @id @default(uuid())
+  orgId          String
+  botId          String
+  conversationId String
+  toolName       String
+  input          Json
+  status         PendingActionStatus @default(pending)
+  result         String?
+  createdAt      DateTime            @default(now())
+  resolvedAt     DateTime?
+
+  bot Bot @relation(fields: [botId], references: [id])
+
+  @@index([orgId])
+  @@map("pending_actions")
 }

@@ -33,198 +33,12 @@ remember — it's checked at commit time.
 
 **Earlier history**: `docs/changelog/2026-09-part1.md` — everything
 from the original CARE-based design system through ADR 0016
-(conversation inbox made non-technical).
+(conversation inbox made non-technical); `docs/changelog/
+2026-09-part2.md` — the CARE-to-shadcn migration (ADR 0017) through the
+bot top bar's shared-across-pages rework.
 
 ---
 
-- **Design system fully off CARE — all 18 primitives now on shadcn's
-  real official source, `@base-ui/react` removed entirely (ADR 0017).**
-  User's explicit instruction: "Remove all design dependencies and keep
-  only Shadcn" — overrides ADR 0014's new-screens-first phasing (which
-  had only migrated `Sidebar`/`Table` after 2 sessions) in favor of
-  finishing the whole set now. All 16 remaining primitives (`Button`,
-  `Dialog`, `AlertDialog`, `Tabs`, `DropdownMenu`, `Popover`, `Tooltip`,
-  `Select`, `Separator`, `Avatar`, `Skeleton`, `Alert`, `Switch`,
-  `RadioGroup`, `Sheet`, `ScrollArea`) pulled in one batch via the
-  existing `scripts/pull-shadcn-component.mjs` (real source from
-  `raw.githubusercontent.com`, never recalled/guessed) — 10 have real
-  screen usage (directly, or indirectly via `Sidebar`'s own internal
-  dependencies), 6 (`Popover`/`Avatar`/`Alert`/`Switch`/`RadioGroup`/
-  `ScrollArea`) had zero usage anywhere in the app even under CARE,
-  migrated anyway since the goal was dropping the dependency entirely,
-  not just fixing load-bearing screens — documented plainly that these
-  6 only got `tsc`/build verification, not real browser behavior, since
-  nothing renders them. `npm uninstall @base-ui/react` once nothing
-  imported it anymore; bundle size dropped measurably as a real,
-  incidental benefit (e.g. the bot editor page's First Load JS: 230kB
-  → 187kB).
-
-  `tsc` surfaced 5 real API differences between Base UI and radix-ui in
-  one pass (fixed, not guessed): `Tabs.Content`'s `keepMounted` →
-  `forceMount`; CARE's `destructive-solid` Button variant doesn't exist
-  on shadcn's real 6-variant set (→ `destructive`); `Select.Value`
-  needs no `items` workaround with real radix-ui (only Base UI's popup-
-  unmounts-while-closed behavior required that); `Sidebar`'s one-line
-  `TooltipProvider` `delay`→`delayDuration` adaptation from the ADR
-  0014 Sidebar-only migration reverted now that `Tooltip` is also real
-  shadcn; and CARE's extra `AlertAction`/`SheetBody` exports (unused
-  anywhere) dropped from `components/ui/index.ts`.
-
-  **Caught one real, non-cosmetic regression by actually clicking
-  through the app, not trusting `tsc`**: the knowledge base's delete
-  confirmation used a `<form action={deleteFormAction}>` submit button
-  nested inside `AlertDialogAction` — under real radix-ui, the dialog's
-  own close-on-click dismissal unmounts mid-click and corrupts React's
-  server-action wiring, so clicking "Delete" silently fired zero
-  network requests (confirmed via request/response logging) — the row
-  never actually got deleted, though the UI gave no visible sign
-  anything was wrong. This exact flow had only ever been "verified for
-  real" as a one-off manual check in an earlier session (ADR 0013's
-  knowledge base pass), never as a persistent spec, so nothing would
-  have caught this regression automatically. Fixed by calling the
-  `useActionState` dispatch directly with manually-built `FormData`
-  from `onClick` instead of relying on native form submission —
-  sidesteps the race entirely. Added a permanent
-  `tests/e2e/knowledge.spec.ts` regression spec (Cancel keeps the row,
-  confirming Delete removes it past a real reload) so this can't be
-  silently reintroduced, closing the exact kind of coverage gap
-  CLAUDE.md's own "never commit code that hasn't actually been run"
-  rule warns about.
-
-  Verified: guardrails, `tsc`, a clean rebuild, all 99 unit tests
-  (unchanged), all 41 `tests/e2e/` specs (40 + 1 new regression spec)
-  against a genuinely fresh server, and all 11 `tests/visual/`
-  baselines regenerated (every one changed, as expected — Button's real
-  shadcn styling differs subtly from CARE's, affecting every screen —
-  confirmed via real diff/actual images before regenerating, not
-  assumed) and stable across two clean re-runs. `docs/design/design-
-  system.md`'s component inventory rewritten (no more CARE-vs-shadcn
-  split to track), `docs/conventions.md`'s "Building a new feature"
-  step 2 updated, `docs/adr/0017-complete-shadcn-migration-drop-base-
-  ui.md` added.
-- **`docs/north-star.md` added** — the user's long-term "Configurable AI
-  Agent Platform" product direction (chat-first now, voice/healthcare-
-  multi-agent orchestration later, other verticals after that), captured
-  so a new session has it without re-reading full chat history.
-  `docs/roadmap.md` flagged with the current phase (Phase 1: chat-based,
-  Chatbase-parity + our own product opinions; voice and other verticals
-  explicitly deferred). Docs-only.
-- **Console sidebar rebuilt against a real Chatbase screenshot
-  reference** (user-supplied, not recalled) — replaces the bare
-  "Chatter" logo + 3 nav items shell with: a real org-name header (no
-  fabricated plan badge — we have no billing/plan concept yet, so one
-  wasn't invented), a functional nav search filter, a "Getting started"
-  checklist widget backed by real per-org data (5 steps: first bot,
-  knowledge added, appearance customized, published, integration
-  connected — each a live count query, not a stored flag), and a
-  signed-in-user footer (avatar initial + email + logout). Top bar
-  deliberately left alone this pass (user's explicit call — its real
-  content, a bot switcher/type dropdown, belongs to a future bot-editor
-  redesign, not the shell). `lib/auth.ts` gained `getUserEmail()` (User
-  isn't RLS-protected, same reasoning as the existing login lookups);
-  `lib/ai/botConfig.ts`'s `DEFAULT_APPEARANCE` exported so the checklist
-  can tell a genuinely customized appearance apart from the value
-  `getOrCreateDraft` silently seeds every new draft with.
-
-  Caught two real bugs by actually running this, not trusting types:
-  (1) comparing appearance against `{}` instead of `DEFAULT_APPEARANCE`
-  marked "customize appearance" done the moment anyone opened the bot
-  editor, before ever touching it — caught by a real e2e assertion
-  expecting 1/5 and getting 2/5, not by `tsc`. (2) masking the org-name/
-  user-email `<span>`s directly for `tests/visual/` made the mask
-  bounding box track the text's own rendered width — same character
-  *count* every run (fixed-length timestamp+random suffix) still shifts
-  a few pixels per run from ordinary glyph-width variation, so the
-  baseline flaked on every re-run, not just the first. Fixed by masking
-  the fixed-width parent row instead of the shrink-to-fit text node;
-  confirmed via two clean re-runs after the fix, where the first
-  "regenerate once and move on" attempt would have shipped a still-flaky
-  baseline.
-
-  Also hit and worked around a real, pre-existing environment gap, not
-  a code bug: this container had no `node_modules`, no local Postgres
-  role/db/pgvector, and no `.env` — all set up fresh (`npm install`,
-  `postgresql-16-pgvector` installed, `chatter` role/db created,
-  `db:migrate` + `apply-sql-migrations.mjs` run) to actually verify
-  against a real Postgres instead of skipping verification. Also hit the
-  documented "stale `next-server` process serving an old build" hazard
-  from the ADR 0014 Sidebar/Table migration entry above, twice — same
-  fix (kill the stale process, rebuild, retest).
-
-  Verified: guardrails, `tsc`, a clean rebuild, all 99 unit tests
-  unchanged, all 44 `tests/e2e/` specs (41 existing + 3 new
-  `tests/e2e/sidebar.spec.ts` specs: search filter, checklist progress +
-  navigation, footer identity + logout), and all 11 `tests/visual/`
-  baselines regenerated (every one changed, as expected — the sidebar is
-  present on every console screen) and confirmed stable across two
-  clean re-runs. The browser canary itself couldn't run (this
-  container's Playwright install is missing the exact `chrome-headless-
-  shell` revision `scripts/canary.mjs` expects — a version-pin drift
-  between the pre-installed browser and the `playwright` npm package,
-  unrelated to this change) — worked around with a one-off equivalent
-  check using the full Chromium binary the e2e/visual suites already use
-  successfully, confirming zero console/page errors on `/login` and the
-  unauthenticated `/bots` redirect. Not fixed permanently; flagged here
-  rather than silently skipped. `docs/design/preview/console-shell.html`
-  rebuilt to match.
-- **Bot-scoped top bar with a bot switcher (`components/console/
-  BotTopBar.tsx`) — 2026-09-26, matches the Chatbase reference
-  screenshot's own bot switcher.** Explicit user-confirmed scope: one
-  persistent top bar shared across all 3 bot-scoped pages (editor/
-  knowledge/integrations) via a new `app/(console)/bots/[botId]/
-  layout.tsx`, replacing each page's own separate header — not scoped
-  to the editor alone. Switching bots preserves the current page
-  (Knowledge stays on Knowledge for the new bot) by reusing the
-  pathname's subpath after `/bots/{botId}` verbatim, rather than always
-  landing on the editor. `BotEditorForm.tsx`'s own top row now only
-  keeps what's specific to it (publish-status badge, Save/Publish) —
-  the bot name/switcher and Knowledge/Integrations links moved to the
-  shared bar. Knowledge/Integrations pages' own `<h1>`s demoted to
-  `<h2>` (the page's real h1 is now the switcher row's sr-only bot
-  name) — a page should have exactly one h1.
-
-  Caught two real bugs by actually running this, not trusting types:
-  (1) assumed a parent layout throwing prevents a child page's own data
-  fetch from starting — false for Next.js App Router, which fetches a
-  layout and its page in parallel rather than sequentially. Without the
-  page keeping its own lightweight bot-existence check, an invalid
-  `botId` raced `getOrCreateDraft` into a raw Prisma foreign-key
-  violation instead of the clean "not found" the layout throws — same
-  end result (the plain-language error boundary still shows) but an
-  ugly, harder-to-debug error logged along the way. Fixed by keeping a
-  cheap `findUniqueOrThrow` in the editor page too, confirmed via a real
-  server log showing a clean Prisma `NotFoundError` afterward, not the
-  FK violation. (2) 4 existing `tests/e2e/` specs broke because their
-  own selectors (`button:has-text("Publish")`, `button:has-text("Add")`,
-  a bare `getByText(<bot name>)`) coincidentally substring-matched the
-  new switcher — a `<button>` whose visible text is literally the bot's
-  own name (test bots were named "Publish Test Bot", "Add Menu KB Bot",
-  etc.) — so a click meant for the real action button silently opened
-  the switcher's dropdown instead. Fixed by switching those assertions
-  to `getByRole` with `exact: true` (the switcher's accessible role is
-  `combobox`, not `button`, so a role-scoped query never collides) —
-  worth remembering as a real, recurring hazard of adding any new
-  visible-text control near existing text-based test selectors, not a
-  one-off.
-
-  Verified: guardrails, `tsc`, a clean rebuild, all 99 unit tests
-  unchanged, all 47 `tests/e2e/` specs (44 existing, all updated
-  selectors re-verified passing, + 3 new `tests/e2e/bot-top-bar.spec.ts`
-  specs: switcher lists every bot and preserves the current page on
-  switch, nav highlights the active page, and the error-boundary case
-  for an invalid/foreign bot id), and all 11 `tests/visual/` baselines
-  regenerated (bot editor, its publish dialog, knowledge empty/add-
-  dialog, and the icon-collapsed sidebar — every screen that renders a
-  bot-scoped page) and confirmed stable across two clean re-runs. Also
-  manually screenshotted the Integrations page for real (no existing
-  `tests/visual/` baseline for it) to confirm it correctly picked up the
-  new shared top bar with zero page-specific changes needed.
-  `docs/design/preview/bot-editor.html` updated to show the new shared
-  top bar above each tab scene; `knowledge.html`/`settings.html`/
-  `conversations.html` previews were not touched this pass and are now
-  slightly stale on this one point (same honest gap-flagging as the
-  general design-system-preview staleness already noted in `docs/
-  design/README.md`), not silently assumed current.
 - **Skeleton loading states + a real, previously-invisible text/ring bug
   found and fixed across the whole console — 2026-09-26, user directive
   ("flag when we're not building high-class international standard
@@ -299,6 +113,92 @@ from the original CARE-based design system through ADR 0016
   actions/delete) logged as the file's first "open findings" entry
   rather than left in scrollback. `docs/design/audit.md` added to this
   file's "Where things live" list.
+
+- **Write-capable action tools: order cancellation, gated on human
+  approval — 2026-09-28, ADR 0023.** Follows directly from a real
+  product conversation, not a silent pick: asked what to build next,
+  the user chose "write-capable action tools" from a list of options;
+  per CLAUDE.md's standing rule ("when a new technical pattern needs a
+  real choice, explain it before asking"), the real risk (a write tool
+  is irreversible and a visitor could manipulate the bot into
+  triggering it) and two real-world patterns (fully automatic execution
+  vs. bot-proposes/human-approves) were explained before asking which;
+  the user picked human approval ("Okay let's have 2").
+
+  `request_order_cancellation` (`lib/ai/tools/cancelOrder.ts`) never
+  calls Shopify itself. `handle()` validates the order via the same
+  Shopify REST lookup `check_order_status` already uses (duplicated
+  intentionally, not refactored into a shared helper, to avoid touching
+  tested working code), returns `handoff_required`/`not_found`/
+  `already_cancelled` directly for those cases, and otherwise queues a
+  `PendingAction` and tells the visitor a human will review it — never
+  that it's done. A new generic queue, `lib/pendingActions.ts`,
+  deliberately has zero knowledge of any specific tool (`PendingAction`
+  model, migration `20260928100000_add_pending_actions`, RLS policy
+  `db/migrations/0006_pending_actions_rls.sql` — real cross-org psql
+  test run: org A sees its own row, org B sees 0, no context sees 0).
+  Keeping it generic avoids a circular import: if it imported
+  `executeOrderCancellation` to build a toolName→executor map, and
+  `cancelOrder.ts`'s own `handle()` already imports `createPendingAction`
+  from it, that's a cycle. Resolved by putting the executor-dispatch map
+  in the console layer instead
+  (`app/(console)/bots/[botId]/approvals/actions.ts`'s `EXECUTORS`) —
+  the next write-capable tool adds one line there, not a change to the
+  generic queue.
+
+  New `/bots/[botId]/approvals` console page (added to `BotTopBar`'s nav
+  between Actions and Integrations) lists queued requests; approving
+  needs its own confirm dialog (`AlertDialog`, "This calls Shopify for
+  real and can't be undone") since it's the one moment a real external
+  write happens — matching the existing bot-publish confirm pattern;
+  rejecting needs none, since nothing external happens. Approving calls
+  the tool's separately-exported `executeOrderCancellation`, the real
+  `orderCancel` GraphQL mutation — REST is deprecated for new Shopify
+  work since October 2024, so GraphQL was used from the start rather
+  than matching `check_order_status`'s older REST call. Requires the
+  `write_orders` OAuth scope, widened on `lib/integrations/shopify.ts`'s
+  `SCOPES` constant — a real, documented consequence: a store connected
+  before this change is still running on the old, narrower grant and
+  must redo OAuth before cancellation will work for them; there's no way
+  to silently upgrade an existing token's scope.
+
+  `shopify.dev` stayed blocked for `WebFetch` in this environment (same
+  `EGRESS_BLOCKED` pattern hit earlier for `chatbase.co`) — the
+  `orderCancel` mutation shape, `OrderCancelReason` enum, and
+  `OrderCancelRefundMethodInput` fields were pieced together via
+  WebSearch instead of the primary source, and ADR 0023 says so plainly:
+  unverified against a live Shopify store, matching the project's
+  "check current practice, don't recall it" rule about being honest when
+  that check couldn't actually happen.
+
+  A real, not hypothetical, test-assertion bug caught while writing
+  `tests/unit/lib/ai/tools/cancelOrder.test.ts`: an assertion checking
+  the pending-approval message never contains the word "cancelled" at
+  all failed — correctly, since the real message legitimately says
+  "...before the order is actually cancelled" (future tense). Fixed by
+  asserting the message matches `/review/i` and does *not* match
+  `/has been cancelled|is cancelled|order cancelled/i` — the real
+  intent (never claim the action is done), not a blanket word-ban.
+
+  Verified end-to-end with real screenshots against the running app (no
+  live Shopify store is connectable in this environment, so a
+  `PendingAction` was seeded directly via `withOrgContext`, same bypass
+  precedent as every other Claude/Voyage/Shopify-dependent feature this
+  project has seeded around): the empty state, a queued request with its
+  full description, the approve confirm dialog's wording, and the
+  resolved row correctly showing a real "failed" outcome with "No
+  Shopify store connected for this bot." — never a false "cancelled"
+  success. Also verified: `tsc` clean (no existing tool implementation
+  needed changes when `Tool.handle`'s signature grew an optional 4th
+  `conversationId` parameter — TypeScript's structural typing for
+  optional parameters made this backward-compatible, confirmed rather
+  than assumed), all 9 `check:all` guardrails, 166 unit tests (14 new:
+  9 for `cancelOrder.ts`, 5 for `pendingActions.ts`), a clean production
+  build, 6 new `tests/e2e/` specs (`approvals.spec.ts` + a new a11y
+  scan) all green, and all 20 `tests/visual/` baselines regenerated
+  (the new "Approvals" nav item shifted `BotTopBar`'s layout, so every
+  bot-scoped-page baseline needed regenerating, same as every previous
+  nav-item addition this session) and confirmed stable across two runs.
 
 **Known gaps:**
 - 🟡 `scripts/canary.mjs` can't run in this container as-is — the

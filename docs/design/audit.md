@@ -79,6 +79,7 @@ for. This table is what closes that.
 | Integrations | 🔲 | 🔲 | 🟡 | Axe scan added 2026-09-27, clean. No manual SR pass. |
 | Leads | 🔲 | 🔲 | 🟡 | Axe scan added 2026-09-27, clean. No manual SR pass. |
 | Actions | 🔲 | 🔲 | 🟡 | Axe scan added 2026-09-27, clean (`custom_actions` page, ADR 0022). No manual SR pass. |
+| Approvals | 🔲 | 🔲 | 🟡 | Axe scan added 2026-09-28, clean (`pending_actions` page, ADR 0023). No manual SR pass. |
 | Settings | 🔲 | 🔲 | 🟡 | Axe scan added 2026-09-27, clean. No manual SR pass. |
 | Conversations list/detail | 🔲 | 🔲 | 🟡 | Axe scan added 2026-09-27 for both — caught and fixed a real critical "button-name" violation (`ConversationFilters`'s bot/date-range `Select` triggers intermittently rendered with no accessible name at all, ~40% reproduction rate, same root cause as the bot-editor switcher bug: `SelectValue`'s label resolves after the trigger itself is accessible-name-checkable). No manual SR pass. |
 | Onboarding | 🔲 | 🔲 | 🟡 | Axe scan added 2026-09-27, clean. No manual SR pass. |
@@ -108,6 +109,7 @@ if it's ever touched.
 | Integrations | 🔲 | 🔲 | 🔲 | ✅ | 🔲 | Shares the polished `BotTopBar`; own content (provider list) untouched. |
 | Leads | 🔲 | 🔲 | 🔲 | ✅ | 🟡 | New 2026-09-27, real screenshot checked — reuses Table/empty-state pattern from Knowledge/Conversations (already `border`+`shadow-xs`), so it inherits their depth; no dedicated hover/focus/active pass done (no interactive rows yet, view-only). |
 | Actions | 🔲 | 🔲 | ✅ | ✅ | 🟡 | New 2026-09-27 (ADR 0022), real screenshot checked at empty/add-dialog/populated states — same Table/empty-state inheritance as Leads, plus a working `Switch` per row (real hover/active state from shadcn's own component, not custom-built) so per-row enable/disable already has a visible interactive affordance. |
+| Approvals | 🔲 | 🔲 | ✅ | ✅ | 🟡 | New 2026-09-28 (ADR 0023), real screenshot checked at empty/pending/confirm-dialog/resolved states — same Table/empty-state inheritance as Leads/Actions. `AlertDialog` confirm step on Approve only (the one moment a real external write happens), matching the bot-publish confirm pattern. |
 | Settings | 🔲 | 🔲 | 🔲 | ✅ | 🟡 | Already Card-wrapped; hover/focus/active on its inputs not re-verified. |
 | Conversations list | 🔲 | 🔲 | 🔲 | ✅ | 🔲 | Table row click affordance not audited. |
 | Conversation detail | — | — | — | ✅ | 🟡 | Read-only screen, less interactive surface to check. |

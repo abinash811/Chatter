@@ -3,10 +3,15 @@ import { encrypt } from "@/lib/crypto";
 import { registerIntegrationProvider, type IntegrationProvider } from "@/lib/integrations/provider";
 
 // First concrete adapter for the generic connect/disconnect interface.
-// Minimal scopes per docs/research/competitive-landscape.md's finding on
+// Base scopes per docs/research/competitive-landscape.md's finding on
 // how Zipchat's own Shopify app is scoped: read_products (knowledge base)
-// + read_orders (check_order_status).
-const SCOPES = "read_products,read_orders";
+// + read_orders (check_order_status). write_orders added 2026-09-28
+// (ADR 0023) for request_order_cancellation's approved-execution step —
+// hard to reverse: a store connected before this change is still
+// running on the old, narrower grant and must reconnect (redo OAuth)
+// before order cancellation can work for them; there's no way to
+// silently upgrade an existing token's scope.
+const SCOPES = "read_products,read_orders,write_orders";
 
 function encodeState(orgId: string, botId: string): string {
   // TODO: sign this once a secrets/signing utility exists — a bare

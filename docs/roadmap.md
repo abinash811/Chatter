@@ -26,14 +26,25 @@ The generic core plus one concrete vertical template — see
   scope complete. Site crawling is separate, still open
   (`docs/open-questions.md` #3).
 - RAG retrieval as a tool call, not a hardcoded prompt prepend
-- Four action tools: `search_knowledge_base`, `check_order_status`
+- Five action tools: `search_knowledge_base`, `check_order_status`
   (read-only — see Next), `collect_lead` (write, generic — 2026-09-27,
-  matches Chatbase's "Collect Leads"; see `/bots/[botId]/leads`), and
+  matches Chatbase's "Collect Leads"; see `/bots/[botId]/leads`),
   custom (business-defined) webhook actions (generic — 2026-09-27, ADR
-  0022, matches Chatbase's Custom Actions; see `/bots/[botId]/actions`).
-  Every new tool going forward is industry-agnostic by default, not just
-  ecommerce (scoping decision, 2026-09-27) — `check_order_status` stays
-  the one vertical-specific exception.
+  0022, matches Chatbase's Custom Actions; see `/bots/[botId]/actions`),
+  and `request_order_cancellation` (write-capable, ecommerce — **built
+  2026-09-28, ADR 0023** — see below). Every new tool going forward is
+  industry-agnostic by default, not just ecommerce (scoping decision,
+  2026-09-27) — `check_order_status` and `request_order_cancellation`
+  stay the two deliberate vertical-specific exceptions.
+- Write-capable action tools — **built (2026-09-28, ADR 0023).** The
+  first write tool that can't be undone by "the AI was wrong"
+  (`request_order_cancellation`) never executes itself: it queues a
+  `PendingAction` and a human approves/rejects from a new
+  `/bots/[botId]/approvals` page before the real Shopify call happens.
+  Chosen over full automatic execution after a direct product
+  conversation about the risk (an irreversible action a visitor could
+  manipulate the bot into taking). See `docs/features.md`'s "Order
+  cancellation (approval-gated)" entry.
 - Demo data — **built (2026-09-27).** A one-click "Load sample data"
   button (`/bots`) creates a fully populated example bot (persona,
   knowledge, leads, a custom action, sample conversations) — see
@@ -175,13 +186,13 @@ Validated by competitor research, not yet built:
      harness in step 3 exists to decide it with real numbers.
   Prioritized first among the RAG-architecture gaps since it improves
   every chunk already ingested, with no re-ingestion needed.
-- **Write-capable action tools** — issue a refund, update a shipping
-  address, edit/cancel a booking — not just lookups. Gorgias treats
-  these as core, not advanced; our tool registry (ADR 0002) already
-  supports adding them without engine changes. Partially unblocked by
-  the 2026-09-27 custom-action tool (ADR 0022): a business can already
-  wire a write-capable webhook (e.g. their own booking-cancellation
-  endpoint) themselves today — this item is now about built-in,
+- **More write-capable action tools** — issue a refund, update a
+  shipping address, edit/cancel a booking. Order cancellation shipped
+  2026-09-28 (ADR 0023, human-approval-gated — see "Now" above), which
+  also built the general pattern (`PendingAction` queue + `/approvals`
+  page) any future write tool reuses without engine changes. A business
+  can also already wire its own write-capable webhook via custom
+  actions (ADR 0022) today — this item is about built-in,
   purpose-specific write tools for platforms we integrate with directly
   (e.g. a real Shopify refund call), not the general capability.
 - **Resolution-rate analytics** — % of conversations resolved without

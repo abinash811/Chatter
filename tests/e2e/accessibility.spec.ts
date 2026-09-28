@@ -6,6 +6,7 @@ import {
   seedKnowledgeEntry,
   seedLead,
   seedCustomAction,
+  seedPendingAction,
   uniqueEmail,
   PASSWORD,
 } from "./helpers";
@@ -122,6 +123,15 @@ test("actions page has no serious/critical accessibility violations", async ({ p
   await page.click('a:has-text("Actions")');
   await expect(page).toHaveURL(/\/actions$/);
   await assertNoSeriousViolations(page, page.getByText("check_availability"));
+});
+
+test("approvals page has no serious/critical accessibility violations", async ({ page }) => {
+  await signUpAndCreateBot(page, "A11y Approvals Bot", "a11y-approvals");
+  const botId = page.url().split("/bots/")[1];
+  await seedPendingAction(botId, { toolName: "request_order_cancellation", input: { orderNumber: "1001" } });
+  await page.click('a:has-text("Approvals")');
+  await expect(page).toHaveURL(/\/approvals$/);
+  await assertNoSeriousViolations(page, page.getByText(/Cancel order/));
 });
 
 test("integrations page has no serious/critical accessibility violations", async ({ page }) => {

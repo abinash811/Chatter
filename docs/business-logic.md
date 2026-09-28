@@ -151,6 +151,28 @@ connected the real integration a tool needs (e.g. Shopify for
 `check_order_status`), the tool falls back to "collect info, hand off
 to a human" — never a fabricated answer.
 
+## Write-capable action tools & approvals (`lib/pendingActions.ts`, ADR 0023)
+
+A write-capable tool — one whose effect can't be undone by "the AI was
+wrong" — never executes itself. `request_order_cancellation`
+(`lib/ai/tools/cancelOrder.ts`) validates the order (exists, not
+already cancelled) and, if valid, writes a `pending` `PendingAction`
+row instead of calling Shopify; the visitor is told a human will
+review it, never that it's done. A business owner reviews queued
+requests from `/bots/[botId]/approvals` and approves or rejects each
+one. Only approving calls the tool's separately-exported executor
+(`executeOrderCancellation`, the real `orderCancel` GraphQL mutation) —
+rejecting just marks the row `rejected` and does nothing external.
+
+`lib/pendingActions.ts` is deliberately generic — it has no knowledge
+of `request_order_cancellation` or any other specific tool, so a
+future write tool's own `handle()` can call `createPendingAction`
+without creating a circular import. The one place that maps a
+`toolName` to its executor is the console layer
+(`app/(console)/bots/[botId]/approvals/actions.ts`'s `EXECUTORS` map)
+— the next write-capable tool adds one line there, not a change to the
+generic queue.
+
 ## Knowledge base ingestion
 
 `docs/product-spec.md`'s MVP scope: "file upload and/or manual Q&A at

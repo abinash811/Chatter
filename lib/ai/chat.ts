@@ -122,7 +122,7 @@ export async function sendMessage(params: SendMessageParams): Promise<SendMessag
         if (block.type !== "tool_use") throw new Error("unreachable");
         const tool = toolsByName.get(block.name);
         if (!tool) throw new Error(`Unknown tool "${block.name}"`);
-        const content = await tool.handle(orgId, botId, block.input);
+        const content = await tool.handle(orgId, botId, block.input, conversation.id);
         await withOrgContext(orgId, (tx) =>
           tx.toolCallLog.create({
             data: {

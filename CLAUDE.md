@@ -47,8 +47,8 @@ reason.)
   `docs/design/audit.md` tracks per-screen compliance against the bar —
   check there before assuming a screen is finished.
 - Testing/guardrails: 9 static guardrail checks (`npm run check:all`,
-  runs in one process now — `scripts/check-all.mjs`), 152 unit tests, 83
-  `tests/e2e/` specs, 18 `tests/visual/` baselines, gitleaks secret
+  runs in one process now — `scripts/check-all.mjs`), 166 unit tests, 86
+  `tests/e2e/` specs, 20 `tests/visual/` baselines, gitleaks secret
   scanning + a CI coverage floor, all wired into CI. A few e2e specs
   around publishing intermittently fail under sustained local single-
   worker runs in this dev container (confirmed 2026-09-27: different
@@ -112,9 +112,31 @@ reason.)
   static registry's tools per turn. SSRF-guarded (https-only, blocks
   private/loopback/link-local + the cloud metadata IP), headers encrypted
   at rest. Every tool added from here on is industry-agnostic by default
-  — `check_order_status` stays the one deliberate ecommerce exception
-  (2026-09-27 scoping decision, see `docs/roadmap.md`). Both tools from
-  the 2026-09-27 directive are now built.
+  — `check_order_status` and `request_order_cancellation` stay the two
+  deliberate ecommerce exceptions (2026-09-27 scoping decision, see
+  `docs/roadmap.md`). Both tools from the 2026-09-27 directive are now
+  built.
+- Order cancellation / write-capable action tools (2026-09-28, ADR
+  0023): fifth action tool, `request_order_cancellation` — the first
+  write-capable one, and a new risk category the user chose the safe
+  option for directly ("Okay let's have 2" — human approval, not
+  automatic execution). It never calls Shopify itself: it validates the
+  order and queues a `PendingAction` (`lib/pendingActions.ts`, generic,
+  no knowledge of any specific tool — avoids a circular import with the
+  tool's own `handle()`), telling the visitor a human will review it,
+  never that it's done. New `/bots/[botId]/approvals` console page lists
+  queued requests; approving (behind its own confirm dialog — the one
+  moment a real external write happens) calls the real `orderCancel`
+  GraphQL mutation via the separately-exported `executeOrderCancellation`;
+  rejecting needs no confirmation. Requires the `write_orders` Shopify
+  OAuth scope — a store connected before this change must reconnect.
+  Verified end-to-end with real screenshots: empty state, a queued
+  request, the confirm dialog, and the graceful "no Shopify integration"
+  failure outcome on the resolved row (no real Shopify store is
+  connectable in this environment). `shopify.dev` stayed blocked by this
+  environment's network egress policy for the `orderCancel` mutation
+  shape — pieced together via WebSearch instead of the primary source,
+  flagged as unverified against a live store in ADR 0023.
 - Self-serve config (roadmap "Self-serve configurability"): widget
   appearance editor (greeting/accent/avatar/position) and a 3-template
   persona picker (Support/Sales/Lead-gen), both in the bot editor.
