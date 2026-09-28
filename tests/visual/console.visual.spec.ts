@@ -195,6 +195,17 @@ test("conversation detail — full transcript with an inline tool call (ADR 0015
   });
 });
 
+test("integrations page — Shopify connect row", async ({ page }) => {
+  await signUpAndCreateBot(page, "Support bot", "visual-integrations");
+  await page.click('a:has-text("Integrations")');
+  await expect(page).toHaveURL(/\/integrations$/);
+  // Same Suspense-boundary race as leads/actions' empty-state tests
+  // above — without waiting for real content, this can capture
+  // loading.tsx's skeleton instead of the actual Shopify connect row.
+  await expect(page.getByText("Shopify")).toBeVisible();
+  await expect(page).toHaveScreenshot("integrations.png", { mask: sidebarMasks(page) });
+});
+
 test("console sidebar — icon-collapsed", async ({ page }) => {
   await signUpAndCreateBot(page, "Support bot", "visual-sidebar");
 

@@ -259,6 +259,29 @@ reason.)
   unilaterally redesigned for one screen — flagged to the user since
   fixing it would touch several already-audited screens' visual
   baselines at once, not committed to yet.
+- Integrations depth/polish pass (2026-09-28): `docs/design/audit.md`'s
+  row upgraded from mostly 🔲 to Hover/Focus/Loading/Depth ✅, Active 🟡.
+  Two real, code-level bugs, not just visual ones. (1)
+  `provider.connectFields` (`lib/integrations/provider.ts`) carries a
+  real `label` per field that the page never rendered — the raw
+  `<input>` relied on its `placeholder` alone, which isn't an
+  accessible name; replaced with the shared `Input`/`Label` primitives
+  (`sr-only` label, keeping the restrained Stripe register's horizontal
+  layout while gaining a real accessible name). (2) the provider-list
+  wrapper was the one list screen still using a bare `divide-y`/
+  `border-y` with no rounded corners or shadow, while every other list
+  screen already has `rounded-lg border shadow-xs` — added here too,
+  verified via `getComputedStyle()` (10px radius, real shadow), not
+  just eyeballed (a stale dev-server build initially masked the fix —
+  caught by checking the rendered class list directly, not trusting the
+  first screenshot). New `integrations.png` visual baseline added (none
+  existed before); first attempt raced the Suspense boundary and
+  captured `loading.tsx`'s skeleton instead of real content (same flake
+  class already documented on leads/actions' empty-state tests) — fixed
+  by waiting for real text before capturing. Verified: `tsc` clean, all
+  10 `check:all` guardrails, full unit suite, the integrations a11y scan
+  (clean, now covers the labeled input), and the full 19-test visual
+  suite (18 unchanged + 1 new, stable across two runs).
 - Self-serve config (roadmap "Self-serve configurability"): widget
   appearance editor (greeting/accent/avatar/position) and a 3-template
   persona picker (Support/Sales/Lead-gen), both in the bot editor.
