@@ -217,6 +217,30 @@ reason.)
   `conversation-detail.png` visual baseline regenerated + confirmed
   stable across two runs; e2e and a11y suites for both conversation
   screens re-run clean.
+- Conversations list depth/polish pass (2026-09-28): `docs/design/
+  audit.md`'s row for this screen upgraded from mostly 🔲 to all ✅. Two
+  real bugs caught only via an actual screenshot: (1) `ConversationsTable.tsx`'s
+  row had only `onClick` — no `tabIndex`/`role`/`onKeyDown` — so it
+  wasn't keyboard-reachable at all, the same gap `BotTableRow.tsx`
+  already fixed elsewhere but never applied here when this screen
+  shipped (ADR 0015); fixed by copying that established accessible
+  whole-row-navigates pattern verbatim, now locked in by a permanent
+  e2e test (`tests/e2e/conversations.spec.ts`); (2) the row's
+  `ChevronRight` used `text-border` (the row-border color, near-white)
+  as its icon color, making it nearly invisible — fixed to
+  `text-muted-foreground`. Hover was already free from shadcn's real
+  `Table` (`hover:bg-muted/50`); Depth was already earned (same
+  `rounded-lg border border-border shadow-xs` wrap as Knowledge/Leads/
+  Actions) but had never been credited in the audit table. Focus ring
+  verified genuinely applying via `getComputedStyle()`/`:focus-visible`
+  inspection, not just a visually-ambiguous screenshot. Verified: `tsc`
+  clean, all 10 `check:all` guardrails, full unit suite (166 tests),
+  the full `conversations.spec.ts` file (7/7, including the new test —
+  caught and fixed its own bug: `[data-slot="table-row"]` also matches
+  the header row, so the new test had to scope to `tbody`), the
+  conversations a11y scan, and all 18 visual baselines confirmed
+  unchanged (the new focus/active classes only apply on interaction,
+  not the resting state the visual suite captures).
 - Self-serve config (roadmap "Self-serve configurability"): widget
   appearance editor (greeting/accent/avatar/position) and a 3-template
   persona picker (Support/Sales/Lead-gen), both in the bot editor.

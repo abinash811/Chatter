@@ -82,6 +82,21 @@ test("clicking a conversation row opens the full transcript with a plain-languag
   await expect(page.getByText("check_order_status")).toBeVisible();
 });
 
+// docs/design/audit.md depth/polish pass, 2026-09-28: a plain onClick
+// on the row (no tabIndex/role/onKeyDown) wasn't keyboard-reachable —
+// the same gap BotTableRow.tsx already fixed, never applied here.
+test("a conversation row is keyboard-reachable, not just clickable", async ({ page }) => {
+  await signUpAndCreateBot(page, "Keyboard Nav Bot");
+  const botId = page.url().split("/bots/")[1];
+  await seedConversations(botId);
+
+  await page.goto("/conversations");
+  const row = page.locator('tbody [data-slot="table-row"]').first();
+  await row.focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\/conversations\/[^/]+$/);
+});
+
 test("a conversation from another org is not reachable by id (tenant isolation)", async ({ page, browser }) => {
   await signUpAndCreateBot(page, "Org A Bot");
   const botIdA = page.url().split("/bots/")[1];

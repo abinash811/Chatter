@@ -36,8 +36,22 @@ export function ConversationsTable({ conversations }: { conversations: Conversat
         {conversations.map((conversation) => (
           <TableRow
             key={conversation.id}
-            className="h-row cursor-pointer"
+            // Same accessible whole-row-navigates pattern as
+            // BotTableRow.tsx (docs/design/audit.md's depth/polish
+            // pass) — a plain onClick alone isn't keyboard-reachable;
+            // this was never applied here when the screen first
+            // shipped (ADR 0015).
+            className="h-row cursor-pointer outline-none active:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+            role="link"
+            tabIndex={0}
+            aria-label={`Open conversation with ${conversation.botName}`}
             onClick={() => router.push(`/conversations/${conversation.id}`)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                router.push(`/conversations/${conversation.id}`);
+              }
+            }}
           >
             <TableCell className="font-medium">{conversation.botName}</TableCell>
             <TableCell className="max-w-xs truncate text-muted-foreground">
@@ -55,7 +69,10 @@ export function ConversationsTable({ conversations }: { conversations: Conversat
               {relativeTime(conversation.createdAt)}
             </TableCell>
             <TableCell>
-              <ChevronRight className="h-4 w-4 text-border" />
+              {/* text-border (the row-border color, near-white) made this
+                  chevron nearly invisible — failed at the one thing it's
+                  there for, signaling the row is clickable. */}
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
             </TableCell>
           </TableRow>
         ))}
