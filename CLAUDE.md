@@ -97,20 +97,12 @@ reason.)
   `components/console/OptionCard.tsx`. Real bug caught and fixed before
   shipping: tool descriptions are model-facing instructions of varying
   length, so cards had wildly uneven heights until `line-clamp-2` was
-  added. `www.chatbase.co` itself stays blocked by this environment's
-  network egress policy — everything here is grounded in the user's own
-- Card-gallery redesign (2026-09-27): the bot editor's Tools tab
-  (checkbox list → `OptionCard` grid + `Switch`) and Knowledge's ingestion
-  picker (DropdownMenu → 3 always-visible `OptionCard`s) both redesigned
-  to match Chatbase's own card-gallery pattern (icon/title/description/
-  action), confirmed real via user-supplied screenshots — see `docs/
-  research/competitive-landscape.md`. New shared component:
-  `components/console/OptionCard.tsx`. Real bug caught and fixed before
-  shipping: tool descriptions are model-facing instructions of varying
-  length, so cards had wildly uneven heights until `line-clamp-2` was
-  added. `www.chatbase.co` itself stays blocked by this environment's
-  network egress policy — everything here is grounded in the user's own
-  screenshots, not a live fetch.
+  added. This was grounded in the user's own screenshots at the time,
+  not a live fetch, because `www.chatbase.co` was blocked by this
+  environment's network egress policy then — **that's since changed
+  (2026-09-28): `chatbase.co` access now works**, see the dated entry
+  below and `docs/research/competitive-landscape.md`'s 2026-09-28
+  update.
 - Demo data (2026-09-27): a one-click "Load sample data" button on
   `/bots` (`lib/demoData.ts`) creates a fully populated example bot —
   persona, published config, 3 knowledge Q&A entries, 2 leads, one
@@ -297,6 +289,32 @@ reason.)
   existing plain `outline` button with no confirm step is an already-
   calibrated decision, not an oversight. No code changed this pass —
   audit-only.
+- `chatbase.co` network-block correction (2026-09-28): every prior
+  session's docs claimed `www.chatbase.co`/`chatbase.co` was blocked by
+  this environment's egress policy (`docs/research/competitive-
+  landscape.md`, `docs/research/persona-template-ux.md`, this file) —
+  re-tested directly via `WebFetch` and confirmed it now works (the
+  homepage, several `/docs/user-guides/...` pages, and their public
+  docs index all fetched real content). Verified this is specific to
+  `chatbase.co`, not a general policy change — `ui.shadcn.com`,
+  `docs.langchain.com`, and `shopify.dev` were each re-tested too and
+  are all still genuinely blocked, so those docs' claims were left
+  alone. Corrected the stale claims in both research docs above and
+  this file. Used the new access proactively, not just to fix docs:
+  re-fetched the two `persona-template-ux.md` sources directly (the
+  decoupled persona/tools-steps finding holds up; the specific
+  "instruction-template dropdown" detail didn't re-confirm, flagged as
+  unconfirmed not retracted) and found two previously-unexplored
+  features with real public docs — **Guardrails** (rate limiting, spam
+  detection, country/IP blocking — we have none of this today, a real
+  open question, not yet in `docs/open-questions.md`) and **Procedures**
+  (a named trigger+ordered-steps workflow for high-stakes multi-step
+  interactions like refunds — a real middle ground between our flat
+  tool registry and the already-deferred visual-flow-builder idea, not
+  the same thing at smaller scale). Full detail in `docs/research/
+  competitive-landscape.md`'s 2026-09-28 update. Also deduplicated an
+  accidental verbatim-repeated paragraph in this file's own card-
+  gallery-redesign entry, found while fixing its stale claim.
 - Self-serve config (roadmap "Self-serve configurability"): widget
   appearance editor (greeting/accent/avatar/position) and a 3-template
   persona picker (Support/Sales/Lead-gen), both in the bot editor.

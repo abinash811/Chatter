@@ -11,115 +11,15 @@ Grounding the product spec and vertical-template design in what the closest
 existing product (Zipchat AI) actually does, so we generalize the right
 shape rather than guessing.
 
-## Zipchat AI (primary reference point)
+## Zipchat AI + Claude Agent SDK best practices — archived 2026-09-28
 
-Zipchat is an AI customer-engagement platform for ecommerce that answers
-support questions and sells at the same time.
-
-**Sales & support functions**: greets visitors, asks what they're looking
-for, recommends products, handles objections, recovers abandoned carts,
-generates personalized discount codes, pushes toward checkout. Answers
-FAQs, looks up order status, handles return requests, collects reviews,
-verifies cash-on-delivery orders.
-
-**Agent architecture**: one central AI agent coordinates specialized
-sub-agents for sales, support, and marketing across channels — relevant
-precedent for our "bot engine + tool registry" design, though we don't need
-a multi-agent architecture for v1 (Claude Agent SDK guidance below argues
-for starting narrow).
-
-**Channels**: website + WhatsApp today; email/Instagram/TikTok planned.
-
-**Language**: 95+ languages.
-
-**Integrations**: Shopify, ActiveCampaign, BigCommerce, Klaviyo, Mailchimp,
-WooCommerce, Webflow, Wix, WordPress, PrestaShop, Magento, Zapier.
-
-**Reported performance**: ~16.3% chat conversion rate, 90%+ inquiry
-resolution without human involvement.
-
-**Implication for us**: our v1 doesn't need to match this integration
-breadth. What matters is the *shape* — support + light sales/action-taking,
-grounded in the business's own data, extensible via integrations — and that
-shape generalizes past ecommerce fine (support + light "sales" reads as
-"support + conversion-toward-the-business's-goal" for any vertical: booking
-an appointment, scheduling a test drive, etc.).
-
-Sources:
-- https://www.zipchat.ai/blog/best-ai-chatbot-for-ecommerce
-- https://www.capterra.com/p/10014211/Zipchat/
-- https://coldiq.com/tools/zipchat-ai
-- https://myaskai.com/blog/zipchat-complete-guide-2026
-- https://craftshift.com/zipchat-ai-review/
-
-## Update 2026-09-14: how Zipchat is actually built (ground truth, not marketing)
-
-Checked their own engineering job postings and Shopify App Store listing —
-more reliable than review sites for actual implementation details.
-
-**Stack (from job postings)**: Ruby on Rails backend + Hotwire/ViewComponent
-frontend; Python for "useful libraries" plus web scraping and data storage
-(almost certainly the site-crawl/ingestion pipeline behind their 5-10
-minute auto-indexing); a dedicated "AI RAG Engineer" role building RAG
-agents against OpenAI *or* Anthropic (not single-vendor), retrieval via
-embeddings + vector databases, and prompt engineering. Conventional, proven
-web stack — not novel infrastructure. No mention of MCP anywhere in their
-hiring needs, consistent with the earlier finding that production
-customer-facing agent loops stay off MCP.
-
-**Shopify integration mechanics (from their App Store listing)**: installed
-from the Shopify App Store requesting exactly two scopes — **read
-products** (builds the product knowledge base) and **read orders** (WISMO/
-order status/tracking/return-eligibility). Install → approve permissions →
-account auto-linked → products/policies/FAQ pages indexed within 5-10
-minutes, fully automatic. Order status resolved by calling Shopify's order
-API directly with the stored token. This is a direct real-world validation
-of the self-serve OAuth "Connect X" design already written into
-`docs/architecture.md` — minimal scopes, zero developer effort per
-merchant, automatic ingestion on connect.
-
-**Who built it**: founders with deep ecommerce operating backgrounds (one
-built a $20M ecom brand, another built CheckoutX, processing close to $1B
-in ecommerce GMV/year) rather than an AI-research background. No public
-engineering blog or architecture deep-dive exists. Reads as a competently
-executed, conventional stack rather than novel infrastructure — their
-differentiation is product/conversion instinct (persona tuned to sell,
-proactive discount codes, fast accurate answers), not architectural
-sophistication. Worth remembering when designing the ecommerce template's
-*behavior*, not just its plumbing.
-
-**Unverified loose thread**: their site also has content about AI search
-across Notion/Confluence/Slack/GitHub/Jira for engineering teams under the
-same domain — possibly a second product line, possibly a search artifact.
-Not confirmed, not chased further.
-
-Additional sources for this update:
-- https://apps.shopify.com/partners/fbh-technologies-pte-ltd
-- https://www.zipchat.ai/post/best-shopify-ai-app
-- https://jobs.weekday.works/zipchat-ai-rag-engineer,-ruby-on-rails-%7C-earn-equity
-- https://jobs.weekday.works/zipchat-remote-full-stack-ruby-on-rails-engineer-earn-equity
-- https://www.zipchat.ai/about
-- https://blog.leteyski.com/p/my-first-acquisition-zipchat-ai-the
-
-## Claude Agent SDK / agent-building best practices (Sept 2026)
-
-- Start with a narrow workflow, clear tool boundaries, and a simple agent
-  loop before adding memory, retrieval, MCP, or multi-agent collaboration.
-- Tool definitions are the most important part of an agent — write them
-  precisely. Start with a single agent and 3-5 tools; add complexity only
-  when needed.
-- Reliable agents need harness design (tools, approvals, logs, hooks,
-  tests, context management, escalation), not a prompt-only setup.
-- Use an agent only for open-ended problems where steps are unpredictable;
-  if the workflow can be hardcoded, a linear script is faster and cheaper.
-
-**Implication for us**: our bot engine should start with a small, precise
-tool set (RAG retrieval + a handful of vertical action tools) rather than a
-Zipchat-style multi-agent architecture. We can grow toward specialized
-sub-agents later if a single agent + tool registry proves insufficient —
-don't build the multi-agent version on day one.
-
-Source: https://bertomill.medium.com/claude-agents-sdk-best-practices-from-the-team-that-built-it-63580d1a0c3b
+The initial Zipchat AI research (primary reference point, "how Zipchat is
+actually built" ground-truth update) and the Claude Agent SDK best-
+practices note moved to `docs/research/competitive-landscape-archive.md`
+when this file crossed the 500-line guardrail. Both are already fully
+absorbed into `docs/adr/0001-generic-base-with-vertical-templates.md` and
+`docs/adr/0019-drop-vertical-template-layer.md` — read the archive if you
+need the original sourcing, not because either is still an open question.
 
 ## Update 2026-09-25: Gorgias, Intercom Fin, Drift vs. Tidio
 
@@ -334,13 +234,20 @@ Sources:
 
 Prompted by the user asking specifically whether Chatbase's "Actions"
 page uses a card-gallery layout, not a checkbox list like our Tools tab
-— `www.chatbase.co` is blocked by this environment's network egress
-policy (confirmed via two direct `WebFetch` attempts, both denied), so
-WebSearch was tried first and came back with marketing blog posts, not
-verified UI detail. The user then supplied 5 real screenshots of their
-own live Chatbase workspace (an "Eka.Care EMR App" project) — this
-section is grounded in those, not search-result speculation, per this
-project's own standing rule to read primary sources.
+— `www.chatbase.co` was blocked by this environment's network egress
+policy at the time (confirmed via two direct `WebFetch` attempts, both
+denied), so WebSearch was tried first and came back with marketing blog
+posts, not verified UI detail. The user then supplied 5 real
+screenshots of their own live Chatbase workspace (an "Eka.Care EMR App"
+project) — this section is grounded in those, not search-result
+speculation, per this project's own standing rule to read primary
+sources. **2026-09-28: `www.chatbase.co` access confirmed working now**
+(re-tested directly, see the dated update below) — this section's
+findings, grounded in real screenshots of an authenticated dashboard,
+remain the stronger source for actual UI layout than a public docs
+page fetch would be; the new access mainly unblocks reading their
+*public docs/marketing content* directly instead of via search-result
+summaries, not an authenticated dashboard view.
 
 **Confirmed: yes, both Actions and Data sources are card galleries.**
 - **Actions page**: a 2-column grid of cards, each with an icon, a bold
@@ -450,6 +357,60 @@ Backstage, the Deploy dropdown):**
   anything else in this note — flagged for `docs/roadmap.md`'s Later
   section, not proposed as a near-term build.
 
+## Update 2026-09-28: live docs fetch — Guardrails and Procedures confirmed real, publicly documented features
+
+With `www.chatbase.co` access confirmed working (see the note at the top
+of the "real dashboard UI" section above), fetched their public docs
+directly (`/docs/llms-full.txt` for an index, then individual pages) to
+follow up on this file's own TODO list of unexplored dashboard sidebar
+items. Their public docs turn out to be mostly API/SDK reference, not a
+page per dashboard feature — most guessed URLs 404'd — but two hit real,
+substantial content:
+
+- **Guardrails** (`/docs/user-guides/chatbot/guardrails`) — three
+  mechanisms: **rate limiting** (a message cap per device over a time
+  window, with a customizable "limit reached" response), **spam
+  detection** (an automatic toggle that scans at the 2nd/4th/8th/16th
+  user message and pauses conversations it flags — profanity and
+  "unsolicited commercial promotions, scams, repetitive gibberish" by
+  default, customizable up to 2,000 characters of guidance), and
+  **country blocking** (IP-based, dropdown country picker, applies to
+  the widget + API but not messaging integrations). We have none of
+  this today — guardrail #3 in this project's own CLAUDE.md is about
+  regulated-vertical *prompt* guardrails (refuse diagnosis/legal/
+  financial advice), a completely different concern from *abuse*
+  guardrails (rate limits, spam, geo-blocking). Worth a
+  `docs/open-questions.md` entry: is abuse protection in scope for v1,
+  or later — right now we have zero defense against someone hammering
+  a bot's API or running up Claude API costs via spam.
+- **Procedures** (`/docs/user-guides/chatbot/procedures`) — a named
+  workflow: a **trigger** ("when to use" — the situation that engages
+  it) paired with an ordered list of **steps** the agent works through,
+  used for high-stakes multi-step interactions (refunds, escalations,
+  onboarding) where consistent handling matters more than free-form
+  improvisation. Steps can reference existing actions via `@` notation,
+  use `{{token}}` variables for personalization, and branch
+  conditionally (up to 5 branches per decision point, max 15 steps).
+  This sits in a real, previously-unconsidered middle ground between
+  what we have (a flat tool registry, no ordering/sequencing) and this
+  roadmap's "Later"-deferred visual flow builder (a full graph editor) —
+  a Procedure is much narrower: one trigger, one linear-with-branches
+  script, not a general-purpose flow canvas. Worth flagging as a
+  distinct option from the flow-builder idea already on record, not the
+  same thing at a smaller scale.
+- **Revise (confirmed via public docs, not just the screenshot)** —
+  `best-practices` names "Revise" alongside Q&A correction as a real,
+  documented way to fix a bad logged answer after the fact, strengthening
+  (not just repeating) the "Confidence score + Revise answer" finding
+  already recorded above from screenshots — this is a real, named
+  product feature, not a one-off UI element caught in a screenshot.
+- **Not found as dedicated public docs pages**: Suggestions, Outbound,
+  Helpdesk inbox (as an interface — "Helpdesk" exists only as an API
+  ticketing reference, not a user-guide page), Contacts, Backstage's
+  full capability set. These may simply not have public docs pages
+  (dashboard-only features), not that they don't exist — the original
+  screenshot-based Backstage finding above stands on its own regardless.
+
 ## TODO — still need to research
 
 - RAG architecture best practices for multi-tenant SaaS specifically
@@ -457,10 +418,7 @@ Backstage, the Deploy dropdown):**
   itself is now covered above.
 - Embeddable widget engineering patterns (shadow DOM vs. iframe trade-offs,
   script-tag loading performance).
-- `www.chatbase.co` is blocked by this environment's network egress
-  policy — if unblocked in a future session, re-verify the above against
-  the real product directly (not just user-supplied screenshots) and
-  check the areas not covered here (Widgets, Procedures, Suggestions,
-  Guardrails, Outbound, Helpdesk inbox, Contacts, Backstage's full
-  capability set — all visible as sidebar items in the screenshots but
-  not explored in this pass).
+- Suggestions, Outbound, Helpdesk inbox, Contacts, Backstage's full
+  capability set — no public docs page found for any of these; still
+  needs either a live account or user-supplied screenshots, `chatbase.co`
+  access alone doesn't reach an authenticated dashboard view.

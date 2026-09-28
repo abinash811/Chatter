@@ -1,13 +1,23 @@
 # Research note: How Chatbase actually does persona/use-case templates
 
-Date: 2026-09-27
-Researcher: Claude (web search — direct fetch to chatbase.co is blocked by
-this environment's egress proxy, so findings are triangulated across 3
-WebSearch queries hitting Chatbase's own docs/blog/changelog pages via
-search-result summaries, not a raw page fetch)
-Status: enough to inform the `docs/open-questions.md` #4 decision; a
-first-hand dashboard walkthrough is still TODO if we want to verify beyond
-what their public docs/blog describe.
+Date: 2026-09-27, live-verified 2026-09-28
+Researcher: Claude (originally web search — direct fetch to chatbase.co
+was blocked by this environment's egress proxy at the time, so the
+2026-09-27 findings below were triangulated across 3 WebSearch queries
+hitting Chatbase's own docs/blog/changelog pages via search-result
+summaries, not a raw page fetch. **2026-09-28: `chatbase.co` access
+confirmed working** — WebFetch successfully read the homepage and
+several docs pages directly. Re-fetched `your-first-agent` and
+`introducing-ai-actions` live to check the finding below; see "Live
+re-check" section.)
+Status: the core "persona and tools are decoupled" finding holds up
+under a live re-check, though the specific "dropdown of example
+instruction text" UI detail wasn't re-confirmed (the live docs page
+describes Instructions as free-text tone/role/boundary guidance, not a
+template picker) — that detail may have come from a different page or
+changed since. A first-hand dashboard walkthrough (screenshots or a
+live account) is still the way to fully verify beyond what the public
+docs describe.
 
 ## Why this research
 
@@ -66,12 +76,40 @@ proven, matches a much bigger product's real UX); a bundle is the more
 ambitious bet. This is the user's call to make with this tradeoff stated
 plainly, not something to decide by copying the competitor unexamined.
 
+## Live re-check (2026-09-28)
+
+With `chatbase.co` access confirmed working, re-fetched two of the
+sources below directly instead of relying on search-result summaries:
+
+- **`your-first-agent`**: describes a 3-step flow — Create & Train
+  (pick a data source), Test & Optimize (`Build > Instructions`: model
+  selection, free-text instructions for tone/role/boundaries,
+  temperature), then Deploy (Channels, embed script). Confirms
+  Instructions and Actions are not the same step, and Actions are
+  surfaced only in a "next steps" section after deployment, not bundled
+  into agent creation — consistent with the original finding. Does
+  *not* mention a template/dropdown of canned instruction text for the
+  Instructions step, which the 2026-09-27 WebSearch-triangulated
+  summary below claimed.
+- **`introducing-ai-actions`**: confirms Actions are configured
+  independently — "set up your API or select from prebuilt actions,"
+  then "provide a prompt to guide the Agent on when and how to use the
+  action" (its own prompt field, separate from the main Instructions
+  text) — consistent with "orthogonal, independently-configured
+  concerns."
+
+Net: the decoupled-steps conclusion stands, now on a firmer footing
+(live primary source, not a search summary). The one specific claim
+this doesn't confirm is the "dropdown of example instruction text"
+detail — flag that specific line as unconfirmed, not retracted.
+
 ## TODO — still need to research
 
-- A first-hand look at the real Chatbase dashboard (screenshots or a live
-  account) to confirm the above beyond what their own docs/blog claim —
-  egress to chatbase.co is blocked in this environment, so this needs
-  either a different research pass or a manual check by the user.
+- A first-hand look at the real Chatbase dashboard UI itself
+  (screenshots or a live account), not just its public docs — `WebFetch`
+  reads rendered docs/marketing pages, not an authenticated dashboard,
+  so the actual Instructions-step UI (is there a template dropdown or
+  not?) still needs either a live account or user-supplied screenshots.
 - How Intercom Fin and Crisp handle the same question (not checked this
   pass) — would strengthen or weaken the "decoupled is the norm" finding
   if more than one competitor is checked.
