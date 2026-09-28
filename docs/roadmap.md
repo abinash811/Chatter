@@ -59,7 +59,8 @@ marked with real status (not aspirational):
    retrieval-quality upgrade (recommended — matches the simplicity bar
    better than a settings knob most users would misuse).
 5. **Conversation inbox + filters** — **built** (`/conversations`, ADR
-   0015): dashboard-only, filterable by bot/date/handoff-triggered.
+   0015 + ADR 0016): dashboard-only, filterable by bot/date/"has an
+   issue" — plain-language summaries, not raw tool JSON, per ADR 0016.
    Deliberately no `status`/"resolved" filter yet — see `docs/open-
    questions.md` #7. No email/Slack push channel — that was the other
    half of the open question ADR 0015 resolved, deferred by choice.
