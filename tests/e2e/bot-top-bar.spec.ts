@@ -22,7 +22,7 @@ test("the switcher lists every org bot and switching preserves the current page"
   await page.getByRole("option", { name: "Alpha bot" }).click();
 
   await expect(page).toHaveURL(/\/bots\/[^/]+\/knowledge$/);
-  await expect(page.getByRole("heading", { name: "Knowledge base" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Data sources" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Alpha bot" })).toBeVisible();
 });
 
