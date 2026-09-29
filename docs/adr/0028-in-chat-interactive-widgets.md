@@ -85,12 +85,27 @@ infrastructure, not a parallel system:
   ship as templates through the existing template/config layer (ADR
   0001), not hardcoded into the core engine.
 
-This ADR records the *shape* of the decision and the *reuse* strategy.
-It does not yet resolve: the exact widget schema format (JSON Schema vs.
-a custom shape), how `renderWidget` results are transported over the
-existing chat-turn response, or the state-condition expression syntax —
-those are implementation-level follow-ups, tracked in
-`docs/open-questions.md`, before any code is scaffolded.
+The widget schema format is **JSON Schema** — the user confirmed this
+explicitly (2026-09-29), after weighing it against a custom shape
+matching Chatbase's own internal structure more literally. Reasoning
+discussed and agreed: JSON Schema is an actual international standard
+(IETF standards track), already the format our tool-input schemas use
+(`lib/ai/tools/registry.ts`) and what Claude's own tool-calling API is
+built on, versus a custom shape that would be a private convention we'd
+have to design, document, and maintain forever for no functional gain —
+only cosmetic parity with Chatbase's internal builder. A custom shape
+was explicitly *not* chosen to unlock "more options" for users (Code/
+Functions/States/Components are separate layers from Schema and don't
+depend on its format) — JSON Schema only ever owned the data-fields
+job, and does that job fully (objects, arrays, enums, nested types,
+validation constraints).
+
+This ADR records the *shape* of the decision, the *reuse* strategy, and
+the schema format. It does not yet resolve: how `renderWidget` results
+are transported over the existing chat-turn response, or the state-
+condition expression syntax — those are implementation-level
+follow-ups, tracked in `docs/open-questions.md`, before any code is
+scaffolded.
 
 ## Alternatives considered
 
@@ -110,6 +125,15 @@ those are implementation-level follow-ups, tracked in
   custom actions — rejected: duplicates the SSRF guard, encrypted-
   header handling, and approval-gating already built and verified for
   custom actions (ADR 0022/0023), for no real gain.
+- **A custom schema shape mirroring Chatbase's own internal structure**
+  — rejected: no functional benefit over JSON Schema (both can express
+  the same field types/validation), only cosmetic parity with a
+  competitor's internal implementation, at the cost of designing,
+  documenting, and maintaining a private format forever. Reversing
+  this later is possible but not free: every stored widget definition
+  and every reader of the schema (builder UI, runtime renderer, tool-
+  call handling) would need migrating — a deliberate, not casual, cost
+  if it's ever revisited.
 - **Ship nothing, keep text-only tool responses** — simplest, but
   concedes a real, documented Chatbase capability with a clear use
   case (structured data collection, live data display) that several of
@@ -126,7 +150,7 @@ Reusing the custom-action pipeline and shadcn/ui primitives keeps the
 security and design surface bounded, but this is still hard to reverse
 once bots start depending on it in production (a widget schema change
 later could break a business's already-configured widget). Nothing is
-scaffolded yet — the next step is resolving the schema-format and
-transport sub-decisions (added to `docs/open-questions.md`) before any
-code is written, per this project's standing rule against silently
-picking a technical pattern with real tradeoffs.
+scaffolded yet — the next step is resolving the transport and state-
+condition sub-decisions (`docs/open-questions.md` #9) before any code
+is written, per this project's standing rule against silently picking
+a technical pattern with real tradeoffs.

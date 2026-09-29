@@ -61,18 +61,22 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
    not blocking anything today. Distinct from #1 above (that's whether
    we ever offer self-hosting as a *product* option to businesses; this
    is where *our own* managed instance runs).
-9. **In-chat widget schema format & transport** (2026-09-29, ADR 0028).
-   ADR 0028 records the *shape* of the decision (reuse the tool/custom-
-   action pipeline, shadcn/ui primitives, `PendingAction` approval gate)
-   but not the implementation details: should the widget schema be
-   plain JSON Schema or a custom shape matching our existing tool-input
-   schemas more closely? How does a `renderWidget` result travel over
+9. **In-chat widget transport & state-condition syntax** (2026-09-29,
+   ADR 0028). ADR 0028 records the *shape* of the decision (reuse the
+   tool/custom-action pipeline, shadcn/ui primitives, `PendingAction`
+   approval gate) and, as of 2026-09-29, the schema format — **JSON
+   Schema**, confirmed by the user (an actual standard, already used by
+   our tool-input schemas and Claude's own tool-calling API, over a
+   custom shape that would only buy cosmetic parity with Chatbase's
+   internal builder at the cost of maintaining a private format
+   forever). Still open: how does a `renderWidget` result travel over
    the existing chat-turn response without breaking `SendMessageResult`
    consumers (`app/api/chat/route.ts`, `sendPreviewMessageAction`)? What
    expression syntax do States' visibility conditions use (simple field
    comparisons only, per ADR 0028 — but the exact grammar isn't chosen)?
    Blocking further scaffolding of the widget feature specifically, not
-   the rest of the roadmap.
+   the rest of the roadmap. Awaiting screenshots of Chatbase's real
+   widget-builder UI before any console-side scaffolding either way.
 
 ## Not yet asked
 
