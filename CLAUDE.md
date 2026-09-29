@@ -211,24 +211,11 @@ reason.)
   conversations a11y scan, and all 18 visual baselines confirmed
   unchanged (the new focus/active classes only apply on interaction,
   not the resting state the visual suite captures).
-- Knowledge depth/polish pass (2026-09-28): `docs/design/audit.md`'s row
-  upgraded from mostly 🔲 to Hover/Focus/Loading/Depth ✅, Active 🟡.
-  Depth was already earned (same `rounded-lg border border-border
-  shadow-xs` wrap as Conversations/Leads/Actions) but never credited.
-  Real screenshot review (using "Load sample data" to get a populated
-  screen without a live embeddings call, since Q&A/file/URL ingestion
-  all require a real `ANTHROPIC_API_KEY`) flagged the delete button's
-  hover as visually almost imperceptible — `--accent` (`oklch(97%)`)
-  against a near-white `oklch(100%)` page background. `getComputedStyle()`
-  confirmed the hover genuinely applies (not broken), and the same
-  `ghost`-variant subtlety is already accepted and credited ✅ on the
-  Bots list's row-action button, so this was documented as a real,
-  cross-cutting `--accent`-on-white contrast question (affects `ghost`
-  buttons in 5 files total: `ActionsTable.tsx`, `KnowledgeTable.tsx`,
-  `BotTableRow.tsx`, `BotsTable.tsx`, `sidebar.tsx`) rather than
-  unilaterally redesigned for one screen — flagged to the user since
-  fixing it would touch several already-audited screens' visual
-  baselines at once, not committed to yet.
+- Knowledge depth/polish pass (2026-09-28): full history moved to
+  `docs/changelog.md` — superseded 2026-09-29 by the Data sources
+  rebuild below. The one still-open finding (a cross-cutting `--accent`-
+  on-white `ghost`-button contrast question, affecting 5 files) is still
+  not committed to.
 - Integrations depth/polish pass (2026-09-28): `docs/design/audit.md`'s
   row upgraded from mostly 🔲 to Hover/Focus/Loading/Depth ✅, Active 🟡.
   Two real, code-level bugs, not just visual ones. (1)
@@ -313,6 +300,24 @@ reason.)
   e2e suites, and all 19 visual baselines (4 regenerated, stable across
   two runs). Guardrails and Procedures (the other two real gaps from
   the 2026-09-28 Chatbase research) are separate, larger follow-ups.
+- Data sources rebuild (2026-09-29, Phase 1): Knowledge page renamed
+  "Knowledge base" → "Data sources" and rebuilt to match Chatbase's own
+  page — a 4th entry point (**text snippet**, `createTextEntry`, no
+  file/URL round trip) plus search/type-filter/sort/bulk-select-delete
+  on the table (`@tanstack/react-table` + `nuqs`, ADR 0024's pattern)
+  and an informational total-size indicator (no cap — `docs/open-
+  questions.md` #6 is unresolved). Real bug caught by a screenshot
+  before shipping: `OptionCard`'s `line-clamp-2` truncated mid-word once
+  the grid went 3→4 columns — fixed by shortening copy, not widening
+  layout. **Deliberately out of scope, discussed with the user first**:
+  real multi-page site crawling (`docs/open-questions.md` #3, still
+  unresolved) and Notion-page/ticket sources (Notion needs a full OAuth
+  connector; Tickets is Chatbase's own paywalled helpdesk integration).
+  Verified: `tsc` clean, all 10 guardrails, full unit suite, 17
+  `knowledge.spec.ts` tests (6 new), the knowledge a11y scan, both
+  `knowledge-empty.png`/`knowledge-add-dialog.png` visual baselines
+  regenerated + stable across two runs, full 19-baseline visual suite
+  otherwise unchanged.
 - Self-serve config (roadmap "Self-serve configurability"): widget
   appearance editor (greeting/accent/avatar/position) and a 3-template
   persona picker (Support/Sales/Lead-gen), both in the bot editor.

@@ -85,7 +85,7 @@ export async function deleteKnowledgeSource(orgId: string, botId: string, source
 async function createChunkedEntry(
   orgId: string,
   botId: string,
-  kind: "file" | "url",
+  kind: "file" | "url" | "text",
   title: string,
   text: string,
 ): Promise<void> {
@@ -131,4 +131,25 @@ export async function createFileEntry(
 export async function createUrlEntry(orgId: string, botId: string, url: string): Promise<void> {
   const { title, text } = await extractUrlText(url);
   await createChunkedEntry(orgId, botId, "url", title, text);
+}
+
+// Pasted text, no file/URL round trip — the same chunking pipeline as
+// file/URL, just skipping extraction since the text is already plain.
+export async function createTextEntry(orgId: string, botId: string, title: string, text: string): Promise<void> {
+  await createChunkedEntry(orgId, botId, "text", title, text);
+}
+
+// Informational only (docs/open-questions.md #6's pricing/billing-tier
+// question is unresolved, so there's no plan-based cap to enforce or
+// display against — just the raw total, unlike Chatbase's "X KB / 1 MB").
+// Sums each chunk's content length, not the original file/upload size,
+// since that's what's actually stored.
+export async function getTotalKnowledgeBytes(orgId: string, botId: string): Promise<number> {
+  const sources = await withOrgContext(orgId, (tx) =>
+    tx.knowledgeSource.findMany({ where: { botId }, include: { chunks: true } }),
+  );
+  return sources.reduce(
+    (total, source) => total + source.chunks.reduce((sum, chunk) => sum + Buffer.byteLength(chunk.content), 0),
+    0,
+  );
 }

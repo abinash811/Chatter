@@ -176,11 +176,12 @@ generic queue.
 ## Knowledge base ingestion
 
 `docs/product-spec.md`'s MVP scope: "file upload and/or manual Q&A at
-minimum for v1" — now fully built, three ways in
-(`lib/ai/knowledgeBase.ts`, `/bots/[botId]/knowledge`). Site crawling
-(multi-page, link-following) stays separate, deferred scope
-(`docs/open-questions.md` #4) — everything here is single-Q&A/single-
-file/single-URL. ADR 0013 covers the file/URL decisions in full.
+minimum for v1" — now fully built, four ways in
+(`lib/ai/knowledgeBase.ts`, `/bots/[botId]/knowledge`, "Data sources"
+as of 2026-09-29). Site crawling (multi-page, link-following) stays
+separate, deferred scope (`docs/open-questions.md` #3) — everything
+here is single-Q&A/single-file/single-URL/single-text-snippet. ADR
+0013 covers the file/URL decisions in full.
 
 **Manual Q&A**: one `KnowledgeSource` (`kind: "qa"`, `title` = the
 question) + one `KnowledgeChunk` (`content` = the answer) per pair — no
@@ -199,6 +200,17 @@ pull just the article content — not nav/footer/ad chrome. Guarded by
 `assertPublicHttpUrl` (a basic SSRF check: `http`/`https` only, and the
 literal hostname is rejected if it's `localhost`/loopback/private/link-
 local — see `docs/security.md` for what this guard does *not* cover).
+
+**Text snippet** (`createTextEntry`, 2026-09-29): a title + pasted text,
+no extraction step — reuses the same chunking pipeline as file/URL
+(`kind: "text"`). The smallest of the four entry points since there's
+no file parsing or network fetch involved.
+
+**Total size indicator** (`getTotalKnowledgeBytes`): sums each stored
+chunk's content length across a bot's sources — informational only, no
+plan-based cap enforced or displayed against it (`docs/open-
+questions.md` #6's billing-tier question is unresolved, so there's
+nothing to cap against yet, unlike Chatbase's "X KB / 1 MB").
 
 **Chunking** (`lib/ai/chunking.ts`'s `chunkText`, file/URL only — a Q&A
 pair never needs it): a hand-rolled recursive splitter, paragraph →

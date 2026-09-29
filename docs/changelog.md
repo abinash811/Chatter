@@ -407,4 +407,24 @@ bot top bar's shared-across-pages rework.
   each time confirmed via job logs as this same known class, not a new
   issue. Don't keep inflating individual timeouts chasing this; run
   scoped test files during a session, not the full suite repeatedly.
+- Knowledge depth/polish pass, full detail (2026-09-28 — superseded
+  2026-09-29 by the Data sources rebuild, see CLAUDE.md): `docs/design/
+  audit.md`'s row upgraded from mostly 🔲 to Hover/Focus/Loading/Depth
+  ✅, Active 🟡. Depth was already earned (same `rounded-lg border
+  border-border shadow-xs` wrap as Conversations/Leads/Actions) but
+  never credited. Real screenshot review (using "Load sample data" to
+  get a populated screen without a live embeddings call, since Q&A/
+  file/URL ingestion all require a real `ANTHROPIC_API_KEY`) flagged the
+  delete button's hover as visually almost imperceptible — `--accent`
+  (`oklch(97%)`) against a near-white `oklch(100%)` page background.
+  `getComputedStyle()` confirmed the hover genuinely applies (not
+  broken), and the same `ghost`-variant subtlety is already accepted and
+  credited ✅ on the Bots list's row-action button, so this was
+  documented as a real, cross-cutting `--accent`-on-white contrast
+  question (affects `ghost` buttons in 5 files total: `ActionsTable.
+  tsx`, `KnowledgeTable.tsx`, `BotTableRow.tsx`, `BotsTable.tsx`,
+  `sidebar.tsx`) rather than unilaterally redesigned for one screen —
+  flagged to the user since fixing it would touch several already-
+  audited screens' visual baselines at once, not committed to yet
+  (still not committed to as of the 2026-09-29 rebuild).
 
