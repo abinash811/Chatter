@@ -217,6 +217,15 @@ model Conversation {
   // — a publish mid-conversation must not shift an in-flight visitor).
   configVersionId String
   createdAt       DateTime @default(now())
+  // ADR 0027: "ongoing" | "paused" — exactly the two values Chatbase's
+  // own real API documents (their own filter dialog lists more, but
+  // only these two are confirmed from a primary source). A paused
+  // conversation still records incoming Message rows; lib/ai/chat.ts
+  // skips the model call and tool loop while paused.
+  status          String   @default("ongoing")
+  // ADR 0027: "widget" | "playground" — this bot's two real message
+  // origins (app/api/chat/route.ts vs. sendPreviewMessageAction).
+  source          String   @default("widget")
 
   bot      Bot       @relation(fields: [botId], references: [id])
   messages Message[]

@@ -279,19 +279,40 @@ behavior as the reference product's own Playground. **How**:
 `PreviewSheet.tsx`, `sendPreviewMessageAction` (`app/(console)/bots/
 [botId]/actions.ts`), calling `lib/ai/chat.ts`'s `sendMessage` directly.
 
-### Conversation inbox
+### Conversation inbox (Activity)
 **Who**: the business owner — a non-technical reviewer, not a developer.
-**What**: `/conversations` — a filterable list (by bot, date, "has an
-issue") of every widget conversation, and `/conversations/
-[conversationId]` — the full message transcript with each tool call
-shown as a plain-language summary ("Looked up order #1234 — found it.")
-rather than raw JSON; the raw input/output stays available behind a
-"Technical details" disclosure. Dashboard-only for v1, no email/Slack
-push. **How**: `lib/conversations.ts`, each tool's own
-`describeForInbox` (`lib/ai/tools/*.ts`), `components/console/
-{ConversationsTable,ConversationFilters,ConversationThread}.tsx`. ADR
-0015 + ADR 0016. No `status`/"resolved" concept yet — see `docs/open-
-questions.md` #7.
+**What**: `/conversations` — a split-pane Activity layout (list left,
+Chat/Details panel right), rebuilt 2026-09-29 (ADR 0027) to match
+Chatbase's own real Activity section (recreated from their actual docs,
+`docs/user-guides/chatbot/activity` and the pause/resume API reference —
+not guessed). Filterable by bot, date, "has an issue", and status
+(ongoing/paused). Clicking a row opens `/conversations/[conversationId]`
+with two tabs: **Chat** — the full transcript, each tool call shown as a
+plain-language summary ("Looked up order #1234 — found it.") rather than
+raw JSON, the raw input/output behind a "Technical details" disclosure
+(ADR 0016); **Details** — Contact (from a linked Lead, else
+"Anonymous"), Source (Widget/Playground), Status, message count, Created,
+Last activity, and the Conversation ID. Sentiment and Country show
+honest "Not analyzed"/"Not tracked" states rather than fabricated values
+— matches Chatbase's own real "unanalyzed" UI, not invented data
+(guardrail #4). A business owner can **pause/resume** a conversation
+(the bot stops replying but still records incoming visitor messages,
+`public/widget.js` degrades gracefully when `reply` is `null`) and
+**bulk-select + export to CSV**. Dashboard-only for v1, no email/Slack
+push. **How**: `lib/conversations.ts` (`status`/`source`/`contact`/
+`lastActivityAt`, `setConversationStatus`), `app/(console)/conversations/
+shared.ts` (the list-data loader shared by both routes, since
+`searchParams` isn't available in a shared layout), `app/(console)/
+conversations/actions.ts` (`toggleConversationPauseAction`),
+`components/console/{ConversationsSplitView,ConversationListPane,
+ConversationDetailPanel,ConversationFilters,ConversationThread}.tsx`,
+`lib/csvExport.ts`. ADR 0015 + ADR 0016 + ADR 0027. **Not built**, same
+as Chatbase docs would require real work we haven't scoped: Sentiment
+analysis, Country/IP geolocation, a Confidence-score metric, voice
+sessions (out of scope, `docs/north-star.md`), Procedures. `docs/open-
+questions.md` #7 ("resolved" status semantics) is still open — the new
+`status` field is about AI-reply availability (ongoing/paused), a
+different concept from "resolved for analytics."
 
 ## Planned
 

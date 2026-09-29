@@ -122,8 +122,8 @@ export async function sendPreviewMessageAction(
 
   try {
     const session = await getCurrentSession();
-    const result = await sendMessage({ orgId: session.orgId, botId, conversationId, userMessage });
-    return { status: "success", message: null, conversationId: result.conversationId, reply: result.reply };
+    const result = await sendMessage({ orgId: session.orgId, botId, conversationId, userMessage, source: "playground" });
+    return { status: "success", message: null, conversationId: result.conversationId, reply: result.reply ?? undefined };
   } catch (err) {
     console.error("[sendPreviewMessageAction]", err);
     let message = "Couldn't get a reply. Please try again.";

@@ -147,7 +147,7 @@ test("conversations list has no serious/critical accessibility violations", asyn
   await seedConversations(botId);
   await page.click('a:has-text("Conversations")');
   await expect(page).toHaveURL(/\/conversations$/);
-  await assertNoSeriousViolations(page, page.locator('[data-slot="table-body"] tr').first());
+  await assertNoSeriousViolations(page, page.locator("ul > li").first());
 });
 
 test("conversation detail has no serious/critical accessibility violations", async ({ page }) => {

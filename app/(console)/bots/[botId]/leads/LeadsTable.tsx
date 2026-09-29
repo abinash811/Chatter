@@ -3,9 +3,8 @@ import { relativeTime } from "@/lib/utils";
 import type { LeadRow } from "@/lib/leads";
 
 // Linear register (docs/architecture.md §7) — a dense, read-only data
-// list, same pattern as ConversationsTable/BotsTable. No client
-// interactivity needed (no row click, no actions yet), so this stays a
-// plain server component.
+// list, same pattern as BotsTable. No client interactivity needed (no
+// row click, no actions yet), so this stays a plain server component.
 export function LeadsTable({ leads }: { leads: LeadRow[] }) {
   if (leads.length === 0) {
     return (

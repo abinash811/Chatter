@@ -25,6 +25,21 @@ export function relativeTime(date: Date): string {
 
 // Small and local for the same reason as relativeTime — one use case
 // (the knowledge base's total-size indicator) doesn't justify a library.
+// "Sep 28, 2026, 10:13 AM" — matches Chatbase's own Details panel date
+// format (confirmed from the user's own screenshot). Client-only by
+// convention (called from "use client" components) since
+// Intl.DateTimeFormat's output can vary by the runtime's locale/TZ —
+// safe here since it never runs during server rendering.
+export function formatDateTime(date: Date): string {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+}
+
 export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;

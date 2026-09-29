@@ -175,8 +175,11 @@ test("conversations list — with seeded conversations (Started column masked, i
 
   await page.click('a:has-text("Conversations")');
   await expect(page).toHaveURL(/\/conversations$/);
+  // ADR 0027's split-pane list — each row's relative timestamp
+  // ("just now", "4m ago") is real wall-clock-relative text, same
+  // masking rationale as bots-table.png's Created column.
   await expect(page).toHaveScreenshot("conversations-list.png", {
-    mask: [page.locator('[data-slot="table-body"] tr td:last-child'), ...sidebarMasks(page)],
+    mask: [page.locator(".text-xs.text-muted-foreground"), ...sidebarMasks(page)],
   });
 });
 
@@ -187,11 +190,11 @@ test("conversation detail — full transcript with an inline tool call (ADR 0015
 
   await page.goto(`/conversations/${issueConversationId}`);
   await expect(page).toHaveScreenshot("conversation-detail.png", {
-    // Every relative timestamp in the thread ("Visitor · 4m ago", the
-    // tool call's own timestamp) and the header's "Started X ago" — all
-    // real wall-clock-relative text, same masking rationale as bots-
-    // table.png's Created column.
-    mask: [page.locator(".text-xs.text-muted-foreground"), page.getByText(/^Started /), ...sidebarMasks(page)],
+    // Every relative timestamp — the list pane's rows, the thread's
+    // "Visitor · 4m ago", the tool call's own timestamp — is real
+    // wall-clock-relative text, same masking rationale as bots-table.
+    // png's Created column.
+    mask: [page.locator(".text-xs.text-muted-foreground"), ...sidebarMasks(page)],
   });
 });
 

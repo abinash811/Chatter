@@ -47,7 +47,12 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
    of "resolved" before it's buildable — closed by visitor leaving
    satisfied? no handoff triggered? something else? ADR 0015
    deliberately left this undefined rather than picking a definition
-   while building the conversation inbox.
+   while building the conversation inbox. **Partially touched but not
+   resolved by ADR 0027** (2026-09-29, the Activity rebuild): the new
+   `Conversation.status` field ("ongoing"/"paused") is a different
+   concept — whether the bot is currently generating AI replies — not
+   the "resolved for analytics" idea this question asks about. Still
+   open.
 8. **App compute platform** (narrowed 2026-09-27 — the database half is
    resolved: AWS RDS for PostgreSQL, ADR 0021). Cloud provider is AWS;
    still open is where the Next.js app itself runs — AWS App Runner

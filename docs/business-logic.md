@@ -273,7 +273,7 @@ question/answer fields a business owner just typed (`useActionState`'s
 failure, unless the action's returned state re-seeds them via
 `defaultValue`; same fix already shipped for `/login`'s email field).
 
-## Conversation inbox (`lib/conversations.ts`, ADR 0015 + ADR 0016)
+## Conversation inbox / Activity (`lib/conversations.ts`, ADR 0015 + ADR 0016 + ADR 0027)
 
 `Conversation`, `Message`, and `ToolCallLog` were written on every chat
 turn since `lib/ai/chat.ts`'s `sendMessage` first shipped, but no console
@@ -282,7 +282,9 @@ route ever read them back — `/conversations` (list) and `/conversations/
 ADR 0015 (resolving the previously-open "human handoff channel" question):
 no email/Slack push in this pass. Built for a non-technical business
 owner to review real conversations and spot problems, per ADR 0016 — not
-a developer debugging screen.
+a developer debugging screen. Rebuilt 2026-09-29 (ADR 0027) into a
+split-pane layout matching Chatbase's own real Activity section, read
+from their actual docs, not guessed.
 
 **List** (`listConversations`): one row per `Conversation`, joined to its
 bot's name and its most recent `Message` for a preview, filterable by
@@ -312,12 +314,50 @@ found.") — the raw tool name/input/output JSON stays real and available
 "Technical details" disclosure, not deleted, so an engineer debugging a
 bad answer can still get at it from the same page a business owner uses.
 
-**Deliberately not built**: a `status`/"resolved" concept. `docs/roadmap.
-md`'s "Resolution-rate analytics" already flagged this as needing a real
-product definition first (closed by visitor leaving satisfied? no
-issue triggered? something else?) — ADR 0015 left it undefined rather
-than silently picking one while building the inbox; tracked as `docs/
-open-questions.md` #7.
+**Pause/resume** (ADR 0027, `setConversationStatus`): a business owner
+can pause a conversation from its Details panel. A paused conversation
+still records incoming visitor messages — `lib/ai/chat.ts`'s
+`sendMessage` persists the user message, then returns `{ reply: null }`
+before any model call or tool loop, matching Chatbase's own documented
+behavior ("stops receiving AI replies but still records incoming
+messages") exactly. `app/api/chat/route.ts` and `public/widget.js`
+degrade gracefully — `appendMessage` is simply skipped when `reply` is
+`null`, no error surfaced to the visitor.
+
+**Source** (`Conversation.source`, `"widget" | "playground"`): set once
+at conversation creation, from whichever caller started it —
+`app/api/chat/route.ts` (defaults to `"widget"`) or
+`sendPreviewMessageAction` (`"playground"`, the bot editor's Test-your-
+bot preview). Shown on the Details tab so a reviewer can tell a real
+visitor conversation from an internal test one.
+
+**Contact** (`getConversationDetail`): resolved from a `Lead` row linked
+by `conversationId`, if `collect_lead` was called during that
+conversation; otherwise shown as "Anonymous" — never fabricated.
+
+**Deliberately not built, grounded in what Chatbase's own UI actually
+shows** (confirmed from real screenshots, not guessed): Sentiment
+analysis and Country/IP geolocation both render as honest "Not
+analyzed"/"Not tracked" states — matching Chatbase's own real
+"unanalyzed" UI, not invented values (guardrail #4). Also not built: a
+Confidence-score metric, voice sessions (out of scope per `docs/north-
+star.md`), and Procedures (a named trigger+ordered-steps workflow — a
+real middle ground between the flat tool registry and the deferred
+visual-flow-builder idea, tracked as a future Build sub-area). A
+`status`/"resolved for analytics" concept (distinct from the new
+ongoing/paused `status` field, which is about AI-reply availability) is
+still not built. `docs/roadmap.md`'s "Resolution-rate analytics" already
+flagged this as needing a real product definition first (closed by
+visitor leaving satisfied? no issue triggered? something else?) — ADR
+0015 left it undefined rather than silently picking one while building
+the inbox; tracked as `docs/open-questions.md` #7.
+
+**Bulk select + export**: the "..." menu's "Select" enters bulk-select
+mode (checkboxes on each list row); selected rows (or, via "Export
+all", every currently-filtered row) export to CSV client-side
+(`lib/csvExport.ts` — a `Blob` + `URL.createObjectURL` + a synthetic
+`<a download>` click, no new API route, since the data is already
+server-rendered into the page).
 
 **Verification note**: conversations can't be created through the
 console UI — they're only ever written by the widget chat API
@@ -327,11 +367,16 @@ base's embeddings call). `tests/e2e/helpers.ts`'s `seedConversations`
 writes directly via Prisma, scoped through the same `withOrgContext` +
 `BotPublicKey` mechanism the app itself uses to bootstrap an `orgId`
 from a `botId` — standing in for a real chat turn, same pattern
-`knowledge.spec.ts` already used for a directly-seeded knowledge entry.
-Every other part of the feature (list rendering, filters, the issue
-derivation for both tools, the plain-language summaries, the detail
-transcript, tenant isolation across orgs) was verified for real against
-a real Postgres instance and a real browser.
+`knowledge.spec.ts` already used for a directly-seeded knowledge entry;
+it now also seeds a third, paused conversation for pause/resume and
+status-filter coverage. Every other part of the feature (list rendering,
+filters, the issue derivation for both tools, the plain-language
+summaries, the detail transcript, tenant isolation across orgs, and the
+2026-09-29 rebuild's pause/resume toggle, Source/Contact fields, and CSV
+export) was verified for real against a real Postgres instance and a
+real browser — including a live functional check that pausing a
+conversation actually suppresses the AI reply end-to-end, not just that
+the `status` column flips.
 
 ## Tenant isolation in practice
 

@@ -1,35 +1,32 @@
 import { Skeleton } from "@/components/ui";
 
-// Matches ConversationsTable's real shape (bot/date/issue filters,
-// table rows) — a considered loading state (docs/design/principles.md
-// #5), not a blank flash while listConversations()'s query resolves.
+// Matches ConversationsSplitView's real shape (ADR 0027) — a considered
+// loading state (docs/design/principles.md #5), not a blank flash while
+// loadConversationsListData()'s query resolves.
 export default function ConversationsLoading() {
   return (
-    <div>
+    <div className="flex h-[calc(100vh-8rem)] flex-col">
       <div className="flex h-row items-center justify-between">
         <Skeleton className="h-5 w-32" />
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <Skeleton className="h-row-sm w-40" />
           <Skeleton className="h-row-sm w-36" />
-          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-8 w-8" />
         </div>
       </div>
 
-      <div className="mt-4 overflow-hidden rounded-lg border border-border shadow-xs">
-        <div className="flex h-10 items-center gap-6 bg-soft-background px-2">
-          <Skeleton className="h-3 w-10" />
-          <Skeleton className="h-3 w-16" />
-          <Skeleton className="ml-auto h-3 w-14" />
-          <Skeleton className="h-3 w-14" />
+      <div className="mt-4 flex flex-1 overflow-hidden rounded-lg border border-border shadow-xs">
+        <div className="flex w-80 shrink-0 flex-col gap-3 border-r border-border p-3">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="space-y-1.5">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-full" />
+            </div>
+          ))}
         </div>
-        {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="flex h-row items-center gap-6 border-t border-border px-2">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-5 w-16 rounded" />
-            <Skeleton className="ml-auto h-4 w-20" />
-            <Skeleton className="h-4 w-14" />
-          </div>
-        ))}
+        <div className="flex-1 p-4">
+          <Skeleton className="h-6 w-40" />
+        </div>
       </div>
     </div>
   );

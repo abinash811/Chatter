@@ -35,258 +35,12 @@ remember — it's checked at commit time.
 from the original CARE-based design system through ADR 0016
 (conversation inbox made non-technical); `docs/changelog/
 2026-09-part2.md` — the CARE-to-shadcn migration (ADR 0017) through the
-bot top bar's shared-across-pages rework.
+bot top bar's shared-across-pages rework; `docs/changelog/
+2026-09-part3.md` — skeleton loading states through the /bots list's
+rebuild onto the real CARE `Table` (ADR 0008).
 
 ---
 
-- **Skeleton loading states + a real, previously-invisible text/ring bug
-  found and fixed across the whole console — 2026-09-26, user directive
-  ("flag when we're not building high-class international standard
-  products").** `Skeleton` (pulled in ADR 0017, zero real usage until
-  now) wired into 7 new `loading.tsx` files — Next.js App Router's
-  automatic per-segment Suspense boundary — for `/bots`, `/bots/
-  [botId]` (editor), its `knowledge` and `integrations` sub-routes,
-  `/conversations`, `/conversations/[conversationId]`, and `/settings`.
-  Each skeleton matches its real page's actual shape (row counts,
-  column widths, Card sections) rather than a generic spinner. The
-  bot-scoped ones deliberately skip the shared `BotTopBar` (already
-  rendered by the parent layout around the Suspense boundary — including
-  it would have shown two top bars briefly). Confirmed genuinely
-  rendering, not just wired: CDP network-latency emulation
-  (`Network.emulateNetworkConditions`) plus a polling loop, since local
-  Postgres is normally too fast to ever show a loading state — a
-  screenshot alone can't prove a race condition like this.
-
-  Caught and fixed a real, previously-invisible bug across 6 files while
-  doing this pass, not related to loading states at all: `text-accent`
-  (no `bg-accent` pairing) and `ring-accent`/`accent-accent` were used
-  as a standalone brand text/ring/checked-fill color in `AuthShell.tsx`
-  (the "SIGN IN"/"SIGN UP" eyebrow), `LoginForm.tsx`/`SignupForm.tsx`
-  (the "Sign up"/"Log in" links), `BotsTable.tsx` (avatar initials), and
-  `Input`/`Textarea`/`Checkbox` (focus rings + checked fill) — but ADR
-  0014's token swap redefined `--accent` as a pale neutral-100
-  *background* tint (paired with `--accent-foreground` for text on top
-  of it), not a text/ring color. Every one of those was rendering as
-  near-invisible pale text/rings on a white background, invisible to
-  `tsc`/the build the same way every other Tailwind-token regression in
-  this project's history has been — only caught by actually looking at
-  real screenshots and `getComputedStyle` output, not by reading the
-  code. Fixed to `text-foreground`/`ring-ring`/`accent-primary` (the
-  correct real shadcn tokens, matching `Button`'s own
-  `focus-visible:ring-ring/50`); the two auth links also gained
-  `font-medium underline` since a monochrome palette has no separate
-  link color to rely on for differentiation from body text.
-
-  `AuthShell.tsx`'s right-side card also got the same depth/polish pass
-  as the bot editor and bots list (`bg-soft-background` + `shadow-xs`,
-  was a flat bordered box) — closes the login/signup item from the
-  polish-pass known gap below.
-
-  **Process change, not just a one-off fix**: `.claude/skills/ship-
-  checklist/SKILL.md` now has a standing item (an explicit design-bar
-  self-check — real hover/focus/active/loading states, named out loud
-  against principles.md #5/#9 — before calling any UI change done) per
-  the user's explicit instruction to flag this going forward rather than
-  wait to be asked.
-
-  Verified: guardrails, `tsc`, a clean rebuild, all 99 unit tests. Full
-  `tests/e2e`/`tests/visual` suites intentionally not run this pass per
-  explicit user request (mid-session) — flagged here rather than
-  silently claimed as verified; both should be run and any resulting
-  baseline updates committed before this is called fully shipped.
-- **`docs/design/audit.md` created — a living per-screen design-bar
-  scoreboard, docs-only.** User's explicit question: is design-audit
-  work like the bots-list review actually getting documented, and how
-  do we not miss this in future? Answer was honest, not reassuring:
-  every code *change* was already landing in this file's Done/Known-
-  gaps section, but a spoken-in-chat audit (hover/focus/loading-state
-  findings, functionality gaps like missing search) had nowhere
-  persistent to live — it would have been lost to context compaction.
-  `docs/design/audit.md` is the fix: one row per console screen
-  tracking hover/focus/active/loading/depth status against principles
-  #5/#9, plus a running list of open functionality gaps per screen.
-  `.claude/skills/ship-checklist/SKILL.md`'s design-bar self-check item
-  now explicitly points here — an audit finding gets logged in the same
-  turn it's found, not "in the next commit." First real content: the
-  bots-list audit from this session (badges indistinguishable, avatar
-  chips visually identical, empty state has no CTA, no search/sort/row-
-  actions/delete) logged as the file's first "open findings" entry
-  rather than left in scrollback. `docs/design/audit.md` added to this
-  file's "Where things live" list.
-
-- **Write-capable action tools: order cancellation, gated on human
-  approval — 2026-09-28, ADR 0023.** Follows directly from a real
-  product conversation, not a silent pick: asked what to build next,
-  the user chose "write-capable action tools" from a list of options;
-  per CLAUDE.md's standing rule ("when a new technical pattern needs a
-  real choice, explain it before asking"), the real risk (a write tool
-  is irreversible and a visitor could manipulate the bot into
-  triggering it) and two real-world patterns (fully automatic execution
-  vs. bot-proposes/human-approves) were explained before asking which;
-  the user picked human approval ("Okay let's have 2").
-
-  `request_order_cancellation` (`lib/ai/tools/cancelOrder.ts`) never
-  calls Shopify itself. `handle()` validates the order via the same
-  Shopify REST lookup `check_order_status` already uses (duplicated
-  intentionally, not refactored into a shared helper, to avoid touching
-  tested working code), returns `handoff_required`/`not_found`/
-  `already_cancelled` directly for those cases, and otherwise queues a
-  `PendingAction` and tells the visitor a human will review it — never
-  that it's done. A new generic queue, `lib/pendingActions.ts`,
-  deliberately has zero knowledge of any specific tool (`PendingAction`
-  model, migration `20260928100000_add_pending_actions`, RLS policy
-  `db/migrations/0006_pending_actions_rls.sql` — real cross-org psql
-  test run: org A sees its own row, org B sees 0, no context sees 0).
-  Keeping it generic avoids a circular import: if it imported
-  `executeOrderCancellation` to build a toolName→executor map, and
-  `cancelOrder.ts`'s own `handle()` already imports `createPendingAction`
-  from it, that's a cycle. Resolved by putting the executor-dispatch map
-  in the console layer instead
-  (`app/(console)/bots/[botId]/approvals/actions.ts`'s `EXECUTORS`) —
-  the next write-capable tool adds one line there, not a change to the
-  generic queue.
-
-  New `/bots/[botId]/approvals` console page (added to `BotTopBar`'s nav
-  between Actions and Integrations) lists queued requests; approving
-  needs its own confirm dialog (`AlertDialog`, "This calls Shopify for
-  real and can't be undone") since it's the one moment a real external
-  write happens — matching the existing bot-publish confirm pattern;
-  rejecting needs none, since nothing external happens. Approving calls
-  the tool's separately-exported `executeOrderCancellation`, the real
-  `orderCancel` GraphQL mutation — REST is deprecated for new Shopify
-  work since October 2024, so GraphQL was used from the start rather
-  than matching `check_order_status`'s older REST call. Requires the
-  `write_orders` OAuth scope, widened on `lib/integrations/shopify.ts`'s
-  `SCOPES` constant — a real, documented consequence: a store connected
-  before this change is still running on the old, narrower grant and
-  must redo OAuth before cancellation will work for them; there's no way
-  to silently upgrade an existing token's scope.
-
-  `shopify.dev` stayed blocked for `WebFetch` in this environment (same
-  `EGRESS_BLOCKED` pattern hit earlier for `chatbase.co`) — the
-  `orderCancel` mutation shape, `OrderCancelReason` enum, and
-  `OrderCancelRefundMethodInput` fields were pieced together via
-  WebSearch instead of the primary source, and ADR 0023 says so plainly:
-  unverified against a live Shopify store, matching the project's
-  "check current practice, don't recall it" rule about being honest when
-  that check couldn't actually happen.
-
-  A real, not hypothetical, test-assertion bug caught while writing
-  `tests/unit/lib/ai/tools/cancelOrder.test.ts`: an assertion checking
-  the pending-approval message never contains the word "cancelled" at
-  all failed — correctly, since the real message legitimately says
-  "...before the order is actually cancelled" (future tense). Fixed by
-  asserting the message matches `/review/i` and does *not* match
-  `/has been cancelled|is cancelled|order cancelled/i` — the real
-  intent (never claim the action is done), not a blanket word-ban.
-
-  Verified end-to-end with real screenshots against the running app (no
-  live Shopify store is connectable in this environment, so a
-  `PendingAction` was seeded directly via `withOrgContext`, same bypass
-  precedent as every other Claude/Voyage/Shopify-dependent feature this
-  project has seeded around): the empty state, a queued request with its
-  full description, the approve confirm dialog's wording, and the
-  resolved row correctly showing a real "failed" outcome with "No
-  Shopify store connected for this bot." — never a false "cancelled"
-  success. Also verified: `tsc` clean (no existing tool implementation
-  needed changes when `Tool.handle`'s signature grew an optional 4th
-  `conversationId` parameter — TypeScript's structural typing for
-  optional parameters made this backward-compatible, confirmed rather
-  than assumed), all 9 `check:all` guardrails, 166 unit tests (14 new:
-  9 for `cancelOrder.ts`, 5 for `pendingActions.ts`), a clean production
-  build, 6 new `tests/e2e/` specs (`approvals.spec.ts` + a new a11y
-  scan) all green, and all 20 `tests/visual/` baselines regenerated
-  (the new "Approvals" nav item shifted `BotTopBar`'s layout, so every
-  bot-scoped-page baseline needed regenerating, same as every previous
-  nav-item addition this session) and confirmed stable across two runs.
-
-**Known gaps:**
-- 🟡 `scripts/canary.mjs` can't run in this container as-is — the
-  pre-installed Playwright browser only has
-  `chromium_headless_shell-1194`, but the `playwright` npm package
-  (installed fresh this session, no `node_modules` existed before)
-  expects `-1243`. `tests/e2e/`/`tests/visual/` both work around this
-  already (`playwright.config.ts`/`playwright.visual.config.ts` pass
-  `executablePath: /opt/pw-browsers/chromium`, the full browser, not the
-  headless-shell variant), so real browser coverage isn't blocked — only
-  the standalone canary script's default `chromium.launch()` is. Fix is
-  either the same `executablePath` override added to `canary.mjs`, or
-  re-running `npx playwright install` to fetch the matching shell —
-  neither done yet, flagged rather than silently skipped next time this
-  comes up.
-- 🔲 Design system tokens/infra and a real 18-component primitive layer
-  are done — **all 18 now on shadcn's real official source, ADR 0017**
-  (superseding the ADR 0008/CARE-pull mechanism entirely; see the Done
-  bullet below). Bots list (real `Table`) and the bot editor (persistent
-  top bar + `Tabs` + `Dialog`, principles.md #10) are rebuilt on these
-  primitives, not just recolored. The integrations page now shares the
-  same persistent `BotTopBar` (bot switcher + Editor/Knowledge/
-  Integrations nav, 2026-09-26) as the editor and knowledge pages — the
-  top-level shell gap is closed. Its own content (a plain provider list)
-  hasn't had a dedicated depth/polish pass (principles.md #5/#9 — Card
-  wrapping, etc.) the way the bot editor has; that's the part still
-  open.
-- 🟡 The depth/polish pass (principles.md #5/#9 — real Card boundaries,
-  centered layout, hover/shadow/focus/active states, considered loading
-  states) is done on the bot editor, the bots list, and login/signup
-  (see the Done bullet above). Still open: the integrations page's own
-  content (still a plain provider-row list, though it now shares the
-  polished `BotTopBar`), the settings page, the knowledge page, the
-  conversations list/detail, and the sidebar itself (structurally solid
-  per the 2026-09-26 rebuild, but never got a dedicated shadow/hover
-  polish pass the way the bot editor did). Apply the same recipe
-  (Card-wrap floating content, real hover/focus/active states checked
-  via `getComputedStyle`, a `loading.tsx` skeleton matching the real
-  layout) when each is next touched — and check `text-accent`/
-  `ring-accent`/`accent-accent` don't reappear; the real tokens are
-  `text-foreground`/`ring-ring`/`accent-primary`. A sidebar user/org
-  identity footer (avatar + name) already exists (added with the
-  sidebar rebuild) — no longer a gap.
-- The console sidebar nav shell is done: `app/(console)/layout.tsx` +
-  `components/console/AppSidebar.tsx` now use the real CARE `Sidebar`
-  (icon-collapsible, cookie-persisted state, active-route highlighting,
-  a `logoutAction` server action wired to the footer) — replacing the
-  hand-rolled `<nav>`. **Tailwind upgraded to v4.3.3 (ADR 0009)** to
-  build it: the pulled `Sidebar`'s CARE-authored v4 syntax
-  (`w-(--sidebar-width)`) silently compiled to nothing under our old
-  v3.4.19, breaking layout invisibly to `tsc`/the build — only caught
-  by an actual screenshot. Migrated via the official codemod
-  (`@tailwindcss/upgrade`), not a hand patch — `tailwind.config.ts` is
-  gone, every token now lives in `app/globals.css`'s `@theme` block.
-  Verified: full guardrail suite, a real headless-browser check that
-  the sidebar's width/offset math is now correct with zero console
-  errors, and all 11 `tests/e2e/` specs passing unchanged. All 15
-  interactive pulled primitives also got `"use client"` added — CARE's
-  source has no such concept (Vite SPA), Next.js App Router requires
-  it; this was already true before the v4 upgrade, just never listed
-  here explicitly until now.
-- Dependency sweep after ADR 0009 (the actual gap was triage, not
-  detection — see the ADR): 5 more open Dependabot PRs found and
-  triaged, not just Tailwind's. Merged (verified: `tsc`, guardrails,
-  build, a real headless-browser check, all 11 E2E specs): `actions/
-  checkout`/`actions/setup-node` v4→v7 (`.github/workflows/ci.yml`),
-  `@types/node` 22→26, `tailwind-merge` 2→3 (v3 is what CARE itself
-  pins post-Tailwind-v4 — checked, not assumed), `lucide-react` 0→1
-  (checked the real breaking-changes list — brand-icon removal and
-  `*Circle` renames — against every icon we actually import; none
-  affected). **Deliberately left open, not silently bundled in**:
-  Next.js 15→16, Prisma 5→7 (×2, client+CLI), TypeScript 5→7 — each a
-  real framework major needing its own dedicated migration effort, not
-  a same-pass triage item. `.claude/skills/ship-checklist/SKILL.md` now
-  has this as a standing item (any dependency, not just this one case)
-  so it isn't only a one-time catch-up.
-- `/bots` rebuilt on the real CARE `Table` (`components/console/
-  BotsTable.tsx`, ADR 0008) — column headers (Name/Status/Created),
-  whole-row click-to-navigate (a small client component just for the
-  router handler; the page itself stays server-rendered), same data
-  passed as plain serializable fields (not full Prisma records — the
-  lesson from the bot-editor's earlier server/client serialization
-  bug). `docs/design/preview/bots-list.html` updated to match the real
-  headed-table look, not the old borderless div-list. Verified: full
-  guardrail suite, `tsc`, build, a real headless-browser check
-  (create → table shows it → row click navigates), and 2 new
-  `tests/e2e/bots-list.spec.ts` specs (13 total now) — not just a
-  throwaway script.
 - A real unit-test layer now exists — `tests/unit/` (Vitest,
   `vitest.config.mts`), closing the biggest gap from the 2026-09-25
   "critique the automated setup" discussion: `lib/ai/` (the chat loop,
@@ -466,4 +220,76 @@ bot top bar's shared-across-pages rework.
   suite, the integrations a11y scan (clean, now covers the labeled
   input), and the full 19-test visual suite (18 unchanged + 1 new,
   stable across two runs).
+- Conversations Activity rebuild, full detail (2026-09-29, ADR 0027):
+  the user shared 5 real Chatbase Activity screenshots (chat-log list,
+  Filter-by modal, Playground view, "..." menu, Details tab) and asked
+  to recreate the layout/UI/UX in our own design system, grounded in
+  Chatbase's real docs, "Dont guess anything always." Read two real
+  primary sources via `WebFetch` (`docs/user-guides/chatbot/activity`
+  and the conversation pause/resume API reference — quoted verbatim in
+  the ADR, not summarized), compared against the existing table-based
+  `/conversations`, and proposed a phased plan; the user approved Phase
+  1 with a single "okay." Rebuilt `/conversations` and `/conversations/
+  [conversationId]` as a split-pane layout (list left, Chat/Details
+  panel right), replacing `ConversationsTable.tsx` entirely.
+  `Conversation` gained two real columns — `status` ("ongoing"/
+  "paused") and `source` ("widget"/"playground") — via a hand-written
+  migration, applied against real local Postgres and re-verified clean
+  with `scripts/verify-rls.mjs`. Pause/resume is real, not decorative:
+  `lib/ai/chat.ts`'s `sendMessage` now persists the visitor's message
+  but returns `{ reply: null }` before any model call when a
+  conversation is paused, matching Chatbase's own documented behavior
+  ("stops receiving AI replies but still records incoming messages")
+  exactly; `public/widget.js` and `app/api/chat/route.ts` degrade
+  gracefully when `reply` is `null`. The Details tab shows Contact
+  (resolved from a linked `Lead`, else "Anonymous"), Source, Status,
+  message count, Created, Last activity, and the Conversation ID —
+  Sentiment and Country deliberately render "Not analyzed"/"Not
+  tracked" rather than fabricated values, matching Chatbase's own real
+  "unanalyzed" UI state (confirmed from the user's screenshot) per
+  guardrail #4, rather than inventing data we don't compute. Added
+  bulk-select + client-side CSV export (`lib/csvExport.ts`, a `Blob` +
+  synthetic `<a download>` click, no new API route needed). Wrote ADR
+  0027 recording the layout decision, the schema additions, and — as
+  important — an explicit "Alternatives considered" section for why
+  Sentiment/Country/`ended`/`taken_over` states were *not* built (no
+  primary source grounds them yet); the ADR's Consequences section
+  notes this only partially answers `docs/open-questions.md` #7 (the
+  new `status` field is about AI-reply availability, a different
+  concept from "resolved for analytics").
+  Real architectural finding mid-build: Next.js's `searchParams` is
+  only passed to Page components, not Layout components, so a shared
+  `layout.tsx` couldn't read the filter query params needed by both
+  routes — solved with `app/(console)/conversations/shared.ts`, an
+  async data-loader function called independently by both `page.tsx`
+  files, rather than duplicating the query logic or forcing a client-
+  side workaround.
+  Real bugs caught while verifying, not hypothetical: (1) the unit-test
+  mock for `getConversationDetail` had no `tx.lead.findFirst` mock for
+  the new Contact-resolution `Promise.all`, failing the one test that
+  exercised it — fixed by adding the mock. (2) the e2e suite's list-row
+  count assertions (`page.locator("ul > li")`) matched the sidebar's
+  own nav `<ul><li>` structure too, inflating counts — fixed by adding
+  `data-slot="conversation-list"` to the real list and scoping every
+  count/text assertion to it, including the bulk-select checkbox count
+  (which also had to exclude the unrelated "Has an issue" filter
+  checkbox, itself `role="checkbox"`). (3) the Details-tab e2e test's
+  `getByRole("tabpanel", { name: "Details" })` returned zero elements —
+  initially suspected as a Radix accessible-naming quirk or a
+  hydration race, but checking the actual `error-context.md` page
+  snapshot (rather than guessing) showed the "Details" tab's own click
+  had been silently dropped from the test during an earlier edit; the
+  real fix was restoring that click, not working around a phantom
+  timing bug.
+  Verified: `npx tsc --noEmit` clean; all 10 `check:all` guardrails;
+  full unit suite (168 tests); the full `tests/e2e/` suite (101/102 —
+  the one failure is the pre-existing, already-documented "Published
+  v1" toast-timeout flake, confirmed unrelated by re-reading its own
+  error output); the `conversations-list.png`/`conversation-detail.png`
+  visual baselines regenerated and stable across two runs, with the
+  full 19-baseline visual suite otherwise pixel-identical; a live
+  functional verification script (not just mocks) confirmed pausing a
+  conversation actually suppresses the widget's next AI reply
+  end-to-end, and that Source correctly reads "Playground" for a
+  preview-originated conversation.
 

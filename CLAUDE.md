@@ -302,6 +302,16 @@ reason.)
   inputs, no separate query-param section, no JSON body templating.
   Verified: `tsc` clean, all 10 guardrails, full unit suite, 2 new
   `actions.spec.ts` tests + a11y scan (22/22), visual suite unchanged.
+- Conversations Activity rebuild (2026-09-29, ADR 0027): `/conversations`
+  rebuilt into a split-pane layout (list left, Chat/Details panel right)
+  from 5 real Chatbase screenshots + their actual docs (not guessed).
+  New `Conversation.status`/`.source` fields power real pause/resume
+  (the bot skips its reply but still records the visitor's message,
+  matching Chatbase's documented behavior) and Widget-vs-Playground
+  tracking. Sentiment/Country deliberately show honest "Not analyzed"/
+  "Not tracked" states rather than fabricated data (guardrail #4).
+  Bulk-select + CSV export added. Full detail, including 3 real bugs
+  caught while verifying: `docs/changelog.md`.
 - Self-serve config (roadmap "Self-serve configurability"): widget
   appearance editor (greeting/accent/avatar/position) and a 3-template
   persona picker (Support/Sales/Lead-gen), both in the bot editor.

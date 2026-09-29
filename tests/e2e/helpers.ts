@@ -55,7 +55,7 @@ export async function createSecondBot(page: Page, name: string): Promise<void> {
 // solves via BotPublicKey, the one table exempt from RLS.
 export async function seedConversations(
   botId: string,
-): Promise<{ normalConversationId: string; issueConversationId: string }> {
+): Promise<{ normalConversationId: string; issueConversationId: string; pausedConversationId: string }> {
   const orgId = await getOrgIdForBot(botId);
   const draft = await withOrgContext(orgId, (tx) => tx.botConfigVersion.findFirstOrThrow({ where: { botId } }));
 
@@ -103,7 +103,18 @@ export async function seedConversations(
     }),
   );
 
-  return { normalConversationId: normal.id, issueConversationId: withIssue.id };
+  // ADR 0027 — a paused conversation for pause/resume + status-filter
+  // coverage.
+  const paused = await withOrgContext(orgId, (tx) =>
+    tx.conversation.create({ data: { orgId, botId, configVersionId: draft.id, status: "paused" } }),
+  );
+  await withOrgContext(orgId, (tx) =>
+    tx.message.create({
+      data: { orgId, conversationId: paused.id, role: "user", content: "Is anyone still there?" },
+    }),
+  );
+
+  return { normalConversationId: normal.id, issueConversationId: withIssue.id, pausedConversationId: paused.id };
 }
 
 // Same class of gap as seedConversations: a real Q&A entry needs a

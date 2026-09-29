@@ -151,7 +151,10 @@
       if (!res.ok) throw new Error("chat request failed: " + res.status);
       var data = await res.json();
       conversationId = data.conversationId;
-      appendMessage("assistant", data.reply);
+      // data.reply is null when a business owner has paused this
+      // conversation from the console (ADR 0027) — the message above was
+      // still recorded, there's just no AI reply to show for this turn.
+      if (data.reply) appendMessage("assistant", data.reply);
     } catch (err) {
       console.error("[Chatter widget]", err);
       appendMessage("assistant", "Sorry, something went wrong. Please try again.");

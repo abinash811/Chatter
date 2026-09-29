@@ -17,11 +17,17 @@ export interface SendMessageParams {
   /** Omit to start a new conversation. */
   conversationId?: string;
   userMessage: string;
+  /** ADR 0027 — only meaningful when starting a new conversation; an
+   * existing conversation keeps the source it was created with. */
+  source?: "widget" | "playground";
 }
 
 export interface SendMessageResult {
   conversationId: string;
-  reply: string;
+  /** ADR 0027 — null when the conversation is paused: the visitor's
+   * message is still recorded (below), but no AI reply is generated,
+   * matching Chatbase's own documented pause behavior exactly. */
+  reply: string | null;
 }
 
 // Stateless by design (README.md, docs/architecture.md's scaling note):
@@ -58,7 +64,7 @@ export async function sendMessage(params: SendMessageParams): Promise<SendMessag
       })
     : await withOrgContext(orgId, (tx) =>
         tx.conversation.create({
-          data: { orgId, botId, configVersionId: publishedVersion.id },
+          data: { orgId, botId, configVersionId: publishedVersion.id, source: params.source ?? "widget" },
           include: { messages: true },
         }),
       );
@@ -88,6 +94,14 @@ export async function sendMessage(params: SendMessageParams): Promise<SendMessag
       data: { orgId, conversationId: conversation.id, role: "user", content: userMessage },
     }),
   );
+
+  // ADR 0027: a paused conversation still records the visitor's message
+  // (just did, above) but generates no AI reply — matches Chatbase's own
+  // documented pause behavior exactly ("stops receiving AI replies but
+  // still records incoming messages"). No model call, no tool loop.
+  if (conversation.status === "paused") {
+    return { conversationId: conversation.id, reply: null };
+  }
 
   // BYOA (ADR 0012): an org's own key if they've set one, else the
   // gateway falls back to our managed ANTHROPIC_API_KEY.

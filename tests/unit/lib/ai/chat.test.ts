@@ -97,6 +97,32 @@ describe("sendMessage", () => {
     );
   });
 
+  it("ADR 0027: a paused conversation records the message but skips the model call entirely, returning a null reply", async () => {
+    findUniqueConversation.mockResolvedValue({ id: "conv-1", botId: "bot-1", status: "paused", messages: [] });
+    const { sendMessage } = await import("@/lib/ai/chat");
+
+    const result = await sendMessage({ orgId: "org-1", botId: "bot-1", conversationId: "conv-1", userMessage: "hi" });
+
+    expect(result).toEqual({ conversationId: "conv-1", reply: null });
+    expect(createMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ role: "user", content: "hi" }) }),
+    );
+    expect(generateReply).not.toHaveBeenCalled();
+    // Only the visitor's message was persisted — no assistant reply.
+    expect(createMessage).toHaveBeenCalledTimes(1);
+  });
+
+  it("a new conversation is created with the given source (ADR 0027), defaulting to widget", async () => {
+    generateReply.mockResolvedValue({ content: [{ type: "text", text: "hi" }], stopReason: "end_turn" });
+    const { sendMessage } = await import("@/lib/ai/chat");
+
+    await sendMessage({ orgId: "org-1", botId: "bot-1", userMessage: "hi", source: "playground" });
+
+    expect(createConversation).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ source: "playground" }) }),
+    );
+  });
+
   it("rejects a conversationId that belongs to a different bot — even though RLS already scopes it by org, this closes the same-org cross-bot case", async () => {
     findUniqueConversation.mockResolvedValue({ id: "conv-1", botId: "other-bot", messages: [] });
     const { sendMessage } = await import("@/lib/ai/chat");
