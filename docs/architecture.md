@@ -70,6 +70,13 @@ doc as ADRs land instead of letting decisions live only in chat history.
   low-stakes-write tools (lookups, `collect_lead`, custom actions) are
   unaffected — this only applies to a tool whose effect can't be undone
   by "the AI was wrong."
+- **In-chat interactive widgets — proposed, not built** (ADR 0028): a
+  tool's `handle()` would gain a `renderWidget` result shape (forms/
+  cards/tables rendered inline in the chat, not just text), reusing the
+  custom-action request pipeline for interactive elements' behavior and
+  `PendingAction` for any write-capable one. Schema format and
+  transport still open (`docs/open-questions.md` #9) — nothing
+  scaffolded yet.
 - Streamed responses back to the widget.
 - **BYOA (bring-your-own API key)**: optional, per-org, off by default —
   a business can plug in their own Anthropic key from `/settings`
