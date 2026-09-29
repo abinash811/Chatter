@@ -56,7 +56,10 @@ test("a widget with no fields is rejected before saving", async ({ page }) => {
   await page.fill("#triggerDescription", "Should never save with no fields.");
   await page.getByRole("dialog").getByRole("button", { name: "Add widget" }).click();
 
-  await expect(page.getByText("Add at least one field")).toBeVisible();
+  // Scoped to the dialog — a Sonner toast can carry the same server-
+  // action error text at the same moment, and an unscoped getByText
+  // resolves to both (Playwright strict-mode violation).
+  await expect(page.getByRole("dialog").getByText("Add at least one field")).toBeVisible();
   await expect(page.getByText("No widgets yet")).toBeVisible();
 });
 
