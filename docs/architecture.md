@@ -65,6 +65,15 @@ doc as ADRs land instead of letting decisions live only in chat history.
   instead of using our managed one. The model gateway (below) resolves
   it once per request; nothing past that point (tools, RAG, the chat
   loop) knows or cares which key served the call. See ADR 0012.
+- **Model tier + temperature are per-bot config, not global** (ADR 0026):
+  `BotConfigVersion.model`/`.temperature`, editable in the bot editor's
+  Persona tab, flow straight into the gateway call — same-vendor Claude
+  tiers only (Sonnet/Haiku/Opus), not a multi-provider picker (ADR
+  0002's scope). Temperature is real (not just UI) only for Haiku — the
+  Anthropic API rejects any non-1.0 value on models released after
+  Claude Opus 4.6, which covers Sonnet/Opus — enforced both in the UI
+  (disabled slider) and independently server-side (never trusting the
+  client alone).
 
 **Design rule: interface vs. connector are separate layers, from day one.**
 What Claude sees — the tool name and JSON schema (`check_order_status`,

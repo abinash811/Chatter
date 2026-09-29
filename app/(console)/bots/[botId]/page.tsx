@@ -56,6 +56,8 @@ export default async function BotPage({
       publishedVersion={publishedVersion?.version ?? null}
       persona={draft.persona}
       guardrails={draft.guardrails}
+      model={draft.model}
+      temperature={draft.temperature}
       tools={listAllTools().map((tool) => ({
         name: tool.name,
         description: tool.description,

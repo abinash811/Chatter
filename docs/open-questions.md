@@ -25,18 +25,18 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
    No recommendation yet — needs real scoping (and likely a small
    competitor check: how Intercom/Drift/Tidio actually expose this)
    before an ADR.
-6. **LLM model picker + pricing display** (`docs/roadmap.md`'s "Self-
-   serve configurability" #7). Does pricing display apply to BYOA users
-   at all (they pay Anthropic directly) or only the managed-key path?
-   What does "pricing" mean here — real per-token cost passed through,
-   a markup, or a simple tier label ("fast" vs. "smart")? The last
-   option ties into the still-open billing/pricing model question below
-   — a real per-token cost display only makes sense once that's
-   answered. A concrete UI reference now exists: Chatbase shows a
-   model dropdown ("Auto") + a Temperature slider in a sidebar next to
-   the instructions editor — see `docs/research/competitive-
-   landscape.md`'s 2026-09-27 update (real screenshots, not a guess).
-   Still doesn't resolve the pricing-display half of this question.
+6. **Pricing display** (`docs/roadmap.md`'s "Self-serve configurability"
+   #7 — the model-picker half of this item is now built, ADR 0026: a
+   Sonnet/Haiku/Opus tier picker + a temperature slider that's only
+   functionally enabled for Haiku, since the Anthropic SDK's own types
+   mark temperature deprecated for every model released after Claude
+   Opus 4.6, which covers Sonnet/Opus but not Haiku). Still open: does
+   pricing display apply to BYOA users at all (they pay Anthropic
+   directly) or only the managed-key path? What does "pricing" mean
+   here — real per-token cost passed through, a markup, or a simple
+   tier label ("fast" vs. "smart")? The last option ties into the
+   still-open billing/pricing model question below — a real per-token
+   cost display only makes sense once that's answered.
 7. **`Conversation` "resolved" status semantics.** `docs/roadmap.md`'s
    Next section ("Resolution-rate analytics") needs a real definition
    of "resolved" before it's buildable — closed by visitor leaving

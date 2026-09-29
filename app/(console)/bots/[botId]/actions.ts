@@ -11,6 +11,7 @@ import {
   MAX_SUGGESTED_REPLIES,
   DEFAULT_APPEARANCE,
 } from "@/lib/ai/botConfig";
+import { MODEL_TIER_OPTIONS, DEFAULT_MODEL_ID, DEFAULT_TEMPERATURE, getModelTierOption } from "@/lib/ai/modelOptions";
 import { listAllTools } from "@/lib/ai/tools/registry";
 import { sendMessage } from "@/lib/ai/chat";
 import "@/lib/ai/tools";
@@ -32,9 +33,26 @@ export async function saveDraftAction(
 ): Promise<SaveDraftState> {
   try {
     const session = await getCurrentSession();
+    const modelId = MODEL_TIER_OPTIONS.some((m) => m.id === formData.get("model"))
+      ? String(formData.get("model"))
+      : DEFAULT_MODEL_ID;
+    // Never trust the client alone for the temperature-lock rule (the
+    // slider is disabled in the UI for a model that doesn't support it,
+    // but a disabled control's value still submits, and a form can be
+    // driven directly) — a real 400 in production from a stale/forced
+    // value would violate guardrail #4, so the server re-derives whether
+    // this model allows a custom temperature and pins it to the API's
+    // own default otherwise.
+    const modelTier = getModelTierOption(modelId);
+    const requestedTemperature = Number(formData.get("temperature"));
+    const temperature = modelTier.supportsTemperature && Number.isFinite(requestedTemperature)
+      ? Math.min(1, Math.max(0, requestedTemperature))
+      : DEFAULT_TEMPERATURE;
     await saveDraft(session.orgId, botId, {
       persona: String(formData.get("persona") ?? ""),
       guardrails: String(formData.get("guardrails") ?? ""),
+      model: modelId,
+      temperature,
       tools: listAllTools()
         .map((t) => t.name)
         .filter((name) => formData.get(`tool_${name}`) === "on"),

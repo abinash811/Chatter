@@ -121,6 +121,45 @@ test("avatar and position selects (Appearance tab) save and survive a reload", a
   await expect(page.getByRole("combobox", { name: "Widget position" })).toHaveText("Bottom left");
 });
 
+test("model tier + temperature (Persona tab) save, survive a reload, and lock temperature for a non-Haiku model", async ({
+  page,
+}) => {
+  await signUpAndCreateBot(page, "Model Tier Test Bot");
+
+  // Default (Sonnet) doesn't support temperature — the SDK's own types
+  // mark it deprecated for models released after Claude Opus 4.6 (ADR
+  // 0026) — the slider should already be disabled at rest. Radix's
+  // Slider root is a <span>, not a native form control, so it signals
+  // disabled via aria-disabled/data-disabled, not the disabled property
+  // toBeDisabled() checks for.
+  await expect(page.locator('[data-slot="slider"]')).toHaveAttribute("aria-disabled", "true");
+
+  await page.getByRole("combobox", { name: "AI Model" }).click();
+  await page.getByRole("option", { name: "Haiku" }).click();
+  await expect(page.locator('[data-slot="slider"]')).not.toHaveAttribute("aria-disabled", "true");
+
+  const thumb = page.locator('[data-slot="slider-thumb"]');
+  await thumb.focus();
+  for (let i = 0; i < 5; i++) await page.keyboard.press("ArrowLeft");
+  await expect(page.getByText("0.5", { exact: true })).toBeVisible();
+
+  await page.click('button:has-text("Save draft")');
+  await expect(page.getByText("Draft saved.")).toBeVisible({ timeout: 20000 }); // see the comment in the first test above
+
+  await page.reload();
+  await expect(page.getByRole("combobox", { name: "AI Model" })).toHaveText("Haiku");
+  await expect(page.getByText("0.5", { exact: true })).toBeVisible();
+  await expect(page.locator('[data-slot="slider"]')).not.toHaveAttribute("aria-disabled", "true");
+
+  // Switching to a temperature-locked model re-disables the slider and
+  // resets its displayed value — never leaves a stale enabled-looking
+  // 0.5 next to a model that can't actually honor it.
+  await page.getByRole("combobox", { name: "AI Model" }).click();
+  await page.getByRole("option", { name: "Opus" }).click();
+  await expect(page.locator('[data-slot="slider"]')).toHaveAttribute("aria-disabled", "true");
+  await expect(page.getByText("1.0", { exact: true })).toBeVisible();
+});
+
 test("suggested reply chips save, survive a reload, and skip blank rows", async ({ page }) => {
   await signUpAndCreateBot(page, "Suggested Replies Bot");
   await page.click('button[role="tab"]:has-text("Appearance")');

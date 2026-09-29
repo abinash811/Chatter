@@ -124,13 +124,17 @@ marked with real status (not aspirational):
    time-on-page)" line). Needs real scoping before an ADR: trigger
    types, whether ecommerce-specific (cart abandonment) or generic,
    and where the config UI lives. See `docs/open-questions.md`.
-7. **LLM model picker + pricing visibility** — BYOA (ADR 0012) exists,
-   but there's no model *picker* (Claude model tier) or any pricing
-   display at all today. Needs a decision: pricing shown for the
-   managed-key path only (BYOA users pay Anthropic directly, so "our"
-   pricing may not apply to them the same way), and what "pricing"
-   means here — real per-token cost, a markup, or a simple tier label.
-   See `docs/open-questions.md`.
+7. **LLM model picker — built (2026-09-28, ADR 0026).** A Sonnet/Haiku/
+   Opus tier picker + temperature slider in the bot editor's Persona
+   tab, Claude-only (not multi-vendor — ADR 0002's scope). Temperature
+   is genuinely adjustable only for Haiku, verified against the
+   Anthropic SDK's own types (models after Claude Opus 4.6 reject any
+   non-1.0 value). **Pricing visibility still not built** — BYOA (ADR
+   0012) exists, but there's no pricing display at all today. Needs a
+   decision: pricing shown for the managed-key path only (BYOA users
+   pay Anthropic directly, so "our" pricing may not apply to them the
+   same way), and what "pricing" means here — real per-token cost, a
+   markup, or a simple tier label. See `docs/open-questions.md`.
 
 Sequencing once each open question above is answered: appearance editor
 and tool enable/disable's "nothing to do" make #2/#3 the fastest wins;

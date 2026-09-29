@@ -36,6 +36,7 @@ import { OptionCard } from "@/components/console/OptionCard";
 import type { AvatarEmoji, WidgetPosition } from "@/lib/ai/appearanceOptions";
 import { PERSONA_TEMPLATES } from "@/lib/ai/personaTemplates";
 import { AppearanceTabContent } from "./AppearanceTabContent";
+import { ModelTabContent } from "./ModelTabContent";
 import { PreviewSheet } from "./PreviewSheet";
 
 const idleState: SaveDraftState = { status: "idle", message: null };
@@ -74,6 +75,8 @@ export function BotEditorForm({
   publishedVersion,
   persona,
   guardrails,
+  model,
+  temperature,
   tools,
   greeting,
   accentColor,
@@ -86,6 +89,8 @@ export function BotEditorForm({
   publishedVersion: number | null;
   persona: string;
   guardrails: string;
+  model: string;
+  temperature: number;
   tools: { name: string; description: string; enabled: boolean }[];
   greeting: string;
   accentColor: string;
@@ -158,7 +163,7 @@ export function BotEditorForm({
             <TabsTrigger value="appearance">Appearance</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="persona" forceMount className="mt-4 data-[state=inactive]:hidden">
+          <TabsContent value="persona" forceMount className="mt-4 space-y-4 data-[state=inactive]:hidden">
             <Card>
               <CardHeader>
                 <CardTitle>Persona</CardTitle>
@@ -198,6 +203,8 @@ export function BotEditorForm({
                 </div>
               </CardContent>
             </Card>
+
+            <ModelTabContent model={model} temperature={temperature} />
           </TabsContent>
 
           <TabsContent value="guardrails" forceMount className="mt-4 data-[state=inactive]:hidden">

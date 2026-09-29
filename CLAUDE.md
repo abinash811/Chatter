@@ -46,35 +46,13 @@ reason.)
   login/signup; Skeleton loading states on 7 routes.
   `docs/design/audit.md` tracks per-screen compliance against the bar —
   check there before assuming a screen is finished.
-- Testing/guardrails: 10 static guardrail checks (`npm run check:all`,
-  runs in one process now — `scripts/check-all.mjs`), 166 unit tests, 87
-  `tests/e2e/` specs, 20 `tests/visual/` baselines, gitleaks secret
-  scanning + a CI coverage floor, all wired into CI. A few e2e specs
-  around publishing/saving intermittently fail under sustained single-
-  worker runs (confirmed 2026-09-27 locally: different tests fail each
-  run, all pass instantly alone, a fresh server restart didn't help) —
-  real resource contention, not a product bug; don't chase it further
-  locally. **Update 2026-09-28: this now confirmed to reproduce in the
-  real GitHub Actions runner too**, not just this dev container — PR
-  #11's CI failed 3 times in a row (2 separate automatic runs + 1
-  explicit re-run), each time on a different `bot-editor.spec.ts` test,
-  always the same failure shape: a "Draft saved."/"Published..." toast
-  not appearing before Playwright's default (or even an already-
-  generous 20-30s) timeout. Hardened the "Draft saved." assertions to a
-  20s timeout (`tests/e2e/bot-editor.spec.ts`, matching the existing
-  precedent already there for the publish toast) as a real, minimal fix
-  for that specific pattern — but the very next CI run on the same PR
-  still missed the already-20s publish toast *and* the newly-hardened
-  save toast simultaneously, confirming this isn't a per-assertion
-  timing problem a bigger number fixes: CI's 2-vCPU runner genuinely
-  stalls under Playwright's 2 parallel workers once the suite grew past
-  ~85 specs. Fixed structurally instead: `playwright.config.ts` now sets
-  `retries: 1` under `process.env.CI` (standard practice for this class
-  of transient contention — a real, deterministic bug still fails
-  identically on the retry, so this doesn't mask anything; local runs
-  stay at 0 retries). Don't keep inflating individual timeouts chasing
-  this. Run scoped test files during a session, not the full suite
-  repeatedly.
+- Testing/guardrails: 10 static guardrail checks (`npm run check:all`),
+  166 unit tests, 87+ `tests/e2e/` specs, 20+ `tests/visual/` baselines,
+  gitleaks + a CI coverage floor, all wired into CI. Known, tracked
+  flake: a toast-timeout resource-contention issue on CI's 2-vCPU
+  runner (`retries: 1` under CI mitigates but doesn't eliminate it) —
+  full history in `docs/changelog.md`. Don't chase it further locally;
+  run scoped test files during a session, not the full suite repeatedly.
 - Suggested-reply buttons (2026-09-27): up to 3 chip buttons, configured
   in the Appearance tab (`MAX_SUGGESTED_REPLIES`,
   `lib/ai/appearanceOptions.ts`), shown once under the widget's first
@@ -315,6 +293,26 @@ reason.)
   competitive-landscape.md`'s 2026-09-28 update. Also deduplicated an
   accidental verbatim-repeated paragraph in this file's own card-
   gallery-redesign entry, found while fixing its stale claim.
+- Model tier + temperature picker (2026-09-28, ADR 0026): first of
+  Chatbase's "Build" section's 5 sub-areas tackled — a "Model" card in
+  the bot editor's Persona tab (Sonnet/Haiku/Opus, Claude-only per ADR
+  0002) + a temperature slider genuinely adjustable only for Haiku.
+  Real finding mid-build, verified against the Anthropic SDK's own
+  types: temperature is deprecated (locked to 1.0, else a 400) for
+  every model released after Claude Opus 4.6 — covers Sonnet/Opus, not
+  Haiku. UI disables + resets the slider for a locked tier (guardrail
+  #4); the server (`actions.ts`) independently re-enforces the same
+  lock. `BotConfigVersion.model`/`.temperature` migration applied and
+  verified against a real local Postgres, RLS re-verified clean. Real,
+  unrelated a11y bug also caught and fixed via a genuine axe-core
+  failure: shadcn's default `Slider` forwards `aria-label` to `Root`
+  instead of the actual `role="slider"` `Thumb` — fixed in
+  `components/ui/slider.tsx`, documented as a delta per ADR 0025.
+  Verified: `tsc` clean, all 10 guardrails, full unit suite, a new
+  permanent e2e test, the full `bot-editor`/`accessibility`/`demo-data`
+  e2e suites, and all 19 visual baselines (4 regenerated, stable across
+  two runs). Guardrails and Procedures (the other two real gaps from
+  the 2026-09-28 Chatbase research) are separate, larger follow-ups.
 - Self-serve config (roadmap "Self-serve configurability"): widget
   appearance editor (greeting/accent/avatar/position) and a 3-template
   persona picker (Support/Sales/Lead-gen), both in the bot editor.

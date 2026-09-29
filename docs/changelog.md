@@ -379,4 +379,32 @@ bot top bar's shared-across-pages rework.
   this is revisited. `render.yaml`/ADR 0005 (deployment prep) stay in
   the repo as-is; this only affects whether CI gets a post-deploy check,
   not whether Render prep work is undone.
+- Testing/guardrails toast-timeout flake, full history (2026-09-27/28):
+  10 static guardrail checks (`npm run check:all`), 166 unit tests, 87+
+  `tests/e2e/` specs, 20+ `tests/visual/` baselines, gitleaks + a CI
+  coverage floor, all wired into CI. A few e2e specs around publishing/
+  saving intermittently failed under sustained single-worker runs
+  (confirmed 2026-09-27 locally: different tests fail each run, all
+  pass instantly alone, a fresh server restart didn't help) — real
+  resource contention, not a product bug. Confirmed 2026-09-28 to also
+  reproduce in the real GitHub Actions runner: PR #11's CI failed 3
+  times in a row (2 automatic + 1 explicit re-run), each time on a
+  different `bot-editor.spec.ts` test, always the same shape — a "Draft
+  saved."/"Published..." toast not appearing before Playwright's
+  default (or an already-generous 20-30s) timeout. Hardened the "Draft
+  saved." assertions to 20s (matching the existing publish-toast
+  precedent) as a real, minimal fix — but the very next CI run missed
+  the already-20s publish toast *and* the newly-hardened save toast
+  simultaneously, confirming this isn't a per-assertion timing problem:
+  CI's 2-vCPU runner genuinely stalls under Playwright's 2 parallel
+  workers once the suite grew past ~85 specs. Fixed structurally
+  instead: `playwright.config.ts` sets `retries: 1` under
+  `process.env.CI` (a real, deterministic bug still fails identically
+  on the retry, so this doesn't mask anything; local runs stay at 0
+  retries). Reduces but doesn't eliminate the flake — still recurs
+  intermittently on later PR #11 pushes throughout 2026-09-28, always
+  the same `preview.spec.ts`/`bot-editor.spec.ts` toast-timeout shape,
+  each time confirmed via job logs as this same known class, not a new
+  issue. Don't keep inflating individual timeouts chasing this; run
+  scoped test files during a session, not the full suite repeatedly.
 

@@ -1,5 +1,6 @@
 import type { PrismaClient, Prisma } from "@prisma/client";
 import { withOrgContext } from "@/lib/db";
+import { DEFAULT_MODEL_ID, DEFAULT_TEMPERATURE } from "./modelOptions";
 
 // Implements the draft/publish design from docs/architecture.md §5.
 //
@@ -86,6 +87,8 @@ export async function getOrCreateDraft(orgId: string, botId: string) {
         guardrails: latestPublished?.guardrails ?? "",
         tools: latestPublished?.tools ?? [],
         appearance: (latestPublished?.appearance ?? DEFAULT_APPEARANCE) as Prisma.InputJsonValue,
+        model: latestPublished?.model ?? DEFAULT_MODEL_ID,
+        temperature: latestPublished?.temperature ?? DEFAULT_TEMPERATURE,
       },
     });
   });
@@ -99,6 +102,8 @@ export async function saveDraft(
     guardrails: string;
     tools: string[];
     appearance: BotAppearance;
+    model: string;
+    temperature: number;
   },
 ) {
   const draft = await getOrCreateDraft(orgId, botId);
@@ -110,6 +115,8 @@ export async function saveDraft(
         guardrails: fields.guardrails,
         tools: fields.tools,
         appearance: fields.appearance as unknown as Prisma.InputJsonValue,
+        model: fields.model,
+        temperature: fields.temperature,
       },
     }),
   );

@@ -101,6 +101,8 @@ export async function sendMessage(params: SendMessageParams): Promise<SendMessag
       cachedSystemPrompt: systemPrompt,
       messages: history,
       tools,
+      model: publishedVersion.model,
+      temperature: publishedVersion.temperature,
     });
 
     history.push({ role: "assistant", content: result.content });

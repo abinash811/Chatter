@@ -1,5 +1,6 @@
 import { withOrgContext, getOrCreateBotPublicKey } from "@/lib/db";
 import { getOrCreateDraft, saveDraft, publishDraft, DEFAULT_APPEARANCE } from "@/lib/ai/botConfig";
+import { DEFAULT_MODEL_ID, DEFAULT_TEMPERATURE } from "@/lib/ai/modelOptions";
 import { PERSONA_TEMPLATES } from "@/lib/ai/personaTemplates";
 
 // "Load sample data" (2026-09-27 user directive: seed realistic demo
@@ -143,6 +144,8 @@ export async function createDemoBot(orgId: string): Promise<string> {
     guardrails: "Never quote a final shipping cost — always say it's calculated at checkout.",
     tools: ["search_knowledge_base", "collect_lead", "check_order_status"],
     appearance: DEFAULT_APPEARANCE,
+    model: DEFAULT_MODEL_ID,
+    temperature: DEFAULT_TEMPERATURE,
   });
   await publishDraft(orgId, bot.id);
 

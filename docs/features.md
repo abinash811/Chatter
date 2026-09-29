@@ -141,6 +141,23 @@ template-ux.md` for why). **How**: `lib/ai/personaTemplates.ts` (pure
 data, same zero-dependency pattern as `appearanceOptions.ts`), an
 uncontrolled-textarea ref in `BotEditorForm.tsx`.
 
+### Model tier + temperature picker
+**Who**: the business owner configuring a bot's underlying AI behavior.
+**What**: a "Model" card in the Persona tab (below the persona text) —
+an AI Model dropdown (Sonnet/Haiku/Opus, all Claude, no multi-vendor
+picker) and a Temperature slider that's genuinely adjustable only for
+Haiku — the Anthropic API rejects any non-1.0 temperature on models
+released after Claude Opus 4.6, which covers Sonnet and Opus, verified
+against the SDK's own type definitions (ADR 0026). Switching to a
+temperature-locked model disables the slider and resets it to 1.0 with
+a plain-language explanation, rather than leaving a control that would
+silently no-op or fail in production. **How**: `BotConfigVersion.model`/
+`.temperature` (defaults match the engine's pre-existing hardcoded
+values, so no backfill needed), `lib/ai/modelOptions.ts` (tier data +
+the `supportsTemperature` flag), `ModelTabContent.tsx`, enforced
+independently server-side in `actions.ts`'s `saveDraftAction` (never
+trusting the disabled-control convention alone).
+
 ### Shopify connect flow
 **Who**: an ecommerce business. **What**: self-serve OAuth "Connect
 Shopify" from the console; once connected, `check_order_status` can look
