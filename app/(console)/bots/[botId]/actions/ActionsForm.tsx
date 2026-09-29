@@ -6,7 +6,9 @@ import {
   createCustomActionAction,
   toggleCustomActionAction,
   deleteCustomActionAction,
+  testCustomActionAction,
   type CustomActionState,
+  type TestActionState,
 } from "./actions";
 import { AddActionDialog } from "./AddActionDialog";
 import { ActionsTable } from "./ActionsTable";
@@ -24,6 +26,7 @@ import {
 } from "@/components/ui";
 
 const idleState: CustomActionState = { status: "idle", message: null };
+const idleTestState: TestActionState = { status: "idle", statusCode: null, bodyText: null, message: null };
 
 function useActionToast(state: CustomActionState) {
   useEffect(() => {
@@ -43,6 +46,7 @@ export function ActionsForm({ botId, actions }: { botId: string; actions: Custom
     deleteCustomActionAction.bind(null, botId),
     idleState,
   );
+  const [testState, testFormAction, isTesting] = useActionState(testCustomActionAction, idleTestState);
 
   const [addOpen, setAddOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -69,7 +73,16 @@ export function ActionsForm({ botId, actions }: { botId: string; actions: Custom
         </Button>
       </div>
 
-      <AddActionDialog open={addOpen} onOpenChange={setAddOpen} formAction={addFormAction} state={addState} isPending={isAdding} />
+      <AddActionDialog
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        formAction={addFormAction}
+        state={addState}
+        isPending={isAdding}
+        testFormAction={testFormAction}
+        testState={testState}
+        isTesting={isTesting}
+      />
 
       <ActionsTable
         actions={actions}

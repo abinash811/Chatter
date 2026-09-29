@@ -77,6 +77,32 @@ test("toggling an action's enabled switch and deleting it both work", async ({ p
   await expect(page.getByText("No custom actions yet")).toBeVisible();
 });
 
+test("Test button requires a method and URL before firing", async ({ page }) => {
+  await signUpAndCreateBot(page, "Test Validation Bot");
+  await page.click('a:has-text("Actions")');
+  await page.waitForURL(/\/actions$/);
+  await page.getByRole("button", { name: "Add action", exact: true }).click();
+
+  await page.getByRole("button", { name: "Test", exact: true }).click();
+  await expect(page.getByText("Fill in a method and URL first.")).toBeVisible();
+});
+
+// Deterministic and network-free — the SSRF guard rejects the URL before
+// any fetch is attempted, same real guard the create-action path uses
+// (isBlockedActionUrl), so this doesn't depend on this environment's
+// egress policy the way testing a real successful call would.
+test("Test button runs the same SSRF guard as saving does", async ({ page }) => {
+  await signUpAndCreateBot(page, "Test SSRF Bot");
+  await page.click('a:has-text("Actions")');
+  await page.waitForURL(/\/actions$/);
+  await page.getByRole("button", { name: "Add action", exact: true }).click();
+
+  await page.fill("#url", "https://169.254.169.254/latest/meta-data");
+  await page.getByRole("button", { name: "Test", exact: true }).click();
+
+  await expect(page.getByText(/URL isn't allowed/)).toBeVisible();
+});
+
 test("a bot's custom actions are reachable from the bot editor's top bar", async ({ page }) => {
   await signUpAndCreateBot(page, "Nav Actions Bot");
   await page.click('a:has-text("Actions")');

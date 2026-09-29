@@ -350,6 +350,31 @@ Two tables are the deliberate exceptions, both resolvable *before*
 - **`UserOrgAccess`** — resolves which org a *console user* belongs to
   at login, before there's any org context yet.
 
+## Custom action "Test this action" (2026-09-29)
+
+`testCustomActionAction` (`app/(console)/bots/[botId]/actions/actions.ts`)
+fires a real HTTP request against whatever the Add-action dialog
+currently holds — method, URL, headers, and per-field sample values —
+before the action is ever saved. It needs no `orgId`/tenant scoping: it
+never touches the database, only the outside world, so it's a plain
+top-level server action rather than one bound to a `botId`.
+
+It shares `performActionRequest` (`lib/ai/tools/customAction.ts`) with
+the live bot tool call — the same SSRF guard (`isBlockedActionUrl`),
+the same query-params-for-GET/JSON-body-otherwise routing, the same
+10s timeout. That's deliberate: a passing test call and a real saved
+action use the identical request-building code, so "it worked in the
+test" is a real guarantee about how the saved action will behave, not
+a separate code path that could quietly drift from the real one. The
+live tool call wraps the same result in the handoff-JSON contract
+(guardrail #4); the test path returns the raw status/body instead,
+since a business owner debugging their own endpoint needs to see what
+actually came back, not a plain-language fallback message.
+
+Response bodies are capped at 4000 characters before reaching the
+console — a test call is for confirming shape/status, not for browsing
+a large payload.
+
 ## Shopify connect flow
 
 `app/api/integrations/[provider]/callback/route.ts` deliberately never

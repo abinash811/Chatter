@@ -427,4 +427,43 @@ bot top bar's shared-across-pages rework.
   flagged to the user since fixing it would touch several already-
   audited screens' visual baselines at once, not committed to yet
   (still not committed to as of the 2026-09-29 rebuild).
+- Settings depth/polish pass, full detail (2026-09-28): `docs/design/
+  audit.md`'s row upgraded from mostly 🔲 to Hover/Focus/Loading/Depth
+  ✅, Active 🟡. No code-level bugs here, unlike Integrations — this
+  screen already used the shared `Input`/`Label`/`Card` primitives
+  correctly (real `htmlFor`/`id` pairing) since it was first built.
+  `Card` already earns Depth (`rounded-lg border shadow-xs`) —
+  credited, was 🟡. Real screenshot review of rest/focus/hover/"key
+  set" states confirmed clear hierarchy and working focus rings on both
+  inputs. Considered whether "Remove" (API key) needs a `destructive`
+  variant or confirm dialog like Knowledge's delete — deliberately not
+  flagged: removing a BYOA key is fully reversible (falls back to the
+  managed key, no data loss), unlike an unrecoverable knowledge-entry
+  delete, so the existing plain `outline` button with no confirm step
+  is an already-calibrated decision, not an oversight. No code changed
+  this pass — audit-only.
+- Integrations depth/polish pass, full detail (2026-09-28): `docs/
+  design/audit.md`'s row upgraded from mostly 🔲 to Hover/Focus/
+  Loading/Depth ✅, Active 🟡. Two real, code-level bugs, not just
+  visual ones. (1) `provider.connectFields` (`lib/integrations/
+  provider.ts`) carries a real `label` per field that the page never
+  rendered — the raw `<input>` relied on its `placeholder` alone, which
+  isn't an accessible name; replaced with the shared `Input`/`Label`
+  primitives (`sr-only` label, keeping the restrained Stripe register's
+  horizontal layout while gaining a real accessible name). (2) the
+  provider-list wrapper was the one list screen still using a bare
+  `divide-y`/`border-y` with no rounded corners or shadow, while every
+  other list screen already has `rounded-lg border shadow-xs` — added
+  here too, verified via `getComputedStyle()` (10px radius, real
+  shadow), not just eyeballed (a stale dev-server build initially
+  masked the fix — caught by checking the rendered class list directly,
+  not trusting the first screenshot). New `integrations.png` visual
+  baseline added (none existed before); first attempt raced the
+  Suspense boundary and captured `loading.tsx`'s skeleton instead of
+  real content (same flake class already documented on leads/actions'
+  empty-state tests) — fixed by waiting for real text before capturing.
+  Verified: `tsc` clean, all 10 `check:all` guardrails, full unit
+  suite, the integrations a11y scan (clean, now covers the labeled
+  input), and the full 19-test visual suite (18 unchanged + 1 new,
+  stable across two runs).
 

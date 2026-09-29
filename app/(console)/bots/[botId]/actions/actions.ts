@@ -11,10 +11,17 @@ import {
   type HttpMethod,
   type ActionField,
 } from "@/lib/customActions";
-import { isBlockedActionUrl } from "@/lib/ai/tools/customAction";
+import { isBlockedActionUrl, performActionRequest } from "@/lib/ai/tools/customAction";
 
 export interface CustomActionState {
   status: "idle" | "success" | "error";
+  message: string | null;
+}
+
+export interface TestActionState {
+  status: "idle" | "success" | "error";
+  statusCode: number | null;
+  bodyText: string | null;
   message: string | null;
 }
 
@@ -131,4 +138,64 @@ export async function deleteCustomActionAction(
     console.error("[deleteCustomActionAction]", err);
     return { status: "error", message: "Couldn't delete that action. Please try again." };
   }
+}
+
+// Caps how much of a real response body reaches the console — a test
+// call is for confirming the shape/status of a response, not for
+// browsing a large payload, and an unbounded body risks a slow render
+// for a business owner who points this at the wrong endpoint.
+const MAX_TEST_BODY_CHARS = 4000;
+
+// "Test this action" (no auth/tenant scoping needed — this never
+// touches the DB, it just fires the real request with whatever the form
+// currently holds, before the action is even saved) so a business owner
+// can confirm their own endpoint actually works, the same way Chatbase's
+// real custom-action builder lets you "test with live data" before
+// going live. Reuses performActionRequest — the exact same request-
+// building code path the live bot tool call uses once saved, so a
+// passing test here means the real thing will behave the same way.
+export async function testCustomActionAction(
+  _prevState: TestActionState,
+  formData: FormData,
+): Promise<TestActionState> {
+  const method = String(formData.get("method") ?? "");
+  const url = String(formData.get("url") ?? "").trim();
+  const headersRaw = String(formData.get("headers") ?? "");
+
+  if (!isHttpMethod(method) || !url) {
+    return { status: "error", statusCode: null, bodyText: null, message: "Fill in a method and URL first." };
+  }
+  if (isBlockedActionUrl(url)) {
+    return {
+      status: "error",
+      statusCode: null,
+      bodyText: null,
+      message: "That URL isn't allowed — it must be a public https:// address.",
+    };
+  }
+
+  const input: Record<string, string> = {};
+  for (let i = 0; i < MAX_FIELDS; i++) {
+    const name = String(formData.get(`field_name_${i}`) ?? "").trim();
+    const testValue = String(formData.get(`test_value_${i}`) ?? "").trim();
+    if (name && testValue) input[name] = testValue;
+  }
+
+  const result = await performActionRequest(url, method, readHeaders(headersRaw) ?? {}, input);
+
+  if (!result.ok) {
+    return {
+      status: "error",
+      statusCode: result.status ?? null,
+      bodyText: result.bodyText?.slice(0, MAX_TEST_BODY_CHARS) ?? null,
+      message: result.errorMessage ?? `The endpoint responded with ${result.status}.`,
+    };
+  }
+
+  return {
+    status: "success",
+    statusCode: result.status ?? null,
+    bodyText: result.bodyText?.slice(0, MAX_TEST_BODY_CHARS) ?? "",
+    message: null,
+  };
 }

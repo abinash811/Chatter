@@ -216,44 +216,14 @@ reason.)
   rebuild below. The one still-open finding (a cross-cutting `--accent`-
   on-white `ghost`-button contrast question, affecting 5 files) is still
   not committed to.
-- Integrations depth/polish pass (2026-09-28): `docs/design/audit.md`'s
-  row upgraded from mostly 🔲 to Hover/Focus/Loading/Depth ✅, Active 🟡.
-  Two real, code-level bugs, not just visual ones. (1)
-  `provider.connectFields` (`lib/integrations/provider.ts`) carries a
-  real `label` per field that the page never rendered — the raw
-  `<input>` relied on its `placeholder` alone, which isn't an
-  accessible name; replaced with the shared `Input`/`Label` primitives
-  (`sr-only` label, keeping the restrained Stripe register's horizontal
-  layout while gaining a real accessible name). (2) the provider-list
-  wrapper was the one list screen still using a bare `divide-y`/
-  `border-y` with no rounded corners or shadow, while every other list
-  screen already has `rounded-lg border shadow-xs` — added here too,
-  verified via `getComputedStyle()` (10px radius, real shadow), not
-  just eyeballed (a stale dev-server build initially masked the fix —
-  caught by checking the rendered class list directly, not trusting the
-  first screenshot). New `integrations.png` visual baseline added (none
-  existed before); first attempt raced the Suspense boundary and
-  captured `loading.tsx`'s skeleton instead of real content (same flake
-  class already documented on leads/actions' empty-state tests) — fixed
-  by waiting for real text before capturing. Verified: `tsc` clean, all
-  10 `check:all` guardrails, full unit suite, the integrations a11y scan
-  (clean, now covers the labeled input), and the full 19-test visual
-  suite (18 unchanged + 1 new, stable across two runs).
-- Settings depth/polish pass (2026-09-28): `docs/design/audit.md`'s row
-  upgraded from mostly 🔲 to Hover/Focus/Loading/Depth ✅, Active 🟡. No
-  code-level bugs here, unlike Integrations — this screen already used
-  the shared `Input`/`Label`/`Card` primitives correctly (real
-  `htmlFor`/`id` pairing) since it was first built. `Card` already
-  earns Depth (`rounded-lg border shadow-xs`) — credited, was 🟡. Real
-  screenshot review of rest/focus/hover/"key set" states confirmed
-  clear hierarchy and working focus rings on both inputs. Considered
-  whether "Remove" (API key) needs a `destructive` variant or confirm
-  dialog like Knowledge's delete — deliberately not flagged: removing a
-  BYOA key is fully reversible (falls back to the managed key, no data
-  loss), unlike an unrecoverable knowledge-entry delete, so the
-  existing plain `outline` button with no confirm step is an already-
-  calibrated decision, not an oversight. No code changed this pass —
-  audit-only.
+- Integrations depth/polish pass (2026-09-28): full history moved to
+  `docs/changelog.md` — 2 real code-level bugs fixed (an unlabeled
+  input, a missing rounded-border/shadow wrap), all states ✅ except
+  Active 🟡.
+- Settings depth/polish pass (2026-09-28): full history moved to
+  `docs/changelog.md` — audit-only, no code changed, all states ✅
+  except Active 🟡 (no bespoke active state, same as other list
+  screens).
 - `chatbase.co` network-block correction (2026-09-28): every prior
   session's docs claimed `www.chatbase.co`/`chatbase.co` was blocked by
   this environment's egress policy (`docs/research/competitive-
@@ -318,6 +288,20 @@ reason.)
   `knowledge-empty.png`/`knowledge-add-dialog.png` visual baselines
   regenerated + stable across two runs, full 19-baseline visual suite
   otherwise unchanged.
+- Custom actions "Test this action" (2026-09-29): closed the biggest
+  gap found comparing our existing Custom Actions (ADR 0022, already
+  self-serve, no developer needed) against Chatbase's real docs — no
+  way to test an endpoint before saving. Added a Test button to the
+  Add-action dialog, sharing `performActionRequest` (new shared helper,
+  `lib/ai/tools/customAction.ts`) with the live bot tool call, so a
+  passing test is a real guarantee. Verified end-to-end against a real
+  endpoint (api.github.com). Real layout finding caught by screenshot:
+  a same-row test-value input cramped the field grid — fixed to a
+  two-line stacked row, confirmed via `scrollWidth`/`clientWidth`.
+  Still-open gaps vs. Chatbase, flagged not deferred silently: no typed
+  inputs, no separate query-param section, no JSON body templating.
+  Verified: `tsc` clean, all 10 guardrails, full unit suite, 2 new
+  `actions.spec.ts` tests + a11y scan (22/22), visual suite unchanged.
 - Self-serve config (roadmap "Self-serve configurability"): widget
   appearance editor (greeting/accent/avatar/position) and a 3-template
   persona picker (Support/Sales/Lead-gen), both in the bot editor.

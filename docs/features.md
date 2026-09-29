@@ -55,9 +55,30 @@ behind the bot's draft/publish cycle. Headers are encrypted at rest
 (`lib/crypto.ts`); the URL is checked against an SSRF guard (https-only,
 blocks loopback/private/link-local addresses including the cloud
 metadata IP) before every call. No edit yet — delete and recreate.
-**How**: `lib/customActions.ts` (CRUD), `lib/ai/tools/customAction.ts`
-(the runtime `Tool` factory + SSRF guard), the `CustomAction` model.
-ADR 0022.
+**"Test this action"** (2026-09-29): a Test button in the Add-action
+dialog fires a real request with typed-in sample values, before saving
+— closes the biggest gap found comparing against Chatbase's own real
+custom-action builder (which offers the same "test with live data"
+step; read from their actual docs, not a summary). Shows the raw HTTP
+status and response body, so a business owner can confirm their own
+endpoint actually works without needing a developer, rather than
+finding out it's broken from a real visitor. Reuses the exact same
+request-building code (`performActionRequest`,
+`lib/ai/tools/customAction.ts`) the live bot tool call uses once saved,
+so a passing test means the real thing behaves the same way; runs the
+same SSRF guard. Nothing from a test is stored. **How**:
+`lib/customActions.ts` (CRUD), `lib/ai/tools/customAction.ts` (the
+runtime `Tool` factory + SSRF guard + shared `performActionRequest`),
+`testCustomActionAction` (`actions.ts`), the `CustomAction` model. ADR
+0022.
+
+**Known remaining gaps vs. Chatbase's real custom-action builder**
+(compared against their actual docs, not a summary): no typed inputs
+(everything is a plain string, not Text/Number/Boolean), no separate
+query-parameter section distinct from the body (routing is inferred
+from HTTP method only), and no JSON body templating (the body is
+always the flat input object, can't target a nested/specific shape).
+Not started — flagged to the user, not silently deferred.
 
 ### Order cancellation (approval-gated)
 **Who**: the bot proposes it, the business owner decides. **What**: a

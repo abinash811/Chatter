@@ -41,6 +41,54 @@ export function isBlockedActionUrl(rawUrl: string): boolean {
 
 const ACTION_FETCH_TIMEOUT_MS = 10_000;
 
+// Shared between the live tool call above and the console's "Test this
+// action" step (actions.ts's testCustomActionAction) — one request-
+// building/firing implementation instead of two that could quietly
+// drift apart. The live path wraps this in the handoff-JSON contract
+// (guardrail #4); the test path returns the raw result so a business
+// owner can actually see what their API sent back.
+export interface ActionRequestResult {
+  ok: boolean;
+  status?: number;
+  bodyText?: string;
+  errorMessage?: string;
+}
+
+export async function performActionRequest(
+  url: string,
+  method: string,
+  headers: Record<string, string>,
+  input: Record<string, unknown>,
+): Promise<ActionRequestResult> {
+  if (isBlockedActionUrl(url)) {
+    return { ok: false, errorMessage: "That URL isn't allowed — it must be a public https:// address." };
+  }
+
+  const hasBody = method === "POST" || method === "PUT" || method === "PATCH";
+  const target = new URL(url);
+  if (!hasBody) {
+    for (const [key, value] of Object.entries(input)) {
+      target.searchParams.set(key, String(value));
+    }
+  }
+
+  try {
+    const res = await fetch(target, {
+      method,
+      headers: { ...headers, ...(hasBody ? { "Content-Type": "application/json" } : {}) },
+      body: hasBody ? JSON.stringify(input) : undefined,
+      signal: AbortSignal.timeout(ACTION_FETCH_TIMEOUT_MS),
+    });
+    const bodyText = await res.text();
+    return { ok: res.ok, status: res.status, bodyText };
+  } catch (err) {
+    return {
+      ok: false,
+      errorMessage: err instanceof Error && err.name === "TimeoutError" ? "Timed out." : "Couldn't reach that URL.",
+    };
+  }
+}
+
 export function buildCustomActionTool(action: CustomActionForExecution): Tool {
   return {
     name: `custom_${action.name}`,
@@ -48,46 +96,19 @@ export function buildCustomActionTool(action: CustomActionForExecution): Tool {
     inputSchema: action.inputSchema as Tool["inputSchema"],
 
     async handle(_orgId, _botId, input) {
-      if (isBlockedActionUrl(action.url)) {
-        return JSON.stringify({
-          status: "handoff_required",
-          reason: "This action's endpoint isn't reachable — a human will need to help instead.",
-        });
-      }
+      const result = await performActionRequest(action.url, action.method, action.headers, input);
 
-      const hasBody = action.method === "POST" || action.method === "PUT" || action.method === "PATCH";
-      const url = new URL(action.url);
-      if (!hasBody) {
-        for (const [key, value] of Object.entries(input)) {
-          url.searchParams.set(key, String(value));
-        }
-      }
-
-      try {
-        const res = await fetch(url, {
-          method: action.method,
-          headers: { ...action.headers, ...(hasBody ? { "Content-Type": "application/json" } : {}) },
-          body: hasBody ? JSON.stringify(input) : undefined,
-          signal: AbortSignal.timeout(ACTION_FETCH_TIMEOUT_MS),
-        });
-
-        if (!res.ok) {
-          return JSON.stringify({
-            status: "handoff_required",
-            reason: `The ${action.name} action failed (${res.status}).`,
-          });
-        }
-
-        const text = await res.text();
-        return JSON.stringify({ status: "ok", result: text });
-      } catch {
+      if (!result.ok) {
         // Never fail silently or hallucinate a result (guardrail #4) — a
-        // network error, timeout, or DNS failure all fall back the same way.
-        return JSON.stringify({
-          status: "handoff_required",
-          reason: `Couldn't reach the ${action.name} action.`,
-        });
+        // blocked URL, network error, timeout, or non-2xx status all
+        // fall back the same way.
+        const reason = result.status
+          ? `The ${action.name} action failed (${result.status}).`
+          : `Couldn't reach the ${action.name} action.`;
+        return JSON.stringify({ status: "handoff_required", reason });
       }
+
+      return JSON.stringify({ status: "ok", result: result.bodyText });
     },
 
     // No describeForInbox: a business-named, dynamically-shaped action

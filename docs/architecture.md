@@ -55,6 +55,12 @@ doc as ADRs land instead of letting decisions live only in chat history.
   (built fresh via `buildCustomActionTool`, `lib/ai/tools/
   customAction.ts`) — the static registry itself is untouched. Same
   guardrail #4 fallback and an SSRF guard on the business-supplied URL.
+  A "Test this action" step (2026-09-29) in the console dialog fires a
+  real request with sample values before saving, sharing the exact
+  request-building code (`performActionRequest`) the live tool call
+  uses — no developer needed to confirm a business's own endpoint
+  actually works, closing the gap against Chatbase's own real
+  custom-action builder's "test with live data" step.
 - **Write-capable tools never execute directly — they queue a
   `PendingAction` for human approval** (ADR 0023). A tool like
   `request_order_cancellation` validates the request and writes a

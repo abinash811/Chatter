@@ -1,11 +1,13 @@
 "use client";
 
+import { useRef } from "react";
 import {
   Button,
   Input,
   Textarea,
   Label,
   Checkbox,
+  Badge,
   Select,
   SelectContent,
   SelectItem,
@@ -20,7 +22,7 @@ import {
   DialogClose,
 } from "@/components/ui";
 import { HTTP_METHODS } from "@/lib/customActionOptions";
-import type { CustomActionState } from "./actions";
+import type { CustomActionState, TestActionState } from "./actions";
 
 // Notion register (ADR 0011) — a calm, one-time compose surface, same
 // choice as AddQaDialog.tsx. Fields are a fixed set of 4 rows rather than
@@ -31,13 +33,31 @@ export function AddActionDialog({
   formAction,
   state,
   isPending,
+  testFormAction,
+  testState,
+  isTesting,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   formAction: (formData: FormData) => void;
   state: CustomActionState;
   isPending: boolean;
+  testFormAction: (formData: FormData) => void;
+  testState: TestActionState;
+  isTesting: boolean;
 }) {
+  // Reads the create-action form's current (unsaved) values to fire a
+  // real test request — a second <form> can't easily share these fields
+  // without duplicating every input, so the Test button instead builds
+  // FormData straight from the DOM. type="button" keeps it from
+  // submitting/validating the create form itself.
+  const formRef = useRef<HTMLFormElement>(null);
+
+  function handleTest() {
+    if (!formRef.current) return;
+    testFormAction(new FormData(formRef.current));
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] overflow-y-auto">
@@ -48,7 +68,7 @@ export function AddActionDialog({
             when to use it based on the description below.
           </DialogDescription>
         </DialogHeader>
-        <form action={formAction} className="space-y-3">
+        <form ref={formRef} action={formAction} className="space-y-3">
           <div>
             <Label htmlFor="name">Name</Label>
             <Input id="name" name="name" placeholder="check_availability" className="mt-1" required />
@@ -98,20 +118,60 @@ export function AddActionDialog({
           </div>
           <div>
             <Label className="mb-1 block">What should the bot ask the visitor for?</Label>
-            <div className="space-y-2 rounded-md border border-border p-2">
+            <div className="space-y-3 rounded-md border border-border p-2">
               {[0, 1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <Input name={`field_name_${i}`} placeholder="field name" className="w-32" />
-                  <Input name={`field_description_${i}`} placeholder="what it is" className="flex-1" />
-                  <Label className="flex items-center gap-1 whitespace-nowrap text-xs font-normal text-muted-foreground">
-                    <Checkbox name={`field_required_${i}`} />
-                    Required
-                  </Label>
+                <div key={i} className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <Input name={`field_name_${i}`} placeholder="field name" className="w-28" />
+                    <Input name={`field_description_${i}`} placeholder="what it is" className="flex-1" />
+                    <Label className="flex items-center gap-1 whitespace-nowrap text-xs font-normal text-muted-foreground">
+                      <Checkbox name={`field_required_${i}`} />
+                      Required
+                    </Label>
+                  </div>
+                  <Input
+                    name={`test_value_${i}`}
+                    placeholder="Test value (only used by the Test button below)"
+                    className="text-xs"
+                    aria-label={`Test value for field ${i + 1}`}
+                  />
                 </div>
               ))}
             </div>
             <p className="mt-1 text-xs text-muted-foreground">Leave a row's field name blank to skip it.</p>
           </div>
+
+          <div className="rounded-md border border-border p-3">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium">Test this action</p>
+              <Button type="button" variant="outline" size="sm" onClick={handleTest} disabled={isTesting}>
+                {isTesting ? "Testing..." : "Test"}
+              </Button>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Fires a real request to the URL above with the test values you typed, so you can confirm it works
+              before saving — nothing is stored from this.
+            </p>
+            {testState.status !== "idle" && (
+              <div className="mt-3 space-y-1">
+                <div className="flex items-center gap-2">
+                  {testState.statusCode !== null && (
+                    <Badge variant={testState.status === "success" ? "default" : "destructive"}>
+                      {testState.statusCode}
+                    </Badge>
+                  )}
+                  {testState.message && <p className="text-sm text-destructive">{testState.message}</p>}
+                  {testState.status === "success" && !testState.message && (
+                    <p className="text-sm text-muted-foreground">Request succeeded.</p>
+                  )}
+                </div>
+                {testState.bodyText && (
+                  <pre className="max-h-40 overflow-auto rounded-md bg-muted p-2 text-xs">{testState.bodyText}</pre>
+                )}
+              </div>
+            )}
+          </div>
+
           {state.status === "error" && state.message && <p className="text-sm text-destructive">{state.message}</p>}
           <DialogFooter>
             <DialogClose asChild>
