@@ -5,6 +5,7 @@ import { getModelGateway, type ModelMessage } from "@/lib/ai/gateway";
 import { buildSystemPrompt } from "@/lib/ai/systemPrompt";
 import { getToolsForNames } from "@/lib/ai/tools/registry";
 import { getEnabledCustomActionTools } from "@/lib/ai/tools/customAction";
+import { getEnabledWidgetTools, parseRenderWidgetPayload, type RenderWidgetPayload } from "@/lib/ai/tools/widget";
 import "@/lib/ai/tools";
 
 // Per Claude Agent SDK guidance (docs/research/competitive-landscape.md):
@@ -28,6 +29,11 @@ export interface SendMessageResult {
    * message is still recorded (below), but no AI reply is generated,
    * matching Chatbase's own documented pause behavior exactly. */
   reply: string | null;
+  /** ADR 0028 — set when this turn triggered an in-chat widget (a form
+   * to render inline, alongside `reply`'s accompanying text). The
+   * visitor's filled-in answers come back as their own next chat
+   * message, not a special endpoint. */
+  widget?: RenderWidgetPayload;
 }
 
 // Stateless by design (README.md, docs/architecture.md's scaling note):
@@ -80,7 +86,11 @@ export async function sendMessage(params: SendMessageParams): Promise<SendMessag
   // 0022); every enabled one for this bot is always in the mix.
   const staticTools = getToolsForNames(publishedVersion.tools as string[]);
   const customTools = await getEnabledCustomActionTools(orgId, botId);
-  const tools = [...staticTools, ...customTools];
+  // Same "not draft/publish-gated" precedent as custom actions (ADR
+  // 0028, following ADR 0022) — every enabled widget is always in the
+  // mix, not a publishedVersion.tools entry.
+  const widgetTools = await getEnabledWidgetTools(orgId, botId);
+  const tools = [...staticTools, ...customTools, ...widgetTools];
   const toolsByName = new Map(tools.map((tool) => [tool.name, tool]));
 
   const history: ModelMessage[] = conversation.messages.map((m) => ({
@@ -109,6 +119,12 @@ export async function sendMessage(params: SendMessageParams): Promise<SendMessag
   const apiKey = org.anthropicApiKeyEncrypted ? decrypt(org.anthropicApiKeyEncrypted) : undefined;
   const gateway = getModelGateway(apiKey);
   let finalText = "";
+  // ADR 0028 — the last widget triggered this turn, if any. The model's
+  // own next turn (after seeing the tool result) naturally produces the
+  // accompanying text ("Sure, please fill this out:"), so no early-exit
+  // branching is needed in the loop below — this just captures the
+  // structured signal alongside whatever finalText the loop settles on.
+  let widget: RenderWidgetPayload | undefined;
 
   for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
     const result = await gateway.generateReply({
@@ -150,6 +166,8 @@ export async function sendMessage(params: SendMessageParams): Promise<SendMessag
             },
           }),
         );
+        const renderWidget = parseRenderWidgetPayload(content);
+        if (renderWidget) widget = renderWidget;
         return { type: "tool_result" as const, toolUseId: block.id, content };
       }),
     );
@@ -167,5 +185,5 @@ export async function sendMessage(params: SendMessageParams): Promise<SendMessag
     }),
   );
 
-  return { conversationId: conversation.id, reply: finalText };
+  return { conversationId: conversation.id, reply: finalText, widget };
 }

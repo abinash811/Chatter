@@ -35,6 +35,7 @@ const MIGRATIONS = [
   "db/migrations/0004_leads_rls.sql",
   "db/migrations/0005_custom_actions_rls.sql",
   "db/migrations/0006_pending_actions_rls.sql",
+  "db/migrations/0007_widgets_rls.sql",
 ];
 
 async function main() {

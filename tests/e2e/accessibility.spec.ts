@@ -6,6 +6,7 @@ import {
   seedKnowledgeEntry,
   seedLead,
   seedCustomAction,
+  seedWidget,
   seedPendingAction,
   uniqueEmail,
   PASSWORD,
@@ -123,6 +124,15 @@ test("actions page has no serious/critical accessibility violations", async ({ p
   await page.click('a:has-text("Actions")');
   await expect(page).toHaveURL(/\/actions$/);
   await assertNoSeriousViolations(page, page.getByText("check_availability"));
+});
+
+test("widgets page has no serious/critical accessibility violations", async ({ page }) => {
+  await signUpAndCreateBot(page, "A11y Widgets Bot", "a11y-widgets");
+  const botId = page.url().split("/bots/")[1];
+  await seedWidget(botId, { name: "booking_form", triggerDescription: "Collect booking details." });
+  await page.click('a:has-text("Widgets")');
+  await expect(page).toHaveURL(/\/widgets$/);
+  await assertNoSeriousViolations(page, page.getByText("booking_form"));
 });
 
 test("approvals page has no serious/critical accessibility violations", async ({ page }) => {

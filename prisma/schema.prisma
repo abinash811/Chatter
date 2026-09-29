@@ -104,6 +104,7 @@ model Bot {
   leads          Lead[]
   customActions  CustomAction[]
   pendingActions PendingAction[]
+  widgets        Widget[]
   publicKey      BotPublicKey?
 
   @@index([orgId])
@@ -283,6 +284,31 @@ model CustomAction {
   @@unique([botId, name])
   @@index([orgId])
   @@map("custom_actions")
+}
+
+// In-chat interactive widget (ADR 0028) — a form the bot can render
+// inline in a conversation, matching Chatbase's own "Widgets" feature's
+// smallest useful slice: a Schema-driven form with no Functions/States
+// yet (those are separate, larger follow-ups per the ADR). Per-bot, not
+// draft/publish-gated — same precedent as CustomAction (ADR 0022):
+// takes effect immediately on save/toggle.
+model Widget {
+  id                 String   @id @default(uuid())
+  orgId              String
+  botId              String
+  name               String // slug; the tool name Claude sees is `render_widget_<name>`
+  triggerDescription String // model-facing: when should the bot show this widget
+  submitLabel        String   @default("Submit")
+  schema             Json // JSON Schema {properties, required} — the form's fields
+  enabled            Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  bot Bot @relation(fields: [botId], references: [id])
+
+  @@unique([botId, name])
+  @@index([orgId])
+  @@map("widgets")
 }
 
 model Message {

@@ -70,13 +70,22 @@ doc as ADRs land instead of letting decisions live only in chat history.
   low-stakes-write tools (lookups, `collect_lead`, custom actions) are
   unaffected — this only applies to a tool whose effect can't be undone
   by "the AI was wrong."
-- **In-chat interactive widgets — proposed, not built** (ADR 0028): a
-  tool's `handle()` would gain a `renderWidget` result shape (forms/
-  cards/tables rendered inline in the chat, not just text), reusing the
-  custom-action request pipeline for interactive elements' behavior and
-  `PendingAction` for any write-capable one. Schema format and
-  transport still open (`docs/open-questions.md` #9) — nothing
-  scaffolded yet.
+- **In-chat interactive widgets, Phase 1 built** (2026-09-29, ADR
+  0028): a `Widget` model (per-bot, not draft/publish-gated, same
+  precedent as `CustomAction`) rendered as a Schema-driven form inline
+  in the chat, not just text. A dynamic tool factory
+  (`lib/ai/tools/widget.ts`) is merged into every turn's tools the same
+  way custom actions are; `handle()` returns a tagged JSON string
+  (`{"type":"render_widget", ...}`) — the same structured-signaling
+  pattern every other tool already uses, no interface change. The chat
+  loop needs no early-exit branching: the model's own next turn, after
+  seeing the tool result, naturally produces the accompanying text, and
+  `lib/ai/chat.ts` just scans for the tag and attaches it to
+  `SendMessageResult.widget`. The visitor's filled-in answers come back
+  as their own next chat message over the existing `/api/chat`
+  endpoint. Phase 2 (Functions that call a live API via
+  `performActionRequest`, States/multi-view widgets) is deliberately
+  deferred — `docs/open-questions.md` #9.
 - Streamed responses back to the widget.
 - **BYOA (bring-your-own API key)**: optional, per-org, off by default —
   a business can plug in their own Anthropic key from `/settings`

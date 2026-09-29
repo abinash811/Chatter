@@ -55,11 +55,17 @@ vi.mock("@/lib/ai/tools/registry", () => ({ getToolsForNames }));
 vi.mock("@/lib/ai/tools", () => ({}));
 const getEnabledCustomActionTools = vi.fn().mockResolvedValue([]);
 vi.mock("@/lib/ai/tools/customAction", () => ({ getEnabledCustomActionTools }));
+const getEnabledWidgetTools = vi.fn().mockResolvedValue([]);
+vi.mock("@/lib/ai/tools/widget", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/ai/tools/widget")>("@/lib/ai/tools/widget");
+  return { ...actual, getEnabledWidgetTools };
+});
 
 beforeEach(() => {
   vi.clearAllMocks();
   getToolsForNames.mockReturnValue([]);
   getEnabledCustomActionTools.mockResolvedValue([]);
+  getEnabledWidgetTools.mockResolvedValue([]);
   findFirstVersion.mockResolvedValue({ id: "version-1", tools: [] });
   createConversation.mockResolvedValue({ id: "conv-new", messages: [] });
   createMessage.mockResolvedValue({});
@@ -221,6 +227,48 @@ describe("sendMessage", () => {
 
     expect(result.reply).toBe("10am is open.");
     expect(runTool).toHaveBeenCalledWith("custom_check_availability", "org-1", "bot-1", { date: "2026-10-01" });
+  });
+
+  it("ADR 0028: merges enabled widget tools and attaches the render_widget payload to the result", async () => {
+    getEnabledWidgetTools.mockResolvedValue([mockTool("render_widget_booking_form")]);
+    generateReply
+      .mockResolvedValueOnce({
+        content: [{ type: "tool_use", id: "call_1", name: "render_widget_booking_form", input: {} }],
+        stopReason: "tool_use",
+      })
+      .mockResolvedValueOnce({ content: [{ type: "text", text: "Sure, please fill this out:" }], stopReason: "end_turn" });
+    const schema = { type: "object", properties: { name: { type: "string", title: "Name" } }, required: [], additionalProperties: false };
+    runTool.mockResolvedValue(
+      JSON.stringify({ type: "render_widget", widgetId: "widget-1", name: "booking_form", submitLabel: "Book now", schema }),
+    );
+    const { sendMessage } = await import("@/lib/ai/chat");
+
+    const result = await sendMessage({ orgId: "org-1", botId: "bot-1", userMessage: "I'd like to book" });
+
+    expect(result.reply).toBe("Sure, please fill this out:");
+    expect(result.widget).toEqual({
+      type: "render_widget",
+      widgetId: "widget-1",
+      name: "booking_form",
+      submitLabel: "Book now",
+      schema,
+    });
+  });
+
+  it("a normal tool call never populates result.widget", async () => {
+    generateReply
+      .mockResolvedValueOnce({
+        content: [{ type: "tool_use", id: "call_1", name: "search_knowledge_base", input: {} }],
+        stopReason: "tool_use",
+      })
+      .mockResolvedValueOnce({ content: [{ type: "text", text: "answer" }], stopReason: "end_turn" });
+    getToolsForNames.mockReturnValue([mockTool("search_knowledge_base")]);
+    runTool.mockResolvedValue("plain text result");
+    const { sendMessage } = await import("@/lib/ai/chat");
+
+    const result = await sendMessage({ orgId: "org-1", botId: "bot-1", userMessage: "hi" });
+
+    expect(result.widget).toBeUndefined();
   });
 
   it("BYOA (ADR 0012): decrypts and passes the org's own key when it has set one", async () => {

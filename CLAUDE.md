@@ -312,6 +312,19 @@ reason.)
   "Not tracked" states rather than fabricated data (guardrail #4).
   Bulk-select + CSV export added. Full detail, including 3 real bugs
   caught while verifying: `docs/changelog.md`.
+- In-chat widgets, Phase 1 (2026-09-29, ADR 0028): a `/bots/[botId]/
+  widgets` page defines a Schema-driven form (text/number/checkbox/
+  dropdown fields) the bot can render inline in the chat instead of
+  collecting info through plain text. Researched from Chatbase's real
+  "Widgets" docs — Functions (a widget calling a real API) and States
+  (multi-view widgets) are deliberately deferred, `docs/open-
+  questions.md` #9. Reuses the tool-calling interface unchanged (a
+  tagged JSON string, same pattern every tool uses) — no chat-loop
+  branching needed. Renders in both `public/widget.js` and
+  `PreviewSheet.tsx`; a visitor's answers come back as their own next
+  chat message. JSON Schema (not a custom shape) confirmed by the user.
+  Verified: `tsc` clean, all 10 guardrails, full unit suite (181, 24
+  new), RLS verified. Full detail: `docs/changelog.md`.
 - Self-serve config (roadmap "Self-serve configurability"): widget
   appearance editor (greeting/accent/avatar/position) and a 3-template
   persona picker (Support/Sales/Lead-gen), both in the bot editor.

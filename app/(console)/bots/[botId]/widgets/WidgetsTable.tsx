@@ -1,0 +1,68 @@
+"use client";
+
+import { Trash2 } from "lucide-react";
+import { Button, Badge, Switch, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui";
+import type { WidgetRow } from "@/lib/widgets";
+
+export function WidgetsTable({
+  widgets,
+  onToggle,
+  onDelete,
+}: {
+  widgets: WidgetRow[];
+  onToggle: (id: string, enabled: boolean) => void;
+  onDelete: (id: string) => void;
+}) {
+  if (widgets.length === 0) {
+    return (
+      <div className="mt-4 flex flex-col items-center gap-2 rounded-lg border border-border py-14 shadow-xs">
+        <p className="text-sm font-medium">No widgets yet</p>
+        <p className="text-sm text-muted-foreground">
+          Add one above to let your bot collect structured info with an inline form instead of plain text.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-4 rounded-lg border border-border shadow-xs">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>Fields</TableHead>
+            <TableHead>Enabled</TableHead>
+            <TableHead className="w-8" />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {widgets.map((widget) => (
+            <TableRow key={widget.id} className="h-row">
+              <TableCell className="font-medium">
+                {widget.name}
+                <p className="max-w-xs truncate text-xs font-normal text-muted-foreground">{widget.triggerDescription}</p>
+              </TableCell>
+              <TableCell>
+                <Badge variant="muted">
+                  {widget.fields.length} field{widget.fields.length === 1 ? "" : "s"}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                <Switch
+                  checked={widget.enabled}
+                  onCheckedChange={(checked) => onToggle(widget.id, checked)}
+                  aria-label={`${widget.enabled ? "Disable" : "Enable"} ${widget.name}`}
+                />
+              </TableCell>
+              <TableCell>
+                <Button type="button" variant="ghost" size="icon-sm" aria-label="Delete" onClick={() => onDelete(widget.id)}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}

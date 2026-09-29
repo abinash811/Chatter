@@ -173,6 +173,56 @@ without creating a circular import. The one place that maps a
 — the next write-capable tool adds one line there, not a change to the
 generic queue.
 
+## In-chat widgets (`lib/widgets.ts`, `lib/ai/tools/widget.ts`, ADR 0028)
+
+A widget is a form the bot can render inline in the chat — Phase 1 of
+Chatbase's real "Widgets" feature, read from their actual docs, not
+guessed (ADR 0028): Schema-driven forms only, not yet their fuller
+Functions/States system. Per-bot, not draft/publish-gated, same
+precedent as Custom actions (ADR 0022) — a widget takes effect
+immediately on save/toggle.
+
+**Trigger mechanism — no chat-loop special-casing needed.** A widget
+is built into a real `Tool` the same way a custom action is
+(`buildWidgetTool`, `lib/ai/tools/widget.ts`), merged into every turn's
+tool list by `lib/ai/chat.ts` alongside the static registry and custom
+actions. The tool takes no input — the widget itself collects data
+from the *visitor*, not the model — and its `handle()` returns a
+tagged JSON string, `{"type":"render_widget", widgetId, name,
+submitLabel, schema}`, the exact same structured-signaling pattern
+every other tool already uses for its own output shape
+(`handoff_required`, `ok`/`result`). Because the model sees this tool
+call "succeed" like any other, its own next turn naturally produces
+the accompanying text ("Sure, please fill this out:") — no special
+early-exit branching was needed in the tool loop. `sendMessage` just
+scans each turn's tool results for the tag and attaches the last one
+found to `SendMessageResult.widget`, alongside `reply`.
+
+**Rendering and submission.** `public/widget.js` (vanilla JS, shadow-
+DOM styled) and `PreviewSheet.tsx` (React + `components/ui/`
+primitives) each build a form from the widget's JSON Schema
+(`properties`/`required`/`enum`) independently, matching their own
+surface's design system rather than sharing a renderer neither can use
+directly. On submit, the collected field values are formatted as plain
+text (`"Your name: Priya, Party size: 4"`) and sent as the visitor's
+own next chat message over the existing `/api/chat` endpoint — no new
+endpoint, no separate submission concept.
+
+**Schema format is JSON Schema**, confirmed by the user (2026-09-29)
+over a custom shape mirroring Chatbase's own internal structure — an
+actual standard already used by this codebase's tool-input schemas and
+Claude's own tool-calling API, versus a private format that would only
+buy cosmetic parity with a competitor's builder. `lib/widgets.ts`
+converts between the console's typed field builder (name/label/type/
+required/options) and the stored JSON Schema, the same
+fields-to-schema/schema-to-fields round trip `lib/customActions.ts`
+already established for its own input schema.
+
+**Deliberately not built this pass** (`docs/open-questions.md` #9): a
+widget's submit calling a real API (would reuse
+`performActionRequest`), multi-view widgets driven by conditions
+(States), and field types beyond text/number/boolean/dropdown.
+
 ## Knowledge base ingestion
 
 `docs/product-spec.md`'s MVP scope: "file upload and/or manual Q&A at

@@ -14,6 +14,7 @@ import {
 import { MODEL_TIER_OPTIONS, DEFAULT_MODEL_ID, DEFAULT_TEMPERATURE, getModelTierOption } from "@/lib/ai/modelOptions";
 import { listAllTools } from "@/lib/ai/tools/registry";
 import { sendMessage } from "@/lib/ai/chat";
+import type { RenderWidgetPayload } from "@/lib/ai/tools/widget";
 import "@/lib/ai/tools";
 
 export interface SaveDraftState {
@@ -95,6 +96,8 @@ export interface PreviewMessageState {
   message: string | null;
   conversationId?: string;
   reply?: string;
+  /** ADR 0028 — set when this preview turn triggered an in-chat widget. */
+  widget?: RenderWidgetPayload;
 }
 
 // "Test your bot" preview (2026-09-27) — an authenticated console user
@@ -123,7 +126,13 @@ export async function sendPreviewMessageAction(
   try {
     const session = await getCurrentSession();
     const result = await sendMessage({ orgId: session.orgId, botId, conversationId, userMessage, source: "playground" });
-    return { status: "success", message: null, conversationId: result.conversationId, reply: result.reply ?? undefined };
+    return {
+      status: "success",
+      message: null,
+      conversationId: result.conversationId,
+      reply: result.reply ?? undefined,
+      widget: result.widget,
+    };
   } catch (err) {
     console.error("[sendPreviewMessageAction]", err);
     let message = "Couldn't get a reply. Please try again.";

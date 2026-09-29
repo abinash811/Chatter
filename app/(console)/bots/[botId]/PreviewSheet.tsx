@@ -1,17 +1,38 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState, type FormEvent } from "react";
 import { MessageCircle } from "lucide-react";
 import { sendPreviewMessageAction, type PreviewMessageState } from "./actions";
+import type { RenderWidgetPayload } from "@/lib/ai/tools/widget";
 import {
   Button,
   Input,
+  Label,
+  Checkbox,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetDescription,
 } from "@/components/ui";
+
+// ADR 0028 — the shape of a widget's JSON Schema this sheet knows how to
+// render; loosely typed since a widget's fields are business-authored,
+// not compile-time known.
+interface WidgetSchemaProperty {
+  type?: "string" | "number" | "boolean";
+  title?: string;
+  enum?: string[];
+}
+interface WidgetSchema {
+  properties?: Record<string, WidgetSchemaProperty>;
+  required?: string[];
+}
 
 const idleState: PreviewMessageState = { status: "idle", message: null };
 
@@ -35,11 +56,17 @@ export function PreviewSheet({ botId, published }: { botId: string; published: b
   const [inputValue, setInputValue] = useState("");
   const [state, formAction, isPending] = useActionState(sendPreviewMessageAction.bind(null, botId), idleState);
   const listRef = useRef<HTMLDivElement>(null);
+  // ADR 0028 — the last widget triggered, if any, and the visitor's
+  // in-progress answers before submitting.
+  const [widget, setWidget] = useState<RenderWidgetPayload | undefined>();
+  const [widgetValues, setWidgetValues] = useState<Record<string, string | boolean>>({});
 
   useEffect(() => {
-    if (state.status === "success" && state.reply) {
-      setMessages((prev) => [...prev, { role: "assistant", content: state.reply! }]);
+    if (state.status === "success") {
+      if (state.reply) setMessages((prev) => [...prev, { role: "assistant", content: state.reply! }]);
       setConversationId(state.conversationId);
+      setWidget(state.widget);
+      setWidgetValues({});
     }
   }, [state]);
 
@@ -52,6 +79,29 @@ export function PreviewSheet({ botId, published }: { botId: string; published: b
     if (!text || isPending) return;
     setMessages((prev) => [...prev, { role: "user", content: text }]);
     setInputValue("");
+    const formData = new FormData();
+    formData.set("message", text);
+    if (conversationId) formData.set("conversationId", conversationId);
+    formAction(formData);
+  }
+
+  // ADR 0028 — the visitor's filled-in widget answers are sent back as
+  // their own next chat message, formatted plain-language, same as
+  // public/widget.js's renderWidget does — no new endpoint.
+  function handleWidgetSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!widget || isPending) return;
+    const schema = widget.schema as WidgetSchema;
+    const properties = schema.properties ?? {};
+    const parts: string[] = [];
+    Object.entries(properties).forEach(([name, prop]) => {
+      const value = widgetValues[name];
+      if (value === undefined || value === "" || value === false) return;
+      parts.push(`${prop.title ?? name}: ${value}`);
+    });
+    const text = parts.join(", ");
+    setWidget(undefined);
+    setMessages((prev) => [...prev, { role: "user", content: text }]);
     const formData = new FormData();
     formData.set("message", text);
     if (conversationId) formData.set("conversationId", conversationId);
@@ -96,6 +146,76 @@ export function PreviewSheet({ botId, published }: { botId: string; published: b
                 </div>
               ))}
               {isPending && <div className="mr-auto max-w-[85%] rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">Thinking...</div>}
+              {widget && (
+                <form
+                  onSubmit={handleWidgetSubmit}
+                  className="mr-auto flex max-w-[85%] flex-col gap-2 rounded-lg bg-muted p-3"
+                >
+                  {Object.entries((widget.schema as WidgetSchema).properties ?? {}).map(([name, prop]) => {
+                    const required = ((widget.schema as WidgetSchema).required ?? []).includes(name);
+                    const fieldId = `widget-field-${name}`;
+                    if (prop.type === "boolean") {
+                      return (
+                        <div key={name} className="flex items-center gap-2">
+                          <Checkbox
+                            id={fieldId}
+                            checked={Boolean(widgetValues[name])}
+                            onCheckedChange={(checked) => setWidgetValues((prev) => ({ ...prev, [name]: checked === true }))}
+                          />
+                          <Label htmlFor={fieldId} className="text-xs font-normal">
+                            {prop.title ?? name}
+                            {required && " *"}
+                          </Label>
+                        </div>
+                      );
+                    }
+                    if (prop.enum) {
+                      return (
+                        <div key={name}>
+                          <Label htmlFor={fieldId} className="text-xs">
+                            {prop.title ?? name}
+                            {required && " *"}
+                          </Label>
+                          <Select
+                            value={String(widgetValues[name] ?? "")}
+                            onValueChange={(value) => setWidgetValues((prev) => ({ ...prev, [name]: value }))}
+                          >
+                            <SelectTrigger id={fieldId} size="sm" className="mt-1">
+                              <SelectValue placeholder="Choose one" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {prop.enum.map((option) => (
+                                <SelectItem key={option} value={option}>
+                                  {option}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div key={name}>
+                        <Label htmlFor={fieldId} className="text-xs">
+                          {prop.title ?? name}
+                          {required && " *"}
+                        </Label>
+                        <Input
+                          id={fieldId}
+                          type={prop.type === "number" ? "number" : "text"}
+                          required={required}
+                          value={String(widgetValues[name] ?? "")}
+                          onChange={(e) => setWidgetValues((prev) => ({ ...prev, [name]: e.target.value }))}
+                          className="mt-1"
+                        />
+                      </div>
+                    );
+                  })}
+                  <Button type="submit" size="sm" disabled={isPending} className="self-start">
+                    {widget.submitLabel}
+                  </Button>
+                </form>
+              )}
             </div>
 
             {state.status === "error" && state.message && (

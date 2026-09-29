@@ -175,6 +175,33 @@ export async function seedCustomAction(
   );
 }
 
+// Widget (ADR 0028) rows for a11y/e2e specs that just need a populated
+// list, not the console's Add dialog round trip — same bypass-the-UI
+// precedent as seedCustomAction above.
+export async function seedWidget(
+  botId: string,
+  fields: { name: string; triggerDescription: string; schema?: Record<string, unknown> },
+): Promise<void> {
+  const orgId = await getOrgIdForBot(botId);
+  await withOrgContext(orgId, (tx) =>
+    tx.widget.create({
+      data: {
+        orgId,
+        botId,
+        name: fields.name,
+        triggerDescription: fields.triggerDescription,
+        submitLabel: "Submit",
+        schema: (fields.schema ?? {
+          type: "object",
+          properties: { name: { type: "string", title: "Name" } },
+          required: ["name"],
+          additionalProperties: false,
+        }) as Prisma.InputJsonValue,
+      },
+    }),
+  );
+}
+
 // A write-capable tool's (request_order_cancellation, ADR 0023) queued
 // request — bypasses calling the real tool, same precedent as seedLead,
 // since there's no live Shopify integration connectable in this

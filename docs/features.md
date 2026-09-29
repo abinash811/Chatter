@@ -80,6 +80,34 @@ from HTTP method only), and no JSON body templating (the body is
 always the flat input object, can't target a nested/specific shape).
 Not started — flagged to the user, not silently deferred.
 
+### In-chat widgets
+**Who**: the business owner (builds the widget) and the bot's visitor
+(fills it in). **What**: a form the bot can render inline in the chat
+— up to 4 typed fields (text/number/checkbox/dropdown) — instead of
+collecting structured info through plain back-and-forth text. Matches
+the smallest useful slice of Chatbase's real "Widgets" feature (read
+from their actual docs, not guessed — see ADR 0028): a Schema-driven
+form, not yet their fuller Functions/States/rich-component system. A
+new `/bots/[botId]/widgets` console page defines each widget (name,
+when the bot should show it, its fields); the bot decides when to
+trigger one based on the plain-language trigger description, exactly
+like any other tool. The visitor's filled-in answers come back as
+their own next chat message — no separate submission endpoint. Not
+draft/publish-gated, same precedent as Custom actions (ADR 0022):
+takes effect immediately on save/toggle. **How**: `lib/widgets.ts`
+(CRUD + JSON Schema conversion), `lib/ai/tools/widget.ts` (the dynamic
+tool factory — `handle()` returns a tagged JSON string, the same
+structured-signaling pattern every other tool already uses),
+`lib/ai/chat.ts` (merges enabled widget tools into every turn, scans
+tool results for the tag), `public/widget.js` + `PreviewSheet.tsx`
+(inline form rendering — vanilla JS and React respectively, both
+matching each surface's own design system). ADR 0028.
+
+**Deliberately not built this pass** (Phase 2, `docs/open-questions.md`
+#9): a widget's submit calling a real API (Functions), multi-view
+widgets driven by conditions (States), and a richer component library
+beyond the 4 field types above.
+
 ### Order cancellation (approval-gated)
 **Who**: the bot proposes it, the business owner decides. **What**: a
 write-capable action tool — the first one, and a new risk category

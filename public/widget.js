@@ -76,6 +76,15 @@
     '  .suggestions { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 12px; }' +
     '  .suggestion { border: 1px solid #ddd; background: #fff; border-radius: 999px; padding: 6px 12px;' +
     '    font: inherit; font-size: 13px; cursor: pointer; }' +
+    // ADR 0028 — an in-chat widget (form) rendered inline, styled to
+    // read as part of the transcript rather than a separate surface.
+    '  .widget-form { align-self: flex-start; max-width: 90%; display: flex; flex-direction: column; gap: 8px;' +
+    '    background: #f1f1f4; border-radius: 10px; padding: 10px 12px; }' +
+    '  .widget-field { display: flex; flex-direction: column; gap: 3px; }' +
+    '  .widget-field label { font-size: 12px; font-weight: 600; }' +
+    '  .widget-field input, .widget-field select { border: 1px solid #ddd; border-radius: 6px; padding: 6px 8px; font: inherit; }' +
+    '  .widget-field.checkbox { flex-direction: row; align-items: center; gap: 6px; }' +
+    '  .widget-submit { border: none; border-radius: 8px; padding: 8px 12px; color: white; cursor: pointer; align-self: flex-start; }' +
     '</style>' +
     '<div class="window" part="window">' +
     '  <div class="header" part="header"></div>' +
@@ -119,6 +128,87 @@
     messagesEl.scrollTop = messagesEl.scrollHeight;
   }
 
+  // ADR 0028 — renders a form inline from the widget's JSON Schema
+  // (properties/required/enum), collected values on submit sent back as
+  // the visitor's own next chat message — no new endpoint, the model
+  // reads the submission like any other typed reply.
+  function renderWidget(payload) {
+    var schema = payload.schema || {};
+    var properties = schema.properties || {};
+    var required = schema.required || [];
+
+    var formEl = document.createElement("form");
+    formEl.className = "widget-form";
+
+    var inputs = {};
+    Object.keys(properties).forEach(function (name) {
+      var prop = properties[name];
+      var fieldWrap = document.createElement("div");
+      fieldWrap.className = "widget-field" + (prop.type === "boolean" ? " checkbox" : "");
+
+      var label = document.createElement("label");
+      var inputId = "widget-field-" + name;
+      label.setAttribute("for", inputId);
+      label.textContent = (prop.title || name) + (required.indexOf(name) !== -1 ? " *" : "");
+
+      var input;
+      if (prop.enum) {
+        input = document.createElement("select");
+        prop.enum.forEach(function (option) {
+          var optionEl = document.createElement("option");
+          optionEl.value = option;
+          optionEl.textContent = option;
+          input.appendChild(optionEl);
+        });
+      } else if (prop.type === "boolean") {
+        input = document.createElement("input");
+        input.type = "checkbox";
+      } else if (prop.type === "number") {
+        input = document.createElement("input");
+        input.type = "number";
+      } else {
+        input = document.createElement("input");
+        input.type = "text";
+      }
+      input.id = inputId;
+      input.name = name;
+      if (required.indexOf(name) !== -1 && prop.type !== "boolean") input.required = true;
+
+      if (prop.type === "boolean") {
+        fieldWrap.appendChild(input);
+        fieldWrap.appendChild(label);
+      } else {
+        fieldWrap.appendChild(label);
+        fieldWrap.appendChild(input);
+      }
+      formEl.appendChild(fieldWrap);
+      inputs[name] = { el: input, prop: prop };
+    });
+
+    var submitButton = document.createElement("button");
+    submitButton.type = "submit";
+    submitButton.className = "widget-submit";
+    submitButton.textContent = payload.submitLabel || "Submit";
+    submitButton.style.background = appearance.accentColor;
+    formEl.appendChild(submitButton);
+
+    formEl.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var parts = [];
+      Object.keys(inputs).forEach(function (name) {
+        var entry = inputs[name];
+        var value = entry.prop.type === "boolean" ? entry.el.checked : entry.el.value;
+        if (value === "" || value === false) return;
+        parts.push((entry.prop.title || name) + ": " + value);
+      });
+      formEl.remove();
+      sendText(parts.join(", "));
+    });
+
+    messagesEl.appendChild(formEl);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
   // Shown once, under the greeting, so a first-time visitor has
   // something to tap instead of a blank input — cleared the moment a
   // real conversation starts (own click or typed message), same as the
@@ -155,6 +245,7 @@
       // conversation from the console (ADR 0027) — the message above was
       // still recorded, there's just no AI reply to show for this turn.
       if (data.reply) appendMessage("assistant", data.reply);
+      if (data.widget) renderWidget(data.widget);
     } catch (err) {
       console.error("[Chatter widget]", err);
       appendMessage("assistant", "Sorry, something went wrong. Please try again.");
