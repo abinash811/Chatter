@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Button,
   Input,
@@ -19,7 +20,7 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui";
-import { WIDGET_FIELD_TYPES } from "@/lib/widgetOptions";
+import { WIDGET_FIELD_TYPES, WIDGET_HTTP_METHODS } from "@/lib/widgetOptions";
 import type { WidgetState } from "./actions";
 
 const FIELD_TYPE_LABELS: Record<(typeof WIDGET_FIELD_TYPES)[number], string> = {
@@ -45,6 +46,12 @@ export function AddWidgetDialog({
   state: WidgetState;
   isPending: boolean;
 }) {
+  // Phase 2 (ADR 0028) — progressive disclosure: a business owner who
+  // just wants a collection-only form never sees method/URL/headers at
+  // all, matching the same "dumb person should be able to configure
+  // this" bar the fixed-field-row design already follows.
+  const [callApi, setCallApi] = useState(false);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] overflow-y-auto">
@@ -112,6 +119,57 @@ export function AddWidgetDialog({
               ))}
             </div>
             <p className="mt-1 text-xs text-muted-foreground">Leave a row's field name blank to skip it.</p>
+          </div>
+
+          <div className="rounded-md border border-border p-3">
+            <Label className="flex items-center gap-2 text-sm font-medium">
+              <Checkbox name="callApi" checked={callApi} onCheckedChange={(checked) => setCallApi(checked === true)} />
+              Call an API when this form is submitted
+            </Label>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Optional. Without this, the visitor's answers are just sent to the bot as a message — with it, the
+              submitted values are sent straight to your own endpoint.
+            </p>
+            {callApi && (
+              <div className="mt-3 space-y-3">
+                <div className="flex gap-3">
+                  <div>
+                    <Label htmlFor="apiMethod">Method</Label>
+                    <Select name="apiMethod" defaultValue="POST">
+                      <SelectTrigger id="apiMethod" className="mt-1 w-28">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {WIDGET_HTTP_METHODS.map((method) => (
+                          <SelectItem key={method} value={method}>
+                            {method}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex-1">
+                    <Label htmlFor="apiUrl">URL</Label>
+                    <Input id="apiUrl" name="apiUrl" type="url" placeholder="https://api.example.com/book" className="mt-1" />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="apiHeaders">Headers (optional)</Label>
+                  <Textarea
+                    id="apiHeaders"
+                    name="apiHeaders"
+                    placeholder={"Authorization: Bearer sk_live_...\nX-Api-Key: ..."}
+                    rows={2}
+                    className="mt-1 font-mono text-xs"
+                  />
+                  <p className="mt-1 text-xs text-muted-foreground">One per line, as "Header-Name: value". Stored encrypted.</p>
+                </div>
+                <Label className="flex items-center gap-2 text-sm font-normal">
+                  <Checkbox name="writeCapable" />
+                  This can't be undone — require a team member's approval before it happens
+                </Label>
+              </div>
+            )}
           </div>
 
           {state.status === "error" && state.message && <p className="text-sm text-destructive">{state.message}</p>}

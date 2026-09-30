@@ -180,7 +180,15 @@ export async function seedCustomAction(
 // precedent as seedCustomAction above.
 export async function seedWidget(
   botId: string,
-  fields: { name: string; triggerDescription: string; schema?: Record<string, unknown> },
+  fields: {
+    name: string;
+    triggerDescription: string;
+    schema?: Record<string, unknown>;
+    // Phase 2 (ADR 0028) — omit for a collection-only widget.
+    apiUrl?: string;
+    apiMethod?: string;
+    writeCapable?: boolean;
+  },
 ): Promise<void> {
   const orgId = await getOrgIdForBot(botId);
   await withOrgContext(orgId, (tx) =>
@@ -197,6 +205,9 @@ export async function seedWidget(
           required: ["name"],
           additionalProperties: false,
         }) as Prisma.InputJsonValue,
+        apiUrl: fields.apiUrl ?? null,
+        apiMethod: fields.apiMethod ?? null,
+        writeCapable: fields.writeCapable ?? false,
       },
     }),
   );

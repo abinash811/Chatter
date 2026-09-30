@@ -31,6 +31,7 @@ export function WidgetsTable({
           <TableRow>
             <TableHead>Name</TableHead>
             <TableHead>Fields</TableHead>
+            <TableHead>On submit</TableHead>
             <TableHead>Enabled</TableHead>
             <TableHead className="w-8" />
           </TableRow>
@@ -46,6 +47,19 @@ export function WidgetsTable({
                 <Badge variant="muted">
                   {widget.fields.length} field{widget.fields.length === 1 ? "" : "s"}
                 </Badge>
+              </TableCell>
+              <TableCell>
+                {/* Phase 2 (ADR 0028) — at-a-glance signaling (console-
+                    frontend rule #8): a collection-only widget vs. one
+                    that calls a real API, and whether that call needs
+                    approval, reads differently without opening the row. */}
+                {widget.apiUrl ? (
+                  <Badge variant={widget.writeCapable ? "destructive" : "default"}>
+                    {widget.writeCapable ? "Calls API — needs approval" : "Calls API"}
+                  </Badge>
+                ) : (
+                  <span className="text-sm text-muted-foreground">Message only</span>
+                )}
               </TableCell>
               <TableCell>
                 <Switch

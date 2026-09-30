@@ -61,17 +61,15 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
    not blocking anything today. Distinct from #1 above (that's whether
    we ever offer self-hosting as a *product* option to businesses; this
    is where *our own* managed instance runs).
-9. **In-chat widgets, Phase 2 (Functions that call a live API, and
-   States/multi-view widgets)** (2026-09-29, ADR 0028). Phase 1
-   (Schema-driven forms, JSON Schema format, transport via the existing
-   tool-result channel) shipped 2026-09-29 — see `docs/features.md`.
-   Still open, not yet scoped: should a widget's submit action call a
-   real API (reusing `performActionRequest`, per ADR 0028's decision
-   section) as an opt-in per widget, or stay collection-only forever?
-   What expression syntax would States' visibility conditions use
+9. **In-chat widgets, States/multi-view widgets** (2026-09-29, ADR
+   0028). Phase 1 (Schema-driven forms) shipped 2026-09-29; Phase 2
+   (Functions — an opt-in real API call on submit, write-capable ones
+   gated behind the existing `PendingAction` approval queue) shipped
+   2026-09-30 — see `docs/features.md`. Still open, not yet scoped:
+   what expression syntax would States' visibility conditions use
    (simple field comparisons only, per ADR 0028 — but the exact grammar
-   isn't chosen)? Not blocking anything else — Phase 1 is a complete,
-   independently useful slice on its own.
+   isn't chosen)? Not blocking anything else — Phases 1 and 2 are a
+   complete, independently useful slice on their own.
 
 ## Not yet asked
 

@@ -80,7 +80,7 @@ for. This table is what closes that.
 | Leads | 🔲 | 🔲 | 🟡 | Axe scan added 2026-09-27, clean. No manual SR pass. |
 | Actions | 🔲 | 🔲 | 🟡 | Axe scan added 2026-09-27, clean (`custom_actions` page, ADR 0022). No manual SR pass. |
 | Approvals | 🔲 | 🔲 | 🟡 | Axe scan added 2026-09-28, clean (`pending_actions` page, ADR 0023). No manual SR pass. |
-| Widgets | 🔲 | 🔲 | 🟡 | Axe scan added 2026-09-29, clean (`widgets` page, ADR 0028). No manual SR pass. |
+| Widgets | 🔲 | 🔲 | 🟡 | Axe scan added 2026-09-29, clean (`widgets` page, ADR 0028). Phase 2 (Functions) UI screenshot-verified 2026-09-30: empty state, Add dialog with the "Call an API" section expanded, and the populated table's "Calls API"/"Calls API — needs approval" badges all read clean against the design bar — axe scan not re-run against the new dialog fields. No manual SR pass. |
 | Settings | 🔲 | 🔲 | 🟡 | Axe scan added 2026-09-27, clean. No manual SR pass. |
 | Conversations list/detail | 🔲 | 🔲 | 🟡 | Axe scan added 2026-09-27 for both — caught and fixed a real critical "button-name" violation (`ConversationFilters`'s bot/date-range `Select` triggers intermittently rendered with no accessible name at all, ~40% reproduction rate, same root cause as the bot-editor switcher bug: `SelectValue`'s label resolves after the trigger itself is accessible-name-checkable). Re-scanned clean 2026-09-29 after the split-pane rebuild (ADR 0027) — the list scan now targets the real `<ul><li>` rows (was the old `<table>` body), the detail scan is unchanged. No manual SR pass. |
 | Onboarding | 🔲 | 🔲 | 🟡 | Axe scan added 2026-09-27, clean. No manual SR pass. |

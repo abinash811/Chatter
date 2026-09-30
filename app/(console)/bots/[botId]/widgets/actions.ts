@@ -2,7 +2,18 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentSession } from "@/lib/auth";
-import { createWidget, setWidgetEnabled, deleteWidget, slugifyWidgetName, WIDGET_FIELD_TYPES, type WidgetField, type WidgetFieldType } from "@/lib/widgets";
+import {
+  createWidget,
+  setWidgetEnabled,
+  deleteWidget,
+  slugifyWidgetName,
+  WIDGET_FIELD_TYPES,
+  WIDGET_HTTP_METHODS,
+  type WidgetField,
+  type WidgetFieldType,
+  type WidgetHttpMethod,
+} from "@/lib/widgets";
+import { isBlockedActionUrl } from "@/lib/ai/tools/customAction";
 
 export interface WidgetState {
   status: "idle" | "success" | "error";
@@ -11,6 +22,28 @@ export interface WidgetState {
 
 function isWidgetFieldType(value: string): value is WidgetFieldType {
   return (WIDGET_FIELD_TYPES as readonly string[]).includes(value);
+}
+
+function isWidgetHttpMethod(value: string): value is WidgetHttpMethod {
+  return (WIDGET_HTTP_METHODS as readonly string[]).includes(value);
+}
+
+// Same parsing as actions.ts's own readHeaders — duplicated rather than
+// shared, matching this codebase's existing precedent (cancelOrder.ts's
+// Shopify lookup) of not refactoring two independently-tested call
+// sites into one shared helper for a few lines of pure parsing.
+function readApiHeaders(raw: string): Record<string, string> | undefined {
+  const trimmed = raw.trim();
+  if (!trimmed) return undefined;
+  const headers: Record<string, string> = {};
+  for (const line of trimmed.split("\n")) {
+    const idx = line.indexOf(":");
+    if (idx === -1) continue;
+    const key = line.slice(0, idx).trim();
+    const value = line.slice(idx + 1).trim();
+    if (key) headers[key] = value;
+  }
+  return headers;
 }
 
 // Up to 4 fields per widget — same fixed-rows precedent as actions.ts's
@@ -54,9 +87,31 @@ export async function createWidgetAction(botId: string, _prevState: WidgetState,
     return { status: "error", message: "Add at least one field for the bot to collect." };
   }
 
+  // Phase 2 (ADR 0028) — a Function is entirely optional; the "callApi"
+  // checkbox gates whether these fields are read at all, so a business
+  // owner who just wants a collection-only form never has to think
+  // about method/URL/headers.
+  let api: { method: WidgetHttpMethod; url: string; headers?: Record<string, string>; writeCapable: boolean } | undefined;
+  if (formData.get("callApi") === "on") {
+    const rawMethod = String(formData.get("apiMethod") ?? "");
+    const url = String(formData.get("apiUrl") ?? "").trim();
+    if (!isWidgetHttpMethod(rawMethod) || !url) {
+      return { status: "error", message: "Method and URL are required when calling an API on submit." };
+    }
+    if (isBlockedActionUrl(url)) {
+      return { status: "error", message: "That URL isn't allowed — it must be a public https:// address." };
+    }
+    api = {
+      method: rawMethod,
+      url,
+      headers: readApiHeaders(String(formData.get("apiHeaders") ?? "")),
+      writeCapable: formData.get("writeCapable") === "on",
+    };
+  }
+
   try {
     const session = await getCurrentSession();
-    await createWidget(session.orgId, botId, { name, triggerDescription, submitLabel, fields });
+    await createWidget(session.orgId, botId, { name, triggerDescription, submitLabel, fields, api });
     revalidatePath(`/bots/${botId}/widgets`);
     return { status: "success", message: "Widget added." };
   } catch (err) {

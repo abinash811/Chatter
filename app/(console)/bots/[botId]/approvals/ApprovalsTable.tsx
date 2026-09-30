@@ -14,6 +14,16 @@ function describeRequest(toolName: string, input: Record<string, unknown>): stri
     const reason = input.reason as string | undefined;
     return reason ? `Cancel order #${orderNumber} — "${reason}"` : `Cancel order #${orderNumber}`;
   }
+  // Widget submissions (ADR 0028, Phase 2) — dynamic per business-
+  // authored widget, so the name comes from the toolName itself rather
+  // than a hardcoded case per widget.
+  if (toolName.startsWith("submit_widget_")) {
+    const widgetName = toolName.slice("submit_widget_".length);
+    const fields = Object.entries(input)
+      .map(([key, value]) => `${key}: ${value}`)
+      .join(", ");
+    return `Submit "${widgetName}" widget — ${fields}`;
+  }
   return toolName;
 }
 

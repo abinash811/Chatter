@@ -1,5 +1,7 @@
 import type { Tool } from "@/lib/ai/tools/registry";
-import { listEnabledWidgetsForExecution, type WidgetForExecution } from "@/lib/widgets";
+import { performActionRequest } from "@/lib/ai/tools/customAction";
+import { createPendingAction } from "@/lib/pendingActions";
+import { listEnabledWidgetsForExecution, getWidgetByNameForExecution, type WidgetForExecution } from "@/lib/widgets";
 
 // In-chat interactive widgets (ADR 0028) — matches Chatbase's own
 // "Widgets" feature's smallest useful slice: a Schema-driven form the
@@ -54,9 +56,94 @@ export function buildWidgetTool(widget: WidgetForExecution): Tool {
   };
 }
 
+// Phase 2 (ADR 0028) — a Function: the widget's submit action calls a
+// real API, reusing the exact same pipeline as CustomAction (ADR 0022)
+// rather than a new action-calling path (performActionRequest, its SSRF
+// guard, encrypted headers). Only built for a widget that has apiUrl
+// set — a collection-only widget (Phase 1's default) gets no submit
+// tool at all, since there's nothing for the model to call once the
+// visitor's answers come back as their own plain-text message.
+//
+// The model calls this itself, after the visitor submits the widget's
+// form, passing back the same field values — the tool's own description
+// is what tells it to (guardrail #2: no hardcoded logic in the core
+// engine deciding this).
+function buildWidgetSubmitTool(widget: WidgetForExecution): Tool {
+  const approvalNote = widget.writeCapable
+    ? " This performs a real action that can't be undone, so it requires a team member's approval before it actually happens."
+    : "";
+  return {
+    name: `submit_widget_${widget.name}`,
+    description: `Call this immediately after the visitor submits the ${widget.name} widget's form, passing exactly the values they gave.${approvalNote}`,
+    inputSchema: widget.schema as Tool["inputSchema"],
+
+    async handle(orgId, botId, input, conversationId) {
+      if (widget.writeCapable) {
+        // Same precedent as request_order_cancellation (ADR 0023): never
+        // call the real API directly — queue it for human review.
+        await createPendingAction(orgId, botId, conversationId ?? "unknown", `submit_widget_${widget.name}`, input);
+        return JSON.stringify({
+          status: "pending_approval",
+          message: "A team member will review this before it's actually submitted.",
+        });
+      }
+
+      const result = await performActionRequest(widget.apiUrl!, widget.apiMethod!, widget.headers, input);
+      if (!result.ok) {
+        // Never fail silently or hallucinate a result (guardrail #4).
+        const reason = result.status
+          ? `The ${widget.name} widget's API call failed (${result.status}).`
+          : `Couldn't reach the ${widget.name} widget's API.`;
+        return JSON.stringify({ status: "handoff_required", reason });
+      }
+      return JSON.stringify({ status: "ok", result: result.bodyText });
+    },
+
+    describeForInbox(_input, output) {
+      const parsed = JSON.parse(output) as { status: string; reason?: string };
+      if (parsed.status === "pending_approval") {
+        return { summary: `Submitted the ${widget.name} widget — waiting on approval.`, isIssue: true };
+      }
+      if (parsed.status === "handoff_required") {
+        return { summary: `Tried to submit the ${widget.name} widget — ${parsed.reason} Handed off to a human.`, isIssue: true };
+      }
+      return { summary: `Submitted the ${widget.name} widget.`, isIssue: false };
+    },
+  };
+}
+
 export async function getEnabledWidgetTools(orgId: string, botId: string): Promise<Tool[]> {
   const widgets = await listEnabledWidgetsForExecution(orgId, botId);
-  return widgets.map(buildWidgetTool);
+  return widgets.flatMap((widget) => (widget.apiUrl ? [buildWidgetTool(widget), buildWidgetSubmitTool(widget)] : [buildWidgetTool(widget)]));
+}
+
+// The approved-execution step for a write-capable widget's queued
+// submission — called from the approvals console action
+// (app/(console)/bots/[botId]/approvals/actions.ts), never from
+// buildWidgetSubmitTool's own handle() above (same avoid-a-circular-
+// import reasoning as cancelOrder.ts's executeOrderCancellation: that
+// function already imports createPendingAction from lib/pendingActions.ts).
+// Looks the widget's own API config up fresh by name, since a
+// PendingAction only stores the toolName + the visitor's input, not the
+// widget's URL/headers.
+export async function executeWidgetSubmission(
+  orgId: string,
+  botId: string,
+  widgetName: string,
+  input: Record<string, unknown>,
+): Promise<{ status: "executed" | "failed"; detail: string }> {
+  const widget = await getWidgetByNameForExecution(orgId, botId, widgetName);
+  if (!widget || !widget.apiUrl || !widget.apiMethod) {
+    return { status: "failed", detail: `Widget "${widgetName}" no longer exists or has no API configured.` };
+  }
+  const result = await performActionRequest(widget.apiUrl, widget.apiMethod, widget.headers, input);
+  if (!result.ok) {
+    return {
+      status: "failed",
+      detail: result.status ? `API call failed (${result.status}).` : "Couldn't reach the widget's API.",
+    };
+  }
+  return { status: "executed", detail: result.bodyText ? result.bodyText.slice(0, 500) : "Submitted successfully." };
 }
 
 // Parses a tool's raw string output and returns the widget payload if

@@ -81,6 +81,76 @@ test("toggling a widget's enabled switch and deleting it both work", async ({ pa
   await expect(page.getByText("No widgets yet")).toBeVisible();
 });
 
+test("seeded collection-only widget shows 'Message only' in the On submit column", async ({ page }) => {
+  // Deliberately doesn't say "Message" — the bot switcher/sr-only
+  // heading render the bot's own name, and a name containing the
+  // assertion text below causes a Playwright strict-mode collision.
+  await signUpAndCreateBot(page, "Collection Bot");
+  const botId = page.url().match(/\/bots\/([^/]+)/)![1];
+  await seedWidget(botId, { name: "feedback_form", triggerDescription: "Collect feedback." });
+
+  await page.click('a:has-text("Widgets")');
+  await expect(page.getByText("Message only")).toBeVisible();
+});
+
+// Phase 2 (ADR 0028) — a Function: the widget's submit action calls a
+// real API, gated behind the "Call an API" checkbox so a collection-
+// only widget never shows method/URL/headers fields at all.
+test("adding a widget with 'Call an API' configures a Function", async ({ page }) => {
+  await signUpAndCreateBot(page, "Function Widget Bot");
+  await page.click('a:has-text("Widgets")');
+  await page.waitForURL(/\/widgets$/);
+  await page.getByRole("button", { name: "Add widget", exact: true }).click();
+
+  await page.fill("#name", "Booking Form");
+  await page.fill("#triggerDescription", "Collect booking details once the visitor confirms.");
+  await page.fill('input[name="field_name_0"]', "date");
+  await page.fill('input[name="field_label_0"]', "Preferred date");
+
+  await page.getByText("Call an API when this form is submitted").click();
+  await page.fill("#apiUrl", "https://api.example.com/book");
+  await page.getByRole("dialog").getByRole("button", { name: "Add widget" }).click();
+
+  await expect(page.getByText("Widget added.")).toBeVisible();
+  await expect(page.getByText("Calls API", { exact: true })).toBeVisible();
+});
+
+test("a widget's API call requires a method and URL when 'Call an API' is checked", async ({ page }) => {
+  await signUpAndCreateBot(page, "Function Validation Bot");
+  await page.click('a:has-text("Widgets")');
+  await page.waitForURL(/\/widgets$/);
+  await page.getByRole("button", { name: "Add widget", exact: true }).click();
+
+  await page.fill("#name", "Broken Function Form");
+  await page.fill("#triggerDescription", "desc");
+  await page.fill('input[name="field_name_0"]', "email");
+  await page.getByText("Call an API when this form is submitted").click();
+  // Leave the URL blank.
+  await page.getByRole("dialog").getByRole("button", { name: "Add widget" }).click();
+
+  await expect(page.getByRole("dialog").getByText("Method and URL are required")).toBeVisible();
+});
+
+// Deterministic and network-free — the SSRF guard rejects the URL
+// before any fetch is attempted, same guard actions.spec.ts's own test
+// exercises (isBlockedActionUrl, shared by both features).
+test("a widget's API URL pointed at internal infrastructure is rejected before saving (SSRF guard)", async ({ page }) => {
+  await signUpAndCreateBot(page, "Widget SSRF Bot");
+  await page.click('a:has-text("Widgets")');
+  await page.waitForURL(/\/widgets$/);
+  await page.getByRole("button", { name: "Add widget", exact: true }).click();
+
+  await page.fill("#name", "Metadata Probe");
+  await page.fill("#triggerDescription", "desc");
+  await page.fill('input[name="field_name_0"]', "x");
+  await page.getByText("Call an API when this form is submitted").click();
+  await page.fill("#apiUrl", "https://169.254.169.254/latest/meta-data");
+  await page.getByRole("dialog").getByRole("button", { name: "Add widget" }).click();
+
+  await expect(page.getByRole("dialog").getByText(/URL isn't allowed/)).toBeVisible();
+  await expect(page.getByText("No widgets yet")).toBeVisible();
+});
+
 test("a bot's widgets are reachable from the bot editor's top bar", async ({ page }) => {
   await signUpAndCreateBot(page, "Nav Widgets Bot");
   await page.click('a:has-text("Widgets")');

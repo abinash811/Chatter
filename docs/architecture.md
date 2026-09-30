@@ -70,8 +70,8 @@ doc as ADRs land instead of letting decisions live only in chat history.
   low-stakes-write tools (lookups, `collect_lead`, custom actions) are
   unaffected — this only applies to a tool whose effect can't be undone
   by "the AI was wrong."
-- **In-chat interactive widgets, Phase 1 built** (2026-09-29, ADR
-  0028): a `Widget` model (per-bot, not draft/publish-gated, same
+- **In-chat interactive widgets, Phase 1 + 2 built** (2026-09-29/30,
+  ADR 0028): a `Widget` model (per-bot, not draft/publish-gated, same
   precedent as `CustomAction`) rendered as a Schema-driven form inline
   in the chat, not just text. A dynamic tool factory
   (`lib/ai/tools/widget.ts`) is merged into every turn's tools the same
@@ -83,9 +83,12 @@ doc as ADRs land instead of letting decisions live only in chat history.
   `lib/ai/chat.ts` just scans for the tag and attaches it to
   `SendMessageResult.widget`. The visitor's filled-in answers come back
   as their own next chat message over the existing `/api/chat`
-  endpoint. Phase 2 (Functions that call a live API via
-  `performActionRequest`, States/multi-view widgets) is deliberately
-  deferred — `docs/open-questions.md` #9.
+  endpoint. Phase 2 (2026-09-30) adds Functions: an optional real API
+  call on submit, reusing `performActionRequest`'s SSRF guard, and the
+  `PendingAction` approval queue (ADR 0023) when the widget is
+  write-capable — never a direct call from inside a chat turn.
+  States/multi-view widgets remain deliberately deferred —
+  `docs/open-questions.md` #9.
 - Streamed responses back to the widget.
 - **BYOA (bring-your-own API key)**: optional, per-org, off by default —
   a business can plug in their own Anthropic key from `/settings`

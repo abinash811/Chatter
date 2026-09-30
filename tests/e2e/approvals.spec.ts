@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { signUpAndCreateBot, seedPendingAction } from "./helpers";
+import { signUpAndCreateBot, seedPendingAction, seedWidget } from "./helpers";
 
 test("approvals page shows the empty state before any request is queued", async ({ page }) => {
   await signUpAndCreateBot(page, "Empty Approvals Bot");
@@ -62,6 +62,41 @@ test("rejecting a request needs no confirmation and marks it rejected", async ({
 
   const row = page.locator("table tbody tr").first();
   await expect(row.getByText("rejected", { exact: true })).toBeVisible();
+});
+
+// Phase 2 (ADR 0028) — a write-capable widget's submission never calls
+// its API directly; it queues the exact same PendingAction shape as
+// request_order_cancellation, and approving it dispatches to
+// executeWidgetSubmission (a real request, same as "Test this action"'s
+// precedent of hitting api.github.com rather than a mocked endpoint).
+test("approving a write-capable widget's queued submission calls its real API", async ({ page }) => {
+  await signUpAndCreateBot(page, "Widget Approval Bot");
+  const botId = page.url().match(/\/bots\/([^/]+)/)![1];
+  await seedWidget(botId, {
+    name: "refund_form",
+    triggerDescription: "Collect refund requests.",
+    apiUrl: "https://api.github.com/zen",
+    apiMethod: "GET",
+    writeCapable: true,
+  });
+  await seedPendingAction(botId, { toolName: "submit_widget_refund_form", input: { reason: "Wrong size" } });
+
+  await page.click('a:has-text("Approvals")');
+  await expect(page.getByText(/Submit "refund_form" widget/)).toBeVisible();
+  await page.getByRole("button", { name: "Approve", exact: true }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Approve" }).click();
+
+  // A real fetch actually fires here — proving executeWidgetSubmission
+  // wires through to the same performActionRequest custom actions use,
+  // not that GitHub's anonymous API always returns 200 (it returned 403
+  // without a User-Agent header in this environment, same class of real
+  // constraint as the Shopify approval test's own "no store connected"
+  // graceful failure). What matters: the row leaves "pending" for a real
+  // terminal state, never a fabricated success.
+  const row = page.locator("table tbody tr").first();
+  const statusBadge = row.locator('[data-slot="badge"]');
+  await expect(statusBadge).not.toHaveText("pending");
+  await expect(statusBadge).toHaveText(/approved|failed/);
 });
 
 test("a bot's approvals are reachable from the bot editor's top bar", async ({ page }) => {

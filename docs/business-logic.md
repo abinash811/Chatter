@@ -218,10 +218,26 @@ required/options) and the stored JSON Schema, the same
 fields-to-schema/schema-to-fields round trip `lib/customActions.ts`
 already established for its own input schema.
 
-**Deliberately not built this pass** (`docs/open-questions.md` #9): a
-widget's submit calling a real API (would reuse
-`performActionRequest`), multi-view widgets driven by conditions
-(States), and field types beyond text/number/boolean/dropdown.
+**Phase 2 — Functions (2026-09-30).** A widget with an `apiUrl` gets a
+second tool, `submit_widget_<name>` (`buildWidgetSubmitTool`), called
+right after the visitor submits. Non-write-capable: calls
+`performActionRequest` (Custom Actions' SSRF-guarded, encrypted-header
+helper, ADR 0022) directly, returning `{"status":"ok",...}` or
+degrading to `{"status":"handoff_required",...}` on failure (guardrail
+#4). Write-capable: never touches the API from the tool call — queues a
+`PendingAction` (ADR 0023) instead; approving it in
+`/bots/[botId]/approvals` dispatches on the `submit_widget_` prefix to
+`executeWidgetSubmission`, which re-resolves the widget fresh by name
+(a `PendingAction` stores only the tool name + input, not the widget's
+URL/headers) and performs the one real call. The Add dialog's "Call an
+API when this form is submitted" checkbox is progressive disclosure —
+unchecked, a widget behaves exactly as Phase 1 did. The URL is rejected
+server-side by the same `isBlockedActionUrl` guard before it's ever
+stored.
+
+**Deliberately not built** (`docs/open-questions.md` #9): multi-view
+widgets driven by conditions (States), and field types beyond text/
+number/boolean/dropdown.
 
 ## Knowledge base ingestion
 

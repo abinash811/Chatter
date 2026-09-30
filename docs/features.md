@@ -103,10 +103,25 @@ tool results for the tag), `public/widget.js` + `PreviewSheet.tsx`
 (inline form rendering — vanilla JS and React respectively, both
 matching each surface's own design system). ADR 0028.
 
-**Deliberately not built this pass** (Phase 2, `docs/open-questions.md`
-#9): a widget's submit calling a real API (Functions), multi-view
-widgets driven by conditions (States), and a richer component library
-beyond the 4 field types above.
+**Phase 2 — Functions (2026-09-30)**: a widget's submit can optionally
+call a real API instead of just collecting text. The Add dialog gains a
+"Call an API when this form is submitted" checkbox (progressive
+disclosure — collection-only widgets never see Method/URL/Headers);
+checking it stores an encrypted-header, SSRF-guarded (reuses
+`isBlockedActionUrl`/`performActionRequest` from Custom Actions, ADR
+0022) endpoint on the widget. A write-capable Function never calls the
+API directly — it queues the same `PendingAction` human-approval queue
+write-capable Custom Actions use (ADR 0023); approving it dispatches
+the real call via `executeWidgetSubmission`. The widgets table shows
+the outcome at a glance: "Message only" / "Calls API" / "Calls API —
+needs approval". **How**: `lib/ai/tools/widget.ts`'s
+`buildWidgetSubmitTool`/`executeWidgetSubmission`,
+`app/(console)/bots/[botId]/approvals/actions.ts` (dispatches on the
+`submit_widget_` tool-name prefix). ADR 0028.
+
+**Deliberately not built** (States/multi-view widgets and a richer
+component library beyond the 4 field types above — `docs/open-
+questions.md` #9).
 
 ### Order cancellation (approval-gated)
 **Who**: the bot proposes it, the business owner decides. **What**: a

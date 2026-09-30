@@ -15,3 +15,10 @@ export interface WidgetField {
   // stored as a real array.
   options: string[];
 }
+
+// Phase 2 (ADR 0028) — reuses lib/customActionOptions.ts's exact same
+// HTTP method list rather than redefining it, but kept as its own
+// export here (not imported from there) for the same client-bundle-
+// isolation reason customActionOptions.ts itself was split out.
+export const WIDGET_HTTP_METHODS = ["GET", "POST", "PUT", "PATCH"] as const;
+export type WidgetHttpMethod = (typeof WIDGET_HTTP_METHODS)[number];

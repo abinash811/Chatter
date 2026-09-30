@@ -1,8 +1,15 @@
 import type { Prisma } from "@prisma/client";
 import { withOrgContext } from "@/lib/db";
-import { WIDGET_FIELD_TYPES, type WidgetField, type WidgetFieldType } from "@/lib/widgetOptions";
+import { encrypt, decrypt } from "@/lib/crypto";
+import {
+  WIDGET_FIELD_TYPES,
+  WIDGET_HTTP_METHODS,
+  type WidgetField,
+  type WidgetFieldType,
+  type WidgetHttpMethod,
+} from "@/lib/widgetOptions";
 
-export { WIDGET_FIELD_TYPES, type WidgetField, type WidgetFieldType };
+export { WIDGET_FIELD_TYPES, WIDGET_HTTP_METHODS, type WidgetField, type WidgetFieldType, type WidgetHttpMethod };
 
 // Data layer for in-chat interactive widgets (ADR 0028) — the console
 // CRUD side of lib/ai/tools/widget.ts's runtime tool factory. Same
@@ -18,6 +25,12 @@ export interface WidgetRow {
   fields: WidgetField[];
   enabled: boolean;
   createdAt: Date;
+  // Phase 2 (ADR 0028) — null/undefined apiUrl means collection-only,
+  // Phase 1's original behavior.
+  apiUrl: string | null;
+  apiMethod: WidgetHttpMethod | null;
+  hasHeaders: boolean;
+  writeCapable: boolean;
 }
 
 interface JsonSchemaProperty {
@@ -94,6 +107,10 @@ export async function listWidgets(orgId: string, botId: string): Promise<WidgetR
     fields: schemaToFields(row.schema),
     enabled: row.enabled,
     createdAt: row.createdAt,
+    apiUrl: row.apiUrl,
+    apiMethod: row.apiMethod as WidgetHttpMethod | null,
+    hasHeaders: row.headersEncrypted !== null,
+    writeCapable: row.writeCapable,
   }));
 }
 
@@ -102,9 +119,19 @@ export interface CreateWidgetInput {
   triggerDescription: string;
   submitLabel: string;
   fields: WidgetField[];
+  // Phase 2 (ADR 0028) — omit entirely for a collection-only widget.
+  api?: {
+    method: WidgetHttpMethod;
+    url: string;
+    headers?: Record<string, string>;
+    writeCapable: boolean;
+  };
 }
 
 export async function createWidget(orgId: string, botId: string, input: CreateWidgetInput): Promise<void> {
+  const headersEncrypted =
+    input.api?.headers && Object.keys(input.api.headers).length > 0 ? encrypt(JSON.stringify(input.api.headers)) : null;
+
   await withOrgContext(orgId, (tx) =>
     tx.widget.create({
       data: {
@@ -114,6 +141,10 @@ export async function createWidget(orgId: string, botId: string, input: CreateWi
         triggerDescription: input.triggerDescription,
         submitLabel: input.submitLabel || "Submit",
         schema: fieldsToSchema(input.fields) as unknown as Prisma.InputJsonValue,
+        apiUrl: input.api?.url ?? null,
+        apiMethod: input.api?.method ?? null,
+        headersEncrypted,
+        writeCapable: input.api?.writeCapable ?? false,
       },
     }),
   );
@@ -129,22 +160,60 @@ export async function deleteWidget(orgId: string, botId: string, id: string): Pr
 
 // Read path for lib/ai/tools/widget.ts — the runtime tool factory only
 // needs enabled widgets, same precedent as
-// listEnabledCustomActionsForExecution.
+// listEnabledCustomActionsForExecution. Headers come back decrypted
+// here (never in WidgetRow above, which faces the console UI) — same
+// separation CustomActionForExecution already established.
 export interface WidgetForExecution {
   id: string;
   name: string;
   triggerDescription: string;
   submitLabel: string;
   schema: unknown;
+  apiUrl: string | null;
+  apiMethod: WidgetHttpMethod | null;
+  headers: Record<string, string>;
+  writeCapable: boolean;
 }
 
-export async function listEnabledWidgetsForExecution(orgId: string, botId: string): Promise<WidgetForExecution[]> {
-  const rows = await withOrgContext(orgId, (tx) => tx.widget.findMany({ where: { botId, enabled: true } }));
-  return rows.map((row) => ({
+function toWidgetForExecution(row: {
+  id: string;
+  name: string;
+  triggerDescription: string;
+  submitLabel: string;
+  schema: unknown;
+  apiUrl: string | null;
+  apiMethod: string | null;
+  headersEncrypted: string | null;
+  writeCapable: boolean;
+}): WidgetForExecution {
+  return {
     id: row.id,
     name: row.name,
     triggerDescription: row.triggerDescription,
     submitLabel: row.submitLabel,
     schema: row.schema,
-  }));
+    apiUrl: row.apiUrl,
+    apiMethod: row.apiMethod as WidgetHttpMethod | null,
+    headers: row.headersEncrypted ? (JSON.parse(decrypt(row.headersEncrypted)) as Record<string, string>) : {},
+    writeCapable: row.writeCapable,
+  };
+}
+
+export async function listEnabledWidgetsForExecution(orgId: string, botId: string): Promise<WidgetForExecution[]> {
+  const rows = await withOrgContext(orgId, (tx) => tx.widget.findMany({ where: { botId, enabled: true } }));
+  return rows.map(toWidgetForExecution);
+}
+
+// For the approvals console action (app/(console)/bots/[botId]/
+// approvals/actions.ts) to resolve a write-capable widget's real API
+// config at approval time — a PendingAction only stores the toolName
+// (`submit_widget_<name>`) and the visitor's input, not the widget's
+// own URL/headers, so this is how the executor finds them.
+export async function getWidgetByNameForExecution(
+  orgId: string,
+  botId: string,
+  name: string,
+): Promise<WidgetForExecution | null> {
+  const row = await withOrgContext(orgId, (tx) => tx.widget.findUnique({ where: { botId_name: { botId, name } } }));
+  return row ? toWidgetForExecution(row) : null;
 }

@@ -1,8 +1,8 @@
 # ADR 0028: In-chat interactive widgets (forms, cards, functions, states)
 
 Status: accepted (Phase 1 — Schema-driven forms — built 2026-09-29;
-Functions/States/rich Components are explicitly deferred, see
-Consequences)
+Phase 2 — Functions that call a real API — built 2026-09-30; States/rich
+Components remain explicitly deferred, see Consequences)
 
 Date: 2026-09-29
 
@@ -76,7 +76,16 @@ infrastructure, not a parallel system:
   encrypted-header handling — rather than a new action-calling path.
   A function that performs a real external write reuses the existing
   `PendingAction` human-approval queue (ADR 0023) when the tool is
-  marked write-capable, rather than executing immediately.
+  marked write-capable, rather than executing immediately. **Built as
+  designed** (Phase 2, 2026-09-30): a widget with an `apiUrl` gets a
+  second tool, `submit_widget_<name>`, alongside its trigger tool. A
+  non-write-capable submission calls `performActionRequest` directly
+  and degrades to `handoff_required` on failure (guardrail #4); a
+  write-capable one never touches the API at all — it queues a
+  `PendingAction` and only `executeWidgetSubmission` (called from the
+  approvals console's `approveAction`, keyed off the
+  `submit_widget_` prefix) performs the real call, at the moment a
+  human approves it.
 - **States** (conditional multi-view widgets) are the smallest useful
   slice for v1: a widget can declare named states and switch between
   them based on its current data, without a general-purpose scripting
@@ -168,11 +177,23 @@ custom actions are, and real inline rendering in both
 `public/widget.js` (vanilla JS, matching the widget's shadow-DOM
 styling) and `PreviewSheet.tsx` (React + `components/ui/` primitives).
 
+**Built (Phase 2, 2026-09-30)**: Functions that call a real API on
+submit. A widget's Add dialog gains a "Call an API when this form is
+submitted" checkbox (progressive disclosure — collection-only widgets
+never see Method/URL/Headers fields at all); checking it stores
+`apiUrl`/`apiMethod`/encrypted `headersEncrypted`/`writeCapable` on the
+`Widget` row (all null/false by default, preserving Phase 1's behavior
+exactly). The URL is rejected up front by the same SSRF guard custom
+actions use (`isBlockedActionUrl`) — no private/loopback/link-local
+address or the cloud metadata IP is reachable. The widgets table shows
+the outcome at a glance via a semantic `Badge`: "Message only" (no
+API), "Calls API" (default variant), or "Calls API — needs approval"
+(destructive variant, write-capable). Verified end-to-end: unit tests
+for both the tool factory and `executeWidgetSubmission`, e2e coverage
+for the console dialog (including the two rejection paths) and a real
+approval flow that dispatches a genuine HTTP request.
+
 **Deliberately deferred, not built** — real scope, not oversights:
-- **Functions that call a live API** — today a widget is "widget-only"
-  in Chatbase's own terms (pure data collection, no API call); wiring a
-  submit to `performActionRequest` is the natural next step but wasn't
-  built this pass.
 - **States (multi-view widgets)** and the **Code/Components** layer
   (a real component library beyond text/number/boolean/select fields)
   — no state-condition syntax was designed or built.

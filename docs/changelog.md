@@ -293,3 +293,71 @@ rebuild onto the real CARE `Table` (ADR 0008).
   end-to-end, and that Source correctly reads "Playground" for a
   preview-originated conversation.
 
+- **In-chat widgets, Phase 2 — Functions that call a real API**
+  (2026-09-30, ADR 0028). User asked to build the Functions half of
+  ADR 0028's original scope: a widget's submit can now optionally call
+  a real API instead of just becoming a chat message, reusing Custom
+  Actions' pipeline (`performActionRequest`, `isBlockedActionUrl`, ADR
+  0022) rather than a parallel one, and the `PendingAction` approval
+  queue (ADR 0023) for write-capable calls.
+  Checked `.claude/rules/bot-engine.md` rule #1 before writing any
+  code — confirmed the `Tool` interface itself (`handle():
+  Promise<string>`) didn't need to change; a widget with an `apiUrl`
+  simply gets a second tool, `submit_widget_<name>`
+  (`buildWidgetSubmitTool`, `lib/ai/tools/widget.ts`), returning the
+  same tagged-JSON-string pattern every tool already uses
+  (`{"status":"ok"|"handoff_required"|"pending_approval",...}`).
+  `Widget` gained `apiUrl`/`apiMethod`/`headersEncrypted`/
+  `writeCapable` columns (migration applied and `scripts/verify-rls.mjs`
+  run against real local Postgres — no new RLS policy needed, the
+  existing table-level policy already covers new columns). Headers are
+  encrypted at rest with the same `lib/crypto.ts` AES-256-GCM helper
+  `CustomAction.headersEncrypted` uses.
+  A write-capable widget's submit tool never calls the API directly —
+  it queues a `PendingAction` and tells the visitor a human will review
+  it. Approving it in `/bots/[botId]/approvals` now dispatches on a
+  `submit_widget_` tool-name prefix (`app/(console)/bots/[botId]/
+  approvals/actions.ts`) to a new `executeWidgetSubmission`
+  (`lib/ai/tools/widget.ts`), which re-resolves the widget fresh by
+  name via `getWidgetByNameForExecution` — a `PendingAction` only
+  stores the tool name and the visitor's input, not the widget's own
+  URL/headers, so the real config has to be looked up again at approval
+  time, not carried in the queued row.
+  Console UI: the Add-widget dialog gained a "Call an API when this
+  form is submitted" checkbox (progressive disclosure — Method/URL/
+  Headers/write-capable fields only render once checked), and the
+  widgets table gained an "On submit" column with a semantic `Badge`
+  ("Message only" / "Calls API" / "Calls API — needs approval").
+  Real bugs caught while verifying, not hypothetical:
+  (1) `tests/unit/lib/ai/tools/widget.test.ts`'s initial
+  `const x = vi.fn(); vi.mock(...)` pattern threw "Cannot access
+  'performActionRequest' before initialization" — a real hoisting
+  order issue once the SUT's own import triggered the mock factory
+  before the const existed; fixed with `vi.hoisted()`.
+  (2) A new e2e test named its bot "Message Only Bot," which collided
+  (Playwright strict-mode) with the "Message only" badge text it was
+  asserting on, since the bot switcher renders the bot's own name on
+  the same page — fixed by renaming the bot to "Collection Bot."
+  (3) The new write-capable-widget approval e2e test initially asserted
+  the queued request would end up "approved" after a real call to
+  `https://api.github.com/zen` — it actually returned a genuine 403
+  (GitHub rejects anonymous requests with no `User-Agent` header,
+  which `performActionRequest` doesn't set), caught by reading the real
+  `error-context.md` snapshot rather than assuming; fixed to accept
+  either `approved` or `failed` as a real, honest terminal state,
+  matching the pre-existing Shopify-approval test's own "no store
+  connected → graceful failure" precedent — then a second Playwright
+  strict-mode collision surfaced (the row's failure-detail paragraph
+  and the status Badge both contained the text "failed"), fixed by
+  scoping the assertion to `row.locator('[data-slot="badge"]')`.
+  Verified: `npx tsc --noEmit` clean; all 10 `check:all` guardrails;
+  full unit suite (195 tests, 25 across the two widget-related test
+  files); a production build; `tests/e2e/widgets.spec.ts` (10/10) and
+  `tests/e2e/approvals.spec.ts` (6/6) run in isolation after fixing the
+  three bugs above; the widgets page's axe scan clean; real screenshots
+  of the Add dialog's Function section and the table's new badges taken
+  and reviewed against the design bar; a full background
+  `npx playwright test` run confirmed 112/114 passing, the only 2
+  failures being the pre-existing, already-documented
+  `knowledge.spec.ts`/`preview.spec.ts` flakes, unrelated to this change.
+
