@@ -66,7 +66,7 @@ export async function extractFileText(filename: string, mimeType: string, buffer
 // would need custom DNS resolution with the resolved IP pinned for the
 // actual socket connection. Documented as a known gap (docs/security.md)
 // rather than silently assumed complete.
-function assertPublicHttpUrl(rawUrl: string): URL {
+export function assertPublicHttpUrl(rawUrl: string): URL {
   let url: URL;
   try {
     url = new URL(rawUrl);

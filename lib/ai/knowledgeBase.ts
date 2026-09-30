@@ -2,11 +2,11 @@ import { withOrgContext } from "@/lib/db";
 import { getEmbeddingsProvider } from "@/lib/ai/embeddings";
 import { chunkText } from "@/lib/ai/chunking";
 import { extractFileText, extractUrlText, KnowledgeIngestionError } from "@/lib/ai/extraction";
+import { crawlSite } from "@/lib/ai/crawler";
 
-// Manual Q&A, file, and URL ingestion (docs/product-spec.md's MVP scope:
-// "file upload and/or manual Q&A at minimum for v1"). Site crawling
-// (multi-page, link-following) stays separate, deferred scope — see
-// docs/open-questions.md #4. ADR 0013 covers the file/URL decisions.
+// Manual Q&A, file, URL, and (ADR 0030) multi-page crawl ingestion
+// (docs/product-spec.md's MVP scope: "file upload and/or manual Q&A at
+// minimum for v1"). ADR 0013 covers the original file/URL decisions.
 //
 // Manual Q&A: one KnowledgeSource + one KnowledgeChunk per pair — no
 // multi-chunk splitting needed, a Q&A pair is already the right
@@ -131,6 +131,31 @@ export async function createFileEntry(
 export async function createUrlEntry(orgId: string, botId: string, url: string): Promise<void> {
   const { title, text } = await extractUrlText(url);
   await createChunkedEntry(orgId, botId, "url", title, text);
+}
+
+// Real multi-page site crawling (ADR 0030) — crawlSite (lib/ai/
+// crawler.ts) does discovery + per-page extraction; this just persists
+// each page the same way a single createUrlEntry call already would.
+// One page's own chunking failure (e.g. MAX_CHUNKS) skips that page
+// rather than aborting the whole crawl, same "one bad item doesn't sink
+// the batch" precedent as bulkDeleteEntriesAction (app/(console)/bots/
+// [botId]/knowledge/actions.ts) — returns how many pages actually made
+// it in, so the console can tell a business owner the real outcome.
+export async function createCrawledEntries(orgId: string, botId: string, startUrl: string): Promise<number> {
+  const pages = await crawlSite(startUrl);
+  let created = 0;
+  for (const page of pages) {
+    try {
+      await createChunkedEntry(orgId, botId, "url", page.title, page.text);
+      created++;
+    } catch {
+      // Skip this page — see function comment.
+    }
+  }
+  if (created === 0) {
+    throw new KnowledgeIngestionError("Found pages on that site, but none had content that could be ingested.");
+  }
+  return created;
 }
 
 // Pasted text, no file/URL round trip — the same chunking pipeline as

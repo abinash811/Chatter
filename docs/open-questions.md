@@ -14,14 +14,6 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
 2. **Compliance posture for regulated verticals**, healthcare especially.
    Do we need real PII/PHI handling rules now, or explicitly scope v1's
    healthcare template as "not for PHI, informational only" and revisit?
-3. **Site crawling in v1 ingestion**, or manual upload/Q&A only for v1 with
-   crawling added later? Crawling is high-value but adds real scope
-   (crawler, dedup, refresh scheduling, respecting robots.txt, etc.).
-   Reaffirmed as deferred 2026-09-29 during the Data sources rebuild
-   (`docs/features.md`) — everything else Chatbase's Data sources page
-   has (text snippet, search/filter/sort, bulk select, total size) got
-   built; only real multi-page crawling ("Add website" with link counts/
-   re-sync/auto-resync) still needs this decision before it's buildable.
 5. **Nudges — scope and mechanism** (`docs/roadmap.md`'s "Self-serve
    configurability" #6). What triggers (exit-intent, time-on-page,
    scroll-depth, cart-abandonment)? Generic across verticals or

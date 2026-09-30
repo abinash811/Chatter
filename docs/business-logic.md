@@ -248,10 +248,9 @@ number/boolean/dropdown.
 `docs/product-spec.md`'s MVP scope: "file upload and/or manual Q&A at
 minimum for v1" — now fully built, four ways in
 (`lib/ai/knowledgeBase.ts`, `/bots/[botId]/knowledge`, "Data sources"
-as of 2026-09-29). Site crawling (multi-page, link-following) stays
-separate, deferred scope (`docs/open-questions.md` #3) — everything
-here is single-Q&A/single-file/single-URL/single-text-snippet. ADR
-0013 covers the file/URL decisions in full.
+as of 2026-09-29). ADR 0013 covers the file/URL decisions in full; ADR
+0030 (below) covers real multi-page site crawling, which the Website
+entry point now also offers.
 
 **Manual Q&A**: one `KnowledgeSource` (`kind: "qa"`, `title` = the
 question) + one `KnowledgeChunk` (`content` = the answer) per pair — no
@@ -275,6 +274,25 @@ local — see `docs/security.md` for what this guard does *not* cover).
 no extraction step — reuses the same chunking pipeline as file/URL
 (`kind: "text"`). The smallest of the four entry points since there's
 no file parsing or network fetch involved.
+
+**Multi-page site crawling** (`lib/ai/crawler.ts`'s `crawlSite`, ADR
+0030): the Add URL dialog's "Crawl this site" checkbox routes to
+`createCrawledEntries` (`lib/ai/knowledgeBase.ts`) instead of the
+single-page `createUrlEntry` path. Discovery is sitemap-first
+(`robots.txt`'s `Sitemap:` directive, else a same-origin
+`/sitemap.xml` guess, else a capped same-origin link-following
+fallback), always checking `robots-parser`'s `isAllowed()` first (a
+disallowed homepage throws before any discovery work starts). Capped
+at `MAX_CRAWL_PAGES` (20), run synchronously (same hard-limits
+precedent as ADR 0013), with a courtesy delay between fetches. Each
+discovered URL reuses the exact same `extractUrlText` every single-URL
+ingestion already uses; one page's failure skips that page rather than
+aborting the crawl (same precedent as `bulkDeleteEntriesAction`).
+Deliberately out of scope: JS-rendered pages (Playwright is dev-only)
+and scheduled re-crawling (no background-job infra yet). Behind a
+swappable `crawlSite(startUrl) -> CrawledPage[]` interface so a vendor
+(Firecrawl was evaluated and passed on — its cost scales with
+Chatter's own usage) stays a contained later option.
 
 **Total size indicator** (`getTotalKnowledgeBytes`): sums each stored
 chunk's content length across a bot's sources — informational only, no
@@ -317,31 +335,10 @@ logged server-side and shown as a generic message instead — never a raw
 error, per guardrail #4.
 
 **Verification note**: this environment's `VOYAGE_API_KEY` is a
-placeholder (same class of gap as the documented missing
-`ANTHROPIC_API_KEY`), so the actual embeddings call has never been
-exercised against the real Voyage API here. Everything up to that
-boundary — the raw SQL vector write/read, the RLS isolation specific to
-`knowledge_sources`/`knowledge_chunks`, the console UI's list/add/
-delete flow, and (for file/URL) the real extraction libraries
-themselves — was verified for real: `pdf-parse` against a real hand-
-built PDF, `mammoth` against a real bundled `.docx` fixture, `jsdom`+
-`@mozilla/readability` against real sample HTML, a directly-seeded
-file/url source+chunk against a real Postgres+pgvector instance
-(confirming `listKnowledgeSources`/`deleteKnowledgeSource`'s generic-
-across-kinds behavior and that `search_knowledge_base`'s raw query
-retrieves file/url chunks the same way as qa chunks), and a real browser
-upload of that same hand-built PDF through the full server-action
-pipeline (multipart file → buffer → `extractFileText` → chunking),
-which correctly reached the embeddings-call boundary rather than
-erroring anywhere in extraction. `tests/e2e/knowledge.spec.ts` covers
-what's reachable without a real key: the empty states, all three Add
-dialogs, a real `.txt` upload's extraction+chunking, the SSRF guard
-rejecting a real `localhost` URL end-to-end, and — a real bug this
-caught, on the qa path — that a failed save doesn't silently wipe the
-question/answer fields a business owner just typed (`useActionState`'s
-`<form>` resets uncontrolled fields on any action completion, success or
-failure, unless the action's returned state re-seeds them via
-`defaultValue`; same fix already shipped for `/login`'s email field).
+placeholder, so the embeddings call itself has never been exercised
+against the real Voyage API here — everything up to that boundary
+(raw SQL vector write/read, RLS, the console UI, the real extraction
+libraries) was verified for real. Full detail: `docs/changelog.md`.
 
 ## Conversation inbox / Activity (`lib/conversations.ts`, ADR 0015 + ADR 0016 + ADR 0027)
 

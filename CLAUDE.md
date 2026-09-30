@@ -47,7 +47,7 @@ reason.)
   `docs/design/audit.md` tracks per-screen compliance against the bar —
   check there before assuming a screen is finished.
 - Testing/guardrails: 10 static guardrail checks (`npm run check:all`),
-  166 unit tests, 87+ `tests/e2e/` specs, 20+ `tests/visual/` baselines,
+  222 unit tests, 89+ `tests/e2e/` specs, 20+ `tests/visual/` baselines,
   gitleaks + a CI coverage floor, all wired into CI. Known, tracked
   flake: a toast-timeout resource-contention issue on CI's 2-vCPU
   runner (`retries: 1` under CI mitigates but doesn't eliminate it) —
@@ -340,6 +340,17 @@ reason.)
   `docs/open-questions.md` #10. Verified: `tsc` clean, all 10 guardrails,
   full unit suite (211, 16 new), RLS verified, real e2e (console toggle/
   save/reload), a real screenshot of the progressive-disclosure UI.
+- Real multi-page site crawling (2026-09-30, ADR 0030): the Add URL
+  dialog's "Crawl this site" checkbox crawls a whole site (sitemap-
+  first, robots.txt-respected, capped at 20 pages, synchronous —
+  `lib/ai/crawler.ts`'s swappable `crawlSite()`), not just one page.
+  Hand-rolled, not Firecrawl (its cost scales with our own usage); no
+  JS-rendering (Playwright is dev-only) or scheduled re-crawl (no
+  background-job infra) yet, both deliberate. Verified: `tsc` clean,
+  all 10 guardrails, a production build, full unit suite (222, 11 new),
+  2 new e2e specs run against a real prod build, a real screenshot of
+  the dialog reviewed against the design bar. Full detail:
+  `docs/changelog.md`.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.
@@ -352,8 +363,8 @@ reason.)
   `docs/design/audit.md`. No restore-from-archive UI for bots yet.
 - No real end-to-end verified Claude reply yet — blocked on a real
   `ANTHROPIC_API_KEY`.
-- Not built: password reset, site crawling for ingestion
-  (`docs/open-questions.md` #3), teammate invites/multi-org switcher.
+- Not built: password reset, teammate invites/multi-org switcher,
+  scheduled re-crawling and JS-rendered-page crawling (ADR 0030).
 - `scripts/canary.mjs` can't run in this container as-is (Playwright
   browser version mismatch) — `tests/e2e/`/`tests/visual/` already
   work around it, only the standalone script is affected.

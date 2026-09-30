@@ -147,6 +147,36 @@ test("a private/local URL is rejected by the real SSRF guard before any fetch (A
   await expect(page.locator("#url")).toHaveValue("http://localhost/admin");
 });
 
+test("the Add URL dialog's Crawl checkbox is progressive disclosure that relabels the submit button (ADR 0030)", async ({
+  page,
+}) => {
+  await signUpAndCreateBot(page, "Crawl Checkbox KB Bot");
+  await page.goto(page.url() + "/knowledge");
+
+  await openAddMenu(page, "Add URL");
+  await expect(page.getByRole("button", { name: "Add", exact: true })).toBeVisible();
+  await expect(page.getByText("Leave this off to add just the one page above.")).toBeVisible();
+
+  await page.getByRole("checkbox", { name: /Crawl this site/ }).click();
+  await expect(page.getByRole("button", { name: "Crawl site", exact: true })).toBeVisible();
+  await expect(page.getByText(/follow this site's own sitemap/)).toBeVisible();
+});
+
+test("a private/local URL is rejected by the real SSRF guard even with Crawl this site checked (ADR 0030)", async ({
+  page,
+}) => {
+  await signUpAndCreateBot(page, "Crawl SSRF KB Bot");
+  await page.goto(page.url() + "/knowledge");
+
+  await openAddMenu(page, "Add URL");
+  await page.fill("#url", "http://localhost/admin");
+  await page.getByRole("checkbox", { name: /Crawl this site/ }).click();
+  await page.click('button[form="add-url-form"]');
+
+  await expect(page.getByText(/private or local address/)).toBeVisible();
+  await expect(page.locator("#url")).toHaveValue("http://localhost/admin");
+});
+
 test("a bot's knowledge is reachable from the bot editor's top bar", async ({ page }) => {
   await signUpAndCreateBot(page, "Nav KB Bot");
   await page.click('a:has-text("Knowledge")');

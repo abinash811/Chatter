@@ -421,3 +421,77 @@ rebuild onto the real CARE `Table` (ADR 0008).
   isolation, confirmed unrelated); the bot editor's axe scan and the
   demo-data e2e suite re-run clean.
 
+- **Real multi-page site crawling for Data sources (2026-09-30, ADR
+  0030)**: the Add URL dialog's "Crawl this site" checkbox
+  (`AddUrlDialog.tsx`) now crawls a whole site instead of ingesting one
+  page — user-requested, following a build-vs-buy discussion (Firecrawl
+  considered and explicitly passed on: its cost scales with Chatter's
+  own usage, unlike BYOA-capable Claude/Voyage costs, and this product
+  isn't at a scale where paying to have the long tail of crawling edge
+  cases pre-solved is worth it yet). New `lib/ai/crawler.ts`'s
+  `crawlSite(startUrl) -> CrawledPage[]` — the only function the
+  ingestion pipeline calls, so a later vendor swap touches one module,
+  matching the `ModelGateway`/`IntegrationProvider` swappable-interface
+  precedent (`.claude/rules/bot-engine.md` rule #1). Discovery is
+  sitemap-first (robots.txt's `Sitemap:` directive, else a same-origin
+  `/sitemap.xml` guess, else a capped same-origin link-following
+  fallback via `jsdom`), respects `robots.txt` throughout
+  (`robots-parser`), capped at `MAX_CRAWL_PAGES` (20) and run
+  synchronously (same hard-limits-not-a-background-job precedent as
+  ADR 0013), with a courtesy delay between fetches. Per-page extraction
+  reuses `extractUrlText` (`lib/ai/extraction.ts`) completely unchanged
+  — zero duplication of the existing, already-tested single-URL path.
+  New `createCrawledEntries` (`lib/ai/knowledgeBase.ts`) persists each
+  crawled page the same way a single URL entry would; one page's own
+  chunking/embedding failure skips that page rather than aborting the
+  whole crawl (same "one bad item doesn't sink the batch" precedent as
+  `bulkDeleteEntriesAction`).
+  Real, honest scope correction caught before building: Claude had
+  earlier told the user Playwright was "already available, not a new
+  dependency" for a JS-rendering fallback — checking `package.json`
+  before writing code found it's a devDependency only (e2e tests), not
+  shipped to production, so JS-rendering was explicitly cut from this
+  pass rather than silently built on a wrong assumption. Scheduled
+  auto-refresh also explicitly deferred — needs real background-job
+  infrastructure that doesn't exist anywhere in this codebase yet.
+  Real bugs caught while verifying, not assumed from reading the code:
+  (1) `sitemapper`'s `new Sitemapper(...)` requires a constructible
+  mock — an arrow-function `vi.fn().mockImplementation()` silently
+  isn't one (vitest warns, then every sitemap-path test fell through to
+  the link-following fallback instead without erroring), fixed by using
+  a real `function` expression; (2) `assertPublicHttpUrl` normalizes a
+  bare origin to add a trailing slash, so a test comparing against the
+  un-normalized string never matched; (3) the real 500ms-per-page
+  courtesy delay made the `MAX_CRAWL_PAGES` cap test legitimately take
+  ~10s, exceeding vitest's 5000ms default — fixed with an explicit
+  15000ms test timeout, not a production-code change, confirmed correct
+  via a real smoke test against `anthropic.com` showing the same
+  pacing. Real smoke testing against live sites before any automated
+  test was written: `anthropic.com` (541 real sitemap URLs found,
+  correctly capped to 20, real article text extracted) and `example.com`
+  (a 403 there was investigated and confirmed to be pre-existing
+  `extractUrlText` behavior — no User-Agent header on that fetch call —
+  unrelated to the new crawler code, which does set one).
+  `robots-parser@3.0.1` and `sitemapper@4.1.6` added as real
+  dependencies (versions confirmed via `npm view`, not recalled); their
+  real APIs were confirmed by reading the installed `node_modules`
+  READMEs directly, since `shopify.dev`/`sitemaps.org`/`rfc-editor.org`/
+  `playwright.dev` all stayed network-blocked throughout this work
+  despite the user granting access mid-session (very likely a policy-
+  propagation issue needing a fresh session, same pattern observed
+  earlier this session with `shopify.dev`).
+  Verified: `npx tsc --noEmit` clean; all 10 `check:all` guardrails; a
+  production build; full unit suite (222 tests — 8 new in
+  `crawler.test.ts`, 3 new in `knowledgeBase.test.ts`'s
+  `createCrawledEntries` describe block); 2 new permanent e2e tests
+  (`knowledge.spec.ts`) confirming the checkbox's progressive
+  disclosure relabels the submit button and that the real SSRF guard
+  (ADR 0013) rejects a private/local URL even with crawling checked,
+  both run against a real production build, not dev mode (a stale dev
+  build initially made both look broken — rebuilding before testing
+  fixed it, not a real regression); a real screenshot of the Add URL
+  dialog with the Crawl checkbox checked, reviewed against the design
+  bar (clear hierarchy, a bordered progressive-disclosure region, the
+  solid-black CTA correctly relabeling to "Crawl site") — no issues
+  found.
+

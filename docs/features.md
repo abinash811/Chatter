@@ -265,32 +265,35 @@ directly against the database. **How**: `app/(console)/bots/actions.ts`'s
 ### Data sources / knowledge base ingestion (Q&A, file, URL, text snippet)
 **Who**: the business owner. **What**: four ways to feed a bot's
 knowledge base — manual question-and-answer pairs, uploading a PDF/
-DOCX/`.txt`/`.md` file, ingesting a single URL's readable article text
-(not a whole site — see `docs/open-questions.md` #3 on crawling), or
-pasting a raw text snippet directly (2026-09-29, no file/URL round
-trip). Closes `docs/product-spec.md`'s MVP ingestion scope. The four
-entry points are always-visible `OptionCard`s (matching Chatbase's Data
-sources page — see `docs/research/competitive-landscape.md`), not a
-menu you open first. The page itself (renamed "Knowledge base" →
-"Data sources," 2026-09-29, matching Chatbase's own naming) also has
-search, a type filter, a sort dropdown (Newest/Oldest/Title — same
-`@tanstack/react-table` + `nuqs` URL-persisted pattern as the bots
-list, ADR 0024), a bulk-select mode with checkboxes and a bulk-delete
-confirm dialog, and an informational total-size indicator (no
-plan-based cap — `docs/open-questions.md` #6's billing-tier question is
-unresolved, so there's nothing to show a cap against, unlike
-Chatbase's "X KB / 1 MB"). Real multi-page website crawling (Chatbase's
-own "Add website" — discovered links, re-sync, auto-resync) stays
-explicitly deferred, same open question. Notion-page and helpdesk-
-ticket sources are out of scope — Notion needs a full OAuth connector
-build, and tickets is Chatbase's own paywalled helpdesk integration,
-not a generic knowledge source. **How**: `lib/ai/knowledgeBase.ts`
-(source/chunk writes, `createTextEntry`, `getTotalKnowledgeBytes`),
-`lib/ai/extraction.ts` (PDF via `pdf-parse`, DOCX via `mammoth`, URL via
-`jsdom`+`@mozilla/readability`), `lib/ai/chunking.ts` (hand-rolled
-recursive splitter for file/URL/text), `app/(console)/bots/[botId]/
-knowledge/`. ADR 0013. See `docs/business-logic.md`'s "Knowledge base
-ingestion" section.
+DOCX/`.txt`/`.md` file, ingesting a URL (a single page's readable
+article text by default, or the "Crawl this site" checkbox to pull up
+to 20 pages via real sitemap-first, robots.txt-respecting crawling,
+2026-09-30, ADR 0030), or pasting a raw text snippet directly
+(2026-09-29, no file/URL round trip). Closes `docs/product-spec.md`'s
+MVP ingestion scope. The four entry points are always-visible
+`OptionCard`s (matching Chatbase's Data sources page — see `docs/
+research/competitive-landscape.md`), not a menu you open first. The
+page itself (renamed "Knowledge base" → "Data sources," 2026-09-29,
+matching Chatbase's own naming) also has search, a type filter, a sort
+dropdown (Newest/Oldest/Title — same `@tanstack/react-table` + `nuqs`
+URL-persisted pattern as the bots list, ADR 0024), a bulk-select mode
+with checkboxes and a bulk-delete confirm dialog, and an informational
+total-size indicator (no plan-based cap — `docs/open-questions.md`
+#6's billing-tier question is unresolved, so there's nothing to show a
+cap against, unlike Chatbase's "X KB / 1 MB"). Scheduled re-crawling
+and JS-rendered pages stay explicitly deferred (ADR 0030 — no
+background-job infrastructure yet; Playwright is a devDependency only).
+Notion-page and helpdesk-ticket sources are out of scope — Notion needs
+a full OAuth connector build, and tickets is Chatbase's own paywalled
+helpdesk integration, not a generic knowledge source. **How**:
+`lib/ai/knowledgeBase.ts` (source/chunk writes, `createTextEntry`,
+`createCrawledEntries`, `getTotalKnowledgeBytes`), `lib/ai/
+extraction.ts` (PDF via `pdf-parse`, DOCX via `mammoth`, URL via
+`jsdom`+`@mozilla/readability`), `lib/ai/crawler.ts` (`crawlSite` —
+`robots-parser` + `sitemapper` discovery, ADR 0030), `lib/ai/
+chunking.ts` (hand-rolled recursive splitter for file/URL/text),
+`app/(console)/bots/[botId]/knowledge/`. ADR 0013, ADR 0030. See
+`docs/business-logic.md`'s "Knowledge base ingestion" section.
 
 ### Onboarding
 **Who**: a brand-new signup. **What**: a single combined screen (name

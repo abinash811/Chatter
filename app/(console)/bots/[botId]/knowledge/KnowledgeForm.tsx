@@ -135,7 +135,7 @@ export function KnowledgeForm({
         <OptionCard
           icon={LinkIcon}
           title="Website"
-          description="Pull one page's readable text."
+          description="One page, or crawl the whole site."
           action={
             <Button type="button" size="sm" variant="outline" onClick={() => setUrlOpen(true)}>
               Add URL

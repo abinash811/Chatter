@@ -99,6 +99,16 @@ doc as ADRs land instead of letting decisions live only in chat history.
   yet (`public/widget.js` holds `conversationId` only in memory).
   Country/IP blocking is deferred, needs a geolocation-vendor decision
   — `docs/open-questions.md` #10.
+- **Real multi-page site crawling** (2026-09-30, ADR 0030): "Website"
+  ingestion can now crawl a whole site, not just one page — sitemap-
+  first discovery, robots.txt-respected, capped and synchronous (same
+  hard-limits-not-a-background-job precedent as ADR 0013). Hand-rolled,
+  not a vendor (Firecrawl considered, rejected — its cost scales with
+  Chatter's own usage), behind a swappable `crawlSite()` interface so a
+  vendor stays a contained later option, not a rewrite. No JS-rendering
+  fallback yet (Playwright is a dev-only dependency today, not shipped
+  to production) and no scheduled auto-refresh (needs real background-
+  job infrastructure, out of scope here) — both deliberate, named gaps.
 - Streamed responses back to the widget.
 - **BYOA (bring-your-own API key)**: optional, per-org, off by default —
   a business can plug in their own Anthropic key from `/settings`

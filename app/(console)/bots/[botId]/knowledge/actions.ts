@@ -6,6 +6,7 @@ import {
   createQaEntry,
   createFileEntry,
   createUrlEntry,
+  createCrawledEntries,
   createTextEntry,
   deleteKnowledgeSource,
 } from "@/lib/ai/knowledgeBase";
@@ -95,6 +96,23 @@ export async function createUrlAction(
   const url = String(formData.get("url") ?? "").trim();
   if (!url) {
     return { status: "error", message: "A URL is required.", url };
+  }
+
+  // ADR 0030 — the same dialog's "Crawl this site" checkbox routes here
+  // instead of a single-page fetch. Real crawl failures (robots.txt
+  // disallows it, nothing extractable) surface via KnowledgeIngestionError
+  // same as every other ingestion path.
+  if (formData.get("crawl") === "on") {
+    try {
+      const session = await getCurrentSession();
+      const count = await createCrawledEntries(session.orgId, botId, url);
+      revalidatePath(`/bots/${botId}/knowledge`);
+      return { status: "success", message: `Crawled and added ${count} ${count === 1 ? "page" : "pages"}.` };
+    } catch (err) {
+      console.error("[createUrlAction/crawl]", err);
+      const message = err instanceof KnowledgeIngestionError ? err.message : "Couldn't crawl that site. Please try again.";
+      return { status: "error", message, url };
+    }
   }
 
   try {
