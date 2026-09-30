@@ -71,6 +71,15 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
    isn't chosen)? Not blocking anything else — Phases 1 and 2 are a
    complete, independently useful slice on their own.
 
+10. **Country/IP blocking geolocation vendor** (2026-09-30, ADR 0029).
+    Guardrails Phase 1 (rate limiting + spam detection) is built; the
+    third Chatbase-documented mechanism, country/IP-based blocking,
+    needs a real geolocation vendor/library choice first (MaxMind,
+    ipapi.co, a Cloudflare header, a self-hosted IP database) — a
+    genuine cost/accuracy/new-dependency tradeoff, not picked silently.
+    Not blocking anything else — rate limiting and spam detection are a
+    complete, independently useful slice on their own.
+
 ## Not yet asked
 
 - Billing/pricing model — explicitly deferred, not needed until there's a

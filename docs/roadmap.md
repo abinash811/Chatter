@@ -209,6 +209,18 @@ Validated by competitor research, not yet built:
 - **Design pass on `/bots/[botId]/integrations`** — bot list and bot
   editor got theirs (`docs/design/preview/bots-list.html`,
   `bot-editor.html`); integrations is the one console page left.
+- **Guardrails Phase 1 (rate limiting + spam detection) — built
+  (2026-09-30, ADR 0029).** Found via the 2026-09-28 Chatbase docs pass
+  alongside Procedures (below) — see `docs/features.md`'s entry. Country/
+  IP blocking (the third documented mechanism) stays deferred, needs a
+  geolocation-vendor decision, `docs/open-questions.md` #10.
+- **Procedures** — a named trigger + ordered-steps workflow for
+  high-stakes multi-step interactions (refunds, escalations), found in
+  the same 2026-09-28 Chatbase docs pass as Guardrails above. A real
+  middle ground between our flat tool registry and the "Later"-deferred
+  visual flow builder, not the same thing at smaller scale — still
+  needs scoping (step syntax, `@`-action references, branching) before
+  it's buildable, not just time.
 - **Site crawling for ingestion** — `docs/open-questions.md` #3.
   Tidio's positioning (the closest match to our own SMB/self-serve
   target, per the research) treats this as table stakes for a fast

@@ -1,5 +1,5 @@
 import { withOrgContext, getOrCreateBotPublicKey } from "@/lib/db";
-import { getOrCreateDraft, saveDraft, publishDraft, DEFAULT_APPEARANCE } from "@/lib/ai/botConfig";
+import { getOrCreateDraft, saveDraft, publishDraft, DEFAULT_APPEARANCE, DEFAULT_ABUSE_PROTECTION } from "@/lib/ai/botConfig";
 import { DEFAULT_MODEL_ID, DEFAULT_TEMPERATURE } from "@/lib/ai/modelOptions";
 import { PERSONA_TEMPLATES } from "@/lib/ai/personaTemplates";
 
@@ -146,6 +146,7 @@ export async function createDemoBot(orgId: string): Promise<string> {
     appearance: DEFAULT_APPEARANCE,
     model: DEFAULT_MODEL_ID,
     temperature: DEFAULT_TEMPERATURE,
+    abuseProtection: DEFAULT_ABUSE_PROTECTION,
   });
   await publishDraft(orgId, bot.id);
 

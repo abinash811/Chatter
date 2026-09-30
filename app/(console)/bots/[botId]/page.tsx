@@ -1,6 +1,6 @@
 import { getCurrentSession } from "@/lib/auth";
 import { withOrgContext, getOrCreateBotPublicKey } from "@/lib/db";
-import { getOrCreateDraft, parseAppearance } from "@/lib/ai/botConfig";
+import { getOrCreateDraft, parseAppearance, parseAbuseProtection } from "@/lib/ai/botConfig";
 import { listAllTools } from "@/lib/ai/tools/registry";
 import "@/lib/ai/tools";
 import { BotEditorForm } from "./BotEditorForm";
@@ -48,6 +48,7 @@ export default async function BotPage({
 
   const enabledTools = new Set(draft.tools as string[]);
   const appearance = parseAppearance(draft.appearance);
+  const abuseProtection = parseAbuseProtection(draft.abuseProtection);
   const embedSnippet = `<script src="${process.env.APP_BASE_URL}/widget.js" data-bot-key="${publicKey}"></script>`;
 
   return (
@@ -69,6 +70,7 @@ export default async function BotPage({
       position={appearance.position}
       suggestedReplies={appearance.suggestedReplies}
       embedSnippet={embedSnippet}
+      abuseProtection={abuseProtection}
     />
   );
 }

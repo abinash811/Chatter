@@ -37,7 +37,9 @@ import type { AvatarEmoji, WidgetPosition } from "@/lib/ai/appearanceOptions";
 import { PERSONA_TEMPLATES } from "@/lib/ai/personaTemplates";
 import { AppearanceTabContent } from "./AppearanceTabContent";
 import { ModelTabContent } from "./ModelTabContent";
+import { AbuseProtectionTabContent } from "./AbuseProtectionTabContent";
 import { PreviewSheet } from "./PreviewSheet";
+import type { AbuseProtectionConfig } from "@/lib/ai/abuseProtectionOptions";
 
 const idleState: SaveDraftState = { status: "idle", message: null };
 
@@ -84,6 +86,7 @@ export function BotEditorForm({
   position,
   suggestedReplies,
   embedSnippet,
+  abuseProtection,
 }: {
   botId: string;
   publishedVersion: number | null;
@@ -98,6 +101,7 @@ export function BotEditorForm({
   position: WidgetPosition;
   suggestedReplies: string[];
   embedSnippet: string;
+  abuseProtection: AbuseProtectionConfig;
 }) {
   const [saveState, saveFormAction, isSaving] = useActionState(saveDraftAction.bind(null, botId), idleState);
   const [publishState, publishFormAction, isPublishing] = useActionState(
@@ -223,6 +227,10 @@ export function BotEditorForm({
                 <Textarea id="guardrails" name="guardrails" defaultValue={guardrails} rows={5} />
               </CardContent>
             </Card>
+
+            <div className="mt-4">
+              <AbuseProtectionTabContent abuseProtection={abuseProtection} />
+            </div>
           </TabsContent>
 
           <TabsContent value="tools" forceMount className="mt-4 data-[state=inactive]:hidden">

@@ -6,6 +6,9 @@ import { buildSystemPrompt } from "@/lib/ai/systemPrompt";
 import { getToolsForNames } from "@/lib/ai/tools/registry";
 import { getEnabledCustomActionTools } from "@/lib/ai/tools/customAction";
 import { getEnabledWidgetTools, parseRenderWidgetPayload, type RenderWidgetPayload } from "@/lib/ai/tools/widget";
+import { setConversationStatus } from "@/lib/conversations";
+import { parseAbuseProtection } from "@/lib/ai/abuseProtectionOptions";
+import { checkRateLimit, isSpamCheckpoint, classifyRecentMessagesAsSpam } from "@/lib/ai/abuseProtection";
 import "@/lib/ai/tools";
 
 // Per Claude Agent SDK guidance (docs/research/competitive-landscape.md):
@@ -113,11 +116,41 @@ export async function sendMessage(params: SendMessageParams): Promise<SendMessag
     return { conversationId: conversation.id, reply: null };
   }
 
+  // Guardrails Phase 1 (ADR 0029) — off by default; both checks no-op
+  // (no extra DB/model call) unless a business owner has opted in.
+  const abuseProtection = parseAbuseProtection(publishedVersion.abuseProtection);
+  const priorUserMessages = conversation.messages.filter((m) => m.role === "user");
+
+  const rateLimit = await checkRateLimit(orgId, conversation.id, abuseProtection);
+  if (rateLimit.limited) {
+    await withOrgContext(orgId, (tx) =>
+      tx.message.create({
+        data: { orgId, conversationId: conversation.id, role: "assistant", content: rateLimit.message },
+      }),
+    );
+    return { conversationId: conversation.id, reply: rateLimit.message };
+  }
+
   // BYOA (ADR 0012): an org's own key if they've set one, else the
   // gateway falls back to our managed ANTHROPIC_API_KEY.
   const org = await withOrgContext(orgId, (tx) => tx.org.findUniqueOrThrow({ where: { id: orgId } }));
   const apiKey = org.anthropicApiKeyEncrypted ? decrypt(org.anthropicApiKeyEncrypted) : undefined;
   const gateway = getModelGateway(apiKey);
+
+  if (abuseProtection.spamDetectionEnabled && isSpamCheckpoint(priorUserMessages.length + 1)) {
+    const recentUserMessages = [...priorUserMessages.map((m) => m.content), userMessage].slice(-5);
+    const isSpam = await classifyRecentMessagesAsSpam(gateway, recentUserMessages, abuseProtection.spamGuidance);
+    if (isSpam) {
+      // Same setConversationStatus a human clicking "Pause" already
+      // calls (ADR 0027) — the first non-human caller of that function.
+      // No reply this turn either, matching the paused-conversation
+      // branch above exactly, so every future message on this
+      // conversation hits that same code path automatically.
+      await setConversationStatus(orgId, botId, conversation.id, "paused");
+      return { conversationId: conversation.id, reply: null };
+    }
+  }
+
   let finalText = "";
   // ADR 0028 — the last widget triggered this turn, if any. The model's
   // own next turn (after seeing the tool result) naturally produces the

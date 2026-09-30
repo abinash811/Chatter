@@ -51,6 +51,14 @@ vi.mock("@/lib/ai/botConfig", () => ({
   saveDraft,
   publishDraft,
   DEFAULT_APPEARANCE: { greeting: "hi", accentColor: "test-accent", avatarEmoji: "💬", position: "bottom-right" },
+  DEFAULT_ABUSE_PROTECTION: {
+    rateLimitEnabled: false,
+    rateLimitMaxMessages: 20,
+    rateLimitWindowMinutes: 1,
+    rateLimitMessage: "test-limit-message",
+    spamDetectionEnabled: false,
+    spamGuidance: "test-guidance",
+  },
 }));
 
 import { createDemoBot } from "@/lib/demoData";

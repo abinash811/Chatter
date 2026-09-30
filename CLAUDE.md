@@ -250,26 +250,11 @@ reason.)
   competitive-landscape.md`'s 2026-09-28 update. Also deduplicated an
   accidental verbatim-repeated paragraph in this file's own card-
   gallery-redesign entry, found while fixing its stale claim.
-- Model tier + temperature picker (2026-09-28, ADR 0026): first of
-  Chatbase's "Build" section's 5 sub-areas tackled — a "Model" card in
-  the bot editor's Persona tab (Sonnet/Haiku/Opus, Claude-only per ADR
-  0002) + a temperature slider genuinely adjustable only for Haiku.
-  Real finding mid-build, verified against the Anthropic SDK's own
-  types: temperature is deprecated (locked to 1.0, else a 400) for
-  every model released after Claude Opus 4.6 — covers Sonnet/Opus, not
-  Haiku. UI disables + resets the slider for a locked tier (guardrail
-  #4); the server (`actions.ts`) independently re-enforces the same
-  lock. `BotConfigVersion.model`/`.temperature` migration applied and
-  verified against a real local Postgres, RLS re-verified clean. Real,
-  unrelated a11y bug also caught and fixed via a genuine axe-core
-  failure: shadcn's default `Slider` forwards `aria-label` to `Root`
-  instead of the actual `role="slider"` `Thumb` — fixed in
-  `components/ui/slider.tsx`, documented as a delta per ADR 0025.
-  Verified: `tsc` clean, all 10 guardrails, full unit suite, a new
-  permanent e2e test, the full `bot-editor`/`accessibility`/`demo-data`
-  e2e suites, and all 19 visual baselines (4 regenerated, stable across
-  two runs). Guardrails and Procedures (the other two real gaps from
-  the 2026-09-28 Chatbase research) are separate, larger follow-ups.
+- Model tier + temperature picker (2026-09-28, ADR 0026): a "Model" card
+  in the bot editor's Persona tab (Sonnet/Haiku/Opus, Claude-only) + a
+  temperature slider genuinely adjustable only for Haiku (the Anthropic
+  SDK rejects any non-1.0 value for newer models) — UI and server both
+  enforce the lock (guardrail #4).
 - Data sources rebuild (2026-09-29, Phase 1): Knowledge page renamed
   "Knowledge base" → "Data sources" and rebuilt to match Chatbase's own
   page — a 4th entry point (**text snippet**, `createTextEntry`, no
@@ -342,6 +327,19 @@ reason.)
 - Deploy target: AWS confirmed; database is AWS RDS for PostgreSQL (ADR
   0021); app compute (App Runner/ECS/EC2) still open, `docs/open-
   questions.md` #8.
+- Guardrails Phase 1 — rate limiting + spam detection (2026-09-30, ADR
+  0029): opt-in abuse protection on the bot editor's Guardrails tab
+  (a second "Abuse protection" Card, distinct from the existing content-
+  guardrail textarea) — off by default. Rate limiting caps messages per
+  conversation per window with a custom limit-reached reply; spam
+  detection runs a cheap Haiku classification at message-count
+  checkpoints (2/4/8/16) and auto-pauses a flagged conversation via the
+  same mechanism a human "Pause" click uses (ADR 0027). Per-conversation,
+  not per-device — no persistent visitor identity exists yet. Country/IP
+  blocking deferred, needs a geolocation-vendor decision,
+  `docs/open-questions.md` #10. Verified: `tsc` clean, all 10 guardrails,
+  full unit suite (211, 16 new), RLS verified, real e2e (console toggle/
+  save/reload), a real screenshot of the progressive-disclosure UI.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.

@@ -124,6 +124,10 @@ in-progress visitor experiences mid-chat — see `lib/ai/botConfig.ts`.
    requests (see `docs/architecture.md`'s scaling note), so any server
    instance can handle any request.
 
+Between step 2 and step 4, two opt-in Guardrails checks run (off by
+default): rate limiting and spam detection —
+`lib/ai/abuseProtection.ts`, ADR 0029, full detail in `docs/changelog.md`.
+
 ## System prompt caching
 
 `buildSystemPrompt` deliberately does plain string concatenation, never

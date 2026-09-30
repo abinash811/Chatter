@@ -357,6 +357,25 @@ questions.md` #7 ("resolved" status semantics) is still open — the new
 `status` field is about AI-reply availability (ongoing/paused), a
 different concept from "resolved for analytics."
 
+### Guardrails Phase 1 — rate limiting + spam detection
+**Who**: the business owner (configures) and the bot's visitor (subject
+to it). **What**: opt-in abuse protection on the bot editor's Guardrails
+tab, a second Card ("Abuse protection") below the existing content-
+guardrail textarea — off by default, no change to an existing bot until
+enabled. **Rate limiting**: a max-messages-per-window cap (custom
+"limit reached" message) enforced per conversation. **Spam detection**:
+at message-count checkpoints (2nd/4th/8th/16th), a cheap Haiku call
+classifies recent messages against the business's own guidance text; a
+flagged conversation is auto-paused, reusing the same pause mechanism a
+human uses (ADR 0027). Matches Chatbase's own documented "Guardrails"
+feature, minus country/IP blocking (deferred, `docs/open-questions.md`
+#10 — needs a geolocation-vendor decision). **How**:
+`lib/ai/abuseProtectionOptions.ts` (types/defaults/parsing),
+`lib/ai/abuseProtection.ts` (`checkRateLimit`, `isSpamCheckpoint`,
+`classifyRecentMessagesAsSpam`), wired into `lib/ai/chat.ts`'s
+`sendMessage` before the model call, `BotConfigVersion.abuseProtection`
+(JSON), `AbuseProtectionTabContent.tsx`. ADR 0029.
+
 ## Planned
 
 See `docs/roadmap.md` (Now/Next/Later). Notable near-term items: write-

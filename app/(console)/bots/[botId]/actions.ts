@@ -12,10 +12,16 @@ import {
   DEFAULT_APPEARANCE,
 } from "@/lib/ai/botConfig";
 import { MODEL_TIER_OPTIONS, DEFAULT_MODEL_ID, DEFAULT_TEMPERATURE, getModelTierOption } from "@/lib/ai/modelOptions";
+import { DEFAULT_ABUSE_PROTECTION } from "@/lib/ai/abuseProtectionOptions";
 import { listAllTools } from "@/lib/ai/tools/registry";
 import { sendMessage } from "@/lib/ai/chat";
 import type { RenderWidgetPayload } from "@/lib/ai/tools/widget";
 import "@/lib/ai/tools";
+
+function parsePositiveInt(value: FormDataEntryValue | null, fallback: number): number {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback;
+}
 
 export interface SaveDraftState {
   status: "idle" | "success" | "error";
@@ -69,6 +75,21 @@ export async function saveDraftAction(
         suggestedReplies: Array.from({ length: MAX_SUGGESTED_REPLIES }, (_, i) =>
           String(formData.get(`suggestedReply_${i}`) ?? "").trim(),
         ).filter(Boolean),
+      },
+      abuseProtection: {
+        rateLimitEnabled: formData.get("rateLimitEnabled") === "on",
+        rateLimitMaxMessages: parsePositiveInt(
+          formData.get("rateLimitMaxMessages"),
+          DEFAULT_ABUSE_PROTECTION.rateLimitMaxMessages,
+        ),
+        rateLimitWindowMinutes: parsePositiveInt(
+          formData.get("rateLimitWindowMinutes"),
+          DEFAULT_ABUSE_PROTECTION.rateLimitWindowMinutes,
+        ),
+        rateLimitMessage:
+          String(formData.get("rateLimitMessage") ?? "").trim() || DEFAULT_ABUSE_PROTECTION.rateLimitMessage,
+        spamDetectionEnabled: formData.get("spamDetectionEnabled") === "on",
+        spamGuidance: String(formData.get("spamGuidance") ?? "").trim() || DEFAULT_ABUSE_PROTECTION.spamGuidance,
       },
     });
     revalidatePath(`/bots/${botId}`);

@@ -361,3 +361,63 @@ rebuild onto the real CARE `Table` (ADR 0008).
   failures being the pre-existing, already-documented
   `knowledge.spec.ts`/`preview.spec.ts` flakes, unrelated to this change.
 
+- **Guardrails Phase 1 — rate limiting + spam detection** (2026-09-30,
+  ADR 0029). User asked what Chatter should build next to match
+  Chatbase; researched its real, publicly documented "Guardrails"
+  feature (`docs/research/competitive-landscape.md`'s 2026-09-28
+  update) — three mechanisms (rate limiting, spam detection, country/IP
+  blocking) we had zero equivalent of. Built the two that don't need a
+  new external dependency or a new visitor-identity system; deferred
+  country/IP blocking (needs a geolocation-vendor decision,
+  `docs/open-questions.md` #10).
+  Real naming collision caught before writing any code:
+  `BotConfigVersion.guardrails` (a `String`) already exists for
+  persona-level content-guardrail prompt text (CLAUDE.md guardrail #3)
+  — a completely different concept from Chatbase's abuse-protection
+  "Guardrails" that happens to share the name. Resolved by giving the
+  new feature its own field (`abuseProtection Json @default("{}")`,
+  same pattern as `appearance`) while grouping both under the same
+  console "Guardrails" tab as a second Card, "Abuse protection" —
+  documented as a deliberate choice in ADR 0029, not a data-model
+  rename (too large a migration for a cosmetic naming match).
+  Rate limiting scopes to per-conversation, not per-device: no
+  persistent visitor identity exists anywhere in this codebase
+  (`public/widget.js` holds `conversationId` only in a JS closure
+  variable, a known limitation flagged in its own header comment) — a
+  real, explicit narrowing from Chatbase's literal behavior, recorded
+  in the ADR rather than faked with a made-up device ID. Spam detection
+  reuses the model gateway (bot-engine rule #1) rather than a keyword
+  list — a cheap Haiku call at Chatbase's own documented checkpoints
+  (2nd/4th/8th/16th visitor message), classifying against the bot's own
+  configured guidance text; a `SPAM` verdict calls
+  `setConversationStatus(..., "paused")` (`lib/conversations.ts`, ADR
+  0027) — the first non-human caller of that function, a new code path
+  worth naming, not an existing pattern reused unchanged.
+  New: `lib/ai/abuseProtectionOptions.ts` (types/defaults/parsing, zero
+  server deps — same client/server split as `appearanceOptions.ts`),
+  `lib/ai/abuseProtection.ts` (`checkRateLimit`, `isSpamCheckpoint`,
+  `classifyRecentMessagesAsSpam`), `AbuseProtectionTabContent.tsx`
+  (progressive disclosure — Method/URL-style fields only rendered once
+  a toggle is on, matching the widgets Add-dialog's own "Call an API"
+  pattern). `lib/ai/chat.ts`'s `sendMessage` runs both checks between
+  the existing paused-conversation check and the model call; both are
+  no-ops (no extra DB/model call) unless a business owner opts in, so
+  no existing bot's behavior changes.
+  Migration (`20260930010000_add_abuse_protection`) applied and
+  `scripts/verify-rls.mjs` run against real local Postgres — no new RLS
+  policy needed (existing table-level policy already covers the new
+  column). Real screenshot taken of the progressive-disclosure UI
+  (collapsed and expanded) and reviewed against the design bar; a
+  scratch script confirmed the fields actually save and survive a
+  reload against a real running server, not just a passing test.
+  Verified: `npx tsc --noEmit` clean; all 10 `check:all` guardrails; a
+  production build; full unit suite (211 tests, 16 new — 10 in a new
+  `abuseProtection.test.ts`, 6 integration tests added to
+  `chat.test.ts` covering disabled-by-default, rate-limit block, spam
+  pause, and the OK/no-checkpoint pass-through paths); a new permanent
+  e2e test (`bot-editor.spec.ts`) covering the toggle/save/reload round
+  trip, run both in isolation and as part of the full file (the file's
+  2 pre-existing toast-timeout failures reproduced independently in
+  isolation, confirmed unrelated); the bot editor's axe scan and the
+  demo-data e2e suite re-run clean.
+

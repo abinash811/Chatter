@@ -12,15 +12,21 @@ const findFirstVersion = vi.fn();
 const findUniqueConversation = vi.fn();
 const createConversation = vi.fn();
 const createMessage = vi.fn();
+const countMessages = vi.fn();
 const createToolCallLog = vi.fn();
 const findOrg = vi.fn();
+const updateManyConversation = vi.fn();
 
 vi.mock("@/lib/db", () => ({
   withOrgContext: vi.fn((_orgId: string, fn: (tx: unknown) => unknown) =>
     fn({
       botConfigVersion: { findFirst: findFirstVersion },
-      conversation: { findUniqueOrThrow: findUniqueConversation, create: createConversation },
-      message: { create: createMessage },
+      conversation: {
+        findUniqueOrThrow: findUniqueConversation,
+        create: createConversation,
+        updateMany: updateManyConversation,
+      },
+      message: { create: createMessage, count: countMessages },
       toolCallLog: { create: createToolCallLog },
       org: { findUniqueOrThrow: findOrg },
     }),
@@ -66,9 +72,11 @@ beforeEach(() => {
   getToolsForNames.mockReturnValue([]);
   getEnabledCustomActionTools.mockResolvedValue([]);
   getEnabledWidgetTools.mockResolvedValue([]);
-  findFirstVersion.mockResolvedValue({ id: "version-1", tools: [] });
+  findFirstVersion.mockResolvedValue({ id: "version-1", tools: [], abuseProtection: {} });
   createConversation.mockResolvedValue({ id: "conv-new", messages: [] });
   createMessage.mockResolvedValue({});
+  countMessages.mockResolvedValue(0);
+  updateManyConversation.mockResolvedValue({});
   findOrg.mockResolvedValue({ id: "org-1", anthropicApiKeyEncrypted: null });
   getModelGateway.mockReturnValue({ generateReply });
 });
@@ -279,5 +287,123 @@ describe("sendMessage", () => {
     await sendMessage({ orgId: "org-1", botId: "bot-1", userMessage: "hi" });
 
     expect(getModelGateway).toHaveBeenCalledWith("decrypted:encrypted-blob");
+  });
+
+  describe("Guardrails Phase 1 (ADR 0029)", () => {
+    it("disabled by default: never queries the message count and never blocks", async () => {
+      generateReply.mockResolvedValue({ content: [{ type: "text", text: "hi there" }], stopReason: "end_turn" });
+      const { sendMessage } = await import("@/lib/ai/chat");
+
+      const result = await sendMessage({ orgId: "org-1", botId: "bot-1", userMessage: "hi" });
+
+      expect(result.reply).toBe("hi there");
+      expect(countMessages).not.toHaveBeenCalled();
+    });
+
+    it("rate limiting: once the cap is hit, replies with the configured message and never calls the model", async () => {
+      findFirstVersion.mockResolvedValue({
+        id: "version-1",
+        tools: [],
+        abuseProtection: {
+          rateLimitEnabled: true,
+          rateLimitMaxMessages: 5,
+          rateLimitWindowMinutes: 1,
+          rateLimitMessage: "Slow down please.",
+        },
+      });
+      countMessages.mockResolvedValue(6);
+      const { sendMessage } = await import("@/lib/ai/chat");
+
+      const result = await sendMessage({ orgId: "org-1", botId: "bot-1", userMessage: "hi" });
+
+      expect(result.reply).toBe("Slow down please.");
+      expect(generateReply).not.toHaveBeenCalled();
+      expect(createMessage).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ role: "assistant", content: "Slow down please." }) }),
+      );
+    });
+
+    it("rate limiting: under the cap, the model is still called normally", async () => {
+      findFirstVersion.mockResolvedValue({
+        id: "version-1",
+        tools: [],
+        abuseProtection: { rateLimitEnabled: true, rateLimitMaxMessages: 5, rateLimitWindowMinutes: 1 },
+      });
+      countMessages.mockResolvedValue(2);
+      generateReply.mockResolvedValue({ content: [{ type: "text", text: "hi there" }], stopReason: "end_turn" });
+      const { sendMessage } = await import("@/lib/ai/chat");
+
+      const result = await sendMessage({ orgId: "org-1", botId: "bot-1", userMessage: "hi" });
+
+      expect(result.reply).toBe("hi there");
+      expect(generateReply).toHaveBeenCalledTimes(1);
+    });
+
+    it("spam detection: a SPAM verdict at a checkpoint pauses the conversation and returns a null reply, same as an already-paused one", async () => {
+      findFirstVersion.mockResolvedValue({
+        id: "version-1",
+        tools: [],
+        abuseProtection: { spamDetectionEnabled: true, spamGuidance: "no scams" },
+      });
+      // 1 prior user message + this one = 2, a real checkpoint.
+      findUniqueConversation.mockResolvedValue({
+        id: "conv-1",
+        botId: "bot-1",
+        status: "ongoing",
+        messages: [{ role: "user", content: "first message" }],
+      });
+      generateReply.mockResolvedValue({ content: [{ type: "text", text: "SPAM" }], stopReason: "end_turn" });
+      const { sendMessage } = await import("@/lib/ai/chat");
+
+      const result = await sendMessage({ orgId: "org-1", botId: "bot-1", conversationId: "conv-1", userMessage: "buy cheap watches" });
+
+      expect(result).toEqual({ conversationId: "conv-1", reply: null });
+      expect(updateManyConversation).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: "conv-1", botId: "bot-1" }, data: { status: "paused" } }),
+      );
+      // The classification call happened, but never the main reply loop.
+      expect(generateReply).toHaveBeenCalledTimes(1);
+    });
+
+    it("spam detection: an OK verdict at a checkpoint continues normally into the real reply", async () => {
+      findFirstVersion.mockResolvedValue({
+        id: "version-1",
+        tools: [],
+        abuseProtection: { spamDetectionEnabled: true, spamGuidance: "no scams" },
+      });
+      findUniqueConversation.mockResolvedValue({
+        id: "conv-1",
+        botId: "bot-1",
+        status: "ongoing",
+        messages: [{ role: "user", content: "first message" }],
+      });
+      generateReply
+        .mockResolvedValueOnce({ content: [{ type: "text", text: "OK" }], stopReason: "end_turn" })
+        .mockResolvedValueOnce({ content: [{ type: "text", text: "Sure, happy to help." }], stopReason: "end_turn" });
+      const { sendMessage } = await import("@/lib/ai/chat");
+
+      const result = await sendMessage({ orgId: "org-1", botId: "bot-1", conversationId: "conv-1", userMessage: "what are your hours" });
+
+      expect(result.reply).toBe("Sure, happy to help.");
+      expect(updateManyConversation).not.toHaveBeenCalled();
+      expect(generateReply).toHaveBeenCalledTimes(2);
+    });
+
+    it("spam detection: never runs the classification call outside a checkpoint message count", async () => {
+      findFirstVersion.mockResolvedValue({
+        id: "version-1",
+        tools: [],
+        abuseProtection: { spamDetectionEnabled: true, spamGuidance: "no scams" },
+      });
+      // 0 prior messages + this one = 1, not a checkpoint.
+      findUniqueConversation.mockResolvedValue({ id: "conv-1", botId: "bot-1", status: "ongoing", messages: [] });
+      generateReply.mockResolvedValue({ content: [{ type: "text", text: "Hello!" }], stopReason: "end_turn" });
+      const { sendMessage } = await import("@/lib/ai/chat");
+
+      const result = await sendMessage({ orgId: "org-1", botId: "bot-1", conversationId: "conv-1", userMessage: "hi" });
+
+      expect(result.reply).toBe("Hello!");
+      expect(generateReply).toHaveBeenCalledTimes(1);
+    });
   });
 });

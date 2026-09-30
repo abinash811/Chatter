@@ -160,6 +160,43 @@ test("model tier + temperature (Persona tab) save, survive a reload, and lock te
   await expect(page.getByText("1.0", { exact: true })).toBeVisible();
 });
 
+// ADR 0029 — Guardrails Phase 1 (rate limiting + spam detection),
+// rendered as a second Card on the same "Guardrails" tab as the
+// existing persona-level content-guardrail textarea.
+test("abuse protection (Guardrails tab) is off by default, and its fields save + survive a reload once enabled", async ({
+  page,
+}) => {
+  await signUpAndCreateBot(page, "Abuse Protection Test Bot");
+  await page.click('button[role="tab"]:has-text("Guardrails")');
+
+  // Off by default — the numeric/text fields aren't even rendered
+  // (progressive disclosure), matching the widgets Add-dialog's own
+  // "Call an API" checkbox pattern (ADR 0028 Phase 2).
+  await expect(page.getByText("Max messages")).not.toBeVisible();
+  await expect(page.getByText("What counts as spam for this bot")).not.toBeVisible();
+
+  const switches = page.locator('[data-slot="switch"]');
+  await switches.nth(0).click(); // Rate limiting
+  await switches.nth(1).click(); // Spam detection
+
+  await page.fill("#rateLimitMaxMessages", "7");
+  await page.fill("#rateLimitWindowMinutes", "3");
+  await page.fill("#rateLimitMessage", "Please slow down a little.");
+  await page.fill("#spamGuidance", "Crypto scams and unsolicited promotions.");
+
+  await page.click('button:has-text("Save draft")');
+  await expect(page.getByText("Draft saved.")).toBeVisible({ timeout: 20000 }); // see the comment in the first test above
+
+  await page.reload();
+  await page.click('button[role="tab"]:has-text("Guardrails")');
+  await expect(switches.nth(0)).toBeChecked();
+  await expect(switches.nth(1)).toBeChecked();
+  await expect(page.locator("#rateLimitMaxMessages")).toHaveValue("7");
+  await expect(page.locator("#rateLimitWindowMinutes")).toHaveValue("3");
+  await expect(page.locator("#rateLimitMessage")).toHaveValue("Please slow down a little.");
+  await expect(page.locator("#spamGuidance")).toHaveValue("Crypto scams and unsolicited promotions.");
+});
+
 test("suggested reply chips save, survive a reload, and skip blank rows", async ({ page }) => {
   await signUpAndCreateBot(page, "Suggested Replies Bot");
   await page.click('button[role="tab"]:has-text("Appearance")');

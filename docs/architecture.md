@@ -89,6 +89,16 @@ doc as ADRs land instead of letting decisions live only in chat history.
   write-capable — never a direct call from inside a chat turn.
   States/multi-view widgets remain deliberately deferred —
   `docs/open-questions.md` #9.
+- **Guardrails Phase 1 — rate limiting + spam detection** (2026-09-30,
+  ADR 0029): opt-in, off by default. Rate limiting counts real
+  `Message` rows for a conversation within a configured window;
+  spam detection runs a cheap Haiku classification at fixed message-
+  count checkpoints and, on a flag, auto-pauses the conversation via
+  the same mechanism a human "Pause" click uses (ADR 0027). Per-
+  conversation, not per-device — no persistent visitor identity exists
+  yet (`public/widget.js` holds `conversationId` only in memory).
+  Country/IP blocking is deferred, needs a geolocation-vendor decision
+  — `docs/open-questions.md` #10.
 - Streamed responses back to the widget.
 - **BYOA (bring-your-own API key)**: optional, per-org, off by default —
   a business can plug in their own Anthropic key from `/settings`

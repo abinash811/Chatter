@@ -159,6 +159,15 @@ model BotConfigVersion {
   // their exact current behavior with no data backfill needed.
   model       String       @default("claude-sonnet-5")
   temperature Float        @default(1)
+  // Guardrails Phase 1 (ADR 0029) — rate limiting + spam detection
+  // ("abuse protection"). Deliberately a separate field/name from
+  // `guardrails` above: that column is persona-level content-guardrail
+  // prompt text (CLAUDE.md guardrail #3); this is Chatbase's distinct
+  // "Guardrails" concept (abuse protection), which happens to share the
+  // name at the product level but not the data model. Empty JSON parses
+  // to fully-disabled (lib/ai/abuseProtection.ts) — no behavior change
+  // for an existing bot until opted in.
+  abuseProtection Json     @default("{}")
   publishedAt DateTime?
   createdAt   DateTime     @default(now())
 

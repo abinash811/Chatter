@@ -32,6 +32,12 @@ import {
   type AvatarEmoji,
   type WidgetPosition,
 } from "./appearanceOptions";
+export {
+  DEFAULT_ABUSE_PROTECTION,
+  parseAbuseProtection,
+  type AbuseProtectionConfig,
+} from "./abuseProtectionOptions";
+import { DEFAULT_ABUSE_PROTECTION, type AbuseProtectionConfig } from "./abuseProtectionOptions";
 
 export interface BotAppearance {
   greeting: string;
@@ -89,6 +95,7 @@ export async function getOrCreateDraft(orgId: string, botId: string) {
         appearance: (latestPublished?.appearance ?? DEFAULT_APPEARANCE) as Prisma.InputJsonValue,
         model: latestPublished?.model ?? DEFAULT_MODEL_ID,
         temperature: latestPublished?.temperature ?? DEFAULT_TEMPERATURE,
+        abuseProtection: (latestPublished?.abuseProtection ?? DEFAULT_ABUSE_PROTECTION) as Prisma.InputJsonValue,
       },
     });
   });
@@ -104,6 +111,7 @@ export async function saveDraft(
     appearance: BotAppearance;
     model: string;
     temperature: number;
+    abuseProtection: AbuseProtectionConfig;
   },
 ) {
   const draft = await getOrCreateDraft(orgId, botId);
@@ -117,6 +125,7 @@ export async function saveDraft(
         appearance: fields.appearance as unknown as Prisma.InputJsonValue,
         model: fields.model,
         temperature: fields.temperature,
+        abuseProtection: fields.abuseProtection as unknown as Prisma.InputJsonValue,
       },
     }),
   );
