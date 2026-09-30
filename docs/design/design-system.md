@@ -104,6 +104,71 @@ current default exactly (confirmed via the same `raw.githubusercontent.
 com` fetch used for the component source), so this was already correct
 before ADR 0014, not a coincidence worth re-deriving.
 
+**Spacing scale.** No custom spacing scale is defined in `app/globals.css`
+— every `p-*`/`gap-*`/`space-y-*` utility resolves against Tailwind v4's
+own default scale (`--spacing: 0.25rem` base unit, so `p-2` = 0.5rem,
+`gap-4` = 1rem, etc.), same as the color/radius tokens: adopted as-is,
+not re-derived. Real usage across the console, from a grep of every
+`components`/`app` file (most-used first): `gap-2` (0.5rem) and `px-2`/
+`gap-1`/`px-3`/`py-2` for tight control-level spacing (button/input
+padding, icon gaps); `space-y-3`/`space-y-4`/`gap-3`/`gap-4`/`gap-6` for
+form-field and card-grid rhythm; `p-4`/`p-6` for card/dialog body
+padding. Two extra semantic spacing tokens exist for one specific job —
+list-row height, not general layout — `--spacing-row: 2.5rem` and
+`--spacing-row-sm: 2rem` (`app/globals.css`), used by table/list rows
+that need a fixed height independent of their content's own padding.
+No other named spacing tokens exist; a new screen should reach for the
+scale directly (`gap-4`, `p-6`, etc.) rather than inventing one-off
+pixel values.
+
+## Text styles
+
+No custom type scale is defined either — same "adopt Tailwind's
+default, don't re-derive" pattern as spacing. Real usage, most-to-least
+common: `text-sm` (0.875rem, the workhorse — body copy, table cells,
+form labels, button text), `text-xs` (0.75rem — helper/meta text,
+badges, timestamps), `text-lg` (1.125rem — dialog/section titles), and
+`text-base` (1rem, rare — the few places plain paragraph-scale copy is
+needed outside a form control). One custom token exists for a size
+smaller than Tailwind's own scale goes: `--text-micro: 0.625rem` /
+`--text-micro--line-height: 1rem` (`app/globals.css`) — used sparingly
+for the smallest UI chrome (e.g. a table's tiniest inline count/badge),
+not general copy.
+
+Weight: `font-medium` (500, the default for anything that needs to
+stand out slightly — button labels, active nav items, table headers)
+is the most common, followed by `font-semibold` (600 — headings, dialog
+titles, emphasized inline text) and `font-normal` (400 — the default
+body-copy weight, left implicit rather than written out in most places).
+`font-bold` (700) is intentionally rare — reserved for the one or two
+places a heading needs to out-rank a `font-semibold` one on the same
+screen, not a general "make it stand out" tool.
+
+There is no documented heading hierarchy (no `h1`/`h2`/`h3` size
+convention) — each screen currently picks `text-lg font-semibold` for
+its one page-level title and `text-sm font-medium` for section labels
+by convention, not a named scale. Formalizing an actual `h1`–`h3` scale
+is open work, not yet done.
+
+## Breakpoints
+
+Chatter's console is a **desktop-first web application, not a
+responsive mobile product** — there is no deliberate mobile layout
+strategy, and `docs/design/audit.md`'s "Checked <900px wide" column
+this file used to reference has been retired for exactly that reason.
+No custom breakpoints are defined in `app/globals.css`'s `@theme`
+block, so Tailwind v4's own unconfigured defaults apply if a
+breakpoint prefix is ever used: `sm` 40rem/640px, `md` 48rem/768px,
+`lg` 64rem/1024px, `xl` 80rem/1280px, `2xl` 96rem/1536px. In practice
+almost every `sm:`/`md:`/`lg:` prefix in the codebase today comes from
+shadcn's own pulled component source (e.g. `Dialog`'s
+`sm:flex-row` footer, `Sidebar`'s internal collapse mechanics) rather
+than a deliberate app-level responsive rule — a handful of `max-w-sm`/
+`max-w-md`/`max-w-lg` dialog-width utilities are the closest thing to
+intentional breakpoint-driven sizing this app authors itself. New
+screens should be designed and verified at a standard desktop viewport
+(1280px+) and are not expected to adapt below it.
+
 ## Component inventory
 
 **All 25 primitives in `components/ui/` are now verified shadcn/ui
