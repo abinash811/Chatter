@@ -105,10 +105,20 @@ doc as ADRs land instead of letting decisions live only in chat history.
   hard-limits-not-a-background-job precedent as ADR 0013). Hand-rolled,
   not a vendor (Firecrawl considered, rejected — its cost scales with
   Chatter's own usage), behind a swappable `crawlSite()` interface so a
-  vendor stays a contained later option, not a rewrite. No JS-rendering
-  fallback yet (Playwright is a dev-only dependency today, not shipped
-  to production) and no scheduled auto-refresh (needs real background-
-  job infrastructure, out of scope here) — both deliberate, named gaps.
+  vendor stays a contained later option, not a rewrite. No scheduled
+  auto-refresh (needs real background-job infrastructure, out of scope
+  here) — a deliberate, named gap.
+- **JS-rendering fallback for URL/crawl ingestion** (2026-10-02, ADR
+  0031): `extractUrlText` retries with a real headless Chromium
+  (`playwright`, promoted from dev-only to a real production dependency)
+  only when the plain-fetched page yields suspiciously little text — the
+  signature of a client-rendered JS framework shell. Self-hosted, not
+  rented (a Browserless/Firecrawl-style vendor), consistent with ADR
+  0030's build-it-ourselves call, with renting named as the explicit
+  fallback plan if self-hosting proves operationally difficult. Needs a
+  real Chromium binary available wherever this app deploys — a genuine
+  new constraint on the still-open app-compute decision, `docs/open-
+  questions.md` #8.
 - Streamed responses back to the widget.
 - **BYOA (bring-your-own API key)**: optional, per-org, off by default —
   a business can plug in their own Anthropic key from `/settings`

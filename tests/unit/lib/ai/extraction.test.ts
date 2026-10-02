@@ -10,6 +10,21 @@ import { detectFileKind, extractFileText, extractUrlText } from "@/lib/ai/extrac
 // that hasn't actually been run"). Only global `fetch` is mocked, for
 // extractUrlText's happy/error paths — the SSRF guard and HTML parsing
 // underneath it are real.
+//
+// `playwright` (ADR 0031's JS-rendering fallback) is mocked too — a
+// real chromium.launch() here would make these "unit" tests actually
+// launch a browser and hit the live network on every "no content"
+// case, which is exactly the hermeticity bug this mock exists to avoid
+// (caught for real: the first version of this fallback had no mock, and
+// the existing "no extractable article content" test below silently
+// started making a real network call to example.com). Defaults to
+// "no browser available" (`launch` rejects) so every pre-existing test
+// below that doesn't care about rendering keeps its original,
+// plain-fetch-only behavior unchanged.
+const launchChromium = vi.fn();
+vi.mock("playwright", () => ({
+  chromium: { launch: (...args: unknown[]) => launchChromium(...args) },
+}));
 
 describe("detectFileKind", () => {
   it("detects pdf by mimetype or extension", () => {
@@ -82,6 +97,7 @@ describe("extractUrlText", () => {
   const originalFetch = global.fetch;
   beforeEach(() => {
     global.fetch = vi.fn();
+    launchChromium.mockReset().mockRejectedValue(new Error("no browser available in this test"));
   });
   afterEach(() => {
     global.fetch = originalFetch;
@@ -135,5 +151,80 @@ describe("extractUrlText", () => {
       text: async () => "<html><body></body></html>",
     } as unknown as Response);
     await expect(extractUrlText("https://example.com/blank")).rejects.toThrow(/couldn't find readable/i);
+    // No browser available in this test (the beforeEach default) — still
+    // confirms the fallback was attempted, not skipped, before giving up.
+    expect(launchChromium).toHaveBeenCalled();
+  });
+
+  // ADR 0031 — the fallback path, retrying with a real headless browser
+  // when the plain fetch sees only a JS framework's empty shell.
+  describe("JS-rendering fallback (ADR 0031)", () => {
+    function mockBrowser(renderedHtml: string) {
+      launchChromium.mockResolvedValue({
+        newPage: vi.fn().mockResolvedValue({
+          goto: vi.fn().mockResolvedValue(undefined),
+          content: vi.fn().mockResolvedValue(renderedHtml),
+        }),
+        close: vi.fn().mockResolvedValue(undefined),
+      });
+    }
+
+    it("doesn't bother rendering when the plain fetch already found a real article", async () => {
+      const html = `<html><head><title>Hours</title></head><body><article><p>${"We're open 9-5 every weekday, including holidays except Christmas and New Year's Day. ".repeat(3)}</p></article></body></html>`;
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        headers: new Map(),
+        text: async () => html,
+      } as unknown as Response);
+
+      await extractUrlText("https://example.com/hours");
+
+      expect(launchChromium).not.toHaveBeenCalled();
+    });
+
+    it("retries with a real headless browser when the plain fetch only sees a JS framework's empty shell, and uses the rendered content", async () => {
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        headers: new Map(),
+        text: async () => `<html><head><title>App</title></head><body><div id="root"></div></body></html>`,
+      } as unknown as Response);
+      mockBrowser(
+        `<html><head><title>Pricing</title></head><body><article><p>${"Our Pro plan is $29 per month and includes unlimited projects and priority support. ".repeat(3)}</p></article></body></html>`,
+      );
+
+      const result = await extractUrlText("https://example.com/pricing");
+
+      expect(launchChromium).toHaveBeenCalled();
+      expect(result.title).toBe("Pricing");
+      expect(result.text).toContain("Pro plan is $29 per month");
+    });
+
+    it("still throws the plain-language error when the rendered page has no real content either", async () => {
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        headers: new Map(),
+        text: async () => `<html><body><div id="root"></div></body></html>`,
+      } as unknown as Response);
+      mockBrowser(`<html><body><div id="root"></div></body></html>`);
+
+      await expect(extractUrlText("https://example.com/still-empty")).rejects.toThrow(/couldn't find readable/i);
+    });
+
+    it("falls back gracefully (same plain-language error) when the browser itself fails to render the page", async () => {
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        headers: new Map(),
+        text: async () => `<html><body><div id="root"></div></body></html>`,
+      } as unknown as Response);
+      launchChromium.mockResolvedValue({
+        newPage: vi.fn().mockResolvedValue({
+          goto: vi.fn().mockRejectedValue(new Error("navigation timeout")),
+          content: vi.fn(),
+        }),
+        close: vi.fn().mockResolvedValue(undefined),
+      });
+
+      await expect(extractUrlText("https://example.com/times-out")).rejects.toThrow(/couldn't find readable/i);
+    });
   });
 });

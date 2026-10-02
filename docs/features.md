@@ -280,19 +280,23 @@ URL-persisted pattern as the bots list, ADR 0024), a bulk-select mode
 with checkboxes and a bulk-delete confirm dialog, and an informational
 total-size indicator (no plan-based cap — `docs/open-questions.md`
 #6's billing-tier question is unresolved, so there's nothing to show a
-cap against, unlike Chatbase's "X KB / 1 MB"). Scheduled re-crawling
-and JS-rendered pages stay explicitly deferred (ADR 0030 — no
-background-job infrastructure yet; Playwright is a devDependency only).
-Notion-page and helpdesk-ticket sources are out of scope — Notion needs
-a full OAuth connector build, and tickets is Chatbase's own paywalled
-helpdesk integration, not a generic knowledge source. **How**:
+cap against, unlike Chatbase's "X KB / 1 MB"). JS-rendered pages (a
+React/Vue site whose real content only exists after its own JavaScript
+runs) now ingest correctly too — `extractUrlText` retries with a real
+headless Chromium when a plain fetch finds too little text (2026-10-02,
+ADR 0031; self-hosted, not a rented vendor). Scheduled re-crawling
+stays explicitly deferred (ADR 0030 — no background-job infrastructure
+yet). Notion-page and helpdesk-ticket sources are out of scope — Notion
+needs a full OAuth connector build, and tickets is Chatbase's own
+paywalled helpdesk integration, not a generic knowledge source. **How**:
 `lib/ai/knowledgeBase.ts` (source/chunk writes, `createTextEntry`,
 `createCrawledEntries`, `getTotalKnowledgeBytes`), `lib/ai/
 extraction.ts` (PDF via `pdf-parse`, DOCX via `mammoth`, URL via
-`jsdom`+`@mozilla/readability`), `lib/ai/crawler.ts` (`crawlSite` —
-`robots-parser` + `sitemapper` discovery, ADR 0030), `lib/ai/
-chunking.ts` (hand-rolled recursive splitter for file/URL/text),
-`app/(console)/bots/[botId]/knowledge/`. ADR 0013, ADR 0030. See
+`jsdom`+`@mozilla/readability`, JS-rendering fallback via `playwright`),
+`lib/ai/crawler.ts` (`crawlSite` — `robots-parser` + `sitemapper`
+discovery, ADR 0030), `lib/ai/chunking.ts` (hand-rolled recursive
+splitter for file/URL/text),
+`app/(console)/bots/[botId]/knowledge/`. ADR 0013, ADR 0030, ADR 0031. See
 `docs/business-logic.md`'s "Knowledge base ingestion" section.
 
 ### Onboarding

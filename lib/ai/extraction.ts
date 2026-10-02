@@ -4,14 +4,55 @@
 // docs/research/knowledge-ingestion-libraries.md, versions checked via
 // `npm view` at install time, not recalled.
 
+import { existsSync } from "fs";
 import { PDFParse } from "pdf-parse";
 import mammoth from "mammoth";
 import { JSDOM } from "jsdom";
 import { Readability } from "@mozilla/readability";
+import { chromium } from "playwright";
 
 export const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5MB — see ADR 0013 (sync processing, v1)
 const MAX_URL_RESPONSE_BYTES = 5 * 1024 * 1024;
 const URL_FETCH_TIMEOUT_MS = 10_000;
+
+// ADR 0031 — a plain fetch sees nothing on a JS-rendered page (its real
+// content only exists after the page's own JavaScript runs), so a
+// too-short Readability result is treated as a signal to retry with a
+// real headless browser rather than a reason to give up. 150 chars is
+// comfortably below any real article's length but above what an empty
+// JS-shell page (`<div id="root"></div>`) typically renders as plain
+// HTML, so it doesn't fire on short-but-real pages.
+const MIN_TEXT_LENGTH_BEFORE_RENDER_FALLBACK = 150;
+const BROWSER_RENDER_TIMEOUT_MS = 15_000;
+const CRAWLER_USER_AGENT = "ChatterBot/1.0 (+https://chatter.example/crawler)";
+
+// Same sandbox-chromium override playwright.config.ts already uses for
+// this specific environment; a normal deploy target needs its own
+// `npx playwright install chromium` (or equivalent) since `playwright`
+// doesn't ship browser binaries in the npm package itself — see ADR 0031.
+const SANDBOX_CHROMIUM = "/opt/pw-browsers/chromium";
+
+async function renderWithBrowser(url: URL): Promise<string | null> {
+  const browser = await chromium
+    .launch(existsSync(SANDBOX_CHROMIUM) ? { executablePath: SANDBOX_CHROMIUM } : {})
+    .catch(() => null);
+  if (!browser) return null;
+
+  try {
+    const page = await browser.newPage({ userAgent: CRAWLER_USER_AGENT });
+    await page.goto(url.toString(), { waitUntil: "networkidle", timeout: BROWSER_RENDER_TIMEOUT_MS });
+    return await page.content();
+  } catch {
+    return null;
+  } finally {
+    await browser.close();
+  }
+}
+
+function extractArticle(html: string, url: URL) {
+  const dom = new JSDOM(html, { url: url.toString() });
+  return new Readability(dom.window.document).parse();
+}
 
 // A known, expected failure (bad input) with a message safe to show the
 // business owner as-is — as opposed to an unexpected one (a library
@@ -107,8 +148,22 @@ export async function extractUrlText(rawUrl: string): Promise<{ title: string; t
   }
 
   const html = await res.text();
-  const dom = new JSDOM(html, { url: url.toString() });
-  const article = new Readability(dom.window.document).parse();
+  let article = extractArticle(html, url);
+
+  // ADR 0031 — the plain fetch above only ever sees a JS-rendered page's
+  // pre-JavaScript HTML shell, which Readability correctly reads as
+  // "no real content." Only retried here, not tried first, so the vast
+  // majority of pages (which don't need it) stay on the fast, cheap path.
+  if (!article?.textContent || article.textContent.trim().length < MIN_TEXT_LENGTH_BEFORE_RENDER_FALLBACK) {
+    const renderedHtml = await renderWithBrowser(url);
+    if (renderedHtml) {
+      const renderedArticle = extractArticle(renderedHtml, url);
+      if (renderedArticle?.textContent?.trim()) {
+        article = renderedArticle;
+      }
+    }
+  }
+
   if (!article || !article.textContent?.trim()) {
     throw new KnowledgeIngestionError("Couldn't find readable article content on that page.");
   }

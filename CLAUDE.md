@@ -47,7 +47,7 @@ reason.)
   `docs/design/audit.md` tracks per-screen compliance against the bar —
   check there before assuming a screen is finished.
 - Testing/guardrails: 10 static guardrail checks (`npm run check:all`),
-  222 unit tests, 89+ `tests/e2e/` specs, 20+ `tests/visual/` baselines,
+  226 unit tests, 89+ `tests/e2e/` specs, 20+ `tests/visual/` baselines,
   gitleaks + a CI coverage floor, all wired into CI. Known, tracked
   flake: a toast-timeout resource-contention issue on CI's 2-vCPU
   runner (`retries: 1` under CI mitigates but doesn't eliminate it) —
@@ -345,11 +345,17 @@ reason.)
   first, robots.txt-respected, capped at 20 pages, synchronous —
   `lib/ai/crawler.ts`'s swappable `crawlSite()`), not just one page.
   Hand-rolled, not Firecrawl (its cost scales with our own usage); no
-  JS-rendering (Playwright is dev-only) or scheduled re-crawl (no
-  background-job infra) yet, both deliberate. Verified: `tsc` clean,
-  all 10 guardrails, a production build, full unit suite (222, 11 new),
-  2 new e2e specs run against a real prod build, a real screenshot of
-  the dialog reviewed against the design bar. Full detail:
+  scheduled re-crawl yet (no background-job infra), deliberate.
+- JS-rendering fallback for URL/crawl ingestion (2026-10-02, ADR 0031):
+  `extractUrlText` retries with a real headless Chromium (`playwright`,
+  now a real production dependency, not dev-only) when a plain fetch
+  finds too little text — closes ADR 0030's named JS-site gap.
+  Self-hosted first, renting (Browserless/Firecrawl) is the named
+  fallback plan if that proves difficult. Needs a real Chromium binary
+  wherever this app deploys — a new constraint on `docs/open-
+  questions.md` #8. Verified: `tsc` clean, all 10 guardrails, full unit
+  suite (226, 4 new), a real smoke test confirming the sandbox Chromium
+  genuinely renders JS outside the Playwright test runner. Full detail:
   `docs/changelog.md`.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
@@ -364,7 +370,7 @@ reason.)
 - No real end-to-end verified Claude reply yet — blocked on a real
   `ANTHROPIC_API_KEY`.
 - Not built: password reset, teammate invites/multi-org switcher,
-  scheduled re-crawling and JS-rendered-page crawling (ADR 0030).
+  scheduled re-crawling for Data sources (ADR 0030).
 - `scripts/canary.mjs` can't run in this container as-is (Playwright
   browser version mismatch) — `tests/e2e/`/`tests/visual/` already
   work around it, only the standalone script is affected.

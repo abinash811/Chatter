@@ -52,7 +52,10 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
    (full control, most ops burden). User said this is "decided later,"
    not blocking anything today. Distinct from #1 above (that's whether
    we ever offer self-hosting as a *product* option to businesses; this
-   is where *our own* managed instance runs).
+   is where *our own* managed instance runs). Now has a real added
+   constraint (2026-10-02, ADR 0031): JS-rendering fallback for URL/
+   crawl ingestion needs a real Chromium binary available wherever this
+   app runs, so whichever target is picked must support that.
 9. **In-chat widgets, States/multi-view widgets** (2026-09-29, ADR
    0028). Phase 1 (Schema-driven forms) shipped 2026-09-29; Phase 2
    (Functions — an opt-in real API call on submit, write-capable ones

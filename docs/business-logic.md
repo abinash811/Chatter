@@ -269,6 +269,11 @@ pull just the article content — not nav/footer/ad chrome. Guarded by
 `assertPublicHttpUrl` (a basic SSRF check: `http`/`https` only, and the
 literal hostname is rejected if it's `localhost`/loopback/private/link-
 local — see `docs/security.md` for what this guard does *not* cover).
+If that first pass finds suspiciously little text (under 150 chars —
+a JS-framework page's empty-shell signature), it retries once with a
+real headless Chromium (`playwright`, ADR 0031), self-hosted rather
+than rented (Browserless/Firecrawl is the named fallback plan if that
+proves difficult).
 
 **Text snippet** (`createTextEntry`, 2026-09-29): a title + pasted text,
 no extraction step — reuses the same chunking pipeline as file/URL
@@ -282,14 +287,15 @@ single-page `createUrlEntry` path. Discovery is sitemap-first
 (`robots.txt`'s `Sitemap:` directive, else a same-origin
 `/sitemap.xml` guess, else a capped same-origin link-following
 fallback), always checking `robots-parser`'s `isAllowed()` first (a
-disallowed homepage throws before any discovery work starts). Capped
-at `MAX_CRAWL_PAGES` (20), run synchronously (same hard-limits
-precedent as ADR 0013), with a courtesy delay between fetches. Each
-discovered URL reuses the exact same `extractUrlText` every single-URL
-ingestion already uses; one page's failure skips that page rather than
-aborting the crawl (same precedent as `bulkDeleteEntriesAction`).
-Deliberately out of scope: JS-rendered pages (Playwright is dev-only)
-and scheduled re-crawling (no background-job infra yet). Behind a
+disallowed homepage throws before discovery starts). Capped at
+`MAX_CRAWL_PAGES` (20), run synchronously (same hard-limits precedent
+as ADR 0013), with a courtesy delay between fetches. Each discovered
+URL reuses `extractUrlText` unchanged (JS-rendering fallback included);
+one page's failure skips that page rather than aborting the crawl
+(same precedent as `bulkDeleteEntriesAction`).
+JS-rendered pages are now handled too (`extractUrlText`'s own fallback,
+above, applies per-page automatically). Deliberately still out of
+scope: scheduled re-crawling (no background-job infra yet). Behind a
 swappable `crawlSite(startUrl) -> CrawledPage[]` interface so a vendor
 (Firecrawl was evaluated and passed on — its cost scales with
 Chatter's own usage) stays a contained later option.
@@ -481,11 +487,8 @@ a separate code path that could quietly drift from the real one. The
 live tool call wraps the same result in the handoff-JSON contract
 (guardrail #4); the test path returns the raw status/body instead,
 since a business owner debugging their own endpoint needs to see what
-actually came back, not a plain-language fallback message.
-
-Response bodies are capped at 4000 characters before reaching the
-console — a test call is for confirming shape/status, not for browsing
-a large payload.
+actually came back, not a plain-language fallback message. Response
+bodies are capped at 4000 characters before reaching the console.
 
 ## Shopify connect flow
 
