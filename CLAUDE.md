@@ -413,6 +413,14 @@ reason.)
   so the fallback path is what's actually verified (via
   `npm run eval:retrieval` against a live Postgres), not the real
   quality gain. Full detail: `docs/changelog.md`.
+- `--accent`-on-white contrast fix (2026-10-02): closed the cross-
+  cutting ghost-button-hover finding flagged 2026-09-28 (`docs/design/
+  audit.md`) — `--accent` darkened from neutral-100 (97%) to neutral-200
+  (92.2%, reusing the `border`/`strong-background` step), fixing every
+  `ghost` button's hover across the app at once. Prompted by a design-
+  quality review of Chatbase. Verified via real contrast math,
+  `accessibility.spec.ts`/`tests/visual/` (no regressions), and a real
+  before/after screenshot. Full detail: `docs/changelog.md`.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.

@@ -52,7 +52,8 @@ chrome anywhere, color reserved for sparing illustration accents only).
 | `foreground` | `oklch(0% 0 0)` black | `oklch(98.5% 0 none)` neutral-50 | shadcn default |
 | `primary` | `oklch(0% 0 0)` black | `oklch(92.2% 0 none)` neutral-200 | shadcn default |
 | `primary-foreground` | `oklch(98.5% 0 none)` | `oklch(20.5% 0 none)` | shadcn default |
-| `secondary` / `accent` / `muted` | `oklch(97% 0 none)` neutral-100 | `oklch(26.9%–37.1% 0 none)` neutral-700/800 | shadcn default |
+| `secondary` / `muted` | `oklch(97% 0 none)` neutral-100 | `oklch(26.9%–37.1% 0 none)` neutral-700/800 | shadcn default |
+| `accent` | `oklch(92.2% 0 none)` neutral-200 | `oklch(37.1% 0 none)` neutral-700 (unchanged) | 2026-10-02: darkened from neutral-100 — the old value was only a 3-point lightness gap from `--background`'s pure white, making every ghost-button hover nearly invisible (flagged in this file's own audit, fixed after explaining the tradeoff to the user). Reuses the same neutral-200 step already used for `border`/`strong-background`, not a new raw value. |
 | `muted-foreground` | `oklch(48% 0 none)` (darker than shadcn's stock 55.6%) | `oklch(70.8% 0 none)` neutral-400 | 2026-10-02: the stock value was a razor-thin 4.34:1 against `--muted` (97% L) — see note below |
 | `border` / `input` | `oklch(92.2%/87% 0 none)` neutral-200/300 | `oklch(1 0 0 / 10–15%)` translucent white | shadcn default |
 | `ring` | `oklch(70.8% 0 none)` neutral-400 | `oklch(55.6% 0 none)` neutral-500 | shadcn default |

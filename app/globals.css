@@ -132,7 +132,16 @@
   --popover-foreground: oklch(0% 0 0);
   --primary: oklch(0% 0 0); /* monochrome — shadcn default + Claude Console's solid-black buttons */
   --primary-foreground: oklch(98.5% 0 none);
-  --accent: oklch(97% 0 none); /* neutral-100 */
+  /* 2026-10-02: darkened from neutral-100 (97%) to neutral-200 (92.2%,
+     the same step already used for `border`/`strong-background`) — the
+     old value was only a 3-point lightness gap from `--background`'s
+     pure white, making every ghost-button hover (and any other
+     bg-accent use) nearly invisible. Confirmed via real contrast math,
+     not guesswork: accent-foreground (20.5% L) still reads ~14:1 on
+     this darker background, comfortably above AA. Dark mode's --accent
+     wasn't touched — this bug was specific to light mode's near-white
+     background, not reported in dark mode. */
+  --accent: oklch(92.2% 0 none); /* neutral-200 */
   --accent-foreground: oklch(20.5% 0 none); /* neutral-900 */
   --secondary: oklch(97% 0 none); /* neutral-100 */
   --secondary-foreground: oklch(20.5% 0 none); /* neutral-900 */
