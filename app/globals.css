@@ -1,6 +1,17 @@
 @import 'tailwindcss';
 
 @theme {
+  /* ADR 0036 — the real typeface this app runs, not the browser
+     default system-font stack. Inter Variable (self-hosted via
+     @fontsource-variable/inter, imported in app/layout.tsx) first,
+     then Tailwind's own default sans stack as the fallback chain
+     (node_modules/tailwindcss/theme.css) if the font file somehow
+     fails to load. */
+  --font-sans:
+    "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+    "Noto Color Emoji";
+
   --color-background: var(--background);
   --color-soft-background: var(--soft-background);
   --color-muted-background: var(--muted-background);

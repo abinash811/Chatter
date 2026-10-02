@@ -428,6 +428,22 @@ reason.)
   all used for one consistent purpose each. No new bugs found; fixed 2
   stale code comments still citing the pre-fix `--accent` value. See
   `docs/design/audit.md`'s "System coverage" table.
+- Inter typeface + page-title heading hierarchy (2026-10-02, ADR 0036,
+  supersedes ADR 0014's typography call): user reviewed the shipped
+  product and called it "a college project" — the consistency audit
+  above had just confirmed internal consistency but missed this
+  entirely, since it checks consistency, not quality. Root-caused: no
+  `font-family` override existed anywhere, and zero page titles used
+  anything above `text-lg` (18px). Adopted Inter, self-hosted via
+  `@fontsource-variable/inter` (zero network dependency, same reason
+  ADR 0014 originally dropped a custom font), wired as `--font-sans`;
+  bumped the 9 genuine page titles to a real `text-xl` tier above
+  dialog/card titles. Verified via real computed-style checks, full
+  `tests/e2e/` (117/117) + `accessibility.spec.ts` (15/15), all 19
+  visual baselines regenerated + stable, manual layout spot-check (no
+  breakage). Still open: a full per-element typography sweep, the
+  elevation-scale/motion-policy gaps (next in line), and the
+  empty-state/depth-hierarchy pass. Full detail: `docs/changelog.md`.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.

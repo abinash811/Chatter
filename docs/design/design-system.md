@@ -15,8 +15,10 @@ Two separate sources, deliberately not one:
   style) — pulled from its real, current GitHub source via
   `scripts/pull-shadcn-component.mjs` (its live registry API,
   `ui.shadcn.com`, is blocked by this environment's egress policy;
-  `raw.githubusercontent.com` isn't). Default neutral base color,
-  default typography (no custom font — plain system sans-serif stack).
+  `raw.githubusercontent.com` isn't). Default neutral base color.
+  Typography: **Inter** (ADR 0036, 2026-10-02) — superseded the
+  original "no custom font, plain system sans-serif stack" default;
+  see the Typography section below.
 - **Layout/structure**: Claude Console's real, current product
   (screenshots supplied directly by the user — Dashboard, Skills pages).
   Not its component source, not its brand typeface/palette — just how
@@ -101,16 +103,23 @@ check.
 
 ## Type
 
-No custom font — shadcn's own default: the platform sans-serif stack
-(`-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, ...`), verified
-live via `getComputedStyle(document.body).fontFamily`. `next/font/
-google`'s Figtree import (CARE's typeface, ADR 0008) removed from
-`app/layout.tsx` — no Google Fonts network dependency at all now.
+**Inter** (ADR 0036, 2026-10-02), self-hosted via
+`@fontsource-variable/inter`'s `wght.css` (imported once in
+`app/layout.tsx`, wired as `--font-sans` in `app/globals.css`'s
+`@theme` block) — verified live via `getComputedStyle(document.body).
+fontFamily`. No Google Fonts network dependency: a self-hosted npm
+package, not `next/font/google`'s build-time fetch from Google's font
+CDN, for the same reason ADR 0014 originally removed CARE's Figtree
+import (this environment's history of domain-specific network blocks).
 
-Explicit user call (ADR 0014): don't chase Anthropic's brand serif
-seen in the Claude Console screenshots — Chatter is a separate
-commercial product, and it's Anthropic's own brand asset. Claude
-Console is a *layout* reference here, not a typeface to replicate.
+This supersedes ADR 0014's typography call specifically (see ADR
+0036) — prompted by the user flagging the shipped product as looking
+like "a college project" despite the token system being internally
+consistent; a plain system font with no real type scale was a real,
+root-caused contributor, not just an impression. ADR 0014's reasoning
+on Anthropic's brand serif still applies in spirit: Inter isn't a
+replica of any specific reference product's exact brand type, it's the
+real typeface most 2026 SaaS dashboards (Linear included) actually run.
 
 ## Radius & spacing
 
@@ -138,17 +147,22 @@ pixel values.
 
 ## Text styles
 
-No custom type scale is defined either — same "adopt Tailwind's
-default, don't re-derive" pattern as spacing. Real usage, most-to-least
-common: `text-sm` (0.875rem, the workhorse — body copy, table cells,
-form labels, button text), `text-xs` (0.75rem — helper/meta text,
-badges, timestamps), `text-lg` (1.125rem — dialog/section titles), and
-`text-base` (1rem, rare — the few places plain paragraph-scale copy is
-needed outside a form control). One custom token exists for a size
-smaller than Tailwind's own scale goes: `--text-micro: 0.625rem` /
-`--text-micro--line-height: 1rem` (`app/globals.css`) — used sparingly
-for the smallest UI chrome (e.g. a table's tiniest inline count/badge),
-not general copy.
+Still Tailwind's own default size scale (no custom `--text-*` size
+tokens beyond `--text-micro`, below) — but as of ADR 0036 (2026-10-02)
+there's a real, deliberate two-tier heading hierarchy on top of it,
+not just ad hoc per-screen picks. Real usage, most-to-least common:
+`text-sm` (0.875rem, the workhorse — body copy, table cells, form
+labels, button text), `text-xs` (0.75rem — helper/meta text, badges,
+timestamps), `text-xl` (1.25rem — **page titles**, every screen's one
+top-level `<h1>`/`<h2>`, e.g. "Bots", "Settings", "Data sources"),
+`text-lg` (1.125rem — **dialog/card/section titles**, one tier below a
+page title — shadcn's own `AlertDialogTitle` default, Persona/Model
+card headers, etc.), and `text-base` (1rem, rare — the few places plain
+paragraph-scale copy is needed outside a form control). One custom
+token exists for a size smaller than Tailwind's own scale goes:
+`--text-micro: 0.625rem` / `--text-micro--line-height: 1rem`
+(`app/globals.css`) — used sparingly for the smallest UI chrome (e.g.
+a table's tiniest inline count/badge), not general copy.
 
 Weight: `font-medium` (500, the default for anything that needs to
 stand out slightly — button labels, active nav items, table headers)
@@ -157,13 +171,16 @@ titles, emphasized inline text) and `font-normal` (400 — the default
 body-copy weight, left implicit rather than written out in most places).
 `font-bold` (700) is intentionally rare — reserved for the one or two
 places a heading needs to out-rank a `font-semibold` one on the same
-screen, not a general "make it stand out" tool.
+screen, not a general "make it stand out" tool. Page titles also carry
+`tracking-tight` — a small negative letter-spacing that reads correctly
+at Inter's larger weights/sizes, not applied at smaller text sizes.
 
-There is no documented heading hierarchy (no `h1`/`h2`/`h3` size
-convention) — each screen currently picks `text-lg font-semibold` for
-its one page-level title and `text-sm font-medium` for section labels
-by convention, not a named scale. Formalizing an actual `h1`–`h3` scale
-is open work, not yet done.
+**Still open** (ADR 0036's Consequences section, not silently
+dropped): a full per-element typography sweep beyond the page-title
+tier (every `text-sm`/`text-xs` decision, screen by screen) is
+separate, larger scope — this pass established the foundation
+(typeface + the one real heading tier), not a complete type-scale
+overhaul.
 
 ## Breakpoints
 

@@ -49,7 +49,7 @@ export function ApprovalsForm({ botId, actions }: { botId: string; actions: Pend
   return (
     <div>
       <div className="flex h-row items-center justify-between">
-        <h2 className="flex items-center gap-2 text-lg font-semibold">
+        <h2 className="flex items-center gap-2 text-xl font-semibold tracking-tight">
           Approvals{" "}
           {pendingCount > 0 && <span className="text-sm font-normal text-muted-foreground">{pendingCount} waiting</span>}
         </h2>

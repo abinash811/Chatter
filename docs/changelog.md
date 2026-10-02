@@ -273,3 +273,59 @@ Firecrawl last-resort fallback (ADR 0032).
   hover, confirming the hover state now renders as a clearly visible
   gray pill instead of an imperceptible tint.
 
+- **Accent-color/monochrome consistency audit (2026-10-02, task
+  tracker #11).** A stale task predating ADR 0014's monochrome
+  decision — clarified scope with the user first (consistency audit,
+  not re-opening the monochrome-vs-colored-accent decision). A grep
+  sweep (raw non-neutral Tailwind colors, `Badge` variant usage,
+  `bg-primary`/`bg-accent`/`bg-soft-background` purpose consistency)
+  plus real screenshots of 10 console screens found the monochrome
+  system holding consistently everywhere — no new functional bugs.
+  Fixed 2 stale code comments (`BotTableRow.tsx`, `AppSidebar.tsx`)
+  still citing the pre-contrast-fix `--accent` value. Full detail:
+  `docs/design/audit.md`'s System coverage table.
+
+- **Inter typeface + page-title heading hierarchy (2026-10-02, ADR
+  0036, supersedes ADR 0014's typography call).** The user reviewed
+  the shipped product directly and called it "a college project" —
+  immediately after the consistency audit above had found the token
+  system internally sound, a real lesson that consistency-checking
+  and quality-checking are different questions. Root-caused, not
+  guessed: `app/globals.css` had zero `font-family` override anywhere
+  (confirmed via grep) — every screen ran Tailwind's own default
+  system-font stack. A second grep found zero uses of `text-xl` or
+  larger anywhere in the app — every page title capped at `text-lg`
+  (18px), no real heading hierarchy.
+  Explained the real tradeoff to the user before building (Inter vs.
+  a more distinctive typeface vs. keeping system font and fixing other
+  gaps first; typography-first vs. empty-states-first vs.
+  motion-first sequencing) — user chose Inter, typography-first.
+  Adopted via `@fontsource-variable/inter`'s `wght.css` (self-hosted,
+  zero runtime/build-time network dependency — confirmed real via
+  `npm view`), not `next/font/google`, for the same network-dependency
+  reason ADR 0014 originally removed CARE's Figtree import; wired as
+  `--font-sans` in `app/globals.css`'s `@theme` (Tailwind v4's own
+  preflight applies it to `html` automatically). The 9 genuine
+  page-title headings (Bots, Leads, Actions, Widgets, Approvals, Data
+  sources, Integrations, Settings, Conversations) bumped from
+  `text-lg font-semibold` to `text-xl font-semibold tracking-tight` —
+  a real tier above dialog/card titles, which stay at `text-lg`.
+  `app/global-error.tsx`'s inline-styled fallback `h1` (deliberately
+  not Tailwind-dependent, per its own header comment) and
+  `BotTopBar.tsx`'s editable bot-name input (a different structural
+  role, not a static heading) were deliberately left alone.
+  Verified: `npx tsc --noEmit` clean; all 10 `check:all` guardrails; a
+  production build; a real computed-style check confirming
+  `"Inter Variable"` actually renders (not a silent fallback) and the
+  new page-title size/weight; full unit suite (235, unchanged); the
+  full `tests/e2e/` suite (117/117); the full `accessibility.spec.ts`
+  suite (15/15, no new violations); all 19 `tests/visual/` baselines
+  regenerated and confirmed stable across two runs; a manual spot-check
+  of several regenerated screenshots for layout breakage (clipping,
+  overflow, misalignment from Inter's different metrics) — none found.
+  Still open, by design: a full per-element typography sweep beyond
+  page titles, the elevation-scale and motion-policy gaps
+  `docs/design/audit.md` already tracked (next in line per this same
+  feedback), and the empty-state/depth-hierarchy pass sequenced after
+  this one.
+

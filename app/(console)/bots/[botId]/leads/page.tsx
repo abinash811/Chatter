@@ -11,7 +11,7 @@ export default async function LeadsPage({ params }: { params: Promise<{ botId: s
   return (
     <div>
       <div className="flex h-row items-center justify-between">
-        <h1 className="flex items-center gap-2 text-lg font-semibold">
+        <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight">
           Leads{" "}
           {leads.length > 0 && <span className="text-sm font-normal text-muted-foreground">{leads.length}</span>}
         </h1>

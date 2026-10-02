@@ -48,7 +48,7 @@ export default async function IntegrationsPage({
     <div>
       {/* h2, not h1 — the page's h1 is the (sr-only) bot name in the
           shared BotTopBar, app/(console)/bots/[botId]/layout.tsx. */}
-      <h2 className="h-row flex items-center text-lg font-semibold">Integrations</h2>
+      <h2 className="h-row flex items-center text-xl font-semibold tracking-tight">Integrations</h2>
 
       {/* rounded-lg border shadow-xs — same depth treatment as every
           other list screen (Knowledge/Leads/Actions/Conversations); this

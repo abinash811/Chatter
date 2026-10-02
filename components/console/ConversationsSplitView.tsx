@@ -66,7 +66,7 @@ export function ConversationsSplitView({
   return (
     <div className="flex h-[calc(100vh-8rem)] flex-col">
       <div className="flex h-row items-center justify-between">
-        <h1 className="flex items-center gap-2 text-lg font-semibold">
+        <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight">
           Conversations{" "}
           {conversations.length > 0 && (
             <span className="text-sm font-normal text-muted-foreground">{conversations.length}</span>
