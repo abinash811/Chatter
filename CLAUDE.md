@@ -47,7 +47,7 @@ reason.)
   `docs/design/audit.md` tracks per-screen compliance against the bar —
   check there before assuming a screen is finished.
 - Testing/guardrails: 10 static guardrail checks (`npm run check:all`),
-  231 unit tests, 89+ `tests/e2e/` specs, 20+ `tests/visual/` baselines,
+  235 unit tests, 89+ `tests/e2e/` specs, 20+ `tests/visual/` baselines,
   gitleaks + a CI coverage floor, all wired into CI. Known, tracked
   flake: a toast-timeout resource-contention issue on CI's 2-vCPU
   runner (`retries: 1` under CI mitigates but doesn't eliminate it) —
@@ -404,6 +404,15 @@ reason.)
   Postgres (all 3 tenant-isolation assertions passing), full
   `tests/e2e/` (117/117) and `accessibility.spec.ts` (15/15). Full
   detail: `docs/changelog.md`.
+- Reranking via Voyage rerank-2 (2026-10-02, ADR 0035): `lib/ai/
+  rerank.ts`'s new `RerankProvider` re-scores hybrid search's 25-doc RRF
+  candidate pool down to the 5 chunks sent to the model
+  (`lib/ai/retrieval.ts`), falling back to hybrid order on failure.
+  Chosen over Cohere after an explicit tradeoff explained to and
+  confirmed by the user. `VOYAGE_API_KEY` is still a placeholder here,
+  so the fallback path is what's actually verified (via
+  `npm run eval:retrieval` against a live Postgres), not the real
+  quality gain. Full detail: `docs/changelog.md`.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.

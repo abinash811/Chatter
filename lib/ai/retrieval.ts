@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { withOrgContext } from "@/lib/db";
 import { getEmbeddingsProvider } from "@/lib/ai/embeddings";
+import { getRerankProvider } from "@/lib/ai/rerank";
 
 // Extracted from lib/ai/tools/searchKnowledgeBase.ts (2026-09-27) so the
 // eval harness (scripts/eval-retrieval.ts) can call the exact same query
@@ -31,6 +32,15 @@ export interface RetrievedChunk {
 // sets app.org_id for this transaction, so RLS already scopes this
 // query to orgId — the botId filter narrows further to this specific
 // bot's sources within that org.
+// ADR 0035: reranking re-scores a wider RRF-fused candidate pool
+// (rerankPoolSize) down to the matchCount actually returned — a step
+// after hybrid search, not a replacement for it. Pool size is a fixed
+// 25 (comfortably above any matchCount this app uses, well under
+// Voyage's 1000-document request limit) rather than a multiple of
+// matchCount, since the point is giving the reranker a meaningfully
+// wider pool than RRF's own top-K to re-sort, not scaling with it.
+const RERANK_POOL_SIZE = 25;
+
 export async function retrieveKnowledgeChunks(
   orgId: string,
   botId: string,
@@ -45,9 +55,10 @@ export async function retrieveKnowledgeChunks(
 ): Promise<RetrievedChunk[]> {
   const embedding = queryEmbedding ?? (await getEmbeddingsProvider().embed(query));
   const vectorLiteral = `[${embedding.join(",")}]`;
-  const candidateLimit = Math.min(matchCount, 30) * 2;
+  const poolSize = Math.max(matchCount, RERANK_POOL_SIZE);
+  const candidateLimit = Math.min(poolSize, 30) * 2;
 
-  return withOrgContext(orgId, (tx) =>
+  const candidates = await withOrgContext(orgId, (tx) =>
     tx.$queryRaw<RetrievedChunk[]>(Prisma.sql`
       with full_text as (
         select kc.id, row_number() over (
@@ -76,7 +87,25 @@ export async function retrieveKnowledgeChunks(
       order by
         coalesce(1.0 / (50 + full_text.rank_ix), 0.0) +
         coalesce(1.0 / (50 + semantic.rank_ix), 0.0) desc
-      limit ${matchCount}
+      limit ${poolSize}
     `),
   );
+
+  if (candidates.length <= matchCount) return candidates;
+
+  // Reranking is a quality step on top of a working hybrid search, not
+  // a dependency of it — if the rerank call fails (e.g. no real
+  // VOYAGE_API_KEY, a transient network error), fall back to RRF's own
+  // order rather than failing the whole search.
+  try {
+    const reranked = await getRerankProvider().rerank(
+      query,
+      candidates.map((c) => c.content),
+      matchCount,
+    );
+    return reranked.map((r) => candidates[r.index]);
+  } catch (err) {
+    console.warn("Reranking failed, falling back to hybrid-search order:", err);
+    return candidates.slice(0, matchCount);
+  }
 }

@@ -187,9 +187,9 @@ Validated by competitor research, not yet built:
      semantic scores aren't meaningful until a real `VOYAGE_API_KEY`
      exists (the script falls back to a labeled mock embedding so the
      pipeline still runs end-to-end); full-text scores are real today.
-  4. **Reranking** — Voyage `rerank-2` vs. Cohere Rerank v3.5. Step 3's
-     eval harness now exists, so this is unblocked and decidable with
-     real numbers — not yet started, the next concrete RAG item.
+  4. **Reranking — built (2026-10-02, ADR 0035).** Voyage `rerank-2`,
+     chosen over Cohere Rerank v3.5 after an explicit tradeoff explained
+     to and confirmed by the user — see `docs/ai-tech-radar.md`.
   Prioritized first among the RAG-architecture gaps since it improves
   every chunk already ingested, with no re-ingestion needed.
 - **More write-capable action tools** — issue a refund, update a

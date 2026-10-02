@@ -30,6 +30,13 @@ doc as ADRs land instead of letting decisions live only in chat history.
   guardrails are just that bot's own config).
 - RAG retrieval exposed as a **tool call**, not a hardcoded context prepend
   — lets the model decide when it actually needs to look something up.
+- **Retrieval pipeline** (`lib/ai/retrieval.ts`): hybrid search (pgvector +
+  Postgres full-text via RRF, ADR 0021) fuses a 25-document candidate
+  pool, then **reranking** (Voyage `rerank-2`, ADR 0035, behind a
+  `RerankProvider` interface in `lib/ai/rerank.ts`) re-scores that pool
+  down to the ~5 chunks actually sent to the model. Reranking degrades to
+  the hybrid-search order on any failure — it's a quality step on top of
+  a working search, not a dependency of it.
 - **Prompt caching**: the assembled system prompt (persona +
   guardrails) is marked with `cache_control` and placed first in the
   request, since it's identical across every message to that bot until

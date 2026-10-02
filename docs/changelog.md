@@ -432,3 +432,46 @@ Settings, Integrations, and the Conversations Activity rebuild (ADR
   violations); `npm audit` clean of the new findings. All 4 of the
   originally-deferred Dependabot majors are now resolved.
 
+- **Reranking via Voyage rerank-2 (2026-10-02, ADR 0035).** The next
+  concrete RAG item named in `docs/roadmap.md`, unblocked once the eval
+  harness existed to measure it with real numbers instead of picking a
+  vendor on reputation. Explained the real tradeoff to the user before
+  building (Voyage `rerank-2`, same vendor/key as embeddings, vs. Cohere
+  Rerank v3.5, a third AI vendor) and confirmed the choice ("Go ahead
+  and build it with Voyage") — including a direct follow-up question
+  about switching cost later, answered honestly: a `RerankProvider`
+  interface (`lib/ai/rerank.ts`, mirroring `ModelGateway`/
+  `EmbeddingsProvider`) keeps a future Cohere swap to one new provider
+  class + one new env var + a factory-line change, no caller code.
+  Both `docs.voyageai.com` and `api.voyageai.com` stayed network-blocked
+  in this environment — read the real, official `voyageai` npm TS SDK's
+  source instead (installed temporarily via `npm install --no-save`,
+  removed after reading), confirmed the real endpoint
+  (`POST https://api.voyageai.com/v1/rerank`), and — a real finding —
+  the wire-format request/response body is snake_case
+  (`top_k`/`return_documents`/`relevance_score`) even though the SDK's
+  own TS-facing types are camelCase; implemented via plain `fetch`
+  matching `VoyageEmbeddingsProvider`'s existing pattern, not as a real
+  SDK dependency.
+  Wired into `lib/ai/retrieval.ts`: hybrid search's RRF fusion now
+  returns a 25-document candidate pool (`RERANK_POOL_SIZE`) instead of
+  trimming straight to `matchCount`; Voyage re-scores that pool and the
+  result is cut to `matchCount`. A rerank failure falls back to RRF's
+  own order rather than failing the search — reranking is a quality
+  step on top of a working hybrid search, not a dependency of it.
+  Real environment constraint, confirmed by actually running
+  `npm run eval:retrieval` against a live local Postgres: `VOYAGE_API_KEY`
+  is a placeholder here, so every real rerank call returns 403 and the
+  fallback path fires every time — the eval's P@5/R@5/MRR numbers
+  matched plain hybrid search exactly, as expected, proving the fallback
+  works but not the actual reranking quality gain (that needs a real
+  key, flagged as a real follow-up in ADR 0035, not claimed verified).
+  Verified: `npx tsc --noEmit` clean; all 10 `check:all` guardrails; a
+  production build; full unit suite (235, 4 new —
+  `tests/unit/lib/ai/rerank.test.ts`); `node scripts/verify-rls.mjs` run
+  for real against a live local Postgres (all 3 tenant-isolation
+  assertions passing — this change doesn't touch RLS, run anyway per
+  CLAUDE.md's "never commit code that hasn't actually been run"); the
+  full `tests/e2e/bot-editor.spec.ts` suite (10/10, the file that
+  exercises the bot-editor surface closest to this retrieval path).
+

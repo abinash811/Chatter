@@ -25,17 +25,17 @@ Each entry names the real thing (library/vendor/technique, checked via
 - **Voyage AI embeddings** (`voyage-3`) — `lib/ai/embeddings.ts`.
   Anthropic's recommended embeddings partner; not yet formalized as its
   own ADR (`lib/ai/embeddings.ts`'s own comment flags this).
-
-**Assess**
-- **Reranking model** — Voyage `rerank-2` (same vendor/key as
-  embeddings, lowest integration cost) vs. Cohere Rerank v3.5 (widely
-  cited as the strongest standalone reranker in isolation). No traffic
-  yet to justify a second AI vendor, so leaning Voyage first — not yet
-  decided. Whichever is picked, build it behind a `RerankProvider`
-  interface (same pattern as `ModelGateway`/`EmbeddingsProvider`) so
-  switching vendors later is a contained swap: one new provider class +
-  one new env var + a factory-line change, no caller code touches the
-  vendor directly.
+- **Voyage AI reranking** (`rerank-2`) — `lib/ai/rerank.ts`, ADR 0035.
+  Same vendor/key as embeddings (no second AI vendor to manage), chosen
+  over Cohere Rerank v3.5 after an explicit tradeoff explained to and
+  confirmed by the user. Behind a `RerankProvider` interface, same
+  pattern as `ModelGateway`/`EmbeddingsProvider` — switching vendors
+  later is one new provider class + one new env var + a factory-line
+  change. Real limitation: `VOYAGE_API_KEY` is a placeholder in this
+  environment, so the real quality impact (vs. hybrid search alone)
+  hasn't been measured for real yet — only that the wiring and its
+  fallback-on-failure path both work, confirmed by running
+  `npm run eval:retrieval` against a live local Postgres.
 
 ## Retrieval & search
 
@@ -121,12 +121,11 @@ as each ships. Phase 1 shipped same day; phases 2-4 still ahead.
   signal. Full-text scores are real either way. Verified: ran twice
   (deterministic, same result both times), confirmed no leftover rows
   after cleanup.
-
-**Trial** (prioritized, in this order — see `docs/roadmap.md`)
-1. **Reranking** — re-score the top ~30–50 hybrid candidates down to the
-   ~5–8 actually sent to the LLM. Vendor: see Assess above. Deliberately
-   sequenced *after* the eval harness — measure with real numbers
-   instead of picking a vendor on reputation.
+- **Reranking** (`lib/ai/rerank.ts`, `lib/ai/retrieval.ts`, ADR 0035) —
+  Voyage `rerank-2` re-scores a 25-document RRF-fused candidate pool
+  down to the `matchCount` (5) actually sent to the model, see Models &
+  embeddings above for the full writeup. Falls back to hybrid search's
+  own order on any failure.
 
 **Hold**
 - **BM25 extension** (`pg_search`/`pg_textsearch`) — explicitly deferred
