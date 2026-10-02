@@ -70,12 +70,15 @@ export function AppSidebar({
             a different size on every run and never actually stabilize. */}
         <div data-testid="sidebar-org-name" className="flex items-center gap-2 px-2 py-2">
           {/* bg-primary, not bg-accent — same near-invisible-tint bug as
-              Badge's default variant: --accent (oklch(97%)) sits almost
-              on top of --sidebar (oklch(98.5%)), a 1.5% lightness gap
-              that reads as no chip at all against the sidebar
-              background. Every visual-regression baseline masks this
-              exact element (its testid), which is exactly why nobody
-              caught it until a real screenshot was checked by hand. */}
+              Badge's default variant: at the time this was written
+              --accent was oklch(97%), sitting almost on top of
+              --sidebar (oklch(98.5%)), a 1.5% lightness gap that read
+              as no chip at all against the sidebar background (since
+              darkened to 92.2%, 2026-10-02 — still bg-primary here for
+              the real branded-chip look, not just contrast). Every
+              visual-regression baseline masks this exact element (its
+              testid), which is exactly why nobody caught it until a
+              real screenshot was checked by hand. */}
           <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary">
             <MessageCircle className="h-3.5 w-3.5 text-primary-foreground" />
           </div>

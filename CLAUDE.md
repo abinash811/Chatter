@@ -421,6 +421,13 @@ reason.)
   quality review of Chatbase. Verified via real contrast math,
   `accessibility.spec.ts`/`tests/visual/` (no regressions), and a real
   before/after screenshot. Full detail: `docs/changelog.md`.
+- App-wide accent-color/monochrome consistency audit (2026-10-02): a
+  full sweep (grep + real screenshots of 10 screens) confirmed the
+  monochrome system (ADR 0014/0017) holds consistently everywhere — no
+  stray raw colors, `Badge`/`bg-primary`/`bg-accent`/`bg-soft-background`
+  all used for one consistent purpose each. No new bugs found; fixed 2
+  stale code comments still citing the pre-fix `--accent` value. See
+  `docs/design/audit.md`'s "System coverage" table.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.
