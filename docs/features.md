@@ -284,20 +284,24 @@ cap against, unlike Chatbase's "X KB / 1 MB"). JS-rendered pages (a
 React/Vue site whose real content only exists after its own JavaScript
 runs) now ingest correctly too — `extractUrlText` retries with a real
 headless Chromium when a plain fetch finds too little text (2026-10-02,
-ADR 0031; self-hosted, not a rented vendor). Scheduled re-crawling
-stays explicitly deferred (ADR 0030 — no background-job infrastructure
-yet). Notion-page and helpdesk-ticket sources are out of scope — Notion
-needs a full OAuth connector build, and tickets is Chatbase's own
-paywalled helpdesk integration, not a generic knowledge source. **How**:
-`lib/ai/knowledgeBase.ts` (source/chunk writes, `createTextEntry`,
-`createCrawledEntries`, `getTotalKnowledgeBytes`), `lib/ai/
-extraction.ts` (PDF via `pdf-parse`, DOCX via `mammoth`, URL via
-`jsdom`+`@mozilla/readability`, JS-rendering fallback via `playwright`),
+ADR 0031; self-hosted, not a rented vendor), and as a true last resort
+for sites that also resist that, retries again via Firecrawl with a
+stealth proxy (2026-10-02, ADR 0032; platform-funded, not BYOA).
+Scheduled re-crawling stays explicitly deferred (ADR 0030 — no
+background-job infrastructure yet). Notion-page and helpdesk-ticket
+sources are out of scope — Notion needs a full OAuth connector build,
+and tickets is Chatbase's own paywalled helpdesk integration, not a
+generic knowledge source. **How**: `lib/ai/knowledgeBase.ts` (source/
+chunk writes, `createTextEntry`, `createCrawledEntries`,
+`getTotalKnowledgeBytes`), `lib/ai/extraction.ts` (PDF via `pdf-parse`,
+DOCX via `mammoth`, URL via `jsdom`+`@mozilla/readability`, JS-rendering
+fallback via `playwright`, last-resort fallback via `firecrawl`),
 `lib/ai/crawler.ts` (`crawlSite` — `robots-parser` + `sitemapper`
 discovery, ADR 0030), `lib/ai/chunking.ts` (hand-rolled recursive
 splitter for file/URL/text),
-`app/(console)/bots/[botId]/knowledge/`. ADR 0013, ADR 0030, ADR 0031. See
-`docs/business-logic.md`'s "Knowledge base ingestion" section.
+`app/(console)/bots/[botId]/knowledge/`. ADR 0013, ADR 0030, ADR 0031,
+ADR 0032. See `docs/business-logic.md`'s "Knowledge base ingestion"
+section.
 
 ### Onboarding
 **Who**: a brand-new signup. **What**: a single combined screen (name

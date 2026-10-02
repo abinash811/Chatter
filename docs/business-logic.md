@@ -20,11 +20,8 @@ step at all (ADR 0019 — no vertical-template layer), and inviting
 teammates is separate, larger scope with no design done yet. Submitting sets
 `org.name` + `org.onboardedAt`, creates the first bot, and redirects
 straight into that bot's editor — a brand-new account never sees an
-empty `/bots` list.
-
-A brand-new account never sees the empty `/bots` list at signup — but
-archiving that first (and only) bot reaches it again; see "Bot archiving"
-below.
+empty `/bots` list at signup, though archiving that first (and only)
+bot reaches it again; see "Bot archiving" below.
 
 ## Bot archiving (`app/(console)/bots/actions.ts`, ADR 0018)
 
@@ -271,9 +268,13 @@ literal hostname is rejected if it's `localhost`/loopback/private/link-
 local — see `docs/security.md` for what this guard does *not* cover).
 If that first pass finds suspiciously little text (under 150 chars —
 a JS-framework page's empty-shell signature), it retries once with a
-real headless Chromium (`playwright`, ADR 0031), self-hosted rather
-than rented (Browserless/Firecrawl is the named fallback plan if that
-proves difficult).
+real headless Chromium (`playwright`, ADR 0031), self-hosted. If even
+that still comes back empty — a site actively resisting automated
+browsers, not just one that needs JS — a third, platform-funded step
+calls Firecrawl with a stealth proxy (ADR 0032), skipped silently when
+`FIRECRAWL_API_KEY` isn't set. Kept deliberately third, not second: if
+every JS-rendered page fell straight to Firecrawl its usage-scaled
+cost would apply to the common case, not just the rare one.
 
 **Text snippet** (`createTextEntry`, 2026-09-29): a title + pasted text,
 no extraction step — reuses the same chunking pipeline as file/URL
@@ -292,13 +293,11 @@ disallowed homepage throws before discovery starts). Capped at
 as ADR 0013), with a courtesy delay between fetches. Each discovered
 URL reuses `extractUrlText` unchanged (JS-rendering fallback included);
 one page's failure skips that page rather than aborting the crawl
-(same precedent as `bulkDeleteEntriesAction`).
-JS-rendered pages are now handled too (`extractUrlText`'s own fallback,
-above, applies per-page automatically). Deliberately still out of
-scope: scheduled re-crawling (no background-job infra yet). Behind a
-swappable `crawlSite(startUrl) -> CrawledPage[]` interface so a vendor
-(Firecrawl was evaluated and passed on — its cost scales with
-Chatter's own usage) stays a contained later option.
+(same precedent as `bulkDeleteEntriesAction`); `extractUrlText`'s full
+fallback chain (above, including Firecrawl) applies per page
+automatically. Deliberately still out of scope: scheduled re-crawling
+(no background-job infra yet). Behind a swappable `crawlSite(startUrl)
+-> CrawledPage[]` interface so a vendor stays a contained later option.
 
 **Total size indicator** (`getTotalKnowledgeBytes`): sums each stored
 chunk's content length across a bot's sources — informational only, no

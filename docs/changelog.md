@@ -295,3 +295,61 @@ Settings, Integrations, and the Conversations Activity rebuild (ADR
   compute platform) annotated with the new real-Chromium-binary
   constraint this adds to that still-open decision.
 
+- **Firecrawl last-resort fallback for URL/crawl ingestion (2026-10-02,
+  ADR 0032)**: closes the one case ADR 0031 still left open — a site
+  actively resisting automated browsers (bot-detection), not just one
+  that needs JavaScript to run. User asked a sharp, worth-recording
+  question before approving: given we'd pay for Firecrawl anyway, is a
+  3-step chain (plain fetch → self-hosted browser → Firecrawl) actually
+  optimizing anything over skipping straight to Firecrawl once the
+  plain fetch fails? Answer, explained plainly before building: yes —
+  the self-hosted browser (ADR 0031) already handles the common
+  JS-rendered case for free; skipping it would make Firecrawl the
+  primary handler for every JS-heavy site a business owner has, which
+  is exactly the usage-scaled-cost problem ADR 0030/0031 already
+  rejected Firecrawl over, just one layer deeper. Keeping the
+  self-hosted step narrows Firecrawl's real trigger population to
+  sites that *also* defeat a plain headless browser — a much smaller,
+  genuinely rare case.
+  `scrapeWithFirecrawl` (`lib/ai/extraction.ts`) is the true last
+  resort in `extractUrlText`'s chain, called only when the self-hosted
+  render step has also failed to find enough text — `app.scrape(url, {
+  formats: ["markdown"], onlyMainContent: true, proxy: "stealth" })`
+  (`firecrawl` npm package, version confirmed via `npm view`, its real
+  API read from the installed package's own README/types since
+  `firecrawl.dev`'s docs site wasn't checked directly). Platform-funded
+  (one `FIRECRAWL_API_KEY` we configure, not BYOA) — explained to the
+  user as a deliberate choice before building: a business owner
+  bringing their own key for a fallback they'd rarely if ever trigger
+  would make the feature practically unused; degrades silently
+  (skipped, not an error) when the key isn't set, same pattern as every
+  other optional provider key in this codebase.
+  Real, unrelated security finding caught while installing: `npm audit`
+  flagged `firecrawl`'s pinned `axios@1.18.0` transitive dependency as
+  high severity (several real CVEs, including an SSRF-relevant
+  redirect-handling bug) — fixed via `package.json`'s `overrides` field
+  pinning `axios@^1.20.0` (confirmed the first patched version via `npm
+  view axios versions`), not by ignoring the finding or accepting the
+  vulnerable version.
+  Real test-hermeticity bug avoided proactively, having just been
+  caught for real in ADR 0031's own commit: the `firecrawl` mock in
+  `tests/unit/lib/ai/extraction.test.ts` initially risked the same
+  "arrow function isn't `new`-able" mistake `tests/unit/lib/ai/
+  crawler.test.ts`'s `Sitemapper` mock made earlier — caught before
+  committing this time, not after, by writing the mock as a real
+  `function` expression from the start. 5 new tests cover: Firecrawl
+  never attempted when no key is set; used as the true last resort with
+  a stealth proxy once both earlier steps fail; skipped when the
+  self-hosted browser already succeeded; still throws the same
+  plain-language error when Firecrawl also finds nothing; degrades to
+  that same error rather than a raw one when Firecrawl itself throws.
+  Verified: `npx tsc --noEmit` clean; all 10 `check:all` guardrails
+  (`npm audit` back down to the 2 pre-existing, already-tracked Next.js/
+  postcss vulnerabilities); a production build (confirms `firecrawl`
+  stays server-only, no client bundle impact); full unit suite (231
+  tests, 5 new); `tests/e2e/knowledge.spec.ts` and the knowledge a11y
+  scan re-run against the real production build (one flaky failure in
+  the delete-entry test, confirmed non-deterministic — passed on one
+  isolated re-run, failed on another, consistent with the pre-existing
+  documented toast-timeout flake, not a regression from this change).
+

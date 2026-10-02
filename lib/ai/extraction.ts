@@ -10,6 +10,7 @@ import mammoth from "mammoth";
 import { JSDOM } from "jsdom";
 import { Readability } from "@mozilla/readability";
 import { chromium } from "playwright";
+import { Firecrawl } from "firecrawl";
 
 export const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5MB — see ADR 0013 (sync processing, v1)
 const MAX_URL_RESPONSE_BYTES = 5 * 1024 * 1024;
@@ -24,6 +25,7 @@ const URL_FETCH_TIMEOUT_MS = 10_000;
 // HTML, so it doesn't fire on short-but-real pages.
 const MIN_TEXT_LENGTH_BEFORE_RENDER_FALLBACK = 150;
 const BROWSER_RENDER_TIMEOUT_MS = 15_000;
+const FIRECRAWL_TIMEOUT_MS = 20_000;
 const CRAWLER_USER_AGENT = "ChatterBot/1.0 (+https://chatter.example/crawler)";
 
 // Same sandbox-chromium override playwright.config.ts already uses for
@@ -52,6 +54,39 @@ async function renderWithBrowser(url: URL): Promise<string | null> {
 function extractArticle(html: string, url: URL) {
   const dom = new JSDOM(html, { url: url.toString() });
   return new Readability(dom.window.document).parse();
+}
+
+function hasInsufficientText(article: ReturnType<typeof extractArticle>): boolean {
+  return !article?.textContent || article.textContent.trim().length < MIN_TEXT_LENGTH_BEFORE_RENDER_FALLBACK;
+}
+
+// ADR 0032 — the true last resort: only reached when the plain fetch
+// AND our own headless browser (above) both failed to find real
+// content, which narrows this to pages that are either actively
+// blocking automated browsers or hit some other edge case our own
+// Chromium can't clear — not "every JS-rendered page" (renderWithBrowser
+// already handles the common JS case for free). Platform-funded, not
+// BYOA — a business owner configures nothing; silently skipped (not an
+// error) when FIRECRAWL_API_KEY isn't set, same placeholder-key
+// degradation as every other optional provider in this codebase.
+async function scrapeWithFirecrawl(url: URL): Promise<{ title: string; text: string } | null> {
+  const apiKey = process.env.FIRECRAWL_API_KEY;
+  if (!apiKey) return null;
+
+  try {
+    const app = new Firecrawl({ apiKey });
+    const doc = await app.scrape(url.toString(), {
+      formats: ["markdown"],
+      onlyMainContent: true,
+      proxy: "stealth",
+      timeout: FIRECRAWL_TIMEOUT_MS,
+    });
+    const text = doc.markdown?.trim();
+    if (!text) return null;
+    return { title: doc.metadata?.title?.trim() || url.toString(), text };
+  } catch {
+    return null;
+  }
 }
 
 // A known, expected failure (bad input) with a message safe to show the
@@ -154,14 +189,22 @@ export async function extractUrlText(rawUrl: string): Promise<{ title: string; t
   // pre-JavaScript HTML shell, which Readability correctly reads as
   // "no real content." Only retried here, not tried first, so the vast
   // majority of pages (which don't need it) stay on the fast, cheap path.
-  if (!article?.textContent || article.textContent.trim().length < MIN_TEXT_LENGTH_BEFORE_RENDER_FALLBACK) {
+  if (hasInsufficientText(article)) {
     const renderedHtml = await renderWithBrowser(url);
     if (renderedHtml) {
       const renderedArticle = extractArticle(renderedHtml, url);
-      if (renderedArticle?.textContent?.trim()) {
+      if (!hasInsufficientText(renderedArticle)) {
         article = renderedArticle;
       }
     }
+  }
+
+  // ADR 0032 — our own browser still couldn't find real content, which
+  // narrows this to the rare hard case (active bot-blocking, not just
+  // "needs JS"). Firecrawl is never tried before this point.
+  if (hasInsufficientText(article)) {
+    const firecrawlResult = await scrapeWithFirecrawl(url);
+    if (firecrawlResult) return firecrawlResult;
   }
 
   if (!article || !article.textContent?.trim()) {

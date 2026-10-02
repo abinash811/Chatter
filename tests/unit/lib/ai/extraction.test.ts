@@ -26,6 +26,25 @@ vi.mock("playwright", () => ({
   chromium: { launch: (...args: unknown[]) => launchChromium(...args) },
 }));
 
+// ADR 0032's Firecrawl last-resort fallback — mocked for the same
+// hermeticity reason as `playwright` above, plus `FIRECRAWL_API_KEY` is
+// explicitly cleared in beforeEach rather than relying on it being unset
+// in whatever environment runs these tests (a real key present locally
+// would otherwise make `scrapeWithFirecrawl` skip its own "not
+// configured" short-circuit and actually call out to the mock — still
+// hermetic either way here, but explicit beats incidental).
+// A real `function`, not an arrow function — `new Firecrawl(...)` in
+// extraction.ts requires a constructible mock (the same lesson
+// crawler.test.ts's Sitemapper mock already learned the hard way: an
+// arrow-function mockImplementation silently isn't `new`-able, and
+// vitest only warns rather than failing loud).
+const firecrawlScrape = vi.fn();
+vi.mock("firecrawl", () => ({
+  Firecrawl: vi.fn().mockImplementation(function MockFirecrawl() {
+    return { scrape: (...args: unknown[]) => firecrawlScrape(...args) };
+  }),
+}));
+
 describe("detectFileKind", () => {
   it("detects pdf by mimetype or extension", () => {
     expect(detectFileKind("doc.pdf", "application/octet-stream")).toBe("pdf");
@@ -95,12 +114,17 @@ describe("extractFileText", () => {
 
 describe("extractUrlText", () => {
   const originalFetch = global.fetch;
+  const originalFirecrawlKey = process.env.FIRECRAWL_API_KEY;
   beforeEach(() => {
     global.fetch = vi.fn();
     launchChromium.mockReset().mockRejectedValue(new Error("no browser available in this test"));
+    firecrawlScrape.mockReset();
+    delete process.env.FIRECRAWL_API_KEY;
   });
   afterEach(() => {
     global.fetch = originalFetch;
+    if (originalFirecrawlKey === undefined) delete process.env.FIRECRAWL_API_KEY;
+    else process.env.FIRECRAWL_API_KEY = originalFirecrawlKey;
   });
 
   it("rejects a malformed URL before ever fetching", async () => {
@@ -225,6 +249,87 @@ describe("extractUrlText", () => {
       });
 
       await expect(extractUrlText("https://example.com/times-out")).rejects.toThrow(/couldn't find readable/i);
+    });
+  });
+
+  // ADR 0032 — the Firecrawl last resort, only reached once both the
+  // plain fetch and our own headless browser have already failed.
+  describe("Firecrawl last-resort fallback (ADR 0032)", () => {
+    function mockEmptyPageAndFailedRender() {
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        headers: new Map(),
+        text: async () => `<html><body><div id="root"></div></body></html>`,
+      } as unknown as Response);
+      // The beforeEach default already makes launchChromium reject (no
+      // browser available), so the render fallback fails too — reaching
+      // Firecrawl requires both earlier steps to have already failed.
+    }
+
+    it("is never attempted when FIRECRAWL_API_KEY isn't set (platform-funded, not a required dependency)", async () => {
+      mockEmptyPageAndFailedRender();
+
+      await expect(extractUrlText("https://example.com/blocked")).rejects.toThrow(/couldn't find readable/i);
+
+      expect(firecrawlScrape).not.toHaveBeenCalled();
+    });
+
+    it("is used as the true last resort, with a stealth proxy, once both earlier steps have failed", async () => {
+      process.env.FIRECRAWL_API_KEY = "fc-test-key";
+      mockEmptyPageAndFailedRender();
+      firecrawlScrape.mockResolvedValue({
+        markdown: "# Pricing\n\nOur Pro plan is $29 per month and includes unlimited projects.",
+        metadata: { title: "Pricing" },
+      });
+
+      const result = await extractUrlText("https://example.com/blocked");
+
+      expect(result.title).toBe("Pricing");
+      expect(result.text).toContain("Pro plan is $29 per month");
+      expect(firecrawlScrape).toHaveBeenCalledWith(
+        "https://example.com/blocked",
+        expect.objectContaining({ proxy: "stealth", onlyMainContent: true }),
+      );
+    });
+
+    it("isn't called at all when the headless browser already found real content", async () => {
+      process.env.FIRECRAWL_API_KEY = "fc-test-key";
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        headers: new Map(),
+        text: async () => `<html><head><title>App</title></head><body><div id="root"></div></body></html>`,
+      } as unknown as Response);
+      launchChromium.mockResolvedValue({
+        newPage: vi.fn().mockResolvedValue({
+          goto: vi.fn().mockResolvedValue(undefined),
+          content: vi
+            .fn()
+            .mockResolvedValue(
+              `<html><head><title>Pricing</title></head><body><article><p>${"Our Pro plan is $29 per month and includes unlimited projects and priority support. ".repeat(3)}</p></article></body></html>`,
+            ),
+        }),
+        close: vi.fn().mockResolvedValue(undefined),
+      });
+
+      await extractUrlText("https://example.com/pricing");
+
+      expect(firecrawlScrape).not.toHaveBeenCalled();
+    });
+
+    it("still throws the plain-language error when Firecrawl also finds nothing useful", async () => {
+      process.env.FIRECRAWL_API_KEY = "fc-test-key";
+      mockEmptyPageAndFailedRender();
+      firecrawlScrape.mockResolvedValue({ markdown: "", metadata: {} });
+
+      await expect(extractUrlText("https://example.com/truly-blocked")).rejects.toThrow(/couldn't find readable/i);
+    });
+
+    it("degrades to the same plain-language error, not a raw one, when Firecrawl itself throws", async () => {
+      process.env.FIRECRAWL_API_KEY = "fc-test-key";
+      mockEmptyPageAndFailedRender();
+      firecrawlScrape.mockRejectedValue(new Error("Firecrawl API error: 429 rate limited"));
+
+      await expect(extractUrlText("https://example.com/rate-limited")).rejects.toThrow(/couldn't find readable/i);
     });
   });
 });

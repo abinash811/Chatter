@@ -114,11 +114,19 @@ doc as ADRs land instead of letting decisions live only in chat history.
   only when the plain-fetched page yields suspiciously little text — the
   signature of a client-rendered JS framework shell. Self-hosted, not
   rented (a Browserless/Firecrawl-style vendor), consistent with ADR
-  0030's build-it-ourselves call, with renting named as the explicit
-  fallback plan if self-hosting proves operationally difficult. Needs a
-  real Chromium binary available wherever this app deploys — a genuine
-  new constraint on the still-open app-compute decision, `docs/open-
-  questions.md` #8.
+  0030's build-it-ourselves call. Needs a real Chromium binary
+  available wherever this app deploys — a genuine new constraint on the
+  still-open app-compute decision, `docs/open-questions.md` #8.
+- **Firecrawl last-resort fallback** (2026-10-02, ADR 0032): a third
+  step, reached only when both the plain fetch and the self-hosted
+  browser above have already failed — handles the narrower case of a
+  site actively resisting automated access (bot-detection), not every
+  JS-rendered page. Platform-funded (a single `FIRECRAWL_API_KEY`, not
+  BYOA), degrades silently when unset. Deliberately kept as a rare
+  third step rather than the second one, to avoid the self-hosted
+  browser's whole point — if every JS-rendered page fell straight to
+  Firecrawl, its usage-scaled cost would apply to the common case, not
+  just the rare one.
 - Streamed responses back to the widget.
 - **BYOA (bring-your-own API key)**: optional, per-org, off by default —
   a business can plug in their own Anthropic key from `/settings`

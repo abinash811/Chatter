@@ -38,6 +38,7 @@
     "@tanstack/react-table": "^8.21.3",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "firecrawl": "^4.42.1",
     "jsdom": "^30.1.1",
     "lucide-react": "^1.48.0",
     "mammoth": "^1.12.3",
@@ -74,5 +75,10 @@
     "tsx": "^4.23.15",
     "typescript": "^5.6.0",
     "vitest": "^5.0.2"
+  },
+  "overrides": {
+    "firecrawl": {
+      "axios": "^1.20.0"
+    }
   }
 }
