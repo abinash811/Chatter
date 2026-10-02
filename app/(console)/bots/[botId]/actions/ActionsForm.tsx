@@ -65,7 +65,7 @@ export function ActionsForm({ botId, actions }: { botId: string; actions: Custom
     <div>
       <div className="flex h-row items-center justify-between">
         <h2 className="flex items-center gap-2 text-lg font-semibold">
-          Custom actions
+          Custom actions{" "}
           {actions.length > 0 && <span className="text-sm font-normal text-muted-foreground">{actions.length}</span>}
         </h2>
         <Button type="button" size="sm" onClick={() => setAddOpen(true)}>

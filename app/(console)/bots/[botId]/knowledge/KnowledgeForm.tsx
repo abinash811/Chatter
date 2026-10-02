@@ -112,7 +112,7 @@ export function KnowledgeForm({
         {/* h2, not h1 — the page's h1 is the (sr-only) bot name in the
             shared BotTopBar, app/(console)/bots/[botId]/layout.tsx. */}
         <h2 className="flex items-center gap-2 text-lg font-semibold">
-          Data sources
+          Data sources{" "}
           {entries.length > 0 && <span className="text-sm font-normal text-muted-foreground">{entries.length}</span>}
         </h2>
         {/* Informational only, no plan-based cap — docs/open-questions.md

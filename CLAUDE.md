@@ -363,6 +363,25 @@ reason.)
   `overrides` pin. Verified: `tsc` clean, all 10 guardrails (`npm
   audit` clean of this change), a production build, full unit suite
   (231, 5 new). Full detail: `docs/changelog.md`.
+- TypeScript 7 + Next.js 16 upgrade (2026-10-02, ADR 0033): 2 of 4
+  deferred Dependabot majors resolved (Prisma 5→7 stays deferred — a
+  real RLS-touching architecture change, needs its own pass). Checked
+  against our real code first: neither bump's *documented* breaking
+  changes applied here. But the full verification sweep (not just
+  `tsc`+build) caught two real, undocumented regressions from the new
+  build pipeline: a WCAG AA contrast regression (3 tokens were already
+  razor-thin; fixed with real contrast math —
+  `--muted-foreground`/`--destructive` darkened, `AuthShell.tsx`'s
+  `/45`→`/60`) and a JSX whitespace regression (6 pages' `<h1>Label
+  {count}</h1>`-style headings silently lost their space; fixed with
+  explicit `{" "}`). Also corrected a stale, wrong contrast claim in
+  `docs/design/design-system.md` found while investigating (it had
+  checked `muted-foreground` against the wrong background). Verified:
+  `tsc` clean, all 10 guardrails, a production build, full unit suite
+  (231 unchanged), full `tests/e2e/` (117/117) and
+  `accessibility.spec.ts` (15/15, 0 violations, up from 9 failing),
+  all 19 visual baselines regenerated and hand-reviewed. Full detail:
+  `docs/changelog.md`.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.
@@ -381,8 +400,10 @@ reason.)
   browser version mismatch) — `tests/e2e/`/`tests/visual/` already
   work around it, only the standalone script is affected.
 - React component render tests not yet added (infra ready, unblocked).
-- 4 Dependabot majors deliberately deferred: Next.js 15→16, Prisma 5→7
-  (client+CLI), TypeScript 5→7 — each needs its own migration pass.
+- Prisma 5→7 (client+CLI) deliberately deferred — ADR 0033 (2026-10-02)
+  resolved the other 2 of 4 Dependabot majors (Next.js 16, TypeScript 7);
+  this one needs its own pass (new driver-adapter architecture, touches
+  `lib/db.ts`'s RLS mechanism).
 - CI verifying an actual deploy is explicitly out of scope (user
   decision), not just deferred.
 - No deploy target chosen — Render dropped (ADR 0020, 2026-09-27,

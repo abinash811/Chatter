@@ -52,7 +52,7 @@ export function WidgetsForm({ botId, widgets }: { botId: string; widgets: Widget
     <div>
       <div className="flex h-row items-center justify-between">
         <h2 className="flex items-center gap-2 text-lg font-semibold">
-          Widgets
+          Widgets{" "}
           {widgets.length > 0 && <span className="text-sm font-normal text-muted-foreground">{widgets.length}</span>}
         </h2>
         <Button type="button" size="sm" onClick={() => setAddOpen(true)}>

@@ -353,3 +353,81 @@ Settings, Integrations, and the Conversations Activity rebuild (ADR
   isolated re-run, failed on another, consistent with the pre-existing
   documented toast-timeout flake, not a regression from this change).
 
+- **TypeScript 7 + Next.js 16 upgrade, 2 of 4 deferred Dependabot
+  majors resolved (2026-10-02, ADR 0033)**: user asked to resolve the
+  "4 Dependabot majors deliberately deferred" line CLAUDE.md's "Known
+  gaps" had carried since 2026-09-26 without anyone picking up the
+  actual work. Checked each major against this codebase's real usage
+  before deciding anything (not generic release notes): TypeScript 7's
+  new defaults (`strict`, ES2022 target, `moduleResolution`) already
+  matched our `tsconfig.json` exactly; Next 16's real breaking changes
+  (`middleware.ts`→`proxy.ts`, `revalidateTag()`'s new required
+  argument, parallel routes needing `default.js`) don't exist anywhere
+  in this codebase (grepped, not assumed). Prisma 5→7 deliberately
+  **not** included — it's an architecture change (new `prisma-client`
+  generator, required driver adapters, a new `prisma.config.ts`)
+  touching `lib/db.ts`'s RLS mechanism directly, staying its own
+  dedicated future pass with its own ADR.
+  `typescript@7.0.2` and `next@16.3.8` installed, then Next's own
+  official codemod (`npx @next/codemod@canary upgrade latest -y
+  --skip-eslint-upgrade --skip-react-upgrade`) run to catch anything
+  grep might have missed — confirmed no code transforms were needed,
+  matching the risk assessment. `--skip-eslint-upgrade` because this
+  project has no ESLint config at all; `--skip-react-upgrade` because
+  `react@19`/`react-dom@19` already satisfied Next 16's peer range.
+  **Two real, undocumented regressions caught only by running the full
+  verification sweep, not just `tsc`+build** (exactly the class of bug
+  CLAUDE.md's "never commit code that hasn't actually been run" rule
+  exists for):
+  (1) A real WCAG AA color-contrast regression — the full
+  `accessibility.spec.ts` run found 9 pages newly failing. Root-caused
+  with a real in-browser contrast calculator (composited fg-over-bg on
+  a canvas, read back actual sRGB bytes, computed relative luminance
+  per the real WCAG formula — not oklch math by hand) rather than
+  guessed: 3 design tokens (`--muted-foreground`, `--destructive`, and
+  `AuthShell.tsx`'s `text-panel-foreground/45`) were already razor-thin
+  (4.0-4.36:1 against the 4.5:1 minimum) before this upgrade, and a
+  small color-math rounding shift in the new Turbopack/Lightning CSS
+  pipeline tipped several over the line at once. Confirmed genuinely
+  new (not newly-caught-but-pre-existing) by bisecting: reverted to the
+  old deps, the same test passed clean. While investigating, also found
+  `docs/design/design-system.md`'s own prior "4.74:1, verified" claim
+  for `muted-foreground` had checked it against `--background` (white)
+  instead of `--muted` (97% L) — the backdrop it's actually paired with
+  at every real usage site — a methodology gap in the original
+  verification, not just a stale number. Fixed at the token level with
+  real contrast math against every real pairing (not patched
+  per-element, not re-verified against one convenient backdrop):
+  `--muted-foreground` 55.6%→48% L (6.04:1), `--destructive` 57.7%→45%
+  L (6.02-6.91:1 across every usage site — badges, button text, error
+  text), `/45`→`/60` opacity on `AuthShell.tsx`'s one usage (7.04:1).
+  `docs/design/design-system.md` and `docs/design/audit.md` both
+  corrected with the real numbers and the methodology lesson, not just
+  the new values.
+  (2) A real JSX-rendering regression — 6 of `tests/e2e/`'s "seeded X
+  appear in the list" specs failed with a heading-not-found error. The
+  rendered accessible name had silently changed from `"Leads 2"` to
+  `"Leads2"` (no space) on every page using the pattern `<h1>Label
+  {count > 0 && <span>{count}</span>}</h1>` (Bots, Leads, Data sources,
+  Custom actions, Widgets, Conversations — 6 files, found via a
+  codebase-wide grep, not assumed to be isolated to the one failing
+  test first noticed). These relied on incidental JSX whitespace
+  between the label text and the conditional span, which the new
+  build's output no longer preserves the same way. Confirmed genuinely
+  new via the same bisection as the contrast issue. Fixed by making the
+  space explicit (`Label{" "}`) at all 6 sites rather than patching the
+  one test or depending on the old incidental behavior again — a
+  whitespace-only text node doesn't generate a visible flex item, so
+  this didn't add any visual gap (confirmed via the regenerated visual
+  baselines, pixel-reviewed by hand).
+  Verified: `npx tsc --noEmit` clean; all 10 `check:all` guardrails; a
+  production build; full unit suite (231 tests, unchanged — this pass
+  touched no unit-tested logic); the full `tests/e2e/` suite (117/117
+  passing after both fixes, confirmed clean twice); the full
+  `accessibility.spec.ts` suite (15/15, 0 serious/critical violations,
+  up from 9 failing); all 19 `tests/visual/` baselines regenerated
+  (13 genuinely changed pixels from the contrast fix, 6 pixel-identical)
+  and manually reviewed — the spacing fix introduced no visible layout
+  change, the contrast fix is visibly legible without looking washed
+  out or jarring.
+

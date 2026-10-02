@@ -26,7 +26,7 @@ export default async function BotsPage() {
     <div>
       <div className="flex h-row items-center justify-between">
         <h1 className="flex items-center gap-2 text-lg font-semibold">
-          Bots
+          Bots{" "}
           {bots.length > 0 && (
             <span className="text-sm font-normal text-muted-foreground">
               {bots.length}

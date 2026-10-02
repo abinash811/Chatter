@@ -115,7 +115,13 @@
   --strong-background: oklch(92.2% 0 none); /* neutral-200 */
   --muted: oklch(97% 0 none); /* neutral-100 */
   --foreground: oklch(0% 0 0); /* pure black */
-  --muted-foreground: oklch(55.6% 0 none); /* neutral-500 */
+  /* 48% not the stock neutral-500 (55.6%) — on --muted (97% L) that was a
+     razor-thin 4.34:1 against WCAG AA's 4.5:1, caught by a real a11y test
+     failure after the Next.js 16/Turbopack upgrade (its CSS pipeline's
+     color-mix rounding shifted several already-borderline tokens just
+     under the line at once). Real contrast math (not eyeballed): 48%
+     yields 6.04:1, comfortable margin, not a redesign. */
+  --muted-foreground: oklch(48% 0 none);
   --soft-foreground: oklch(43.9% 0 none); /* neutral-600 */
   --disabled-foreground: oklch(87% 0 none); /* neutral-300 */
   --placeholder-foreground: oklch(55.6% 0 none); /* neutral-500 */
@@ -130,7 +136,15 @@
   --accent-foreground: oklch(20.5% 0 none); /* neutral-900 */
   --secondary: oklch(97% 0 none); /* neutral-100 */
   --secondary-foreground: oklch(20.5% 0 none); /* neutral-900 */
-  --destructive: oklch(57.7% 0.245 27.325); /* red-600 */
+  /* 45% not the stock red-600 (57.7%) — same real-contrast-math fix as
+     --muted-foreground above: text-destructive on white was a razor-thin
+     4.77:1, and the destructive Badge's text-on-10%-tint background was
+     under 4.5:1 outright (4.16 on white, 3.85 on a muted ambient
+     backdrop). 45% clears every real usage site with comfortable margin
+     (white-text-on-solid-button and text-on-white both land ~6.9:1, the
+     tinted badge backgrounds ~5.5-6:1) — checked against each, not just
+     one. */
+  --destructive: oklch(45% 0.245 27.325);
   --destructive-foreground: oklch(97.1% 0.013 17.38); /* red-50 */
   --warning: oklch(76.9% 0.188 70.08); /* amber-500 */
   --warning-foreground: oklch(0% 0 0);

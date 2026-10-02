@@ -47,6 +47,7 @@ a stand-in.
 | Motion/animation policy | 🔲 | No documented duration/easing standard or "when not to animate" rule — `docs/design/component-checklist.md` item 3. |
 | Copy structure for errors/empty states | 🟡 | `principles.md` #6 sets tone; no documented structural rule (3-part errors, always a CTA in empty states) — `docs/design/component-checklist.md` items 5-6. |
 | `preview/*.html` vs. real tokens | 🟡 | `bots-list.html` updated 2026-09-27 to match what actually shipped (search/sort/dialog-creation/archive, corrected badge/avatar colors) — the rest of `preview/` is still the known-stale second source of truth (`docs/design/README.md`). |
+| `muted-foreground`/`destructive` contrast | ✅ | Fixed 2026-10-02 (ADR 0033): both were razor-thin against their *real* usage backgrounds (`--muted`, the destructive `Badge`'s tinted background) — `docs/design/design-system.md`'s own prior verification had checked `muted-foreground` against `--background` (white) instead, a methodology gap, not just a wrong number. A Next.js 16 upgrade's full a11y-suite run tipped both over the 4.5:1 line and caught it for real. Darkened both tokens with real contrast math (5.5-7:1 margin now, checked against every real pairing, not one convenient backdrop) — see `docs/design/design-system.md`'s 2026-10-02 correction note. |
 
 **Rule going forward:** if a screen needs to express a meaning (a
 positive/success state, an info callout, per-item visual distinction)

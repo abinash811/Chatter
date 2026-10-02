@@ -53,10 +53,10 @@ chrome anywhere, color reserved for sparing illustration accents only).
 | `primary` | `oklch(0% 0 0)` black | `oklch(92.2% 0 none)` neutral-200 | shadcn default |
 | `primary-foreground` | `oklch(98.5% 0 none)` | `oklch(20.5% 0 none)` | shadcn default |
 | `secondary` / `accent` / `muted` | `oklch(97% 0 none)` neutral-100 | `oklch(26.9%–37.1% 0 none)` neutral-700/800 | shadcn default |
-| `muted-foreground` | `oklch(55.6% 0 none)` neutral-500 | `oklch(70.8% 0 none)` neutral-400 | shadcn default (real 4.74:1 contrast, verified) |
+| `muted-foreground` | `oklch(48% 0 none)` (darker than shadcn's stock 55.6%) | `oklch(70.8% 0 none)` neutral-400 | 2026-10-02: the stock value was a razor-thin 4.34:1 against `--muted` (97% L) — see note below |
 | `border` / `input` | `oklch(92.2%/87% 0 none)` neutral-200/300 | `oklch(1 0 0 / 10–15%)` translucent white | shadcn default |
 | `ring` | `oklch(70.8% 0 none)` neutral-400 | `oklch(55.6% 0 none)` neutral-500 | shadcn default |
-| `destructive` | `oklch(57.7% 0.245 27.325)` red-600 | `oklch(70.4% 0.191 22.216)` red-400 | Tailwind `red` scale |
+| `destructive` | `oklch(45% 0.245 27.325)` (darker than Tailwind's stock red-600, 57.7%) | `oklch(70.4% 0.191 22.216)` red-400 | 2026-10-02: the stock value was 4.0-4.77:1 depending on usage site (text on white, the destructive Badge's tinted background) — see note below |
 | `sidebar` / `sidebar-accent` | neutral-50/100 | neutral-900/800 | shadcn default, monochrome active-item pill (matches Claude Console's subtle gray-pill nav state — no colored active marker) |
 
 **Chatter's own extended vocabulary** (shadcn's leaner default doesn't
@@ -77,12 +77,26 @@ the same neutral/amber/violet scales):
 **Verified for real**, not just computed on paper: a real headless-
 browser check (`getComputedStyle` + a canvas round-trip to get true
 rendered sRGB bytes, not trusting oklch math by hand) confirmed
-`muted-foreground` at 4.74:1 and `soft-foreground` at 7.81:1 against
-`background` — both pass WCAG AA for normal text (4.5:1). `border`/
-`disabled-foreground` are intentionally low-contrast (~1.3–1.5:1) —
-correct for non-text decorative/disabled elements (WCAG doesn't apply
-the 4.5:1 text threshold to them), matching shadcn's own real default
-border value exactly.
+`soft-foreground` at 7.81:1 against `background` — passes WCAG AA for
+normal text (4.5:1). `border`/`disabled-foreground` are intentionally
+low-contrast (~1.3–1.5:1) — correct for non-text decorative/disabled
+elements (WCAG doesn't apply the 4.5:1 text threshold to them),
+matching shadcn's own real default border value exactly.
+
+**2026-10-02 correction**: the original `muted-foreground` figure above
+(4.74:1) checked it against `--background` (pure white) — but
+`muted-foreground` is paired with `--muted` (97% L, not 100%) at every
+real usage site (`Badge`'s `muted` variant, secondary page text), and
+against the *right* backdrop it was really 4.34:1 — under WCAG AA,
+not over. Caught for real by the Next.js 16 upgrade's full a11y-suite
+run (ADR 0033), not by re-reading this doc. `muted-foreground` and
+`destructive` were both re-measured against every real pairing they're
+actually used with (not just one convenient backdrop) and set to the
+darker values in the table above, each landing 5.5-7:1 — comfortable
+margin, not another razor-thin pass. The methodology lesson, not just
+the number: verify a text color against the specific background it's
+actually painted on in the app, not whichever background is easiest to
+check.
 
 ## Type
 

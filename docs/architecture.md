@@ -127,6 +127,20 @@ doc as ADRs land instead of letting decisions live only in chat history.
   browser's whole point — if every JS-rendered page fell straight to
   Firecrawl, its usage-scaled cost would apply to the common case, not
   just the rare one.
+- **TypeScript 7 + Next.js 16** (2026-10-02, ADR 0033): 2 of 4
+  deliberately-deferred Dependabot majors resolved — Prisma 5→7 stays
+  deferred (a real architecture change touching `lib/db.ts`'s RLS
+  mechanism, needs its own pass). Neither bump needed code changes for
+  its own *documented* breaking changes (checked against this codebase
+  first, not assumed), but the full verification sweep caught two real,
+  undocumented rendering regressions from the new build pipeline: a
+  WCAG AA color-contrast regression (3 design tokens were already
+  razor-thin, a rounding shift tipped them under 4.5:1 — fixed with
+  real contrast math, not patched per-element) and a JSX
+  whitespace-rendering regression (`<h1>Label{count && <span>
+  {count}</span>}</h1>` silently lost its implicit space across 6
+  files — fixed with an explicit `{" "}` rather than depending on
+  incidental whitespace-trimming behavior).
 - Streamed responses back to the widget.
 - **BYOA (bring-your-own API key)**: optional, per-org, off by default —
   a business can plug in their own Anthropic key from `/settings`

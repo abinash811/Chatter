@@ -41,7 +41,11 @@ export function AuthShell({
               <br />
               Every business.
             </h2>
-            <p className="text-xs leading-relaxed text-panel-foreground/45">
+            {/* /60 not /45 — real contrast math: /45 on --panel was a
+                razor-thin 4.36:1 against WCAG AA's 4.5:1, caught by a
+                real a11y test after the Next.js 16 upgrade. /60 yields
+                7.04:1, comfortable margin. */}
+            <p className="text-xs leading-relaxed text-panel-foreground/60">
               Ecommerce, healthcare, automotive — the same
               <br />
               Claude-powered core, your own guardrails.
