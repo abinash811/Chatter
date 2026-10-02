@@ -479,6 +479,22 @@ reason.)
   the code — produced false failures), `accessibility.spec.ts`
   (15/15), `tests/visual/` (19/19 unchanged). Full detail:
   `docs/changelog.md`.
+- Table column header consistency fix (2026-10-02, app-wide typography
+  sweep #1 of 3): compiled every open design item from `docs/design/
+  audit.md`/`component-checklist.md` for the user (system-wide vs.
+  per-screen vs. accessibility), user picked the typography sweep
+  first. Real finding: Bots list's sortable headers had a small-caps
+  gray treatment (`text-xs uppercase tracking-wide text-muted-
+  foreground`) that Leads/Actions/Widgets/Approvals/Data sources never
+  got — fixed at the shared `TableHead` primitive
+  (`components/ui/table.tsx`), not per-screen, so every column header
+  in the app now reads the same way for free. Verified via real
+  screenshots, `tsc` clean, all 10 guardrails, full unit suite (235
+  unchanged), full `tests/e2e/` (117/117, clean isolated run),
+  `accessibility.spec.ts` (15/15), 3 visual baselines regenerated +
+  stable. Next up (user's own prioritized list, not yet started):
+  hover-elevation rollout beyond `BotTableRow`, then per-item visual
+  distinction (avatars/chips). Full detail: `docs/changelog.md`.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.

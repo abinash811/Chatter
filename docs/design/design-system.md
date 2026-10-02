@@ -222,6 +222,16 @@ token exists for a size smaller than Tailwind's own scale goes:
 (`app/globals.css`) — used sparingly for the smallest UI chrome (e.g.
 a table's tiniest inline count/badge), not general copy.
 
+**Table column headers** (2026-10-02, part of the same typography
+sweep): `text-xs uppercase tracking-wide text-muted-foreground` is now
+the real default for every `TableHead` (`components/ui/table.tsx`), a
+documented delta from shadcn's stock source — matches `BotsTable.tsx`'s
+`SortableHead` label styling exactly. Real finding: this treatment
+previously only existed on Bots list's sortable headers; Leads/Actions/
+Widgets/Approvals/Data sources rendered plain full-strength `text-sm`
+headers, a real visible inconsistency across every list screen, now
+fixed at the shared primitive rather than per-screen.
+
 Weight: `font-medium` (500, the default for anything that needs to
 stand out slightly — button labels, active nav items, table headers)
 is the most common, followed by `font-semibold` (600 — headings, dialog

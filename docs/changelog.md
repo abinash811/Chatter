@@ -428,3 +428,44 @@ Firecrawl last-resort fallback (ADR 0032).
   (19/19 unchanged — the fade only fires on an active tab switch, not
   captured by resting-state screenshots).
 
+- **Table column header consistency fix (2026-10-02), app-wide
+  typography-sweep item #1.** User asked for a consolidated list of
+  pending design work "for consistent design throughout the app" —
+  compiled every open item from `docs/design/audit.md`/
+  `component-checklist.md` into system-wide vs. per-screen vs.
+  accessibility buckets, explained the real tradeoff, and the user
+  picked the typography sweep first.
+  Real, previously-uncredited finding from that sweep, not assumed: a
+  grep of every `<TableHead>` usage found Bots list's sortable column
+  headers use a small-caps gray treatment (`text-xs uppercase
+  tracking-wide text-muted-foreground`, `BotsTable.tsx`'s
+  `SortableHead`) that Leads/Actions/Widgets/Approvals/Data sources
+  never got — their plain `<TableHead>` cells rendered full-strength
+  `text-sm` black text, a real, visible inconsistency across every
+  list screen in the app. Even Data sources, which explicitly adopted
+  "the same pattern as BotsTable.tsx" (2026-09-29 entry) for its sort
+  *state*, never got the matching visual treatment — the underlying
+  mechanism was shared, the look wasn't.
+  Fixed at the shared primitive (`components/ui/table.tsx`'s
+  `TableHead`), not per-screen — fixing it once gives every column
+  header in the app the same look for free, including any future
+  table, rather than 20 scattered className edits across 6 files.
+  Documented as a deliberate delta from shadcn's stock source, same
+  pattern as every other `components/ui/` customization (ADR 0025).
+  Verified via real screenshots (Leads/Actions headers now visibly
+  match Bots list's small-caps gray style, not just believed to from
+  reading the diff).
+  Real process note, logged honestly: an earlier verification pass in
+  this same session hit a false alarm (9/10 `bot-editor.spec.ts`
+  failures from environmental server contamination, not a code bug,
+  per the Motion entry above) — applied the lesson here by running
+  every verification step in full isolation from the start, killing
+  any lingering manual server process before each test run.
+  Verified: `npx tsc --noEmit` clean; all 10 `check:all` guardrails; a
+  production build; full unit suite (235 unchanged — CSS-only); the
+  full `tests/e2e/` suite (117/117, clean isolated run); the full
+  `accessibility.spec.ts` suite (15/15, no new violations); 3 affected
+  `tests/visual/` baselines (`bots-table.png`, `bots-table-mobile.png`,
+  `approvals-pending.png`) regenerated and confirmed stable across two
+  runs, the other 16 unchanged.
+
