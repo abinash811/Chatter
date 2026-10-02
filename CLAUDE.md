@@ -459,8 +459,25 @@ reason.)
   unchanged), full `tests/e2e/` (117/117, fixed 9 test selectors that
   assumed only one "Add action"/"Add widget" button existed),
   `accessibility.spec.ts` (15/15), 4 visual baselines regenerated +
-  stable. Still open: motion policy, and rolling the interactive-hover
-  elevation convention beyond `BotTableRow`'s one usage. Full detail:
+  stable. Still open: rolling the interactive-hover elevation
+  convention beyond `BotTableRow`'s one usage. Full detail:
+  `docs/changelog.md`.
+- Documented motion scale + closed the one real gap (2026-10-02,
+  third "college project" follow-up): the original "zero motion"
+  diagnosis was an overstatement — Dialog/AlertDialog/DropdownMenu/
+  Popover/Select/Sheet already animate via shadcn's untouched
+  defaults (real values confirmed from Tailwind v4's `theme.css`:
+  150ms default, `cubic-bezier(0.4, 0, 0.2, 1)` — Material's own
+  "standard" easing curve). The one real gap: `TabsContent` had zero
+  transition on tab switch — fixed with a 200ms fade
+  (`components/ui/tabs.tsx`, verified safe against
+  `BotEditorForm.tsx`'s `forceMount` usage via `bot-editor.spec.ts`).
+  Documented in `docs/design/design-system.md`'s new Motion section.
+  Verified: `tsc` clean, all 10 guardrails, full unit suite (235
+  unchanged), full `tests/e2e/` (117/117, run fully isolated after an
+  earlier contaminated run — competing manual server processes, not
+  the code — produced false failures), `accessibility.spec.ts`
+  (15/15), `tests/visual/` (19/19 unchanged). Full detail:
   `docs/changelog.md`.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,

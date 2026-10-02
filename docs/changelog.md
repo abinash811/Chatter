@@ -379,3 +379,52 @@ Firecrawl last-resort fallback (ADR 0032).
   png`, `approvals-empty.png`) regenerated and confirmed stable across
   two runs, the other 15 unchanged.
 
+- **Documented the real motion scale + closed the one actual motion
+  gap (2026-10-02), third follow-up to the "college project" feedback.**
+  Before building anything, checked what actually exists rather than
+  trusting the earlier "zero motion, static UI" diagnosis — it was an
+  overstatement. A grep of every real `animate-in`/`transition-*`/
+  `duration-*` usage in `components/ui/` found Dialog, AlertDialog,
+  DropdownMenu, Popover, Select, and Sheet all already animate open/
+  close via shadcn's own untouched Radix-driven defaults. Real values
+  confirmed from Tailwind v4's own `theme.css` (not recalled):
+  `--default-transition-duration: 150ms`,
+  `--default-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1)`
+  — which is, genuinely, Material Design's own "standard" easing
+  curve, already the implicit default everywhere a bare `transition-*`
+  class is used.
+  The one real, previously-undiscovered gap: `TabsContent` (shadcn's
+  real stock source) has zero transition on tab switch — content just
+  pops in, the only primitive in that whole list that doesn't already
+  animate. Fixed with a documented delta
+  (`data-[state=active]:animate-in data-[state=active]:fade-in-0
+  data-[state=active]:duration-200`, the same duration already used by
+  the overlay tier) in `components/ui/tabs.tsx`.
+  Real risk checked before trusting it: `BotEditorForm.tsx` uses
+  `forceMount` + `data-[state=inactive]:hidden` on all 4 of its tabs
+  (deliberately, so one shared `<form>`'s fields all stay mounted) —
+  a case where content never actually unmounts, the kind of thing that
+  could silently break a mount-triggered animation. Verified safe via
+  the real `bot-editor.spec.ts` suite, not just a visual glance.
+  Real debugging detour, documented honestly: an initial verification
+  pass showed 9/10 `bot-editor.spec.ts` tests failing — looked like a
+  real regression at first. Root-caused via bisection (reverted the
+  CSS change, same failures persisted) to environmental contamination
+  from manually curling/restarting the dev server on the same port
+  while a separate Playwright-managed server was mid-test-run, not the
+  code change. A clean, fully isolated re-run (killed every stray
+  process first) passed 10/10, confirmed again by the full suite.
+  Documented the real duration scale (micro `150ms` / overlay `200ms`
+  / panel `300-500ms`, Sheet's own real asymmetric stock values left
+  alone rather than second-guessed without cause) in
+  `docs/design/design-system.md`'s new Motion section, closing
+  `docs/design/component-checklist.md`/`docs/design/audit.md`'s
+  tracked gap.
+  Verified: `npx tsc --noEmit` clean; all 10 `check:all` guardrails; a
+  production build; full unit suite (235 unchanged — CSS-only); the
+  full `tests/e2e/` suite (117/117, run fully isolated after the
+  contamination above was ruled out); the full `accessibility.spec.ts`
+  suite (15/15, no new violations); the full `tests/visual/` suite
+  (19/19 unchanged — the fade only fires on an active tab switch, not
+  captured by resting-state screenshots).
+

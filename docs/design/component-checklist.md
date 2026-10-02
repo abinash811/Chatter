@@ -19,8 +19,10 @@ actually uses as part of the design-bar self-check
    section, documented 2026-10-02: surface `shadow-xs` / floating
    `shadow-md` / modal `shadow-lg`), tied to an interaction (hover/
    open), not a pick made ad hoc for this one component?
-3. **Motion** — if it animates, does the motion serve hierarchy,
-   feedback, or attention, with a short, bounded duration? Never
+3. **Motion** — if it animates, does it use one of the system's
+   defined tiers (`docs/design/design-system.md`'s Motion section,
+   documented 2026-10-02: micro `150ms` / overlay `200ms` / panel
+   `300-500ms`), serving hierarchy, feedback, or attention? Never
    decorative, never something a user would notice as "an animation"
    rather than just "the UI responding."
 4. **Color-independent state** — if meaning is conveyed by color (a
@@ -49,9 +51,8 @@ actually uses as part of the design-bar self-check
 ## Known system-level gaps against this checklist (2026-09-27)
 
 - ~~No documented elevation scale~~ — fixed 2026-10-02, see item 2 above.
-- No documented motion/duration policy — transitions exist per
-  component (`transition-shadow`, `transition-opacity`) with no stated
-  standard duration/easing or "when not to animate" rule.
+- ~~No documented motion/duration policy~~ — fixed 2026-10-02, see
+  item 3 above. Still no "when not to animate" rule specifically.
 - No documented copy-structure rule for errors/empty states — tone is
   covered (`principles.md` #6), structure (items 5-6 above) isn't yet
   written down anywhere else.

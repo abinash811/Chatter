@@ -145,6 +145,40 @@ change. Not yet applied to every other clickable row/card (e.g.
 `ConversationListPane`'s rows) — a real next step, not claimed done
 here.
 
+## Motion
+
+Documented 2026-10-02 (closing `docs/design/component-checklist.md`
+item 3's tracked gap), same pattern as Elevation above: motion mostly
+already existed via shadcn's own untouched Radix-driven primitives,
+it just had never been written down as a deliberate system — not
+"zero motion," an earlier overstatement corrected here after actually
+checking. Real duration/easing values, confirmed from Tailwind v4's
+own `theme.css` (not recalled): the default transition is `150ms` at
+`cubic-bezier(0.4, 0, 0.2, 1)` — which is, genuinely, Material
+Design's own "standard" easing curve, already in use by default
+everywhere a bare `transition-*` class is used (buttons, inputs,
+hover states) without needing to adopt it on purpose.
+
+| Tier | Duration | Used by |
+|---|---|---|
+| **Micro** (hover/focus feedback) | `150ms` (Tailwind's implicit default) | `Button`, `Input`, `Checkbox`, `Switch`, ghost-button hovers — anywhere a bare `transition-*` class is used with no explicit duration. |
+| **Overlay open/close** | `200ms` | `Dialog`, `AlertDialog`, `DropdownMenu`, `Popover`, `Select` — all shadcn defaults (`data-[state=open]:animate-in`/`data-[state=closed]:animate-out` + `fade`/`zoom`), untouched. |
+| **Panel slide** (`Sheet`) | `300ms` close / `500ms` open | shadcn's own real stock default, asymmetric — not something we introduced or have re-derived a reason to override. |
+
+**One real, new gap closed**: `TabsContent` had zero transition on tab
+switch — content just popped in, the one primitive out of this whole
+list that didn't already animate. Added `data-[state=active]:animate-in
+data-[state=active]:fade-in-0 data-[state=active]:duration-200` (the
+same overlay-tier duration above) as a documented delta from shadcn's
+stock source, verified safe against `BotEditorForm.tsx`'s `forceMount`
+usage (content stays mounted, only `data-state` toggles — the fade
+still re-triggers correctly on each switch) via the real
+`bot-editor.spec.ts` suite, not just a visual check.
+
+**Still open, not done here**: no system-wide "when not to animate"
+rule, and the interactive-hover elevation convention from the
+Elevation section above is still only on `BotTableRow`'s one usage.
+
 ## Radius & spacing
 
 `--radius: 0.625rem` — unchanged; happens to match shadcn's own real
