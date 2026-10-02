@@ -137,13 +137,25 @@ there, not aspirational:
 | **Floating** (an open menu/popover, not modal) | `shadow-md` | `DropdownMenuContent`, `PopoverContent`, `SelectContent` — all shadcn defaults, untouched. |
 | **Modal** (takes over the screen) | `shadow-lg` | `DialogContent`, `AlertDialogContent` — shadcn defaults, untouched. |
 
-One **interactive-hover** convention layered on top, not a 4th tier:
-`BotTableRow`'s avatar chip bumps `shadow-xs` → `shadow-sm` on row
-hover (`group-hover:shadow-sm`, `transition-shadow`) — a small, local
-lift signaling "this row is clickable," not a whole-card elevation
-change. Not yet applied to every other clickable row/card (e.g.
-`ConversationListPane`'s rows) — a real next step, not claimed done
-here.
+An **interactive-hover** convention layered on top, not a 4th tier —
+rolled out app-wide 2026-10-02. Two real variants, not one, because
+the elements it applies to aren't structurally identical:
+
+- **Chip-local lift**: `BotTableRow`'s letter-avatar chip bumps
+  `shadow-xs` → `shadow-sm` on row hover (`group-hover:shadow-sm`,
+  `transition-shadow`) — a small, local lift on the one element the
+  eye lands on first.
+- **Whole-row lift**: `ConversationListPane`'s rows (the only other
+  whole-row-navigates element in the app — audited before building,
+  not assumed) have no chip to lift, so the entire row gets a `shadow-sm`
+  bump on hover instead, with **no resting shadow** (rows share edges
+  via `divide-y`; a resting shadow on every row would bleed into its
+  neighbors) and `relative z-10` on hover so the lifted row's shadow
+  renders above the border line of the row below it, not clipped.
+
+Both read as the same underlying idea (a flat surface gains `shadow-sm`
+on hover, signaling "clickable") expressed through whichever element
+each row actually has.
 
 ## Motion
 

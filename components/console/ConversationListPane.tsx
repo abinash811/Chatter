@@ -52,7 +52,14 @@ export function ConversationListPane({
           <Link
             href={`/conversations/${conversation.id}${query ? `?${query}` : ""}`}
             className={cn(
-              "block px-3 py-3 outline-none hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+              // Row-level elevation convention (2026-10-02, extending
+              // BotTableRow's icon-chip shadow-lift to a row with no
+              // chip to lift): no resting shadow (adjacent rows share
+              // one edge via divide-y — a resting shadow on every row
+              // would bleed into its neighbors), just a shadow-sm bump
+              // on hover, relative+z-10 so it renders above the
+              // divide-y border line of the row below it, not clipped.
+              "relative z-0 block px-3 py-3 outline-none transition-shadow hover:z-10 hover:bg-muted/50 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
               bulkMode && "pl-10",
               conversation.id === selectedId && "bg-muted",
             )}

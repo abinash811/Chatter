@@ -492,9 +492,25 @@ reason.)
   screenshots, `tsc` clean, all 10 guardrails, full unit suite (235
   unchanged), full `tests/e2e/` (117/117, clean isolated run),
   `accessibility.spec.ts` (15/15), 3 visual baselines regenerated +
-  stable. Next up (user's own prioritized list, not yet started):
-  hover-elevation rollout beyond `BotTableRow`, then per-item visual
-  distinction (avatars/chips). Full detail: `docs/changelog.md`.
+  stable. Full detail: `docs/changelog.md`.
+- Hover-elevation rollout (2026-10-02, app-wide consistency item #2 of
+  3): audited before building — `BotTableRow`'s hover-lift is specific
+  to its letter-avatar chip, and no second element in the app has one,
+  so the exact pattern had no real second instance. Reported this
+  honestly rather than inventing a chip; user chose a broader,
+  chip-independent convention instead. `ConversationListPane`'s rows
+  (the only other whole-row-navigates element) now get a whole-row
+  `shadow-sm` lift on hover — no resting shadow (adjacent `divide-y`
+  rows would bleed into each other), `relative z-10` on hover so the
+  shadow isn't clipped by the row below. Verified the shadow genuinely
+  applies via a real computed-style check during a simulated hover.
+  Verified: `tsc` clean, all 10 guardrails, full unit suite (235
+  unchanged), full `tests/e2e/` (116/117 first run — the one failure,
+  `bot-top-bar.spec.ts`, confirmed pre-existing flakiness unrelated to
+  this change via an isolated 3/3 re-run), `accessibility.spec.ts`
+  (15/15), `tests/visual/` (19/19 unchanged). Next up: per-item visual
+  distinction (avatars/chips) — a real new design decision, not yet
+  started. Full detail: `docs/changelog.md`.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.
