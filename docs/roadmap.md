@@ -21,10 +21,11 @@ The generic core plus one concrete vertical template — see
 - Embeddable chat widget (shadow-DOM isolated, per-business theming)
 - Admin console: bot list, bot editor (persona/guardrails/tools/
   appearance, draft/publish), Shopify connect flow
-- Knowledge ingestion: manual Q&A, file upload (PDF/DOCX/txt/md), and
-  single-URL ingestion all done (`docs/features.md`, ADR 0013) — MVP
-  scope complete. Site crawling is separate, still open
-  (`docs/open-questions.md` #3).
+- Knowledge ingestion: manual Q&A, file upload (PDF/DOCX/txt/md),
+  single-URL ingestion (`docs/features.md`, ADR 0013), and real
+  multi-page site crawling with a JS-rendering + Firecrawl-last-resort
+  fallback chain (2026-09-30 through 2026-10-02, ADR 0030/0031/0032) —
+  all done, MVP scope complete.
 - RAG retrieval as a tool call, not a hardcoded prompt prepend
 - Five action tools: `search_knowledge_base`, `check_order_status`
   (read-only — see Next), `collect_lead` (write, generic — 2026-09-27,
@@ -186,9 +187,9 @@ Validated by competitor research, not yet built:
      semantic scores aren't meaningful until a real `VOYAGE_API_KEY`
      exists (the script falls back to a labeled mock embedding so the
      pipeline still runs end-to-end); full-text scores are real today.
-  4. **Reranking** — Voyage `rerank-2` vs. Cohere Rerank v3.5,
-     explicitly deferred (user decision, 2026-09-27) until the eval
-     harness in step 3 exists to decide it with real numbers.
+  4. **Reranking** — Voyage `rerank-2` vs. Cohere Rerank v3.5. Step 3's
+     eval harness now exists, so this is unblocked and decidable with
+     real numbers — not yet started, the next concrete RAG item.
   Prioritized first among the RAG-architecture gaps since it improves
   every chunk already ingested, with no re-ingestion needed.
 - **More write-capable action tools** — issue a refund, update a
@@ -207,9 +208,6 @@ Validated by competitor research, not yet built:
   resolve before building, not a UI task).
 - **Image input** — a visitor sends a photo (damaged item, wrong item).
   Validated by both Gorgias and Intercom Fin shipping it.
-- **Design pass on `/bots/[botId]/integrations`** — bot list and bot
-  editor got theirs (`docs/design/preview/bots-list.html`,
-  `bot-editor.html`); integrations is the one console page left.
 - **Guardrails Phase 1 (rate limiting + spam detection) — built
   (2026-09-30, ADR 0029).** Found via the 2026-09-28 Chatbase docs pass
   alongside Procedures (below) — see `docs/features.md`'s entry. Country/
@@ -222,11 +220,6 @@ Validated by competitor research, not yet built:
   visual flow builder, not the same thing at smaller scale — still
   needs scoping (step syntax, `@`-action references, branching) before
   it's buildable, not just time.
-- **Site crawling for ingestion** — `docs/open-questions.md` #3.
-  Tidio's positioning (the closest match to our own SMB/self-serve
-  target, per the research) treats this as table stakes for a fast
-  setup, which is a real point in favor of prioritizing it, not proof
-  it must ship in v1 — still the user's call.
 
 ## Later
 
