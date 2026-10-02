@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { randomUUID } from "crypto";
 import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { withOrgContext } from "@/lib/db";
 import { hashPassword, verifyPassword } from "@/lib/password";
 
@@ -19,7 +20,8 @@ import { hashPassword, verifyPassword } from "@/lib/password";
 // (see prisma/schema.prisma) — you can't require org context to
 // discover org context.
 
-const rawClient = new PrismaClient();
+// Prisma 7 (ADR 0034): a driver adapter is now mandatory — see lib/db.ts.
+const rawClient = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
 
 const { handlers, auth: nextAuth, signIn, signOut } = NextAuth({
   // Auth.js refuses to trust a Host header it hasn't verified (Host

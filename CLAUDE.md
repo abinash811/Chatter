@@ -364,8 +364,7 @@ reason.)
   audit` clean of this change), a production build, full unit suite
   (231, 5 new). Full detail: `docs/changelog.md`.
 - TypeScript 7 + Next.js 16 upgrade (2026-10-02, ADR 0033): 2 of 4
-  deferred Dependabot majors resolved (Prisma 5→7 stays deferred — a
-  real RLS-touching architecture change, needs its own pass). Checked
+  deferred Dependabot majors resolved. Checked
   against our real code first: neither bump's *documented* breaking
   changes applied here. But the full verification sweep (not just
   `tsc`+build) caught two real, undocumented regressions from the new
@@ -382,6 +381,29 @@ reason.)
   `accessibility.spec.ts` (15/15, 0 violations, up from 9 failing),
   all 19 visual baselines regenerated and hand-reviewed. Full detail:
   `docs/changelog.md`.
+- Prisma 7 upgrade (2026-10-02, ADR 0034): the last of the 4 originally-
+  deferred Dependabot majors, now all resolved. A real architecture
+  change, not a version bump — a driver adapter (`@prisma/adapter-pg`)
+  is now mandatory at every `PrismaClient` (3 call sites: `lib/db.ts`,
+  `lib/auth.ts`, `scripts/verify-rls.mjs`), connection string moved to
+  a new mandatory `prisma.config.ts`. Kept the existing
+  `prisma-client-js` generator (still works unchanged under 7.10.0) —
+  explained as a real tradeoff, user chose the smaller 3-file blast
+  radius over switching to the new `prisma-client` generator (11 more
+  files) in the same RLS-touching pass; that switch stays a deferred
+  future pass. Pinned to `7.10.0` explicitly, not `latest` (which
+  already points to an `8.0.0` release candidate). Real regression
+  caught only by the full e2e suite: Prisma 5's engine auto-loaded
+  `.env`; with the adapter we read `process.env.DATABASE_URL`
+  ourselves, which broke 31 specs in Playwright's own Node process
+  until `process.loadEnvFile()` was added (same pattern already used
+  elsewhere in this codebase). Found+fixed 2 more real CVEs
+  (`mysql2`, `deepmerge-ts`) via `package.json` overrides. Verified:
+  `tsc` clean, a production build, all 10 guardrails, full unit suite
+  (231 unchanged), `scripts/verify-rls.mjs` run for real against a live
+  Postgres (all 3 tenant-isolation assertions passing), full
+  `tests/e2e/` (117/117) and `accessibility.spec.ts` (15/15). Full
+  detail: `docs/changelog.md`.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.
@@ -400,10 +422,10 @@ reason.)
   browser version mismatch) — `tests/e2e/`/`tests/visual/` already
   work around it, only the standalone script is affected.
 - React component render tests not yet added (infra ready, unblocked).
-- Prisma 5→7 (client+CLI) deliberately deferred — ADR 0033 (2026-10-02)
-  resolved the other 2 of 4 Dependabot majors (Next.js 16, TypeScript 7);
-  this one needs its own pass (new driver-adapter architecture, touches
-  `lib/db.ts`'s RLS mechanism).
+- Switching Prisma's `prisma-client-js` generator to the newer
+  `prisma-client` one deliberately deferred (ADR 0034, 2026-10-02) — the
+  old generator still works unchanged under Prisma 7, this is a
+  lower-stakes future pass (11 files' import paths), not urgent.
 - CI verifying an actual deploy is explicitly out of scope (user
   decision), not just deferred.
 - No deploy target chosen — Render dropped (ADR 0020, 2026-09-27,

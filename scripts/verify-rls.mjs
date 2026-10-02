@@ -11,8 +11,20 @@
 // and pgvector already applied — see README's Local Setup).
 
 import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 
-const prisma = new PrismaClient();
+// Same process.loadEnvFile() convention as scripts/apply-sql-
+// migrations.mjs/predev-check.mjs and lib/db.ts — a plain Node script
+// doesn't auto-load .env the way Next's server or Prisma 5's engine
+// did.
+try {
+  process.loadEnvFile();
+} catch {
+  // no .env file — fine if DATABASE_URL is already exported.
+}
+
+// Prisma 7 (ADR 0034): a driver adapter is now mandatory — see lib/db.ts.
+const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
 
 async function withOrg(orgId, fn) {
   return prisma.$transaction(async (tx) => {

@@ -41,77 +41,10 @@ rebuild onto the real CARE `Table` (ADR 0008); `docs/changelog/
 2026-09-part4.md` — the real unit-test layer standing up, visual
 regression testing, and the depth/polish passes for Knowledge,
 Settings, Integrations, and the Conversations Activity rebuild (ADR
-0027).
+0027); `docs/changelog/2026-10-part1.md` — In-chat widgets Phase 2
+(functions that call a real API, ADR 0028).
 
 ---
-
-- **In-chat widgets, Phase 2 — Functions that call a real API**
-  (2026-09-30, ADR 0028). User asked to build the Functions half of
-  ADR 0028's original scope: a widget's submit can now optionally call
-  a real API instead of just becoming a chat message, reusing Custom
-  Actions' pipeline (`performActionRequest`, `isBlockedActionUrl`, ADR
-  0022) rather than a parallel one, and the `PendingAction` approval
-  queue (ADR 0023) for write-capable calls.
-  Checked `.claude/rules/bot-engine.md` rule #1 before writing any
-  code — confirmed the `Tool` interface itself (`handle():
-  Promise<string>`) didn't need to change; a widget with an `apiUrl`
-  simply gets a second tool, `submit_widget_<name>`
-  (`buildWidgetSubmitTool`, `lib/ai/tools/widget.ts`), returning the
-  same tagged-JSON-string pattern every tool already uses
-  (`{"status":"ok"|"handoff_required"|"pending_approval",...}`).
-  `Widget` gained `apiUrl`/`apiMethod`/`headersEncrypted`/
-  `writeCapable` columns (migration applied and `scripts/verify-rls.mjs`
-  run against real local Postgres — no new RLS policy needed, the
-  existing table-level policy already covers new columns). Headers are
-  encrypted at rest with the same `lib/crypto.ts` AES-256-GCM helper
-  `CustomAction.headersEncrypted` uses.
-  A write-capable widget's submit tool never calls the API directly —
-  it queues a `PendingAction` and tells the visitor a human will review
-  it. Approving it in `/bots/[botId]/approvals` now dispatches on a
-  `submit_widget_` tool-name prefix (`app/(console)/bots/[botId]/
-  approvals/actions.ts`) to a new `executeWidgetSubmission`
-  (`lib/ai/tools/widget.ts`), which re-resolves the widget fresh by
-  name via `getWidgetByNameForExecution` — a `PendingAction` only
-  stores the tool name and the visitor's input, not the widget's own
-  URL/headers, so the real config has to be looked up again at approval
-  time, not carried in the queued row.
-  Console UI: the Add-widget dialog gained a "Call an API when this
-  form is submitted" checkbox (progressive disclosure — Method/URL/
-  Headers/write-capable fields only render once checked), and the
-  widgets table gained an "On submit" column with a semantic `Badge`
-  ("Message only" / "Calls API" / "Calls API — needs approval").
-  Real bugs caught while verifying, not hypothetical:
-  (1) `tests/unit/lib/ai/tools/widget.test.ts`'s initial
-  `const x = vi.fn(); vi.mock(...)` pattern threw "Cannot access
-  'performActionRequest' before initialization" — a real hoisting
-  order issue once the SUT's own import triggered the mock factory
-  before the const existed; fixed with `vi.hoisted()`.
-  (2) A new e2e test named its bot "Message Only Bot," which collided
-  (Playwright strict-mode) with the "Message only" badge text it was
-  asserting on, since the bot switcher renders the bot's own name on
-  the same page — fixed by renaming the bot to "Collection Bot."
-  (3) The new write-capable-widget approval e2e test initially asserted
-  the queued request would end up "approved" after a real call to
-  `https://api.github.com/zen` — it actually returned a genuine 403
-  (GitHub rejects anonymous requests with no `User-Agent` header,
-  which `performActionRequest` doesn't set), caught by reading the real
-  `error-context.md` snapshot rather than assuming; fixed to accept
-  either `approved` or `failed` as a real, honest terminal state,
-  matching the pre-existing Shopify-approval test's own "no store
-  connected → graceful failure" precedent — then a second Playwright
-  strict-mode collision surfaced (the row's failure-detail paragraph
-  and the status Badge both contained the text "failed"), fixed by
-  scoping the assertion to `row.locator('[data-slot="badge"]')`.
-  Verified: `npx tsc --noEmit` clean; all 10 `check:all` guardrails;
-  full unit suite (195 tests, 25 across the two widget-related test
-  files); a production build; `tests/e2e/widgets.spec.ts` (10/10) and
-  `tests/e2e/approvals.spec.ts` (6/6) run in isolation after fixing the
-  three bugs above; the widgets page's axe scan clean; real screenshots
-  of the Add dialog's Function section and the table's new badges taken
-  and reviewed against the design bar; a full background
-  `npx playwright test` run confirmed 112/114 passing, the only 2
-  failures being the pre-existing, already-documented
-  `knowledge.spec.ts`/`preview.spec.ts` flakes, unrelated to this change.
 
 - **Guardrails Phase 1 — rate limiting + spam detection** (2026-09-30,
   ADR 0029). User asked what Chatter should build next to match
@@ -430,4 +363,72 @@ Settings, Integrations, and the Conversations Activity rebuild (ADR
   and manually reviewed — the spacing fix introduced no visible layout
   change, the contrast fix is visibly legible without looking washed
   out or jarring.
+
+- **Prisma 7 upgrade, closing the last 2 deferred Dependabot majors
+  (2026-10-02, ADR 0034)**: user asked to close out the "Prisma
+  5→7 (client+CLI) deliberately deferred" item ADR 0033 had left. The
+  highest-risk of the 4 original Dependabot majors — a real
+  architecture change, not a version bump, touching `lib/db.ts`'s
+  `withOrgContext` (the literal mechanism enforcing guardrail #1,
+  tenant isolation via RLS) — so this got its own dedicated pass with
+  real verification, not folded into the earlier TS/Next pass.
+  `prisma.io`'s docs stayed network-blocked (consistent with every
+  prior session), so everything below was confirmed by actually
+  running the real installed CLI and reading its real errors/type
+  definitions, not trusted from secondary-source summaries.
+  Two real findings from that approach: (1) npm's `latest` dist-tag for
+  `prisma` already points to an `8.0.0` release candidate — pinned
+  explicitly to `7.10.0` (the exact version the open Dependabot PRs
+  targeted, confirmed via `npm view prisma versions` as the latest real
+  stable 7.x), same lesson as ADR 0024's TanStack Table pin; (2) the
+  existing `prisma-client-js` generator still works completely
+  unchanged under 7.10.0 (confirmed by running `prisma generate` with
+  it, no deprecation warning) — every secondary source describing "the
+  Prisma 7 migration" assumed the newer `prisma-client` generator
+  (different output location, 11 files' import paths change), which is
+  real and Prisma's recommended path, but not the only one available
+  today.
+  Presented this as a genuine tradeoff before building anything (per
+  CLAUDE.md's process rule): keep the old generator now (3 files
+  change: `lib/db.ts`, `lib/auth.ts`, `scripts/verify-rls.mjs` — the
+  only 3 real `new PrismaClient()` call sites) vs. switch to the new
+  one in the same pass (14 files, bigger diff in the pass already
+  touching RLS). User chose the smaller, old-generator path, deferring
+  the generator switch as its own future pass.
+  Real, confirmed-by-running requirements, not assumed: a driver
+  adapter (`@prisma/adapter-pg`) is now mandatory at runtime —
+  constructing `new PrismaClient()` with no arguments throws a real
+  error naming this; `schema.prisma`'s `datasource` block can no longer
+  hold a connection `url` at all (hard error, confirmed before changing
+  anything) — moved into a new, mandatory `prisma.config.ts`.
+  Real regression caught only by running the full e2e suite, not just
+  `tsc`+build: Prisma 5's engine quietly auto-loaded `.env` for any
+  `PrismaClient` consumer; with the adapter, *this codebase* now reads
+  `process.env.DATABASE_URL` directly, and Node doesn't auto-load
+  `.env` on its own. Next.js's own server already loads `.env`, so the
+  running app was fine, but `tests/e2e/helpers.ts` (Playwright's own
+  Node process) and `scripts/verify-rls.mjs` don't — 31 e2e specs
+  failed with "User was denied access on the database `(not
+  available)`" until this was found and fixed with the same
+  `process.loadEnvFile()` defensive pattern already used in
+  `scripts/apply-sql-migrations.mjs`/`scripts/predev-check.mjs`, added
+  to `lib/db.ts` itself (every consumer gets it for free) and
+  `scripts/verify-rls.mjs`.
+  Real, unrelated security finding while installing: `npm audit`
+  flagged `prisma`'s own transitive `mysql2` (auth-downgrade CVE) and
+  `deepmerge-ts` (stack-exhaustion CVE) — pinned via `package.json`'s
+  `overrides` to patched versions, same pattern as ADR 0032's `axios`
+  fix.
+  Verified: `npx tsc --noEmit` clean; a production build; all 10
+  `check:all` guardrails; full unit suite (231, unchanged — Prisma is
+  mocked at the module boundary in every test); `node scripts/verify-
+  rls.mjs` run for real against a live local Postgres instance, all 3
+  tenant-isolation assertions passing (the one piece of this migration
+  that genuinely couldn't be verified by reading code or `tsc` alone);
+  the full `tests/e2e/` suite (117/117 after the env-loading fix,
+  confirmed clean — the 1 failure before that was the pre-existing,
+  already-documented toast-timeout flake, confirmed by an isolated
+  re-run); the full `accessibility.spec.ts` suite (15/15, 0
+  violations); `npm audit` clean of the new findings. All 4 of the
+  originally-deferred Dependabot majors are now resolved.
 
