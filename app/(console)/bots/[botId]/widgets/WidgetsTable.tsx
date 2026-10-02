@@ -1,26 +1,33 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { Trash2, FormInput } from "lucide-react";
 import { Button, Badge, Switch, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui";
+import { EmptyState } from "@/components/console/EmptyState";
 import type { WidgetRow } from "@/lib/widgets";
 
 export function WidgetsTable({
   widgets,
   onToggle,
   onDelete,
+  onAdd,
 }: {
   widgets: WidgetRow[];
   onToggle: (id: string, enabled: boolean) => void;
   onDelete: (id: string) => void;
+  onAdd: () => void;
 }) {
   if (widgets.length === 0) {
     return (
-      <div className="mt-4 flex flex-col items-center gap-2 rounded-lg border border-border py-14 shadow-xs">
-        <p className="text-sm font-medium">No widgets yet</p>
-        <p className="text-sm text-muted-foreground">
-          Add one above to let your bot collect structured info with an inline form instead of plain text.
-        </p>
-      </div>
+      <EmptyState
+        icon={FormInput}
+        title="No widgets yet"
+        description="Let your bot collect structured info with an inline form instead of plain text."
+        action={
+          <Button type="button" size="sm" onClick={onAdd}>
+            Add widget
+          </Button>
+        }
+      />
     );
   }
 

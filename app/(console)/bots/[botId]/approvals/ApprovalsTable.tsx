@@ -1,4 +1,6 @@
+import { ShieldCheck } from "lucide-react";
 import { Badge, Button, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui";
+import { EmptyState } from "@/components/console/EmptyState";
 import { relativeTime } from "@/lib/utils";
 import type { PendingActionRow } from "@/lib/pendingActions";
 
@@ -47,12 +49,11 @@ export function ApprovalsTable({
 }) {
   if (actions.length === 0) {
     return (
-      <div className="mt-4 flex flex-col items-center gap-2 rounded-lg border border-border py-14 shadow-xs">
-        <p className="text-sm font-medium">Nothing waiting on you</p>
-        <p className="text-sm text-muted-foreground">
-          A write-capable action your bot proposes — like cancelling an order — shows up here first.
-        </p>
-      </div>
+      <EmptyState
+        icon={ShieldCheck}
+        title="Nothing waiting on you"
+        description="A write-capable action your bot proposes — like cancelling an order — shows up here first."
+      />
     );
   }
 

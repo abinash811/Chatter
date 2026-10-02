@@ -15,9 +15,10 @@ actually uses as part of the design-bar self-check
    screenshot? `disabled` means genuinely inert (no focus, no keyboard
    activation), not just dimmed text.
 2. **Elevation** — if it has depth, does it use one of the system's
-   defined shadow levels, tied to an interaction (hover/open), not a
-   `shadow-xs`/`shadow-sm` pick made ad hoc for this one component?
-   **We don't have a defined scale yet — see "Known gaps" below.**
+   defined shadow levels (`docs/design/design-system.md`'s Elevation
+   section, documented 2026-10-02: surface `shadow-xs` / floating
+   `shadow-md` / modal `shadow-lg`), tied to an interaction (hover/
+   open), not a pick made ad hoc for this one component?
 3. **Motion** — if it animates, does the motion serve hierarchy,
    feedback, or attention, with a short, bounded duration? Never
    decorative, never something a user would notice as "an animation"
@@ -47,8 +48,7 @@ actually uses as part of the design-bar self-check
 
 ## Known system-level gaps against this checklist (2026-09-27)
 
-- No documented elevation scale — `docs/design/audit.md`'s "System
-  coverage" table already tracks this.
+- ~~No documented elevation scale~~ — fixed 2026-10-02, see item 2 above.
 - No documented motion/duration policy — transitions exist per
   component (`transition-shadow`, `transition-opacity`) with no stated
   standard duration/easing or "when not to animate" rule.

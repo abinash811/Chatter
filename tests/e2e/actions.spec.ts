@@ -31,7 +31,7 @@ test("adding a custom action through the dialog creates it and shows it in the l
   await signUpAndCreateBot(page, "Compose Bot");
   await page.click('a:has-text("Actions")');
   await page.waitForURL(/\/actions$/);
-  await page.getByRole("button", { name: "Add action", exact: true }).click();
+  await page.getByRole("button", { name: "Add action", exact: true }).first().click();
 
   await expect(page.getByText("Add a custom action")).toBeVisible();
   await page.fill("#name", "Book a table");
@@ -48,7 +48,7 @@ test("a URL pointed at internal infrastructure is rejected before it's ever save
   await signUpAndCreateBot(page, "Guarded Bot");
   await page.click('a:has-text("Actions")');
   await page.waitForURL(/\/actions$/);
-  await page.getByRole("button", { name: "Add action", exact: true }).click();
+  await page.getByRole("button", { name: "Add action", exact: true }).first().click();
 
   await page.fill("#name", "Metadata Probe");
   await page.fill("#description", "Should never be allowed.");
@@ -81,7 +81,7 @@ test("Test button requires a method and URL before firing", async ({ page }) => 
   await signUpAndCreateBot(page, "Test Validation Bot");
   await page.click('a:has-text("Actions")');
   await page.waitForURL(/\/actions$/);
-  await page.getByRole("button", { name: "Add action", exact: true }).click();
+  await page.getByRole("button", { name: "Add action", exact: true }).first().click();
 
   await page.getByRole("button", { name: "Test", exact: true }).click();
   await expect(page.getByText("Fill in a method and URL first.")).toBeVisible();
@@ -95,7 +95,7 @@ test("Test button runs the same SSRF guard as saving does", async ({ page }) => 
   await signUpAndCreateBot(page, "Test SSRF Bot");
   await page.click('a:has-text("Actions")');
   await page.waitForURL(/\/actions$/);
-  await page.getByRole("button", { name: "Add action", exact: true }).click();
+  await page.getByRole("button", { name: "Add action", exact: true }).first().click();
 
   await page.fill("#url", "https://169.254.169.254/latest/meta-data");
   await page.getByRole("button", { name: "Test", exact: true }).click();

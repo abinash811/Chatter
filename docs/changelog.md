@@ -329,3 +329,53 @@ Firecrawl last-resort fallback (ADR 0032).
   feedback), and the empty-state/depth-hierarchy pass sequenced after
   this one.
 
+- **Empty-state treatment + documented elevation scale (2026-10-02),
+  the sequenced follow-up to the typography pass above.** User
+  confirmed "Yes" to tackling empty states + depth hierarchy next.
+  Real bug, not impression: Leads/Actions/Widgets/Approvals/Data
+  sources each rendered a lonely plain-text box (no icon, no CTA) in a
+  mostly-empty page — the single biggest remaining "unfinished"
+  signal once the font/heading fix landed. New shared
+  `components/console/EmptyState.tsx`, deliberately extracted from
+  `ConversationDetailPanel.tsx`'s own pre-existing icon-badge pattern
+  (its "Select a conversation" state) rather than invented — that was
+  the one empty state in the app that already read as finished.
+  Rolled out to all 5 screens with a fitting `lucide-react` icon each
+  (`Users`/`Webhook`/`FormInput`/`ShieldCheck`/`Database`). Real CTA
+  wired, not just copy, where a real action exists: Actions' and
+  Widgets' empty-state buttons open the exact same dialog as their
+  header button (`onAdd` prop threaded down from the existing
+  `addOpen` state already in `ActionsForm.tsx`/`WidgetsForm.tsx`),
+  verified via a real Playwright click-through, not just rendered.
+  Leads/Approvals/Data-sources correctly got no fabricated CTA — no
+  user action exists for the first two (visitor/bot-driven, not
+  something to "add"), and Data sources already has its 4 `OptionCard`
+  entry points above the table.
+  Real regression caught and fixed: adding a second "Add action"/"Add
+  widget" button broke 9 existing e2e test selectors in
+  `actions.spec.ts`/`widgets.spec.ts` that assumed only one such
+  button existed on the page — fixed with `.first()` to deterministically
+  target the header button, the semantically "primary" one.
+  Also closed `docs/design/audit.md`'s long-tracked "no documented
+  elevation scale" gap — not a new scale, a real 3-tier one (surface
+  `shadow-xs` / floating `shadow-md` / modal `shadow-lg`) already
+  existed via shadcn's own untouched component defaults, confirmed by
+  grepping every real `shadow-*` usage in the app; it just had never
+  been written down. `docs/design/design-system.md`'s new Elevation
+  section documents it; `docs/design/component-checklist.md`'s item 2
+  updated to point to it. Honestly flagged, not silently dropped: the
+  one interactive-hover convention that exists (`BotTableRow`'s avatar
+  chip lifting `shadow-xs`→`shadow-sm` on row hover) is still only
+  applied in that one place, not rolled out everywhere a row/card is
+  clickable.
+  Verified: `npx tsc --noEmit` clean; all 10 `check:all` guardrails; a
+  production build; a real Playwright script confirming all 5 new
+  empty states render correctly and the Actions CTA genuinely opens
+  its dialog; full unit suite (235, unchanged); the full `tests/e2e/`
+  suite (117/117, after the selector fix above); the full
+  `accessibility.spec.ts` suite (15/15, no new violations); the 4
+  affected `tests/visual/` baselines (`leads-empty.png`,
+  `actions-empty.png`, `knowledge-empty.png`/`knowledge-add-dialog.
+  png`, `approvals-empty.png`) regenerated and confirmed stable across
+  two runs, the other 15 unchanged.
+

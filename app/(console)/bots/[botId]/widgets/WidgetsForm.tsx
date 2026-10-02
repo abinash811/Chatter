@@ -71,6 +71,7 @@ export function WidgetsForm({ botId, widgets }: { botId: string; widgets: Widget
           toggleFormAction(formData);
         }}
         onDelete={setDeletingId}
+        onAdd={() => setAddOpen(true)}
       />
 
       <AlertDialog open={deletingId !== null} onOpenChange={(open) => !open && setDeletingId(null)}>

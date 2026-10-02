@@ -93,6 +93,7 @@ export function ActionsForm({ botId, actions }: { botId: string; actions: Custom
           toggleFormAction(formData);
         }}
         onDelete={setDeletingId}
+        onAdd={() => setAddOpen(true)}
       />
 
       <AlertDialog open={deletingId !== null} onOpenChange={(open) => !open && setDeletingId(null)}>

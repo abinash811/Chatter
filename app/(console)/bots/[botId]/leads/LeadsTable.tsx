@@ -1,4 +1,6 @@
+import { Users } from "lucide-react";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui";
+import { EmptyState } from "@/components/console/EmptyState";
 import { relativeTime } from "@/lib/utils";
 import type { LeadRow } from "@/lib/leads";
 
@@ -8,12 +10,11 @@ import type { LeadRow } from "@/lib/leads";
 export function LeadsTable({ leads }: { leads: LeadRow[] }) {
   if (leads.length === 0) {
     return (
-      <div className="mt-4 flex flex-col items-center gap-2 rounded-lg border border-border py-14 shadow-xs">
-        <p className="text-sm font-medium">No leads yet</p>
-        <p className="text-sm text-muted-foreground">
-          Contact info your bot collects from visitors will show up here.
-        </p>
-      </div>
+      <EmptyState
+        icon={Users}
+        title="No leads yet"
+        description="Contact info your bot collects from visitors will show up here."
+      />
     );
   }
 

@@ -32,7 +32,7 @@ test("adding a widget through the dialog creates it and shows it in the list", a
   await signUpAndCreateBot(page, "Compose Widget Bot");
   await page.click('a:has-text("Widgets")');
   await page.waitForURL(/\/widgets$/);
-  await page.getByRole("button", { name: "Add widget", exact: true }).click();
+  await page.getByRole("button", { name: "Add widget", exact: true }).first().click();
 
   await expect(page.getByText("Add a widget")).toBeVisible();
   await page.fill("#name", "Lead Capture");
@@ -50,7 +50,7 @@ test("a widget with no fields is rejected before saving", async ({ page }) => {
   await signUpAndCreateBot(page, "No Fields Bot");
   await page.click('a:has-text("Widgets")');
   await page.waitForURL(/\/widgets$/);
-  await page.getByRole("button", { name: "Add widget", exact: true }).click();
+  await page.getByRole("button", { name: "Add widget", exact: true }).first().click();
 
   await page.fill("#name", "Empty Form");
   await page.fill("#triggerDescription", "Should never save with no fields.");
@@ -100,7 +100,7 @@ test("adding a widget with 'Call an API' configures a Function", async ({ page }
   await signUpAndCreateBot(page, "Function Widget Bot");
   await page.click('a:has-text("Widgets")');
   await page.waitForURL(/\/widgets$/);
-  await page.getByRole("button", { name: "Add widget", exact: true }).click();
+  await page.getByRole("button", { name: "Add widget", exact: true }).first().click();
 
   await page.fill("#name", "Booking Form");
   await page.fill("#triggerDescription", "Collect booking details once the visitor confirms.");
@@ -119,7 +119,7 @@ test("a widget's API call requires a method and URL when 'Call an API' is checke
   await signUpAndCreateBot(page, "Function Validation Bot");
   await page.click('a:has-text("Widgets")');
   await page.waitForURL(/\/widgets$/);
-  await page.getByRole("button", { name: "Add widget", exact: true }).click();
+  await page.getByRole("button", { name: "Add widget", exact: true }).first().click();
 
   await page.fill("#name", "Broken Function Form");
   await page.fill("#triggerDescription", "desc");
@@ -138,7 +138,7 @@ test("a widget's API URL pointed at internal infrastructure is rejected before s
   await signUpAndCreateBot(page, "Widget SSRF Bot");
   await page.click('a:has-text("Widgets")');
   await page.waitForURL(/\/widgets$/);
-  await page.getByRole("button", { name: "Add widget", exact: true }).click();
+  await page.getByRole("button", { name: "Add widget", exact: true }).first().click();
 
   await page.fill("#name", "Metadata Probe");
   await page.fill("#triggerDescription", "desc");

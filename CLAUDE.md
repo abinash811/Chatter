@@ -441,9 +441,27 @@ reason.)
   dialog/card titles. Verified via real computed-style checks, full
   `tests/e2e/` (117/117) + `accessibility.spec.ts` (15/15), all 19
   visual baselines regenerated + stable, manual layout spot-check (no
-  breakage). Still open: a full per-element typography sweep, the
-  elevation-scale/motion-policy gaps (next in line), and the
-  empty-state/depth-hierarchy pass. Full detail: `docs/changelog.md`.
+  breakage). Still open: a full per-element typography sweep and the
+  motion-policy gap. Full detail: `docs/changelog.md`.
+- Empty-state treatment + documented elevation scale (2026-10-02, the
+  sequenced follow-up to typography above): new shared
+  `components/console/EmptyState.tsx` (icon badge + title +
+  description + real CTA where one exists), extracted from
+  `ConversationDetailPanel.tsx`'s own pre-existing pattern, rolled out
+  to Leads/Actions/Widgets/Approvals/Data sources — replaces each
+  screen's lonely plain-text box. Actions'/Widgets' empty-state CTAs
+  open the real Add dialog, verified via a Playwright click-through.
+  Also documented the real 3-tier elevation scale (surface `shadow-xs`
+  / floating `shadow-md` / modal `shadow-lg`) that already existed via
+  shadcn's untouched defaults — closing `docs/design/audit.md`'s
+  long-tracked gap by writing down what was true, not inventing a new
+  one. Verified: `tsc` clean, all 10 guardrails, full unit suite (235
+  unchanged), full `tests/e2e/` (117/117, fixed 9 test selectors that
+  assumed only one "Add action"/"Add widget" button existed),
+  `accessibility.spec.ts` (15/15), 4 visual baselines regenerated +
+  stable. Still open: motion policy, and rolling the interactive-hover
+  elevation convention beyond `BotTableRow`'s one usage. Full detail:
+  `docs/changelog.md`.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.

@@ -121,6 +121,30 @@ on Anthropic's brand serif still applies in spirit: Inter isn't a
 replica of any specific reference product's exact brand type, it's the
 real typeface most 2026 SaaS dashboards (Linear included) actually run.
 
+## Elevation
+
+Documented 2026-10-02 (closing `docs/design/audit.md`'s tracked
+"Elevation/shadow scale" gap) — a real 3-tier scale already existed in
+practice, from shadcn's own untouched component defaults; it just had
+never been written down as a deliberate system, so a new component
+could easily pick the wrong tier without realizing one existed.
+Grepped every real `shadow-*` usage to confirm this is what's actually
+there, not aspirational:
+
+| Tier | Shadow | Used by |
+|---|---|---|
+| **Surface** (resting) | `shadow-xs` | `Card`, every table/list wrapper, `Select`'s trigger — the default state of anything sitting flat on the page. |
+| **Floating** (an open menu/popover, not modal) | `shadow-md` | `DropdownMenuContent`, `PopoverContent`, `SelectContent` — all shadcn defaults, untouched. |
+| **Modal** (takes over the screen) | `shadow-lg` | `DialogContent`, `AlertDialogContent` — shadcn defaults, untouched. |
+
+One **interactive-hover** convention layered on top, not a 4th tier:
+`BotTableRow`'s avatar chip bumps `shadow-xs` → `shadow-sm` on row
+hover (`group-hover:shadow-sm`, `transition-shadow`) — a small, local
+lift signaling "this row is clickable," not a whole-card elevation
+change. Not yet applied to every other clickable row/card (e.g.
+`ConversationListPane`'s rows) — a real next step, not claimed done
+here.
+
 ## Radius & spacing
 
 `--radius: 0.625rem` — unchanged; happens to match shadcn's own real

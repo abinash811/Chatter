@@ -1,26 +1,33 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { Trash2, Webhook } from "lucide-react";
 import { Button, Badge, Switch, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui";
+import { EmptyState } from "@/components/console/EmptyState";
 import type { CustomActionRow } from "@/lib/customActions";
 
 export function ActionsTable({
   actions,
   onToggle,
   onDelete,
+  onAdd,
 }: {
   actions: CustomActionRow[];
   onToggle: (id: string, enabled: boolean) => void;
   onDelete: (id: string) => void;
+  onAdd: () => void;
 }) {
   if (actions.length === 0) {
     return (
-      <div className="mt-4 flex flex-col items-center gap-2 rounded-lg border border-border py-14 shadow-xs">
-        <p className="text-sm font-medium">No custom actions yet</p>
-        <p className="text-sm text-muted-foreground">
-          Add one above to let your bot call your own booking system, CRM, or any other endpoint.
-        </p>
-      </div>
+      <EmptyState
+        icon={Webhook}
+        title="No custom actions yet"
+        description="Let your bot call your own booking system, CRM, or any other endpoint."
+        action={
+          <Button type="button" size="sm" onClick={onAdd}>
+            Add action
+          </Button>
+        }
+      />
     );
   }
 

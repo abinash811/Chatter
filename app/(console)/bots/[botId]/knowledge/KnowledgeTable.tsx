@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { useQueryState, parseAsString, parseAsStringLiteral } from "nuqs";
-import { Search, Trash2 } from "lucide-react";
+import { Search, Trash2, Database } from "lucide-react";
+import { EmptyState } from "@/components/console/EmptyState";
 import {
   type ColumnDef,
   type SortingState,
@@ -170,10 +171,7 @@ export function KnowledgeTable({
       )}
 
       {entries.length === 0 ? (
-        <div className="mt-4 flex flex-col items-center gap-2 rounded-lg border border-border py-14 shadow-xs">
-          <p className="text-sm font-medium">No knowledge yet</p>
-          <p className="text-sm text-muted-foreground">Add a source above to get started.</p>
-        </div>
+        <EmptyState icon={Database} title="No knowledge yet" description="Add a source above to get started." />
       ) : rows.length === 0 ? (
         <div className="mt-4 flex flex-col items-center gap-2 rounded-lg border border-border py-8 shadow-xs">
           <p className="text-sm text-muted-foreground">No sources match &ldquo;{search}&rdquo;.</p>
