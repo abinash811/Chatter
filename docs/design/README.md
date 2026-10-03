@@ -13,8 +13,12 @@ a preview here after shipping.
 
 Unlike `app/globals.css` (the real, referenced tokens), these preview
 files hardcode color/type values — they're throwaway visual references,
-not code, so `check-design-tokens.mjs` doesn't scan them. Keep the values
-in sync with `app/globals.css` by hand when tokens change.
+not code, so `check-design-tokens.mjs` doesn't scan them. **A preview is
+a pre-build sketch, not a maintained source of truth once its screen has
+shipped** (`docs/conventions.md`'s "Building a new feature" step 2) —
+once real code exists, `design-system.md` + the real running app are
+authoritative, and a shipped preview is allowed to drift rather than
+requiring an upkeep pass every time a token changes.
 
 **Known gap (ADR 0014, 2026-09-26):** the token swap off CARE's emerald/
 indigo palette to shadcn's neutral one hasn't been back-ported into

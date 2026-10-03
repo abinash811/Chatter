@@ -19,7 +19,16 @@ const SANDBOX_CHROMIUM = "/opt/pw-browsers/chromium";
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: false, // each test creates real DB rows via signup — avoid cross-test races
-  retries: 0,
+  // CI's 2-vCPU runner genuinely stalls under 2 parallel workers once the
+  // suite grew past ~85 specs (confirmed 2026-09-28 on PR #11: a save/
+  // publish toast assertion missed even a generous 20s timeout, a
+  // different test each run — not a deterministic bug, since the same
+  // test passes instantly alone). A single retry is the standard fix for
+  // this class of transient CI resource contention — it does not mask a
+  // real regression, since a genuinely broken test fails identically on
+  // the retry too. Local runs stay at 0 retries so a real bug still
+  // fails loud on the first try during development.
+  retries: process.env.CI ? 1 : 0,
   reporter: "list",
   use: {
     baseURL: process.env.APP_BASE_URL ?? "http://localhost:3000",

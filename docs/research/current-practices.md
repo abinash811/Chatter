@@ -36,7 +36,7 @@ update it in place rather than leaving it to rot.
   server-side for the API route handling that submission — one schema,
   not two hand-maintained copies. *Checked 2026-09-25.*
 - **Rate limiting**: in-memory works for a single-instance deployment
-  (Render, Chatter's case); serverless/edge (Vercel) needs a shared
+  (Chatter's case — deploy host TBD, ADR 0020); serverless/edge (Vercel) needs a shared
   store (Redis/Upstash) since each invocation is isolated. Adopted
   2026-09-25: in-memory sliding-window (`lib/rateLimit.ts`), applied to
   both public widget routes. Revisit if Chatter ever moves to multiple

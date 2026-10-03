@@ -41,7 +41,11 @@ export function AuthShell({
               <br />
               Every business.
             </h2>
-            <p className="text-xs leading-relaxed text-panel-foreground/45">
+            {/* /60 not /45 — real contrast math: /45 on --panel was a
+                razor-thin 4.36:1 against WCAG AA's 4.5:1, caught by a
+                real a11y test after the Next.js 16 upgrade. /60 yields
+                7.04:1, comfortable margin. */}
+            <p className="text-xs leading-relaxed text-panel-foreground/60">
               Ecommerce, healthcare, automotive — the same
               <br />
               Claude-powered core, your own guardrails.
@@ -62,8 +66,22 @@ export function AuthShell({
       </div>
 
       <div className="flex flex-1 items-center justify-center bg-background p-6">
-        <div className="w-full max-w-sm rounded-lg border border-border p-7">
-          <p className="mb-1 text-micro font-bold uppercase tracking-widest text-accent">{eyebrow}</p>
+        {/* Depth/polish pass (principles.md #5/#9, 2026-09-26 rollout):
+            bg-soft-background + shadow-xs, matching Card's real recessed-
+            panel treatment everywhere else — this was a plain flat-white
+            bordered box with no elevation, the exact "wireframe, not a
+            finished screen" principle 5 warns against. */}
+        <div className="w-full max-w-sm rounded-lg border border-border bg-soft-background p-7 shadow-xs">
+          {/* text-foreground, not text-accent — ADR 0014's token swap
+              redefined --accent as a pale neutral-100 background tint
+              (paired with --accent-foreground for text on top of it),
+              not a standalone brand text color. This palette is
+              deliberately monochrome (no accent color exists to reach
+              for), so a bold black kicker label is the correct real
+              token here — text-accent alone rendered as near-invisible
+              pale text on a white background, found the same way as
+              the ring/checkbox bug: real screenshots, not tsc. */}
+          <p className="mb-1 text-micro font-bold uppercase tracking-widest text-foreground">{eyebrow}</p>
           <h1 className="mb-1 text-lg font-semibold">{title}</h1>
           <p className="mb-6 text-sm text-muted-foreground">{subtitle}</p>
           {children}

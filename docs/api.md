@@ -33,12 +33,17 @@ logged server-side, never leaked to this public endpoint)
 ### `GET /api/widget/config?botKey=...`
 
 Cosmetic config the widget needs before rendering (greeting text,
-accent color) — never persona/guardrails/anything internal
-(guardrail #5).
+accent color, avatar emoji, widget position) — never persona/
+guardrails/anything internal (guardrail #5).
 
 **Response `200`**
 ```json
-{ "greeting": "string", "accentColor": "string (hex)" }
+{
+  "greeting": "string",
+  "accentColor": "string (hex)",
+  "avatarEmoji": "string (one of lib/ai/appearanceOptions.ts's AVATAR_EMOJI_OPTIONS)",
+  "position": "\"bottom-right\" | \"bottom-left\""
+}
 ```
 
 **Errors**: `400` missing `botKey` · `401` invalid `botKey` · `429` rate

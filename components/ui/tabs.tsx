@@ -90,7 +90,17 @@ function TabsContent({
   return (
     <TabsPrimitive.Content
       data-slot="tabs-content"
-      className={cn("flex-1 outline-none", className)}
+      // Documented delta from shadcn's stock source (component-
+      // checklist.md item 3, 2026-10-02): the real default has zero
+      // transition on tab switch — content just pops in. Every other
+      // overlay primitive (Dialog/Sheet/Popover/Select/DropdownMenu)
+      // already animates via data-state + tailwindcss-animate; this
+      // brings tab panels in line with that, at the same 200ms/ease
+      // used for the app's other overlay-tier transitions.
+      className={cn(
+        "flex-1 outline-none data-[state=active]:animate-in data-[state=active]:fade-in-0 data-[state=active]:duration-200",
+        className,
+      )}
       {...props}
     />
   )

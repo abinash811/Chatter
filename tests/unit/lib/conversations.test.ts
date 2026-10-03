@@ -14,12 +14,17 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const findManyConversations = vi.fn();
 const findManyToolCallLogs = vi.fn();
 const findUniqueConversation = vi.fn();
+// ADR 0027 — getConversationDetail also looks up a linked Lead for the
+// Details tab's Contact field; defaults to "none found" here so the
+// existing tests (which don't care about Contact) don't need updating.
+const findFirstLead = vi.fn().mockResolvedValue(null);
 
 vi.mock("@/lib/db", () => ({
   withOrgContext: vi.fn((_orgId: string, fn: (tx: unknown) => unknown) =>
     fn({
       conversation: { findMany: findManyConversations, findUnique: findUniqueConversation },
       toolCallLog: { findMany: findManyToolCallLogs },
+      lead: { findFirst: findFirstLead },
     }),
   ),
 }));

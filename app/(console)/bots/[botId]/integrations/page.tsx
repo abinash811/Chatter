@@ -3,7 +3,7 @@ import { getCurrentSession } from "@/lib/auth";
 import { withOrgContext } from "@/lib/db";
 import { listIntegrationProviders, getIntegrationProvider } from "@/lib/integrations/provider";
 import "@/lib/integrations";
-import { Button, Badge } from "@/components/ui";
+import { Button, Badge, Input, Label } from "@/components/ui";
 
 // Generic across every platform (Shopify today, WooCommerce/FHIR/etc.
 // later) — this screen renders whatever listIntegrationProviders()
@@ -46,9 +46,16 @@ export default async function IntegrationsPage({
 
   return (
     <div>
-      <h1 className="h-row flex items-center text-lg font-semibold">Integrations</h1>
+      {/* h2, not h1 — the page's h1 is the (sr-only) bot name in the
+          shared BotTopBar, app/(console)/bots/[botId]/layout.tsx. */}
+      <h2 className="h-row flex items-center text-xl font-semibold tracking-tight">Integrations</h2>
 
-      <div className="mt-4 divide-y divide-border border-y border-border">
+      {/* rounded-lg border shadow-xs — same depth treatment as every
+          other list screen (Knowledge/Leads/Actions/Conversations); this
+          was the one screen still using a bare divide-y/border-y with no
+          rounded corners or shadow, an inconsistency only visible once
+          screenshotted side by side with the others. */}
+      <div className="mt-4 divide-y divide-border rounded-lg border border-border shadow-xs">
         {listIntegrationProviders().map((provider) => {
           const connection = connectedByProvider.get(provider.name);
           return (
@@ -68,15 +75,32 @@ export default async function IntegrationsPage({
               ) : (
                 <form action={connectAction} className="flex items-center gap-2">
                   <input type="hidden" name="provider" value={provider.name} />
-                  {provider.connectFields.map((field) => (
-                    <input
-                      key={field.name}
-                      name={field.name}
-                      placeholder={field.placeholder}
-                      required
-                      className="h-row-sm rounded border border-border bg-transparent px-2 text-sm"
-                    />
-                  ))}
+                  {provider.connectFields.map((field) => {
+                    const fieldId = `${provider.name}-${field.name}`;
+                    return (
+                      <div key={field.name}>
+                        {/* field.label existed on the data model but was
+                            never rendered — the raw <input> below relied
+                            on its placeholder alone, which isn't an
+                            accessible name (docs/accessibility.md). Kept
+                            visually hidden, not shown above the input, to
+                            preserve the restrained Stripe register this
+                            screen already uses (docs/architecture.md §7) —
+                            a horizontal row of visible labels would add
+                            decoration this register deliberately avoids. */}
+                        <Label htmlFor={fieldId} className="sr-only">
+                          {field.label}
+                        </Label>
+                        <Input
+                          id={fieldId}
+                          name={field.name}
+                          placeholder={field.placeholder}
+                          required
+                          className="h-row-sm w-auto"
+                        />
+                      </div>
+                    );
+                  })}
                   <Button size="sm" type="submit">
                     Connect
                   </Button>

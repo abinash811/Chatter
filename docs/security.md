@@ -48,13 +48,24 @@ committed — `.env` is gitignored, `.env.example` documents the shape
 with empty values.
 
 **Secrets we store, at rest**: a business's own Claude API key (BYOA,
-optional per-org, `/settings`) and Shopify OAuth tokens
-(`Integration.accessToken`) are both encrypted with AES-256-GCM
-(`lib/crypto.ts`, keyed by `ENCRYPTION_KEY`, ADR 0012) — not plaintext.
-The decrypted API key is never sent back to the browser once saved;
-`/settings` shows only whether one is set. No key-rotation tooling
-exists yet (rotating `ENCRYPTION_KEY` means re-encrypting every stored
-secret by hand) — a known gap, tracked in ADR 0012, not a v1 blocker.
+optional per-org, `/settings`), Shopify OAuth tokens
+(`Integration.accessToken`), and a custom action's webhook headers
+(`CustomAction.headersEncrypted`, ADR 0022 — e.g. a bearer token for the
+business's own API) are all encrypted with AES-256-GCM (`lib/crypto.ts`,
+keyed by `ENCRYPTION_KEY`, ADR 0012) — not plaintext. The decrypted API
+key/headers are never sent back to the browser once saved; the console
+shows only whether one is set. No key-rotation tooling exists yet
+(rotating `ENCRYPTION_KEY` means re-encrypting every stored secret by
+hand, now three categories of row, not two) — a known gap, tracked in
+ADR 0012, not a v1 blocker.
+
+**SSRF**: a custom action's URL is business-supplied but our own server
+makes the outbound call, so it's checked against an SSRF guard
+(`lib/ai/tools/customAction.ts`'s `isBlockedActionUrl`) before every
+call — https-only, blocks loopback/private/link-local hostnames
+including the cloud instance metadata address (`169.254.169.254`).
+Same guardrail #4 fallback (handoff, never a silent failure) applies
+when a call is blocked or fails.
 
 **If a real secret is ever pasted into a chat session or committed by
 mistake, treat it as compromised and rotate it immediately** — this
@@ -69,6 +80,25 @@ called — so debugging never relies on guesswork (guardrail #6). Every
 tool call is logged to `ToolCallLog` independent of whether its result
 shaped the final answer. See `docs/features.md`'s tool-call
 traceability entry.
+
+## Write-capable action tools
+
+A write-capable tool (one whose effect isn't "the AI was wrong, try
+again" — cancelling an order, issuing a refund) is a categorically
+different risk from a lookup: it's irreversible and a visitor could try
+to manipulate the bot into taking it. ADR 0023's decision, made directly
+with the user rather than assumed: a write tool never executes itself.
+`request_order_cancellation` validates the request and queues a
+`PendingAction`; only a business owner approving it from
+`/bots/[botId]/approvals` triggers the real Shopify `orderCancel` call.
+Rejecting needs no confirmation (nothing external happens); approving
+does (`AlertDialog`, matching the bot-publish confirm pattern) since
+it's the one moment a real side effect occurs. The Shopify OAuth scope
+was widened to include `write_orders` for this — a store connected
+before this change is still running on the narrower grant and must
+reconnect (there's no way to silently upgrade an existing token's
+scope). `lib/pendingActions.ts` is the generic queue; the next
+write-capable tool reuses it without any change to that file.
 
 ## Dependencies
 
@@ -90,9 +120,10 @@ running server: exactly the limit's worth of requests succeed, the next
 one gets a 429 with CORS headers still attached (the CORS-masking bug
 this codebase already hit once, checked again here).
 
-In-memory is correct for Chatter's actual deployment (Render, one
-long-running process) — not the serverless/edge case where in-memory
-state doesn't persist across invocations. **If this ever scales to
+In-memory is correct as long as Chatter deploys as one long-running
+process (deploy host TBD — ADR 0020, `docs/open-questions.md` #8) — not
+the serverless/edge case where in-memory state doesn't persist across
+invocations. **If this ever scales to
 multiple instances, it needs to move to a shared store (Redis)** — a
 single instance's map can't see another instance's count.
 

@@ -14,17 +14,6 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
 2. **Compliance posture for regulated verticals**, healthcare especially.
    Do we need real PII/PHI handling rules now, or explicitly scope v1's
    healthcare template as "not for PHI, informational only" and revisit?
-3. **Site crawling in v1 ingestion**, or manual upload/Q&A only for v1 with
-   crawling added later? Crawling is high-value but adds real scope
-   (crawler, dedup, refresh scheduling, respecting robots.txt, etc.).
-4. **Prompt/persona template scope** (`docs/roadmap.md`'s "Self-serve
-   configurability" #1). Is this 2-3 use-case templates within v1's
-   single ecommerce vertical (support/sales/lead-gen tone+goals), or a
-   cross-vertical library? Affects whether it's small scope now or
-   waits until a second vertical exists to make "cross-vertical"
-   meaningful. Recommend: 2-3 ecommerce use-case templates now — a
-   library with only one vertical to draw from isn't really a library
-   yet.
 5. **Nudges — scope and mechanism** (`docs/roadmap.md`'s "Self-serve
    configurability" #6). What triggers (exit-intent, time-on-page,
    scroll-depth, cart-abandonment)? Generic across verticals or
@@ -33,20 +22,58 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
    No recommendation yet — needs real scoping (and likely a small
    competitor check: how Intercom/Drift/Tidio actually expose this)
    before an ADR.
-6. **LLM model picker + pricing display** (`docs/roadmap.md`'s "Self-
-   serve configurability" #7). Does pricing display apply to BYOA users
-   at all (they pay Anthropic directly) or only the managed-key path?
-   What does "pricing" mean here — real per-token cost passed through,
-   a markup, or a simple tier label ("fast" vs. "smart")? The last
-   option ties into the still-open billing/pricing model question below
-   — a real per-token cost display only makes sense once that's
-   answered.
+6. **Pricing display** (`docs/roadmap.md`'s "Self-serve configurability"
+   #7 — the model-picker half of this item is now built, ADR 0026: a
+   Sonnet/Haiku/Opus tier picker + a temperature slider that's only
+   functionally enabled for Haiku, since the Anthropic SDK's own types
+   mark temperature deprecated for every model released after Claude
+   Opus 4.6, which covers Sonnet/Opus but not Haiku). Still open: does
+   pricing display apply to BYOA users at all (they pay Anthropic
+   directly) or only the managed-key path? What does "pricing" mean
+   here — real per-token cost passed through, a markup, or a simple
+   tier label ("fast" vs. "smart")? The last option ties into the
+   still-open billing/pricing model question below — a real per-token
+   cost display only makes sense once that's answered.
 7. **`Conversation` "resolved" status semantics.** `docs/roadmap.md`'s
    Next section ("Resolution-rate analytics") needs a real definition
    of "resolved" before it's buildable — closed by visitor leaving
    satisfied? no handoff triggered? something else? ADR 0015
    deliberately left this undefined rather than picking a definition
-   while building the conversation inbox.
+   while building the conversation inbox. **Partially touched but not
+   resolved by ADR 0027** (2026-09-29, the Activity rebuild): the new
+   `Conversation.status` field ("ongoing"/"paused") is a different
+   concept — whether the bot is currently generating AI replies — not
+   the "resolved for analytics" idea this question asks about. Still
+   open.
+8. **App compute platform** (narrowed 2026-09-27 — the database half is
+   resolved: AWS RDS for PostgreSQL, ADR 0021). Cloud provider is AWS;
+   still open is where the Next.js app itself runs — AWS App Runner
+   (closest to Render's simplicity), ECS Fargate (more control), or EC2
+   (full control, most ops burden). User said this is "decided later,"
+   not blocking anything today. Distinct from #1 above (that's whether
+   we ever offer self-hosting as a *product* option to businesses; this
+   is where *our own* managed instance runs). Now has a real added
+   constraint (2026-10-02, ADR 0031): JS-rendering fallback for URL/
+   crawl ingestion needs a real Chromium binary available wherever this
+   app runs, so whichever target is picked must support that.
+9. **In-chat widgets, States/multi-view widgets** (2026-09-29, ADR
+   0028). Phase 1 (Schema-driven forms) shipped 2026-09-29; Phase 2
+   (Functions — an opt-in real API call on submit, write-capable ones
+   gated behind the existing `PendingAction` approval queue) shipped
+   2026-09-30 — see `docs/features.md`. Still open, not yet scoped:
+   what expression syntax would States' visibility conditions use
+   (simple field comparisons only, per ADR 0028 — but the exact grammar
+   isn't chosen)? Not blocking anything else — Phases 1 and 2 are a
+   complete, independently useful slice on their own.
+
+10. **Country/IP blocking geolocation vendor** (2026-09-30, ADR 0029).
+    Guardrails Phase 1 (rate limiting + spam detection) is built; the
+    third Chatbase-documented mechanism, country/IP-based blocking,
+    needs a real geolocation vendor/library choice first (MaxMind,
+    ipapi.co, a Cloudflare header, a self-hosted IP database) — a
+    genuine cost/accuracy/new-dependency tradeoff, not picked silently.
+    Not blocking anything else — rate limiting and spam detection are a
+    complete, independently useful slice on their own.
 
 ## Not yet asked
 
@@ -91,3 +118,8 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
   layout. See ADR 0014.
 - ~~Human handoff channel for v1~~ — dashboard inbox only, no email/
   Slack push in this pass. See ADR 0015.
+- ~~Prompt/persona template scope~~ (2026-09-27) — 3 hardcoded ecommerce
+  templates (Support, Sales, Lead-gen), persona text only (decoupled
+  from tools, matching Chatbase's real UX per `docs/research/persona-
+  template-ux.md`), picked from a dropdown in the bot editor's Persona
+  tab. See `docs/features.md`.

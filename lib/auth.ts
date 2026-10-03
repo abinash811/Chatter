@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { randomUUID } from "crypto";
 import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { withOrgContext } from "@/lib/db";
 import { hashPassword, verifyPassword } from "@/lib/password";
 
@@ -19,12 +20,13 @@ import { hashPassword, verifyPassword } from "@/lib/password";
 // (see prisma/schema.prisma) — you can't require org context to
 // discover org context.
 
-const rawClient = new PrismaClient();
+// Prisma 7 (ADR 0034): a driver adapter is now mandatory — see lib/db.ts.
+const rawClient = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
 
 const { handlers, auth: nextAuth, signIn, signOut } = NextAuth({
   // Auth.js refuses to trust a Host header it hasn't verified (Host
   // header injection protection) unless told to — needed for any
-  // deployment behind a reverse proxy (Render) and for localhost dev,
+  // deployment behind any reverse proxy and for localhost dev,
   // neither of which Auth.js trusts automatically. Caught by actually
   // running the login/signup flow: signIn() silently failed with
   // UntrustedHost until this was added.
@@ -119,4 +121,11 @@ export async function getCurrentSession(): Promise<Session> {
     throw new Error("Not authenticated");
   }
   return { userId: session.userId as string, orgId: session.orgId as string };
+}
+
+// User isn't RLS-protected (same reasoning as the login lookups above) —
+// used by the console shell to show the signed-in user's email.
+export async function getUserEmail(userId: string): Promise<string> {
+  const user = await rawClient.user.findUniqueOrThrow({ where: { id: userId }, select: { email: true } });
+  return user.email;
 }

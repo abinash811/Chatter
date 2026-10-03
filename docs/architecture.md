@@ -7,10 +7,15 @@ doc as ADRs land instead of letting decisions live only in chat history.
 ## Components
 
 ### 1. Knowledge layer
-- **Sources**: file upload (PDF/CSV/DOCX), manual Q&A pairs, structured
-  records (a generic "catalog" concept — rows with a name, description,
+- **Sources**: file upload (PDF/CSV/DOCX), manual Q&A pairs, a single
+  URL's readable text, a pasted text snippet, structured records (a
+  generic "catalog" concept — rows with a name, description,
   attributes, price/availability — flexible enough to be a SKU, a clinic
-  service, or a car listing). Site crawling is an open question for v1.
+  service, or a car listing). The console's "Data sources" page (`/bots/
+  [botId]/knowledge`, 2026-09-29) also has search/type-filter/sort and a
+  bulk-select+delete mode across these. Multi-page site crawling is a
+  separate, still-open question for v1 (`docs/open-questions.md` #3) —
+  today's "website" source ingests one page only.
 - **Storage**: embeddings for unstructured content (semantic search) +
   structured rows for anything filterable/exact (price, availability,
   specs). Vector store choice is open — see open questions.
@@ -20,32 +25,157 @@ doc as ADRs land instead of letting decisions live only in chat history.
 ### 2. Bot engine (Claude-powered)
 - System prompt assembled per-bot at request time from that bot's current
   **published config version** (see design rule in section 5) — base
-  persona + vertical template defaults + business-level overrides +
-  guardrails.
+  persona + business-level overrides + guardrails. No vertical-template
+  layer in the assembly (ADR 0019 — dropped; each bot's persona/tools/
+  guardrails are just that bot's own config).
 - RAG retrieval exposed as a **tool call**, not a hardcoded context prepend
   — lets the model decide when it actually needs to look something up.
-- **Prompt caching**: the assembled system prompt (persona + template +
+- **Retrieval pipeline** (`lib/ai/retrieval.ts`): hybrid search (pgvector +
+  Postgres full-text via RRF, ADR 0021) fuses a 25-document candidate
+  pool, then **reranking** (Voyage `rerank-2`, ADR 0035, behind a
+  `RerankProvider` interface in `lib/ai/rerank.ts`) re-scores that pool
+  down to the ~5 chunks actually sent to the model. Reranking degrades to
+  the hybrid-search order on any failure — it's a quality step on top of
+  a working search, not a dependency of it.
+- **Prompt caching**: the assembled system prompt (persona +
   guardrails) is marked with `cache_control` and placed first in the
   request, since it's identical across every message to that bot until
   republished — the published-version design (§5) makes cache
   invalidation automatic and correct. RAG results and conversation
   history go after, uncached. Cuts per-message cost ~90% on the cached
   portion.
-- Vertical action tools: a small per-template registry (e.g.
-  `check_order_status`, `book_appointment`, `check_vehicle_availability`).
-  Each tool either calls a business-configured webhook/integration, or
+- Action tools live in one shared registry (`lib/ai/tools/`), not scoped
+  per vertical (ADR 0019). Each tool either calls a business-configured
+  webhook/integration, or
   falls back to "collect info + hand off to human" (guardrail #4 in
   CLAUDE.md — this is not optional). A tool may also implement an
   optional `describeForInbox(input, output)` (ADR 0016), returning a
   plain-language summary and whether the call counts as an issue for the
   conversation inbox (`/conversations`) — each tool decides this for its
   own output shape, never a hardcoded case in the core engine.
+- **Custom (business-defined) tools are a second, parallel path, not
+  registry entries** (ADR 0022): a business owner can define their own
+  webhook action per bot (`CustomAction` model, `/bots/[botId]/actions`)
+  since its name/schema/URL are per-bot data, not code known at compile
+  time. `lib/ai/chat.ts` builds each turn's tool list by merging the
+  static registry's tools with that bot's enabled `CustomAction` rows
+  (built fresh via `buildCustomActionTool`, `lib/ai/tools/
+  customAction.ts`) — the static registry itself is untouched. Same
+  guardrail #4 fallback and an SSRF guard on the business-supplied URL.
+  A "Test this action" step (2026-09-29) in the console dialog fires a
+  real request with sample values before saving, sharing the exact
+  request-building code (`performActionRequest`) the live tool call
+  uses — no developer needed to confirm a business's own endpoint
+  actually works, closing the gap against Chatbase's own real
+  custom-action builder's "test with live data" step.
+- **Write-capable tools never execute directly — they queue a
+  `PendingAction` for human approval** (ADR 0023). A tool like
+  `request_order_cancellation` validates the request and writes a
+  `pending` row instead of calling the external API itself; the actual
+  write happens only when a business owner approves it from
+  `/bots/[botId]/approvals` (`lib/pendingActions.ts`). Read-only and
+  low-stakes-write tools (lookups, `collect_lead`, custom actions) are
+  unaffected — this only applies to a tool whose effect can't be undone
+  by "the AI was wrong."
+- **In-chat interactive widgets, Phase 1 + 2 built** (2026-09-29/30,
+  ADR 0028): a `Widget` model (per-bot, not draft/publish-gated, same
+  precedent as `CustomAction`) rendered as a Schema-driven form inline
+  in the chat, not just text. A dynamic tool factory
+  (`lib/ai/tools/widget.ts`) is merged into every turn's tools the same
+  way custom actions are; `handle()` returns a tagged JSON string
+  (`{"type":"render_widget", ...}`) — the same structured-signaling
+  pattern every other tool already uses, no interface change. The chat
+  loop needs no early-exit branching: the model's own next turn, after
+  seeing the tool result, naturally produces the accompanying text, and
+  `lib/ai/chat.ts` just scans for the tag and attaches it to
+  `SendMessageResult.widget`. The visitor's filled-in answers come back
+  as their own next chat message over the existing `/api/chat`
+  endpoint. Phase 2 (2026-09-30) adds Functions: an optional real API
+  call on submit, reusing `performActionRequest`'s SSRF guard, and the
+  `PendingAction` approval queue (ADR 0023) when the widget is
+  write-capable — never a direct call from inside a chat turn.
+  States/multi-view widgets remain deliberately deferred —
+  `docs/open-questions.md` #9.
+- **Guardrails Phase 1 — rate limiting + spam detection** (2026-09-30,
+  ADR 0029): opt-in, off by default. Rate limiting counts real
+  `Message` rows for a conversation within a configured window;
+  spam detection runs a cheap Haiku classification at fixed message-
+  count checkpoints and, on a flag, auto-pauses the conversation via
+  the same mechanism a human "Pause" click uses (ADR 0027). Per-
+  conversation, not per-device — no persistent visitor identity exists
+  yet (`public/widget.js` holds `conversationId` only in memory).
+  Country/IP blocking is deferred, needs a geolocation-vendor decision
+  — `docs/open-questions.md` #10.
+- **Real multi-page site crawling** (2026-09-30, ADR 0030): "Website"
+  ingestion can now crawl a whole site, not just one page — sitemap-
+  first discovery, robots.txt-respected, capped and synchronous (same
+  hard-limits-not-a-background-job precedent as ADR 0013). Hand-rolled,
+  not a vendor (Firecrawl considered, rejected — its cost scales with
+  Chatter's own usage), behind a swappable `crawlSite()` interface so a
+  vendor stays a contained later option, not a rewrite. No scheduled
+  auto-refresh (needs real background-job infrastructure, out of scope
+  here) — a deliberate, named gap.
+- **JS-rendering fallback for URL/crawl ingestion** (2026-10-02, ADR
+  0031): `extractUrlText` retries with a real headless Chromium
+  (`playwright`, promoted from dev-only to a real production dependency)
+  only when the plain-fetched page yields suspiciously little text — the
+  signature of a client-rendered JS framework shell. Self-hosted, not
+  rented (a Browserless/Firecrawl-style vendor), consistent with ADR
+  0030's build-it-ourselves call. Needs a real Chromium binary
+  available wherever this app deploys — a genuine new constraint on the
+  still-open app-compute decision, `docs/open-questions.md` #8.
+- **Firecrawl last-resort fallback** (2026-10-02, ADR 0032): a third
+  step, reached only when both the plain fetch and the self-hosted
+  browser above have already failed — handles the narrower case of a
+  site actively resisting automated access (bot-detection), not every
+  JS-rendered page. Platform-funded (a single `FIRECRAWL_API_KEY`, not
+  BYOA), degrades silently when unset. Deliberately kept as a rare
+  third step rather than the second one, to avoid the self-hosted
+  browser's whole point — if every JS-rendered page fell straight to
+  Firecrawl, its usage-scaled cost would apply to the common case, not
+  just the rare one.
+- **TypeScript 7 + Next.js 16** (2026-10-02, ADR 0033): 2 of 4
+  deliberately-deferred Dependabot majors resolved. Neither bump needed
+  code changes for its own *documented* breaking changes (checked
+  against this codebase first, not assumed), but the full verification
+  sweep caught two real, undocumented rendering regressions from the
+  new build pipeline: a WCAG AA color-contrast regression (3 design
+  tokens were already razor-thin, a rounding shift tipped them under
+  4.5:1 — fixed with real contrast math, not patched per-element) and a
+  JSX whitespace-rendering regression (`<h1>Label{count && <span>
+  {count}</span>}</h1>` silently lost its implicit space across 6
+  files — fixed with an explicit `{" "}` rather than depending on
+  incidental whitespace-trimming behavior).
+- **Prisma 7** (2026-10-02, ADR 0034): the 3rd of 4 Dependabot majors —
+  a real architecture change, not a version bump. A driver adapter
+  (`@prisma/adapter-pg`) is now mandatory for every `PrismaClient`
+  (3 real call sites: `lib/db.ts`, `lib/auth.ts`,
+  `scripts/verify-rls.mjs`), and the connection string moved out of
+  `schema.prisma` into a new, mandatory `prisma.config.ts`. Kept the
+  existing `prisma-client-js` generator (still works unchanged under
+  7.10.0, confirmed by running it) rather than switching to the new
+  `prisma-client` generator in the same pass — explained as a real
+  tradeoff and the user chose to keep this pass's blast radius to 3
+  files, deferring the generator switch as its own future pass. RLS
+  re-verified for real against a live Postgres instance
+  (`scripts/verify-rls.mjs`), not just `tsc`. Closes the 4th and final
+  deferred Dependabot major too — `prisma` and `@prisma/client`
+  version together, so the same pass resolved both.
 - Streamed responses back to the widget.
 - **BYOA (bring-your-own API key)**: optional, per-org, off by default —
   a business can plug in their own Anthropic key from `/settings`
   instead of using our managed one. The model gateway (below) resolves
   it once per request; nothing past that point (tools, RAG, the chat
   loop) knows or cares which key served the call. See ADR 0012.
+- **Model tier + temperature are per-bot config, not global** (ADR 0026):
+  `BotConfigVersion.model`/`.temperature`, editable in the bot editor's
+  Persona tab, flow straight into the gateway call — same-vendor Claude
+  tiers only (Sonnet/Haiku/Opus), not a multi-provider picker (ADR
+  0002's scope). Temperature is real (not just UI) only for Haiku — the
+  Anthropic API rejects any non-1.0 value on models released after
+  Claude Opus 4.6, which covers Sonnet/Opus — enforced both in the UI
+  (disabled slider) and independently server-side (never trusting the
+  client alone).
 
 **Design rule: interface vs. connector are separate layers, from day one.**
 What Claude sees — the tool name and JSON schema (`check_order_status`,
@@ -60,20 +190,23 @@ specific connectors" an additive change instead of a rewrite — see
 this separation now and that option gets expensive to add back later.
 
 **Design rule: integrations are self-serve, not our team configuring per
-business.** Each vertical template declares a short menu of "Connect X"
-options (e.g. Connect Shopify, Connect WooCommerce, Connect your FHIR
-EMR, generic webhook as a fallback), each a standard OAuth-style flow
-(Shopify OAuth, SMART on FHIR for healthcare, etc.) the business owner
-completes themselves from the console — no developer, no engineering
-work on our side per business. New businesses on an already-supported
-platform cost us zero engineering; only a genuinely new platform needs a
-connector built once.
+business.** The console offers a short menu of "Connect X" options (e.g.
+Connect Shopify, Connect WooCommerce, generic webhook as a fallback),
+each a standard OAuth-style flow the business owner completes themselves
+— no developer, no engineering work on our side per business. New
+businesses on an already-supported platform cost us zero engineering;
+only a genuinely new platform needs a connector built once.
 
-### 3. Vertical templates
-- A template = default persona/tone + suggested KB structure + curated
-  subset of action tools + suggested guardrails/compliance notes.
-- Lives entirely in config/data, not in core engine code (guardrail #2).
-- A business starts from a template and can diverge freely afterward.
+### 3. Verticals (ADR 0019 — no template layer)
+There is no vertical-template abstraction. The generic bot config
+(persona, guardrails, enabled tools) is the whole model; ecommerce
+defaults today are just that config, not a distinct "template" concept.
+A future vertical (e.g. healthcare) is built as a direct code/config
+change to the engine when actually needed — new default copy, new
+guardrail prompts (CLAUDE.md guardrail #3), new tools — not authored
+against a generic template schema. Guardrail #2 (no `if industry ==`
+branches in shared engine code) still applies on its own merits, kept
+for reviewability, independent of any template mechanism.
 
 ### 4. Embeddable widget
 - Single script tag; renders in a shadow DOM so host-site CSS can't leak in
@@ -82,8 +215,15 @@ connector built once.
 - Talks only to our backend API — never holds secrets (guardrail #5).
 
 ### 5. Admin dashboard
-- Setup wizard: pick template → configure knowledge → customize appearance
+- Setup wizard: create bot → configure knowledge → customize appearance
   → get embed snippet.
+- Bot list: search, sort, rename/duplicate/archive. Archiving is a soft
+  delete (`Bot.archivedAt`, ADR 0018) — kills the embed snippet and hides
+  the bot everywhere, but keeps its conversations/knowledge/integrations.
+  Search/sort on this screen uses `@tanstack/react-table` (row-model
+  logic only, not rendering) with state persisted to the URL via `nuqs`
+  (ADR 0024) — the pattern every future list screen should follow,
+  piloted here before any wider rollout.
 - Knowledge base management: add/edit/remove sources, see what's indexed.
 - Live conversation inbox for human handoff.
 - Analytics: volume, resolution rate, handoff rate, topics.
@@ -129,8 +269,8 @@ applied here to every future setting.
   everywhere, split into a fixed structural layer (component behavior/
   layout) and a thin theme layer (the only thing that varies). Same
   generic-core-plus-thin-configurable-layer pattern used elsewhere in this
-  architecture (vertical templates, tool interface/connector split),
-  applied to design instead of code.
+  architecture (the tool interface/connector split), applied to design
+  instead of code.
 - Foundation: **shadcn/ui's official registry** (Radix-based via the
   unified `radix-ui` package, accessible by default, ships with a token
   system) — locked in as of ADR 0014, after an intermediate detour
@@ -179,7 +319,7 @@ applied here to every future setting.
 Visitor → Widget (script tag, shadow DOM)
         → Backend API (auth'd to a specific business/bot)
         → Bot engine
-            ├─ system prompt = persona + template + overrides + guardrails
+            ├─ system prompt = persona + overrides + guardrails
             ├─ RAG retrieval tool → knowledge store (scoped to business_id)
             └─ action tools → business webhook, or → handoff queue
         → Claude (streamed)

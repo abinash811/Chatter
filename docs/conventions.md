@@ -74,8 +74,22 @@ request was phrased.
    for, what does "done" look like? Ambiguous, or a real design/
    architecture decision hiding in it? Ask — don't guess silently
    (`docs/open-questions.md`'s rule).
-2. **Check design.** Does a `docs/design/preview/` mockup exist? If
-   this is user-facing and none exists, add one. **Current system (ADR
+2. **Check design.** Not four mandatory reads — targeted lookups, most
+   of them skipped most of the time: `principles.md` is the philosophy/
+   bar, checked when questioning *whether* something meets the standard,
+   not per task; `design-system.md` is a targeted lookup for an actual
+   token value or a component's source, not a full read; `preview/` is
+   only the one file for the screen being touched, if it exists;
+   `audit.md` is mainly a *write* destination (log a finding there), a
+   read only when specifically auditing a screen. **A preview mockup is
+   a pre-build sketch, not a maintained source of truth once a screen
+   ships** — its hardcoded colors are known to drift from
+   `design-system.md`'s real tokens (`docs/design/README.md`'s
+   documented gap), so once code exists, `design-system.md` + the real
+   running app win over a stale preview, not the other way around.
+   Does a `docs/design/preview/` mockup exist for a screen that hasn't
+   shipped yet? If this is user-facing and none exists, add one.
+   **Current system (ADR
    0014, supersedes ADR 0008/0010/0011): shadcn/ui's official registry
    for components, Claude Console's real screenshots for layout/
    structure.** Not CARE for either purpose anymore — see ADR 0014 for
@@ -143,6 +157,31 @@ request was phrased.
    just this one.
 7. **Ship checklist.** Run the `ship-checklist` skill before calling it
    done.
+
+## Running verification efficiently
+
+"Never commit code that hasn't actually been run" (CLAUDE.md) doesn't
+mean rerun everything after every change — that burns time and context
+for no extra safety. A 2026-09-27 session shipped one feature but reran
+the full e2e/visual suite five separate times, most of them after a fix
+that only touched one file. Instead:
+
+- Fix in batches. When a run surfaces multiple failures, diagnose and
+  fix all of them before rerunning — don't rerun after each individual
+  fix.
+- While iterating, rerun only the affected spec file(s), not the full
+  suite. The full suite is for the final check, not every intermediate
+  one.
+- Run the full combined pass (unit + e2e + visual + `tsc` + guardrails)
+  once, right before committing — not once per category of fix.
+- Skip writing a throwaway debug script when the failure's own output
+  (error message, screenshot, stack trace) already answers the
+  question. Reach for one only when the cause is genuinely ambiguous
+  from what a normal run already gives you.
+
+None of this loosens the bar: every changed code path still gets
+exercised at least once before commit, and the final pass before
+committing is always comprehensive.
 
 ## Review checklist
 

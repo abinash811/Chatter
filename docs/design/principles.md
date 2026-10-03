@@ -4,7 +4,10 @@ The bar every screen is checked against — sharp and opinionated on
 purpose, not a summary of the deeper docs. For the "why," see
 `docs/architecture.md` §7 and `docs/research/design-system-standards.md`.
 For the mechanical "how," see `docs/conventions.md` and
-`docs/accessibility.md`.
+`docs/accessibility.md`. For whether a single component/screen is
+*structurally* complete (states, elevation, motion, copy structure),
+see `docs/design/component-checklist.md` — these principles are the
+register/quality bar, that file is the completeness checklist.
 
 1. **One component, one way.** Every button is `<Button>`, every text
    field `<Input>`/`<Textarea>`, every checkbox `<Checkbox>`. No raw

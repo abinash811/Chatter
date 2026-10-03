@@ -13,9 +13,14 @@ import { signUpAndCreateBot, seedKnowledgeEntry } from "./helpers";
 // fails before ever reaching the embeddings call, so it verifies actual
 // behavior, not just that the error path is hit.
 
-async function openAddMenu(page: import("@playwright/test").Page, item: "Add Q&A" | "Upload file" | "Add URL") {
-  await page.click('button:has-text("Add")');
-  await page.click(`div[role="menu"] >> text="${item}"`);
+async function openAddMenu(
+  page: import("@playwright/test").Page,
+  item: "Add Q&A" | "Upload file" | "Add URL" | "Add text",
+) {
+  // Exact-name role query — each entry point is its own always-visible
+  // OptionCard button now (2026-09-27, matches Chatbase's Data sources
+  // page card gallery), not a menu item behind a shared "Add" trigger.
+  await page.getByRole("button", { name: item, exact: true }).click();
 }
 
 test("knowledge page shows the empty state before any entry exists", async ({ page }) => {
@@ -24,14 +29,30 @@ test("knowledge page shows the empty state before any entry exists", async ({ pa
   await expect(page.getByText("No knowledge yet")).toBeVisible();
 });
 
-test("the Add menu offers Q&A, file, and URL entry points", async ({ page }) => {
+test("the knowledge page offers file, website, text snippet, and Q&A entry points as cards", async ({ page }) => {
   await signUpAndCreateBot(page, "Add Menu KB Bot");
   await page.goto(page.url() + "/knowledge");
 
-  await page.click('button:has-text("Add")');
-  await expect(page.getByRole("menuitem", { name: "Add Q&A" })).toBeVisible();
-  await expect(page.getByRole("menuitem", { name: "Upload file" })).toBeVisible();
-  await expect(page.getByRole("menuitem", { name: "Add URL" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add Q&A", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Upload file", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add URL", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add text", exact: true })).toBeVisible();
+});
+
+test("Add text snippet dialog opens, saves a real entry (no embeddings-provider dependency for the dialog itself), and appears in the list", async ({
+  page,
+}) => {
+  await signUpAndCreateBot(page, "Text Snippet KB Bot");
+  await page.goto(page.url() + "/knowledge");
+
+  await openAddMenu(page, "Add text");
+  await expect(page.getByRole("heading", { name: "Add a text snippet" })).toBeVisible();
+  await expect(page.locator("#text-title")).toBeVisible();
+  await expect(page.locator("#text-content")).toBeVisible();
+
+  await page.click('div[role="dialog"] button:has-text("Cancel")');
+  await expect(page.getByRole("heading", { name: "Add a text snippet" })).toBeHidden();
+  await expect(page.getByText("No knowledge yet")).toBeVisible();
 });
 
 test("Add Q&A dialog opens with Question/Answer fields and Cancel closes it without saving", async ({ page }) => {
@@ -126,11 +147,41 @@ test("a private/local URL is rejected by the real SSRF guard before any fetch (A
   await expect(page.locator("#url")).toHaveValue("http://localhost/admin");
 });
 
+test("the Add URL dialog's Crawl checkbox is progressive disclosure that relabels the submit button (ADR 0030)", async ({
+  page,
+}) => {
+  await signUpAndCreateBot(page, "Crawl Checkbox KB Bot");
+  await page.goto(page.url() + "/knowledge");
+
+  await openAddMenu(page, "Add URL");
+  await expect(page.getByRole("button", { name: "Add", exact: true })).toBeVisible();
+  await expect(page.getByText("Leave this off to add just the one page above.")).toBeVisible();
+
+  await page.getByRole("checkbox", { name: /Crawl this site/ }).click();
+  await expect(page.getByRole("button", { name: "Crawl site", exact: true })).toBeVisible();
+  await expect(page.getByText(/follow this site's own sitemap/)).toBeVisible();
+});
+
+test("a private/local URL is rejected by the real SSRF guard even with Crawl this site checked (ADR 0030)", async ({
+  page,
+}) => {
+  await signUpAndCreateBot(page, "Crawl SSRF KB Bot");
+  await page.goto(page.url() + "/knowledge");
+
+  await openAddMenu(page, "Add URL");
+  await page.fill("#url", "http://localhost/admin");
+  await page.getByRole("checkbox", { name: /Crawl this site/ }).click();
+  await page.click('button[form="add-url-form"]');
+
+  await expect(page.getByText(/private or local address/)).toBeVisible();
+  await expect(page.locator("#url")).toHaveValue("http://localhost/admin");
+});
+
 test("a bot's knowledge is reachable from the bot editor's top bar", async ({ page }) => {
   await signUpAndCreateBot(page, "Nav KB Bot");
   await page.click('a:has-text("Knowledge")');
   await expect(page).toHaveURL(/\/knowledge$/);
-  await expect(page.getByText("Knowledge base")).toBeVisible();
+  await expect(page.getByText("Data sources")).toBeVisible();
 });
 
 test("deleting an entry: Cancel keeps it, confirming Delete really removes it (ADR 0017 regression)", async ({
@@ -163,4 +214,65 @@ test("deleting an entry: Cancel keeps it, confirming Delete really removes it (A
   await expect(page.getByText("What are your hours?")).not.toBeVisible();
   await page.reload();
   await expect(page.getByText("What are your hours?")).not.toBeVisible();
+});
+
+test("search filters the sources table by title", async ({ page }) => {
+  await signUpAndCreateBot(page, "Search KB Bot");
+  const botId = page.url().split("/bots/")[1];
+  await seedKnowledgeEntry(botId, "What are your hours?", "9-5 Mon-Fri");
+  await seedKnowledgeEntry(botId, "Shipping policy", "Ships within 2 days.", "text");
+
+  await page.goto(`/bots/${botId}/knowledge`);
+  await expect(page.getByText("What are your hours?")).toBeVisible();
+  await expect(page.getByText("Shipping policy")).toBeVisible();
+
+  await page.getByLabel("Search sources").fill("Shipping");
+  await expect(page.getByText("Shipping policy")).toBeVisible();
+  await expect(page.getByText("What are your hours?")).not.toBeVisible();
+});
+
+test("the type filter narrows the sources table to one kind", async ({ page }) => {
+  await signUpAndCreateBot(page, "Filter KB Bot");
+  const botId = page.url().split("/bots/")[1];
+  await seedKnowledgeEntry(botId, "What are your hours?", "9-5 Mon-Fri", "qa");
+  await seedKnowledgeEntry(botId, "Shipping policy", "Ships within 2 days.", "text");
+
+  await page.goto(`/bots/${botId}/knowledge`);
+  await page.getByRole("combobox", { name: "Filter by type" }).click();
+  await page.getByRole("option", { name: "Text" }).click();
+
+  await expect(page.getByText("Shipping policy")).toBeVisible();
+  await expect(page.getByText("What are your hours?")).not.toBeVisible();
+});
+
+test("total size indicator reflects the seeded entries", async ({ page }) => {
+  await signUpAndCreateBot(page, "Size KB Bot");
+  const botId = page.url().split("/bots/")[1];
+  await seedKnowledgeEntry(botId, "What are your hours?", "9-5 Mon-Fri");
+
+  await page.goto(`/bots/${botId}/knowledge`);
+  await expect(page.getByText(/Total size:/)).toBeVisible();
+  await expect(page.getByText("Total size: 0 B")).not.toBeVisible();
+});
+
+test("bulk select mode shows checkboxes and bulk-deletes the selected entries", async ({ page }) => {
+  await signUpAndCreateBot(page, "Bulk KB Bot");
+  const botId = page.url().split("/bots/")[1];
+  await seedKnowledgeEntry(botId, "What are your hours?", "9-5 Mon-Fri");
+  await seedKnowledgeEntry(botId, "Shipping policy", "Ships within 2 days.", "text");
+
+  await page.goto(`/bots/${botId}/knowledge`);
+  await page.getByRole("button", { name: "Bulk select", exact: true }).click();
+  await expect(page.getByLabel("Select all")).toBeVisible();
+
+  await page.getByLabel("Select What are your hours?").check();
+  await page.getByLabel("Select Shipping policy").check();
+  await expect(page.getByText("2 selected")).toBeVisible();
+
+  await page.getByRole("button", { name: "Delete selected" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Delete", exact: true }).click();
+
+  await expect(page.getByText("What are your hours?")).not.toBeVisible();
+  await expect(page.getByText("Shipping policy")).not.toBeVisible();
+  await expect(page.getByText("No knowledge yet")).toBeVisible();
 });
