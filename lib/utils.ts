@@ -45,3 +45,21 @@ export function formatBytes(bytes: number): string {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
+
+// Per-item visual distinction, staying inside ADR 0014/0017's monochrome
+// system (2026-10-03 design pass) — a deterministic hash of a stable id
+// (e.g. a bot's uuid) into one of 4 neutral-scale steps, for list-row
+// avatar chips. Only primary-100..400 are offered: primary-50 is nearly
+// indistinguishable from the page's white background, and primary-500
+// fails WCAG AA (4.43:1) for black text on top — both confirmed via a
+// real browser contrast check (canvas pixel readback), not computed by
+// hand. 100-400 all clear 4.5:1 with margin (16.67:1 down to 8.13:1).
+const AVATAR_CHIP_SHADES = ["bg-primary-100", "bg-primary-200", "bg-primary-300", "bg-primary-400"] as const;
+
+export function hashToAvatarShade(id: string): string {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
+  }
+  return AVATAR_CHIP_SHADES[hash % AVATAR_CHIP_SHADES.length];
+}

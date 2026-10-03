@@ -20,10 +20,13 @@ test("bots list at mobile width", async ({ page }) => {
   await page.goto("/bots");
   // Same per-run-unique sidebar text masked as console.visual.spec.ts's
   // sidebarMasks() — inlined rather than imported to keep this file
-  // independent of that one's internals.
+  // independent of that one's internals. The avatar chip is masked for
+  // the same reason (2026-10-03): its shade is hashed from the bot's
+  // id, which is freshly generated every run.
   await expect(page).toHaveScreenshot("bots-table-mobile.png", {
     mask: [
       page.locator('[data-slot="table-body"] tr td:nth-child(3)'),
+      page.locator('[data-slot="bot-avatar"]'),
       page.getByTestId("sidebar-org-name"),
       page.getByTestId("sidebar-user-email"),
     ],

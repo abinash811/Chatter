@@ -12,7 +12,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui";
-import { relativeTime } from "@/lib/utils";
+import { cn, relativeTime, hashToAvatarShade } from "@/lib/utils";
 import type { BotRow } from "./BotsTable";
 
 // Split out of BotsTable.tsx (scripts/check-file-length.mjs) — one
@@ -48,15 +48,23 @@ export function BotTableRow({
     >
       <TableCell>
         <div className="flex items-center gap-3">
-          {/* bg-primary/10, not bg-accent/10 — the mockup's row-icon
-              chip used a visibly tinted fill (its pre-monochrome
-              emerald), not a plain gray smudge; at the time this was
-              written --accent was oklch(97%) post-ADR-0014 (since
-              darkened to 92.2%, 2026-10-02, for the same near-
-              invisible-tint reason), so bg-accent/10 blended into the
-              white row. text-foreground, not text-accent, for the same
-              reason (--accent is a background tint, not a text color). */}
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-xs font-semibold text-foreground shadow-xs transition-shadow group-hover:shadow-sm">
+          {/* Per-item grayscale distinction (2026-10-03, design pass
+              item #3 of 3) — each bot's chip shade is hashed from its
+              id (hashToAvatarShade), not the uniform bg-primary/10 this
+              used before: a real way to tell items apart at a glance
+              while staying inside ADR 0014/0017's monochrome system
+              (the user's explicit choice over reopening it for real
+              per-item hue). text-foreground stays black for every
+              shade — all 4 candidate steps clear WCAG AA with margin,
+              confirmed via a real browser contrast check, see
+              hashToAvatarShade's own comment. */}
+          <div
+            data-slot="bot-avatar"
+            className={cn(
+              "flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-xs font-semibold text-foreground shadow-xs transition-shadow group-hover:shadow-sm",
+              hashToAvatarShade(bot.id),
+            )}
+          >
             {bot.name.slice(0, 2).toUpperCase()}
           </div>
           <span className="font-medium">{bot.name}</span>

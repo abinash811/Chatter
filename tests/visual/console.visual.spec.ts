@@ -58,12 +58,20 @@ test("onboarding screen", async ({ page }) => {
   await expect(page).toHaveScreenshot("onboarding.png", { mask: [page.locator("#orgName")] });
 });
 
-test("bots list — with a bot (Created column masked, it's a relative timestamp)", async ({ page }) => {
+test("bots list — with a bot (Created column + avatar chip masked, both per-run-unique)", async ({ page }) => {
   await signUpAndCreateBot(page, "Support bot", "visual-table");
   await page.goto("/bots");
 
+  // The avatar chip's shade (2026-10-03, hashToAvatarShade) is hashed
+  // from the bot's id, which signUpAndCreateBot generates fresh each
+  // run — same instability class as the Created timestamp, masked for
+  // the same reason, not because the hashing itself is unstable.
   await expect(page).toHaveScreenshot("bots-table.png", {
-    mask: [page.locator('[data-slot="table-body"] tr td:nth-child(3)'), ...sidebarMasks(page)],
+    mask: [
+      page.locator('[data-slot="table-body"] tr td:nth-child(3)'),
+      page.locator('[data-slot="bot-avatar"]'),
+      ...sidebarMasks(page),
+    ],
   });
 });
 

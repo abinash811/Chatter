@@ -101,6 +101,22 @@ the number: verify a text color against the specific background it's
 actually painted on in the app, not whichever background is easiest to
 check.
 
+**Per-item visual distinction (2026-10-03)**: the only place the system
+deliberately varies color per *item* rather than per *semantic role*.
+`lib/utils.ts`'s `hashToAvatarShade(id)` deterministically hashes a
+stable id (a bot's uuid) into one of `primary-100`..`primary-400` for
+that item's avatar chip (`BotTableRow.tsx`) — real distinction between
+rows in a list, without assigning real hue the way Slack/Linear/Notion
+do (a direct choice to stay inside this system rather than reopen it,
+made explicitly by the user — see `docs/design/audit.md`'s "Per-item
+color variation" row). Only 4 of the 6 numbered neutral steps are
+offered: `primary-50` is nearly indistinguishable from `--background`
+(pure white), and `primary-500` fails WCAG AA for black text on top
+(4.43:1, confirmed via a real browser contrast check) — `primary-100`
+through `400` all clear 4.5:1 with real margin (16.67:1 down to
+8.13:1). If a second list ever needs this same treatment, reuse
+`hashToAvatarShade` rather than re-deriving the step range.
+
 ## Type
 
 **Inter** (ADR 0036, 2026-10-02), self-hosted via

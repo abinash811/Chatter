@@ -322,3 +322,58 @@ Prisma 7 upgrade (ADR 0034), and reranking via Voyage rerank-2 (ADR
   shadow only fires on hover, not captured by resting-state
   screenshots).
 
+- **Per-item grayscale avatar distinction (2026-10-03, app-wide
+  consistency item #3 of 3 — completes the 3-item list the user set
+  after the typography sweep).** After item #2's "no second real
+  instance" finding, offered the real choice for this one up front
+  rather than building anything first: per-item visual distinction
+  almost always means per-item color in the wild (Slack/Linear/Notion
+  all do it), which would reopen ADR 0014/0017's deliberate monochrome
+  decision — just reaffirmed multiple times this session. Put that
+  tradeoff to the user via `AskUserQuestion`; they chose to stay
+  monochrome and vary grayscale only.
+  Implemented as `lib/utils.ts`'s `hashToAvatarShade(id)` — a small
+  string hash (`hash = hash*31 + charCode`, same shape as Java's
+  `String.hashCode`) mapped into one of a fixed shade list, wired into
+  `BotTableRow.tsx`'s avatar chip in place of the uniform `bg-primary/10`
+  it used before. Real constraint found before picking the shade range,
+  not guessed: a real headless-browser contrast check (canvas pixel
+  readback of `getComputedStyle`, since `oklch()` strings don't resolve
+  to rgb via plain `getComputedStyle` reads) of all 6 `--color-primary-*`
+  steps against black text found `primary-50` (250,250,250) nearly
+  indistinguishable from the page's white background and `primary-500`
+  (115,115,115) failing WCAG AA outright (4.43:1, under the 4.5:1
+  minimum) — `primary-100` through `400` all clear it with real margin
+  (16.67:1 down to 8.13:1), so those 4 are the ones offered, not the
+  theoretical 5-6 the token system has.
+  Verified visually with a real screenshot: signed up, created 5 bots
+  through the real UI, confirmed 5 genuinely distinct, legible gray
+  chips on `/bots` (not just that the CSS classes differ).
+  Real bug caught only by the visual regression suite, not by the
+  implementation or the screenshot above: `tests/visual/`'s
+  `bots-table.png`/`bots-table-mobile.png` baselines regenerated clean
+  on the first run, then flaked on a second confirmatory run — the
+  chip's shade is hashed from `bot.id`, which `signUpAndCreateBot`
+  generates fresh every test run, so the "same" baseline test was
+  capturing a different shade each time, exactly the same instability
+  class as the already-masked Created/Started relative-timestamp
+  columns, just not recognized as one until it actually flaked. Fixed
+  by giving the chip a stable `data-slot="bot-avatar"` selector and
+  adding it to both specs' existing `mask` arrays (not a new masking
+  mechanism) — regenerated again and ran the full visual suite twice
+  clean to confirm.
+  Verified: `npx tsc --noEmit` clean; all 10 `check:all` guardrails; the
+  full unit suite (235, one failure — `crawler.test.ts`'s sitemap test
+  timing out at 5000ms under parallel load — confirmed pre-existing and
+  unrelated via an isolated re-run passing 8/8, this change touches no
+  crawler code); the full `tests/e2e/` suite (117/117 — the one failure
+  on the very first pre-change full run, `knowledge.spec.ts`'s delete-
+  confirmation test, confirmed pre-existing and unrelated via an
+  isolated re-run passing 1/1); the full `accessibility.spec.ts` suite
+  (15/15, 0 violations); the full `tests/visual/` suite (19/19, the 2
+  bots-list baselines regenerated with the new mask and confirmed
+  stable across two full runs, the other 17 pixel-unchanged).
+  `docs/design/audit.md`'s "Per-item color variation" row moves 🔲→✅,
+  completing all 3 items of the "consistent design throughout the app"
+  list the user set after the typography sweep.
+

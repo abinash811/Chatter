@@ -508,9 +508,27 @@ reason.)
   unchanged), full `tests/e2e/` (116/117 first run — the one failure,
   `bot-top-bar.spec.ts`, confirmed pre-existing flakiness unrelated to
   this change via an isolated 3/3 re-run), `accessibility.spec.ts`
-  (15/15), `tests/visual/` (19/19 unchanged). Next up: per-item visual
-  distinction (avatars/chips) — a real new design decision, not yet
-  started. Full detail: `docs/changelog.md`.
+  (15/15), `tests/visual/` (19/19 unchanged). Full detail:
+  `docs/changelog.md`.
+- Per-item grayscale avatar distinction (2026-10-03, app-wide
+  consistency item #3 of 3 — completes the list): `BotTableRow.tsx`'s
+  avatar chip now hashes `bot.id` to one of 4 neutral-scale steps
+  (`lib/utils.ts`'s `hashToAvatarShade`) instead of one fixed tint for
+  every row — real per-item distinction, deliberately staying grayscale
+  rather than real hue (the user's explicit choice over reopening ADR
+  0014/0017). Verified via a real screenshot (5 bots, 5 distinct
+  shades) and a real browser contrast check for every candidate step
+  (`primary-50`/`500` excluded — too close to white / fails WCAG AA).
+  Real bug caught only by the visual suite, not by the implementation
+  itself: the chip's shade is hashed from a bot id that's freshly
+  generated per test run, so `bots-table`/`bots-table-mobile.png`
+  flaked on a second run until the chip was masked the same way the
+  Created-timestamp column already is. Verified: `tsc` clean, all 10
+  guardrails, full unit suite (235, one pre-existing unrelated flaky
+  timeout confirmed via isolated re-run), full `tests/e2e/` (117/117),
+  `accessibility.spec.ts` (15/15), `tests/visual/` (2 baselines
+  regenerated + stable across two runs, 17 unchanged). Full detail:
+  `docs/changelog.md`.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.
