@@ -529,6 +529,23 @@ reason.)
   `accessibility.spec.ts` (15/15), `tests/visual/` (2 baselines
   regenerated + stable across two runs, 17 unchanged). Full detail:
   `docs/changelog.md`.
+- Sidebar/top bar depth/polish + accessibility pass (2026-10-03): the
+  last screen on `docs/design/audit.md` with open findings. Audited
+  first — `AppSidebar.tsx` turned out already fully covered by real
+  shadcn primitives (nav/search/Getting-Started/logout all had working
+  hover/focus/active for free, no code change needed). `BotTopBar.tsx`'s
+  hand-built tab nav had two real gaps: no `focus-visible` ring at all
+  (unlike every other custom nav/row element in the app), and its
+  active tab was color-only (component-checklist.md item 4). Fixed
+  both — a focus ring matching the established pattern, plus a
+  `border-b-2` underline (transparent at rest, no layout shift) and
+  `aria-current="page"` as a non-color active signal. Did a real
+  keyboard-only pass (a Playwright tab-walk confirming all 15 reachable
+  elements, each with a genuine computed focus ring). Verified: `tsc`
+  clean, all 10 guardrails, full unit suite (235 unchanged), full
+  `tests/e2e/` (117/117), `accessibility.spec.ts` (15/15), 10 of 19
+  visual baselines regenerated (every screen rendering `BotTopBar`) +
+  stable across two runs. Full detail: `docs/changelog.md`.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.

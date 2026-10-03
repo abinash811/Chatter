@@ -67,12 +67,25 @@ export function BotTopBar({ botId, bots }: { botId: string; bots: { id: string; 
           const href = `/bots/${botId}${item.subpath}`;
           const isActive = pathname === href;
           return (
+            // Sidebar/top bar depth/polish pass (2026-10-03): this nav
+            // used to signal its active item by text color alone
+            // (component-checklist.md item 4, color-independent state)
+            // — the Persona/Guardrails/Tools/Appearance Tabs rendered
+            // directly below it on the same screen already use a
+            // stronger pill background, so this was weaker than its own
+            // neighbor. A bottom-border underline (transparent at rest,
+            // so switching tabs doesn't shift layout) is now a second,
+            // non-color signal; aria-current carries the same state to
+            // assistive tech. focus-visible:ring matches every other
+            // custom nav/row element in the app (ConversationListPane,
+            // BotTableRow) — this was the one real gap.
             <Link
               key={item.subpath}
               href={href}
+              aria-current={isActive ? "page" : undefined}
               className={cn(
-                "text-sm font-medium text-muted-foreground hover:text-foreground",
-                isActive && "text-foreground",
+                "border-b-2 border-transparent py-1 text-sm font-medium text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:rounded-sm",
+                isActive && "border-foreground text-foreground",
               )}
             >
               {item.label}

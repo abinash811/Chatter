@@ -377,3 +377,52 @@ Prisma 7 upgrade (ADR 0034), and reranking via Voyage rerank-2 (ADR
   completing all 3 items of the "consistent design throughout the app"
   list the user set after the typography sweep.
 
+- **Sidebar/top bar depth/polish + accessibility pass (2026-10-03).**
+  Asked for by name — `docs/design/audit.md`'s last screen with open
+  findings: Active 🟡/Depth 🟡 on the Depth/polish table, keyboard-pass
+  🟡/screen-reader 🔲 on the Responsive & accessibility table.
+  Audited `AppSidebar.tsx` and `BotTopBar.tsx` before changing anything,
+  same discipline as the hover-elevation rollout: `AppSidebar`'s nav,
+  search, Getting Started popover, and logout button are all real
+  shadcn primitives (`Sidebar`/`Input`/`Button`, ADR 0017) — confirmed
+  via a real computed-style check that hover/focus/active already work
+  for every one of them, no code change needed there, the 🟡 was
+  stale. `BotTopBar.tsx`'s horizontal tab nav is the one hand-built
+  piece in either component, and had two real, concrete gaps: no
+  `focus-visible` ring at all (every other custom nav/row element in
+  the app — `ConversationListPane`, `BotTableRow` — has one), and its
+  active tab was signaled by text color alone (component-checklist.md
+  item 4, color-independent state) — weaker than the `Tabs` pill
+  rendered directly below it on the same screen.
+  Fixed both: added `focus-visible:ring-2 ring-ring ring-offset-2`
+  matching the established pattern, plus a `border-b-2` underline
+  (transparent at rest so switching tabs causes no layout shift) and
+  `aria-current="page"` as a non-color, assistive-tech-visible active
+  signal. Verified via a real screenshot confirming the underline
+  genuinely follows the active tab across a real navigation (Editor →
+  Knowledge), not just that the class exists.
+  Did a real keyboard-only pass, not just a code read: a Playwright
+  script tab-walked from a fresh page load through all 15 reachable
+  elements (sidebar search/3 nav items/Getting Started/logout/collapse
+  toggle, bot switcher, all 7 `BotTopBar` tabs) and read each one's
+  live `getComputedStyle()` — every element reachable, visible, and
+  carrying a genuine focus ring (not just an outline reset with
+  nothing behind it).
+  Verified: `npx tsc --noEmit` clean; all 10 `check:all` guardrails;
+  full unit suite (235, unchanged — no logic touched); the full
+  `tests/e2e/` suite (117/117); `accessibility.spec.ts` (15/15, 0
+  violations); `tests/visual/` — the active tab's resting-state
+  underline (`border-b-2 border-foreground`, not just the hover/focus
+  states) does render in every baseline that includes `BotTopBar`, so
+  this touched 10 of the 19 baselines (every bot-scoped screen — bot
+  editor and its Appearance/publish-dialog/preview-sheet variants,
+  Leads, Actions, Knowledge empty+dialog, Approvals empty+pending,
+  Integrations, and the collapsed-sidebar shot, which is also taken
+  from a bot page), all regenerated and confirmed stable across two
+  full runs, the other 9 pixel-unchanged. `docs/design/audit.md`'s
+  Sidebar/top bar rows updated in both tables (Depth/polish Active
+  🟡→✅; Responsive & accessibility keyboard-pass 🟡→✅, screen-reader
+  🔲→🟡 — automated axe coverage via every bot-scoped page's existing
+  scan, still no literal AT pass, same honest standard as every other
+  row).
+
