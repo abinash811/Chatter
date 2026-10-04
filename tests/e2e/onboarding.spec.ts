@@ -54,9 +54,9 @@ test("completing onboarding sets the workspace name and lands straight in the ne
   await page.click('button:has-text("Continue")');
 
   await expect(page).toHaveURL(/\/bots\/[^/]+$/);
-  // getByText would match twice — the (sr-only) page heading and the
-  // bot-switcher combobox, both in BotTopBar — so assert on the
-  // heading specifically.
+  // getByText would match twice — the (sr-only) page heading
+  // (bots/[botId]/layout.tsx) and the sidebar bot-switcher combobox
+  // (AppSidebar.tsx, ADR 0037) — so assert on the heading specifically.
   await expect(page.getByRole("heading", { name: "Support bot" })).toBeVisible();
 
   // The name set here shows up in Settings — onboarding and Settings

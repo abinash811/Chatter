@@ -28,7 +28,7 @@ test("seeded leads appear in the list, most recent first", async ({ page }) => {
   await expect(rows.nth(0)).toContainText("—");
 });
 
-test("a bot's leads are reachable from the bot editor's top bar", async ({ page }) => {
+test("a bot's leads are reachable from the bot editor's sidebar nav", async ({ page }) => {
   await signUpAndCreateBot(page, "Nav Leads Bot");
   await page.click('a:has-text("Leads")');
   await expect(page).toHaveURL(/\/bots\/[^/]+\/leads$/);

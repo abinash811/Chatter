@@ -2,14 +2,31 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Search, MessageCircle, Bot as BotIcon, Inbox, Settings, LogOut, Check, Circle } from "lucide-react";
+import { useRouter, usePathname } from "next/navigation";
+import {
+  Search,
+  MessageCircle,
+  Bot as BotIcon,
+  Inbox,
+  Settings,
+  LogOut,
+  Check,
+  Circle,
+  Pencil,
+  Database,
+  Users,
+  Webhook,
+  FormInput,
+  ShieldCheck,
+  Plug,
+} from "lucide-react";
 import {
   Sidebar,
   SidebarHeader,
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
+  SidebarGroupLabel,
   SidebarGroupContent,
   SidebarInput,
   SidebarMenu,
@@ -21,9 +38,30 @@ import {
   Popover,
   PopoverTrigger,
   PopoverContent,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Button,
 } from "@/components/ui";
 import { logoutAction } from "@/app/(console)/actions";
+
+// ADR 0037: every bot-scoped page, in the order they appear in this
+// sub-nav. Icons reused verbatim from each page's own EmptyState (not
+// invented fresh) — Users/Webhook/FormInput/ShieldCheck/Database
+// already mean exactly this elsewhere in the app. Label says "Data
+// sources," not "Knowledge" — the old BotTopBar nav still said
+// "Knowledge," stale since the 2026-09-29 page rename.
+const BOT_NAV_ITEMS = [
+  { subpath: "", label: "Editor", icon: Pencil },
+  { subpath: "/knowledge", label: "Data sources", icon: Database },
+  { subpath: "/leads", label: "Leads", icon: Users },
+  { subpath: "/actions", label: "Actions", icon: Webhook },
+  { subpath: "/widgets", label: "Widgets", icon: FormInput },
+  { subpath: "/approvals", label: "Approvals", icon: ShieldCheck },
+  { subpath: "/integrations", label: "Integrations", icon: Plug },
+];
 
 // Real CARE Sidebar (components/ui/sidebar.tsx, ADR 0008, now on shadcn's
 // official source per ADR 0017) — icon-collapsible, not a hand-rolled
@@ -46,11 +84,14 @@ export function AppSidebar({
   orgName,
   userEmail,
   gettingStartedSteps,
+  bots,
 }: {
   orgName: string;
   userEmail: string;
   gettingStartedSteps: GettingStartedStep[];
+  bots: { id: string; name: string }[];
 }) {
+  const router = useRouter();
   const pathname = usePathname();
   const [query, setQuery] = useState("");
 
@@ -60,6 +101,15 @@ export function AppSidebar({
 
   const completedCount = gettingStartedSteps.filter((step) => step.done).length;
   const totalSteps = gettingStartedSteps.length;
+
+  // ADR 0037 — only render the bot sub-nav while actually inside a bot
+  // (route starts with /bots/<id>, and that id is real, not a stray
+  // "/bots/new" or similar future route).
+  const botMatch = pathname.match(/^\/bots\/([^/]+)/);
+  const activeBotId = botMatch?.[1];
+  const activeBot = bots.find((bot) => bot.id === activeBotId);
+  const botSubpath =
+    activeBot && pathname.startsWith(`/bots/${activeBot.id}`) ? pathname.slice(`/bots/${activeBot.id}`.length) : "";
 
   return (
     <Sidebar collapsible="icon">
@@ -111,6 +161,55 @@ export function AppSidebar({
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        {activeBot && (
+          <>
+            <SidebarSeparator />
+            <SidebarGroup>
+              {/* A real combobox, not a plain label — reuses the exact
+                  switcher BotTopBar used to render, just relocated.
+                  Switching preserves the current subpath (ADR 0037,
+                  same behavior as the old BotTopBar). */}
+              <SidebarGroupLabel asChild className="h-auto group-data-[collapsible=icon]:hidden">
+                <Select
+                  value={activeBot.id}
+                  onValueChange={(newBotId) => router.push(`/bots/${newBotId}${botSubpath}`)}
+                >
+                  <SelectTrigger
+                    size="sm"
+                    aria-label={`Switch bot (currently ${activeBot.name})`}
+                    className="w-full border-none bg-transparent px-2 text-xs font-medium text-sidebar-foreground/70 shadow-none"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {bots.map((bot) => (
+                      <SelectItem key={bot.id} value={bot.id}>
+                        {bot.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {BOT_NAV_ITEMS.map((item) => {
+                    const href = `/bots/${activeBot.id}${item.subpath}`;
+                    return (
+                      <SidebarMenuItem key={item.subpath}>
+                        <SidebarMenuButton asChild isActive={pathname === href} tooltip={item.label}>
+                          <Link href={href}>
+                            <item.icon />
+                            <span>{item.label}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </>
+        )}
       </SidebarContent>
       <SidebarFooter>
         <GettingStartedWidget steps={gettingStartedSteps} completedCount={completedCount} totalSteps={totalSteps} />

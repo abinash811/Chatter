@@ -51,10 +51,10 @@ export function WidgetsForm({ botId, widgets }: { botId: string; widgets: Widget
   return (
     <div>
       <div className="flex h-row items-center justify-between">
-        <h2 className="flex items-center gap-2 text-xl font-semibold tracking-tight">
+        <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight">
           Widgets{" "}
           {widgets.length > 0 && <span className="text-sm font-normal text-muted-foreground">{widgets.length}</span>}
-        </h2>
+        </h1>
         <Button type="button" size="sm" onClick={() => setAddOpen(true)}>
           Add widget
         </Button>

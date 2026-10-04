@@ -2,10 +2,7 @@ import { Skeleton } from "@/components/ui";
 
 // Matches BotEditorForm's real shape (status/actions row, Tabs,
 // Card-wrapped sections) — a considered loading state (docs/design/
-// principles.md #5), not a blank flash. Only the page's own content,
-// not the top bar: app/(console)/bots/[botId]/layout.tsx's BotTopBar
-// already renders around this file's Suspense boundary, so duplicating
-// it here would show two top bars briefly.
+// principles.md #5), not a blank flash.
 export default function BotEditorLoading() {
   return (
     <div className="mx-auto max-w-2xl">

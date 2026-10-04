@@ -45,19 +45,28 @@ describe("crawlSite", () => {
     });
   }
 
-  it("discovers pages via a sitemap referenced in robots.txt and extracts each", async () => {
-    mockRobotsTxt("User-agent: *\nSitemap: https://example.com/sitemap.xml");
-    sitemapFetch.mockResolvedValue({
-      sites: ["https://example.com/a", "https://example.com/b", "https://example.com/c"],
-    });
-    extractUrlText.mockImplementation(async (url: string) => ({ title: url, text: `content of ${url}` }));
+  it(
+    "discovers pages via a sitemap referenced in robots.txt and extracts each",
+    async () => {
+      mockRobotsTxt("User-agent: *\nSitemap: https://example.com/sitemap.xml");
+      sitemapFetch.mockResolvedValue({
+        sites: ["https://example.com/a", "https://example.com/b", "https://example.com/c"],
+      });
+      extractUrlText.mockImplementation(async (url: string) => ({ title: url, text: `content of ${url}` }));
 
-    const pages = await (await import("@/lib/ai/crawler")).crawlSite("https://example.com");
+      const pages = await (await import("@/lib/ai/crawler")).crawlSite("https://example.com");
 
-    expect(pages).toHaveLength(4); // start page + 3 sitemap URLs
-    expect(pages.map((p) => p.url)).toContain("https://example.com/a");
-    expect(extractUrlText).toHaveBeenCalledWith("https://example.com/a");
-  });
+      expect(pages).toHaveLength(4); // start page + 3 sitemap URLs
+      expect(pages.map((p) => p.url)).toContain("https://example.com/a");
+      expect(extractUrlText).toHaveBeenCalledWith("https://example.com/a");
+    },
+    // Same real per-page courtesy delay as the MAX_CRAWL_PAGES test
+    // below (crawler.ts's real `setTimeout`, not a mock) — 4 pages'
+    // worth (~2s) plus test/import overhead was close enough to
+    // vitest's 5000ms default to flake under parallel-worker load (a
+    // real, confirmed flake, not a one-off — found independently twice).
+    10_000,
+  );
 
   it("falls back to /sitemap.xml when robots.txt lists no Sitemap directive", async () => {
     mockRobotsTxt("User-agent: *\nDisallow:");

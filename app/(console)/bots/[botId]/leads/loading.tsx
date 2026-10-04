@@ -1,8 +1,6 @@
 import { Skeleton } from "@/components/ui";
 
-// Matches LeadsTable's real shape — content only, not the shared
-// BotTopBar (already rendered by the parent layout around this Suspense
-// boundary).
+// Matches LeadsTable's real shape.
 export default function LeadsLoading() {
   return (
     <div>

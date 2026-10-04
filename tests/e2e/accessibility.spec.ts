@@ -103,7 +103,7 @@ test("knowledge page has no serious/critical accessibility violations", async ({
   await signUpAndCreateBot(page, "A11y Knowledge Bot", "a11y-knowledge");
   const botId = page.url().split("/bots/")[1];
   await seedKnowledgeEntry(botId, "What are your hours?", "9 to 5, Monday to Friday.");
-  await page.click('a:has-text("Knowledge")');
+  await page.click('a:has-text("Data sources")');
   await expect(page).toHaveURL(/\/knowledge$/);
   await assertNoSeriousViolations(page, page.getByText("What are your hours?"));
 });

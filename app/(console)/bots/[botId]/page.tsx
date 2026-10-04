@@ -10,8 +10,9 @@ import { BotEditorForm } from "./BotEditorForm";
 // page shape now follows docs/design/principles.md #10 (persistent top
 // bar + tabs + confirm-before-publish), the same pattern every future
 // record-editing screen uses. This page is now just a thin data-fetch
-// shell; BotEditorForm owns the tab content, and the shared BotTopBar
-// (app/(console)/bots/[botId]/layout.tsx) owns the bot name/switcher.
+// shell; BotEditorForm owns the tab content and its own page title
+// (ADR 0037 — the bot name/switcher live in AppSidebar's sub-nav now,
+// not a page-level top bar).
 //
 // The layout also validates botId belongs to this org, but Next.js
 // fetches a layout and its page's data in parallel, not sequentially —

@@ -56,7 +56,7 @@ export function ConversationFilters({ bots }: { bots: { id: string; name: string
     <div className="flex items-center gap-3">
       <Select value={botId} onValueChange={(value) => setParam("botId", value)}>
         {/* aria-label, not just SelectValue's rendered text — same fix
-            as BotTopBar.tsx's switcher: a real axe-core scan
+            as AppSidebar.tsx's bot switcher: a real axe-core scan
             (tests/e2e/accessibility.spec.ts) caught this trigger
             intermittently rendering with no accessible name at all
             (critical "button-name" violation, ~40% reproduction rate)

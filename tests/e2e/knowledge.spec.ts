@@ -177,9 +177,9 @@ test("a private/local URL is rejected by the real SSRF guard even with Crawl thi
   await expect(page.locator("#url")).toHaveValue("http://localhost/admin");
 });
 
-test("a bot's knowledge is reachable from the bot editor's top bar", async ({ page }) => {
+test("a bot's knowledge is reachable from the bot editor's sidebar nav", async ({ page }) => {
   await signUpAndCreateBot(page, "Nav KB Bot");
-  await page.click('a:has-text("Knowledge")');
+  await page.click('a:has-text("Data sources")');
   await expect(page).toHaveURL(/\/knowledge$/);
   await expect(page.getByText("Data sources")).toBeVisible();
 });

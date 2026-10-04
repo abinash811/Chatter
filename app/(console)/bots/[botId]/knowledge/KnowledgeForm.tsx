@@ -109,12 +109,10 @@ export function KnowledgeForm({
   return (
     <div>
       <div className="flex h-row items-center justify-between">
-        {/* h2, not h1 — the page's h1 is the (sr-only) bot name in the
-            shared BotTopBar, app/(console)/bots/[botId]/layout.tsx. */}
-        <h2 className="flex items-center gap-2 text-xl font-semibold tracking-tight">
+        <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight">
           Data sources{" "}
           {entries.length > 0 && <span className="text-sm font-normal text-muted-foreground">{entries.length}</span>}
-        </h2>
+        </h1>
         {/* Informational only, no plan-based cap — docs/open-questions.md
             #6 (pricing/billing tiers) is unresolved, so there's nothing
             to show a total against yet, unlike Chatbase's "X KB / 1 MB". */}

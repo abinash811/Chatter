@@ -99,7 +99,7 @@ test("approving a write-capable widget's queued submission calls its real API", 
   await expect(statusBadge).toHaveText(/approved|failed/);
 });
 
-test("a bot's approvals are reachable from the bot editor's top bar", async ({ page }) => {
+test("a bot's approvals are reachable from the bot editor's sidebar nav", async ({ page }) => {
   await signUpAndCreateBot(page, "Nav Approvals Bot");
   await page.click('a:has-text("Approvals")');
   await expect(page).toHaveURL(/\/bots\/[^/]+\/approvals$/);

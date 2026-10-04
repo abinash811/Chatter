@@ -16,7 +16,7 @@ test("loading sample data creates a fully populated demo bot", async ({ page }) 
   await page.waitForURL(/\/bots\/[^/]+$/);
   await expect(page.getByText("Published v1")).toBeVisible();
 
-  await page.click('a:has-text("Knowledge")');
+  await page.click('a:has-text("Data sources")');
   await expect(page.getByRole("heading", { name: "Data sources 3" })).toBeVisible();
 
   await page.click('a:has-text("Leads")');

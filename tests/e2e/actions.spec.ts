@@ -103,7 +103,7 @@ test("Test button runs the same SSRF guard as saving does", async ({ page }) => 
   await expect(page.getByText(/URL isn't allowed/)).toBeVisible();
 });
 
-test("a bot's custom actions are reachable from the bot editor's top bar", async ({ page }) => {
+test("a bot's custom actions are reachable from the bot editor's sidebar nav", async ({ page }) => {
   await signUpAndCreateBot(page, "Nav Actions Bot");
   await page.click('a:has-text("Actions")');
   await expect(page).toHaveURL(/\/bots\/[^/]+\/actions$/);

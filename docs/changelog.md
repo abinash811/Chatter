@@ -48,240 +48,13 @@ crawling (ADR 0030), the JS-rendering fallback (ADR 0031), and the
 Firecrawl last-resort fallback (ADR 0032); `docs/changelog/
 2026-10-part3.md` — TypeScript 7 + Next.js 16 upgrade (ADR 0033),
 Prisma 7 upgrade (ADR 0034), and reranking via Voyage rerank-2 (ADR
-0035).
+0035); `docs/changelog/2026-10-part4.md` — the `--accent`-on-white
+contrast fix, the accent-color/monochrome consistency audit, Inter
+typeface + page-title heading hierarchy (ADR 0036), empty-state
+treatment + the documented elevation scale, the documented motion
+scale, and the table column header consistency fix.
 
 ---
-
-- **`--accent`-on-white contrast fix (2026-10-02).** Closed the
-  cross-cutting finding flagged 2026-09-28 (`docs/design/audit.md`'s
-  Knowledge row): `--accent` was only a 3-point lightness gap from
-  `--background`'s pure white (97% vs. 100%), making every `ghost`
-  button's hover state (`ActionsTable.tsx`, `BotTableRow.tsx`,
-  `BotsTable.tsx`, `sidebar.tsx`, Knowledge's delete button) nearly
-  invisible. Prompted by a design-quality review of Chatbase (confirmed
-  from real screenshots captured earlier this project, not a fresh
-  fetch — `chatbase.co` is network-blocked in this environment again).
-  Two real choices explained to the user before building, per process
-  rules: darken `--accent` app-wide vs. add a separate ghost-hover-only
-  token (chose app-wide — fixes every current and future ghost button
-  at once); and whether to also rebuild the bot editor's Preview into a
-  persistent docked pane like Chatbase's (declined — kept the existing
-  `Sheet`, out of scope for this pass).
-  `--accent` (light mode only; dark mode's wasn't flagged) darkened
-  from neutral-100 (`oklch(97% 0 none)`) to neutral-200
-  (`oklch(92.2% 0 none)`) — reusing the same step already used for
-  `border`/`strong-background`, not a new raw value. Real contrast math
-  confirmed `--accent-foreground` (20.5% L) still reads ~14:1 against
-  the darker background, comfortably above AA, before touching
-  anything else that reads the token (dropdown/select focus states,
-  the `Skeleton` loading fill, `AuthShell.tsx`'s logo chip against the
-  dark `--panel` background).
-  Verified: `npx tsc --noEmit` clean; all 10 `check:all` guardrails;
-  full unit suite (235, unchanged — this is a CSS-only change); the
-  full `accessibility.spec.ts` suite (15/15, no new violations); the
-  full `tests/visual/` suite (19/19 unchanged — the hover delta isn't
-  captured by resting-state screenshots, and the few static `bg-accent`
-  usages, like `AuthShell.tsx`'s logo chip, stayed within the suite's
-  existing pixel-diff tolerance); and a real one-off Playwright
-  screenshot comparing the bots-list row action button at rest vs.
-  hover, confirming the hover state now renders as a clearly visible
-  gray pill instead of an imperceptible tint.
-
-- **Accent-color/monochrome consistency audit (2026-10-02, task
-  tracker #11).** A stale task predating ADR 0014's monochrome
-  decision — clarified scope with the user first (consistency audit,
-  not re-opening the monochrome-vs-colored-accent decision). A grep
-  sweep (raw non-neutral Tailwind colors, `Badge` variant usage,
-  `bg-primary`/`bg-accent`/`bg-soft-background` purpose consistency)
-  plus real screenshots of 10 console screens found the monochrome
-  system holding consistently everywhere — no new functional bugs.
-  Fixed 2 stale code comments (`BotTableRow.tsx`, `AppSidebar.tsx`)
-  still citing the pre-contrast-fix `--accent` value. Full detail:
-  `docs/design/audit.md`'s System coverage table.
-
-- **Inter typeface + page-title heading hierarchy (2026-10-02, ADR
-  0036, supersedes ADR 0014's typography call).** The user reviewed
-  the shipped product directly and called it "a college project" —
-  immediately after the consistency audit above had found the token
-  system internally sound, a real lesson that consistency-checking
-  and quality-checking are different questions. Root-caused, not
-  guessed: `app/globals.css` had zero `font-family` override anywhere
-  (confirmed via grep) — every screen ran Tailwind's own default
-  system-font stack. A second grep found zero uses of `text-xl` or
-  larger anywhere in the app — every page title capped at `text-lg`
-  (18px), no real heading hierarchy.
-  Explained the real tradeoff to the user before building (Inter vs.
-  a more distinctive typeface vs. keeping system font and fixing other
-  gaps first; typography-first vs. empty-states-first vs.
-  motion-first sequencing) — user chose Inter, typography-first.
-  Adopted via `@fontsource-variable/inter`'s `wght.css` (self-hosted,
-  zero runtime/build-time network dependency — confirmed real via
-  `npm view`), not `next/font/google`, for the same network-dependency
-  reason ADR 0014 originally removed CARE's Figtree import; wired as
-  `--font-sans` in `app/globals.css`'s `@theme` (Tailwind v4's own
-  preflight applies it to `html` automatically). The 9 genuine
-  page-title headings (Bots, Leads, Actions, Widgets, Approvals, Data
-  sources, Integrations, Settings, Conversations) bumped from
-  `text-lg font-semibold` to `text-xl font-semibold tracking-tight` —
-  a real tier above dialog/card titles, which stay at `text-lg`.
-  `app/global-error.tsx`'s inline-styled fallback `h1` (deliberately
-  not Tailwind-dependent, per its own header comment) and
-  `BotTopBar.tsx`'s editable bot-name input (a different structural
-  role, not a static heading) were deliberately left alone.
-  Verified: `npx tsc --noEmit` clean; all 10 `check:all` guardrails; a
-  production build; a real computed-style check confirming
-  `"Inter Variable"` actually renders (not a silent fallback) and the
-  new page-title size/weight; full unit suite (235, unchanged); the
-  full `tests/e2e/` suite (117/117); the full `accessibility.spec.ts`
-  suite (15/15, no new violations); all 19 `tests/visual/` baselines
-  regenerated and confirmed stable across two runs; a manual spot-check
-  of several regenerated screenshots for layout breakage (clipping,
-  overflow, misalignment from Inter's different metrics) — none found.
-  Still open, by design: a full per-element typography sweep beyond
-  page titles, the elevation-scale and motion-policy gaps
-  `docs/design/audit.md` already tracked (next in line per this same
-  feedback), and the empty-state/depth-hierarchy pass sequenced after
-  this one.
-
-- **Empty-state treatment + documented elevation scale (2026-10-02),
-  the sequenced follow-up to the typography pass above.** User
-  confirmed "Yes" to tackling empty states + depth hierarchy next.
-  Real bug, not impression: Leads/Actions/Widgets/Approvals/Data
-  sources each rendered a lonely plain-text box (no icon, no CTA) in a
-  mostly-empty page — the single biggest remaining "unfinished"
-  signal once the font/heading fix landed. New shared
-  `components/console/EmptyState.tsx`, deliberately extracted from
-  `ConversationDetailPanel.tsx`'s own pre-existing icon-badge pattern
-  (its "Select a conversation" state) rather than invented — that was
-  the one empty state in the app that already read as finished.
-  Rolled out to all 5 screens with a fitting `lucide-react` icon each
-  (`Users`/`Webhook`/`FormInput`/`ShieldCheck`/`Database`). Real CTA
-  wired, not just copy, where a real action exists: Actions' and
-  Widgets' empty-state buttons open the exact same dialog as their
-  header button (`onAdd` prop threaded down from the existing
-  `addOpen` state already in `ActionsForm.tsx`/`WidgetsForm.tsx`),
-  verified via a real Playwright click-through, not just rendered.
-  Leads/Approvals/Data-sources correctly got no fabricated CTA — no
-  user action exists for the first two (visitor/bot-driven, not
-  something to "add"), and Data sources already has its 4 `OptionCard`
-  entry points above the table.
-  Real regression caught and fixed: adding a second "Add action"/"Add
-  widget" button broke 9 existing e2e test selectors in
-  `actions.spec.ts`/`widgets.spec.ts` that assumed only one such
-  button existed on the page — fixed with `.first()` to deterministically
-  target the header button, the semantically "primary" one.
-  Also closed `docs/design/audit.md`'s long-tracked "no documented
-  elevation scale" gap — not a new scale, a real 3-tier one (surface
-  `shadow-xs` / floating `shadow-md` / modal `shadow-lg`) already
-  existed via shadcn's own untouched component defaults, confirmed by
-  grepping every real `shadow-*` usage in the app; it just had never
-  been written down. `docs/design/design-system.md`'s new Elevation
-  section documents it; `docs/design/component-checklist.md`'s item 2
-  updated to point to it. Honestly flagged, not silently dropped: the
-  one interactive-hover convention that exists (`BotTableRow`'s avatar
-  chip lifting `shadow-xs`→`shadow-sm` on row hover) is still only
-  applied in that one place, not rolled out everywhere a row/card is
-  clickable.
-  Verified: `npx tsc --noEmit` clean; all 10 `check:all` guardrails; a
-  production build; a real Playwright script confirming all 5 new
-  empty states render correctly and the Actions CTA genuinely opens
-  its dialog; full unit suite (235, unchanged); the full `tests/e2e/`
-  suite (117/117, after the selector fix above); the full
-  `accessibility.spec.ts` suite (15/15, no new violations); the 4
-  affected `tests/visual/` baselines (`leads-empty.png`,
-  `actions-empty.png`, `knowledge-empty.png`/`knowledge-add-dialog.
-  png`, `approvals-empty.png`) regenerated and confirmed stable across
-  two runs, the other 15 unchanged.
-
-- **Documented the real motion scale + closed the one actual motion
-  gap (2026-10-02), third follow-up to the "college project" feedback.**
-  Before building anything, checked what actually exists rather than
-  trusting the earlier "zero motion, static UI" diagnosis — it was an
-  overstatement. A grep of every real `animate-in`/`transition-*`/
-  `duration-*` usage in `components/ui/` found Dialog, AlertDialog,
-  DropdownMenu, Popover, Select, and Sheet all already animate open/
-  close via shadcn's own untouched Radix-driven defaults. Real values
-  confirmed from Tailwind v4's own `theme.css` (not recalled):
-  `--default-transition-duration: 150ms`,
-  `--default-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1)`
-  — which is, genuinely, Material Design's own "standard" easing
-  curve, already the implicit default everywhere a bare `transition-*`
-  class is used.
-  The one real, previously-undiscovered gap: `TabsContent` (shadcn's
-  real stock source) has zero transition on tab switch — content just
-  pops in, the only primitive in that whole list that doesn't already
-  animate. Fixed with a documented delta
-  (`data-[state=active]:animate-in data-[state=active]:fade-in-0
-  data-[state=active]:duration-200`, the same duration already used by
-  the overlay tier) in `components/ui/tabs.tsx`.
-  Real risk checked before trusting it: `BotEditorForm.tsx` uses
-  `forceMount` + `data-[state=inactive]:hidden` on all 4 of its tabs
-  (deliberately, so one shared `<form>`'s fields all stay mounted) —
-  a case where content never actually unmounts, the kind of thing that
-  could silently break a mount-triggered animation. Verified safe via
-  the real `bot-editor.spec.ts` suite, not just a visual glance.
-  Real debugging detour, documented honestly: an initial verification
-  pass showed 9/10 `bot-editor.spec.ts` tests failing — looked like a
-  real regression at first. Root-caused via bisection (reverted the
-  CSS change, same failures persisted) to environmental contamination
-  from manually curling/restarting the dev server on the same port
-  while a separate Playwright-managed server was mid-test-run, not the
-  code change. A clean, fully isolated re-run (killed every stray
-  process first) passed 10/10, confirmed again by the full suite.
-  Documented the real duration scale (micro `150ms` / overlay `200ms`
-  / panel `300-500ms`, Sheet's own real asymmetric stock values left
-  alone rather than second-guessed without cause) in
-  `docs/design/design-system.md`'s new Motion section, closing
-  `docs/design/component-checklist.md`/`docs/design/audit.md`'s
-  tracked gap.
-  Verified: `npx tsc --noEmit` clean; all 10 `check:all` guardrails; a
-  production build; full unit suite (235 unchanged — CSS-only); the
-  full `tests/e2e/` suite (117/117, run fully isolated after the
-  contamination above was ruled out); the full `accessibility.spec.ts`
-  suite (15/15, no new violations); the full `tests/visual/` suite
-  (19/19 unchanged — the fade only fires on an active tab switch, not
-  captured by resting-state screenshots).
-
-- **Table column header consistency fix (2026-10-02), app-wide
-  typography-sweep item #1.** User asked for a consolidated list of
-  pending design work "for consistent design throughout the app" —
-  compiled every open item from `docs/design/audit.md`/
-  `component-checklist.md` into system-wide vs. per-screen vs.
-  accessibility buckets, explained the real tradeoff, and the user
-  picked the typography sweep first.
-  Real, previously-uncredited finding from that sweep, not assumed: a
-  grep of every `<TableHead>` usage found Bots list's sortable column
-  headers use a small-caps gray treatment (`text-xs uppercase
-  tracking-wide text-muted-foreground`, `BotsTable.tsx`'s
-  `SortableHead`) that Leads/Actions/Widgets/Approvals/Data sources
-  never got — their plain `<TableHead>` cells rendered full-strength
-  `text-sm` black text, a real, visible inconsistency across every
-  list screen in the app. Even Data sources, which explicitly adopted
-  "the same pattern as BotsTable.tsx" (2026-09-29 entry) for its sort
-  *state*, never got the matching visual treatment — the underlying
-  mechanism was shared, the look wasn't.
-  Fixed at the shared primitive (`components/ui/table.tsx`'s
-  `TableHead`), not per-screen — fixing it once gives every column
-  header in the app the same look for free, including any future
-  table, rather than 20 scattered className edits across 6 files.
-  Documented as a deliberate delta from shadcn's stock source, same
-  pattern as every other `components/ui/` customization (ADR 0025).
-  Verified via real screenshots (Leads/Actions headers now visibly
-  match Bots list's small-caps gray style, not just believed to from
-  reading the diff).
-  Real process note, logged honestly: an earlier verification pass in
-  this same session hit a false alarm (9/10 `bot-editor.spec.ts`
-  failures from environmental server contamination, not a code bug,
-  per the Motion entry above) — applied the lesson here by running
-  every verification step in full isolation from the start, killing
-  any lingering manual server process before each test run.
-  Verified: `npx tsc --noEmit` clean; all 10 `check:all` guardrails; a
-  production build; full unit suite (235 unchanged — CSS-only); the
-  full `tests/e2e/` suite (117/117, clean isolated run); the full
-  `accessibility.spec.ts` suite (15/15, no new violations); 3 affected
-  `tests/visual/` baselines (`bots-table.png`, `bots-table-mobile.png`,
-  `approvals-pending.png`) regenerated and confirmed stable across two
-  runs, the other 16 unchanged.
 
 - **Hover-elevation rollout (2026-10-02), app-wide consistency item #2
   of 3.** User asked to go ahead with the item named in the prior
@@ -425,4 +198,87 @@ Prisma 7 upgrade (ADR 0034), and reranking via Voyage rerank-2 (ADR
   🔲→🟡 — automated axe coverage via every bot-scoped page's existing
   scan, still no literal AT pass, same honest standard as every other
   row).
+
+- **Bot-scoped nav moves from BotTopBar into the sidebar (2026-10-04,
+  ADR 0037).** Triggered by a user-requested full-system audit
+  (process/security/testing/design, via 3 parallel research agents +
+  this session's own fresh design-audit context) — the user then
+  specifically called out the bots section's horizontal tabs as "not
+  that good." Looking closely confirmed a real, previously-uncaught
+  hierarchy problem: `BotTopBar`'s 7 plain-gray-text links sat directly
+  above the editor's own visually *stronger* `<Tabs>` pill row
+  (Persona/Guardrails/Tools/Appearance), so a user's eye landed on the
+  bolder secondary tabs first, not the actual primary page nav above
+  them. Root cause, found while re-reading `docs/design/principles.md`
+  #10 during this review: that principle's "persistent top bar +
+  Tabs" pattern was always about *within-page* section-switching, not
+  cross-page routing — `BotTopBar` had conflated the two jobs, and
+  stacking both directly on top of each other produced the inversion.
+  Presented 3 real alternatives to the user before building anything
+  (per CLAUDE.md's process rule): add icons to the existing bar
+  (GitHub repo-nav precedent, lowest risk), regroup into fewer
+  top-level items, or move the nav into the sidebar (Notion/Linear-
+  style). User chose the sidebar move — the biggest change, and the
+  only one of the three that actually resolves the Tabs collision
+  rather than just making the symptom less visible.
+  `BotTopBar.tsx` deleted outright. `AppSidebar.tsx` gained a
+  contextual `SidebarGroup` (bot switcher + the 7 links, each with a
+  real icon reused from that page's own `EmptyState` — `Users`/
+  `Webhook`/`FormInput`/`ShieldCheck`/`Database`, not invented fresh)
+  rendered only while `usePathname()` matches `/bots/[id]`. 5 pages'
+  page-title heading (`Leads`/`Actions`/`Widgets`/`Approvals`/
+  `Integrations`/`Knowledge`) promoted from `<h2>` to a real `<h1>` —
+  they'd deferred to `BotTopBar`'s sr-only `<h1>` before; that heading
+  now lives in `bots/[botId]/layout.tsx` directly. `BotEditorForm.tsx`
+  gained a real visible "Editor" `<h1>` it never had (previously relied
+  entirely on `BotTopBar`'s heading, the one page with no page-title
+  convention of its own). Also fixed in passing: the nav item still
+  read "Knowledge," stale since the 2026-09-29 "Data sources" rename.
+  **Real, serious bug caught only by the e2e suite, not by any manual
+  check or screenshot**: 3 tests failed after the move —
+  `demo-data.spec.ts`, and the new `bot-sidebar-nav.spec.ts`'s switcher
+  test — both timing out waiting for sidebar links that silently
+  weren't there. The `error-context.md` snapshot showed exactly why:
+  right after creating a brand-new bot (via "Load sample data" or the
+  "New bot" dialog) and landing on its page, `AppSidebar`'s own `bots`
+  list — fetched once by the shared `app/(console)/layout.tsx` — didn't
+  include the bot that had just been created. Root cause, confirmed by
+  reading Next.js's own real `revalidatePath` docs (`node_modules/next/
+  dist/docs/.../revalidatePath.md`), not recalled: `redirect()` alone
+  does not refetch a *shared parent layout's* own server data on a
+  client-side transition — `createBotAction`/`loadSampleDataAction`/
+  `duplicateBotAction` redirected to the new bot with no
+  `revalidatePath` call at all, and `renameBotAction`/`archiveBotAction`
+  only called the default `revalidatePath("/bots")` (page-level,
+  doesn't reach a parent layout). Fixed by adding
+  `revalidatePath("/", "layout")` to all 5 — the documented pattern for
+  busting a *layout's* cached data, not just one page's. This was a
+  real, previously-invisible gap in the architecture `ADR 0037`
+  introduced, not a pre-existing bug — the old `BotTopBar` read its
+  `bots` list from the inner `bots/[botId]/layout.tsx`, which *is*
+  freshly re-run per distinct `botId`, so this exact staleness class
+  never had a chance to surface before.
+  Also fixed a real strict-mode ambiguity in the new
+  `bot-sidebar-nav.spec.ts` test itself: a bare
+  `getByRole("combobox")` on the Data sources page matches 3
+  comboboxes (switcher + filter + sort, the same ambiguity class
+  already documented elsewhere in this app) — disambiguated via the
+  switcher's own `aria-label`. Renamed `bot-top-bar.spec.ts` →
+  `bot-sidebar-nav.spec.ts` to match what it actually tests.
+  Fixed a second, unrelated real bug found while running the full unit
+  suite during this pass: `tests/unit/lib/ai/crawler.test.ts`'s
+  sitemap-discovery test has a real (not mocked) per-page courtesy
+  `setTimeout` in `crawler.ts`, and 4 pages' worth was close enough to
+  vitest's 5000ms default to flake under parallel-worker load —
+  independently confirmed by this session and an earlier audit agent.
+  Given the same explicit extended timeout the file's own
+  `MAX_CRAWL_PAGES` test already uses for the identical reason.
+  Verified: `npx tsc --noEmit` clean; all 10 `check:all` guardrails; a
+  production build; full unit suite (235, the crawler flake now fixed
+  for real, confirmed via a direct re-run); the full `tests/e2e/`
+  suite; `accessibility.spec.ts`; real screenshots of the Editor and
+  Data sources pages confirming the sidebar nav renders correctly and
+  tracks the active route. `docs/design/audit.md`'s "Sidebar/top bar"
+  rows merged into a single "Sidebar" row in both tables, Depth moved
+  🟡→✅ (no second bar left to flatly compare it against).
 

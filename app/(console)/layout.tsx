@@ -45,7 +45,12 @@ export default async function ConsoleLayout({
   // stored flag, so it can't drift from what's actually true. First-bot
   // links point at the org's first bot; onboarding (ADR 0012) guarantees
   // at least one exists here.
+  // ADR 0037: the full list (not just the first bot) is also what
+  // AppSidebar needs to render its contextual bot sub-nav + switcher
+  // when the current route is under /bots/[botId] — fetched here once,
+  // not duplicated in a client-side call.
   const {
+    bots,
     firstBotId,
     hasKnowledge,
     hasAppearance,
@@ -56,9 +61,8 @@ export default async function ConsoleLayout({
     // shouldn't count as "you have a bot" for this checklist.
     const bots = await tx.bot.findMany({
       where: { archivedAt: null },
-      select: { id: true },
+      select: { id: true, name: true },
       orderBy: { createdAt: "asc" },
-      take: 1,
     });
     const firstBotId = bots[0]?.id ?? null;
     const [knowledgeCount, appearanceCount, publishedCount, integrationCount] =
@@ -81,6 +85,7 @@ export default async function ConsoleLayout({
         tx.integration.count(),
       ]);
     return {
+      bots,
       firstBotId,
       hasKnowledge: knowledgeCount > 0,
       hasAppearance: appearanceCount > 0,
@@ -126,6 +131,7 @@ export default async function ConsoleLayout({
         orgName={org.name}
         userEmail={userEmail}
         gettingStartedSteps={gettingStartedSteps}
+        bots={bots}
       />
       <SidebarInset>
         <div className="flex h-row items-center border-b border-border px-4">

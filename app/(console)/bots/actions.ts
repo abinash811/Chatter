@@ -30,6 +30,14 @@ export async function createBotAction(formData: FormData) {
     tx.bot.create({ data: { orgId: session.orgId, name } }),
   );
   await getOrCreateBotPublicKey(session.orgId, bot.id);
+  // ADR 0037: AppSidebar's bot sub-nav is fetched by the root
+  // app/(console)/layout.tsx, which redirect() alone doesn't refetch —
+  // real bug caught by e2e, not reasoned about in advance: a newly
+  // created bot's sidebar sub-nav was missing entirely on first landing
+  // (the root layout's own `bots` list was stale). "layout", not the
+  // default "page" type — see node_modules/next/dist/docs/.../
+  // revalidatePath.md's "Revalidating all data" example.
+  revalidatePath("/", "layout");
   redirect(`/bots/${bot.id}`);
 }
 
@@ -42,6 +50,7 @@ export async function createBotAction(formData: FormData) {
 export async function loadSampleDataAction() {
   const session = await getCurrentSession();
   const botId = await createDemoBot(session.orgId);
+  revalidatePath("/", "layout"); // same reason as createBotAction above
   redirect(`/bots/${botId}`);
 }
 
@@ -61,6 +70,11 @@ export async function renameBotAction(
       tx.bot.update({ where: { id: botId }, data: { name } }),
     );
     revalidatePath("/bots");
+    // The sidebar's bot switcher/group label (AppSidebar.tsx, ADR 0037)
+    // reads from the same root-layout `bots` fetch as the create
+    // actions above — needs the same "layout" revalidation or it still
+    // shows the old name until some other navigation happens to bust it.
+    revalidatePath("/", "layout");
     return { status: "success", message: "Renamed." };
   } catch (err) {
     console.error("[renameBotAction]", err);
@@ -78,8 +92,9 @@ export async function renameBotAction(
 // ADR 0018: archive, never delete — sets archivedAt instead of removing
 // any row. Every bot-fetching query across the app filters
 // archivedAt: null, so this alone is what makes the bot disappear from
-// the list, the top-bar switcher, the conversations filter, and stop
-// resolving via the widget's botKey (lib/db.ts's resolveBotPublicKey).
+// the list, the sidebar switcher (AppSidebar.tsx, ADR 0037), the
+// conversations filter, and stop resolving via the widget's botKey
+// (lib/db.ts's resolveBotPublicKey).
 export async function archiveBotAction(
   botId: string,
   _prevState: BotActionState,
@@ -90,6 +105,7 @@ export async function archiveBotAction(
       tx.bot.update({ where: { id: botId }, data: { archivedAt: new Date() } }),
     );
     revalidatePath("/bots");
+    revalidatePath("/", "layout"); // same reason as renameBotAction above
     return { status: "success", message: "Bot archived." };
   } catch (err) {
     console.error("[archiveBotAction]", err);
@@ -142,5 +158,6 @@ export async function duplicateBotAction(botId: string) {
   });
 
   await getOrCreateBotPublicKey(orgId, newBotId);
+  revalidatePath("/", "layout"); // same reason as createBotAction above
   redirect(`/bots/${newBotId}`);
 }

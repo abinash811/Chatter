@@ -1,14 +1,15 @@
 import { getCurrentSession } from "@/lib/auth";
 import { withOrgContext } from "@/lib/db";
-import { BotTopBar } from "@/components/console/BotTopBar";
 
-// Shared shell for every bot-scoped page (editor/knowledge/integrations)
-// — 2026-09-26 decision to lift the bot switcher + page nav out of each
-// page's own ad hoc header into one persistent top bar, matching the
-// Chatbase reference. Deliberately no width constraint here: the editor
+// Shared shell for every bot-scoped page (editor/knowledge/integrations).
+// ADR 0037 (2026-10-04): the bot switcher + page nav that used to live
+// in a BotTopBar component here now render in AppSidebar's contextual
+// sub-nav instead — this layout keeps only the existence check (still
+// needed for the plain-language error boundary below) and a sr-only
+// <h1> with the bot's name, the one real accessibility role BotTopBar
+// used to carry. Deliberately no width constraint here: the editor
 // keeps its own narrower `mx-auto max-w-2xl` column (a form), while
-// knowledge/integrations keep using the full width (a table/list) — only
-// the top bar itself spans edge to edge.
+// knowledge/integrations keep using the full width (a table/list).
 export default async function BotLayout({
   children,
   params,
@@ -26,7 +27,8 @@ export default async function BotLayout({
       orderBy: { createdAt: "asc" },
     }),
   );
-  if (!bots.some((bot) => bot.id === botId)) {
+  const bot = bots.find((bot) => bot.id === botId);
+  if (!bot) {
     // Matches the pre-existing behavior of each page's own
     // findUniqueOrThrow (still there for the child page's own data) —
     // caught by the plain-language app/error.tsx boundary, not a bare
@@ -36,8 +38,8 @@ export default async function BotLayout({
 
   return (
     <div>
-      <BotTopBar botId={botId} bots={bots} />
-      <div className="mt-4">{children}</div>
+      <h1 className="sr-only">{bot.name}</h1>
+      {children}
     </div>
   );
 }

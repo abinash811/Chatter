@@ -128,7 +128,7 @@ test("actions page — empty state", async ({ page }) => {
 test("knowledge base — empty state and Add Q&A dialog", async ({ page }) => {
   await signUpAndCreateBot(page, "Support bot", "visual-knowledge");
 
-  await page.click('a:has-text("Knowledge")');
+  await page.click('a:has-text("Data sources")');
   await expect(page).toHaveURL(/\/knowledge$/);
   await expect(page.getByText("No knowledge yet")).toBeVisible();
   await expect(page).toHaveScreenshot("knowledge-empty.png", { mask: sidebarMasks(page) });

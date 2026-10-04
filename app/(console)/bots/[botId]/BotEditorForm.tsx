@@ -120,10 +120,15 @@ export function BotEditorForm({
   return (
     <div className="mx-auto max-w-2xl">
       <div className="flex h-row items-center justify-between">
-        {/* Bot name + switcher now live in the shared BotTopBar
-            (app/(console)/bots/[botId]/layout.tsx) — this row keeps only
-            what's specific to the editor: publish status and actions. */}
-        <Badge variant="muted">{publishedVersion ? `Published v${publishedVersion}` : "Never published"}</Badge>
+        {/* ADR 0037: the bot name + switcher now live in AppSidebar's
+            contextual sub-nav, not a page-level top bar — this is a
+            real page title like every other bot-scoped page's own h1,
+            paired with the publish-status badge since both are
+            page-level facts about the editor specifically. */}
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-semibold tracking-tight">Editor</h1>
+          <Badge variant="muted">{publishedVersion ? `Published v${publishedVersion}` : "Never published"}</Badge>
+        </div>
         <div className="flex items-center gap-3">
           <PreviewSheet botId={botId} published={publishedVersion !== null} />
           <Button type="submit" form="bot-editor-form" variant="outline" size="sm" disabled={isSaving}>

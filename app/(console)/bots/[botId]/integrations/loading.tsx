@@ -1,8 +1,7 @@
 import { Skeleton } from "@/components/ui";
 
 // Matches the integrations page's real shape (heading + a provider row
-// per connector) — content only, not the shared BotTopBar (already
-// rendered by the parent layout around this Suspense boundary).
+// per connector).
 export default function IntegrationsLoading() {
   return (
     <div>

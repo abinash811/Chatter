@@ -151,7 +151,7 @@ test("a widget's API URL pointed at internal infrastructure is rejected before s
   await expect(page.getByText("No widgets yet")).toBeVisible();
 });
 
-test("a bot's widgets are reachable from the bot editor's top bar", async ({ page }) => {
+test("a bot's widgets are reachable from the bot editor's sidebar nav", async ({ page }) => {
   await signUpAndCreateBot(page, "Nav Widgets Bot");
   await page.click('a:has-text("Widgets")');
   await expect(page).toHaveURL(/\/bots\/[^/]+\/widgets$/);

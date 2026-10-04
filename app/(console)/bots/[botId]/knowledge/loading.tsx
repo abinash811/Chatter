@@ -1,8 +1,6 @@
 import { Skeleton } from "@/components/ui";
 
-// Matches KnowledgeForm's real shape (header + Add button, table rows)
-// — content only, not the shared BotTopBar (already rendered by the
-// parent layout around this Suspense boundary).
+// Matches KnowledgeForm's real shape (header + Add button, table rows).
 export default function KnowledgeLoading() {
   return (
     <div>

@@ -546,6 +546,30 @@ reason.)
   `tests/e2e/` (117/117), `accessibility.spec.ts` (15/15), 10 of 19
   visual baselines regenerated (every screen rendering `BotTopBar`) +
   stable across two runs. Full detail: `docs/changelog.md`.
+- Bot-scoped nav moved from `BotTopBar` into the sidebar (2026-10-04,
+  ADR 0037): a user-requested full-system audit flagged the bots
+  section's horizontal tabs as "not that good" — real finding on
+  review, `BotTopBar`'s 7 links sat directly above the editor's own
+  visually *stronger* Tabs pill row, inverting the intended hierarchy.
+  `BotTopBar.tsx` deleted; its links + bot switcher now live in a
+  contextual `AppSidebar` sub-nav (Notion/Linear-style, real icons
+  reused from each page's own `EmptyState`), rendered only while
+  inside a bot. 5 pages' heading promoted `<h2>`→`<h1>`; `BotEditorForm`
+  gained a real "Editor" `<h1>` it never had. Real bug caught only by
+  e2e, not any manual check: a brand-new bot's sidebar sub-nav was
+  missing entirely right after creation — `app/(console)/layout.tsx`'s
+  `bots` fetch wasn't being refreshed by `redirect()` alone; fixed with
+  `revalidatePath("/", "layout")` on all 5 bot-list-mutating actions
+  (create/duplicate/load-sample-data/rename/archive). Also fixed a
+  real, independently-confirmed `crawler.test.ts` flake (a genuine
+  per-page `setTimeout`, not a mock issue, close enough to vitest's
+  default timeout to flake under parallel load) while running the
+  full suite during this pass. Verified: `tsc` clean, all 10
+  guardrails, full unit suite (235, crawler flake now fixed), full
+  `tests/e2e/` (117/117), `accessibility.spec.ts` (15/15), 10 visual
+  baselines regenerated + stable across two runs, real screenshots of
+  Editor/Data sources confirming the new nav. Full detail:
+  `docs/changelog.md`.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.
