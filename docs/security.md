@@ -90,7 +90,7 @@ to manipulate the bot into taking it. ADR 0023's decision, made directly
 with the user rather than assumed: a write tool never executes itself.
 `request_order_cancellation` validates the request and queues a
 `PendingAction`; only a business owner approving it from
-`/bots/[botId]/approvals` triggers the real Shopify `orderCancel` call.
+`/approvals` triggers the real Shopify `orderCancel` call.
 Rejecting needs no confirmation (nothing external happens); approving
 does (`AlertDialog`, matching the bot-publish confirm pattern) since
 it's the one moment a real side effect occurs. The Shopify OAuth scope

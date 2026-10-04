@@ -10,8 +10,6 @@ import {
   Inbox,
   Settings,
   LogOut,
-  Check,
-  Circle,
   Pencil,
   Database,
   Users,
@@ -35,32 +33,30 @@ import {
   SidebarSeparator,
   Avatar,
   AvatarFallback,
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Button,
 } from "@/components/ui";
 import { logoutAction } from "@/app/(console)/actions";
+import { GettingStartedWidget } from "./GettingStartedWidget";
 
 // ADR 0037: every bot-scoped page, in the order they appear in this
 // sub-nav. Icons reused verbatim from each page's own EmptyState (not
-// invented fresh) — Users/Webhook/FormInput/ShieldCheck/Database
-// already mean exactly this elsewhere in the app. Label says "Data
-// sources," not "Knowledge" — the old BotTopBar nav still said
-// "Knowledge," stale since the 2026-09-29 page rename.
+// invented fresh) — Webhook/FormInput/Database already mean exactly
+// this elsewhere in the app. Label says "Data sources," not
+// "Knowledge" — the old BotTopBar nav still said "Knowledge," stale
+// since the 2026-09-29 page rename.
+// ADR 0038 (2026-10-04): Leads/Approvals/Integrations moved OUT of this
+// sub-nav into the global NAV_ITEMS below — they're org-wide concepts
+// (a lead/review-queue item/Shopify connection isn't scoped to one
+// bot), not per-bot pages. Only the 4 genuinely per-bot pages stay here.
 const BOT_NAV_ITEMS = [
   { subpath: "", label: "Editor", icon: Pencil },
   { subpath: "/knowledge", label: "Data sources", icon: Database },
-  { subpath: "/leads", label: "Leads", icon: Users },
   { subpath: "/actions", label: "Actions", icon: Webhook },
   { subpath: "/widgets", label: "Widgets", icon: FormInput },
-  { subpath: "/approvals", label: "Approvals", icon: ShieldCheck },
-  { subpath: "/integrations", label: "Integrations", icon: Plug },
 ];
 
 // Real CARE Sidebar (components/ui/sidebar.tsx, ADR 0008, now on shadcn's
@@ -68,9 +64,15 @@ const BOT_NAV_ITEMS = [
 // <nav>. Nav items live here, not in layout.tsx, since usePathname()'s
 // active-state needs a client boundary; the auth check and the
 // server-fetched org/user/checklist data stay server-side in the layout.
+// Leads/Approvals/Integrations added 2026-10-04 (ADR 0038) — previously
+// nested under a specific bot, moved here once they turned out to be
+// org-wide concepts, not per-bot ones.
 const NAV_ITEMS = [
   { href: "/bots", label: "Bots", icon: BotIcon },
   { href: "/conversations", label: "Conversations", icon: Inbox },
+  { href: "/leads", label: "Leads", icon: Users },
+  { href: "/approvals", label: "Approvals", icon: ShieldCheck },
+  { href: "/integrations", label: "Integrations", icon: Plug },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
@@ -239,61 +241,5 @@ export function AppSidebar({
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
-  );
-}
-
-function GettingStartedWidget({
-  steps,
-  completedCount,
-  totalSteps,
-}: {
-  steps: GettingStartedStep[];
-  completedCount: number;
-  totalSteps: number;
-}) {
-  if (completedCount === totalSteps) return null;
-
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          className="h-auto w-full flex-col items-start gap-1.5 bg-card px-2.5 py-2 text-left font-normal group-data-[collapsible=icon]:hidden"
-        >
-          <span className="text-xs font-medium">
-            Getting started
-            <span className="ml-1.5 text-muted-foreground">
-              {completedCount}/{totalSteps} completed
-            </span>
-          </span>
-          <span className="flex w-full gap-1">
-            {steps.map((step, i) => (
-              <span
-                key={i}
-                className={step.done ? "h-1 flex-1 rounded-full bg-primary" : "h-1 flex-1 rounded-full bg-muted"}
-              />
-            ))}
-          </span>
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent side="right" align="end" className="w-64 p-2">
-        <div className="flex flex-col">
-          {steps.map((step) => (
-            <Link
-              key={step.label}
-              href={step.href}
-              className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-soft-background"
-            >
-              {step.done ? (
-                <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
-              ) : (
-                <Circle className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-              )}
-              <span className={step.done ? "text-muted-foreground line-through" : ""}>{step.label}</span>
-            </Link>
-          ))}
-        </div>
-      </PopoverContent>
-    </Popover>
   );
 }

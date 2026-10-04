@@ -2,14 +2,16 @@ import { test, expect } from "@playwright/test";
 import { signUpAndCreateBot, createSecondBot } from "./helpers";
 
 // Bot-scoped sub-nav (components/console/AppSidebar.tsx, ADR 0037,
-// 2026-10-04) — a bot switcher + Editor/Data sources/Leads/Actions/
-// Widgets/Approvals/Integrations links, rendered as a contextual
-// sidebar section while inside a bot, replacing the old BotTopBar
-// horizontal bar (2026-09-26 through 2026-10-03) that this file used to
-// test. Moved after a design audit found the horizontal bar visually
-// losing to the editor's own stronger Tabs row directly below it.
-// Switching bots preserves the current page rather than always landing
-// on the editor.
+// 2026-10-04) — a bot switcher + Editor/Data sources/Actions/Widgets
+// links, rendered as a contextual sidebar section while inside a bot,
+// replacing the old BotTopBar horizontal bar (2026-09-26 through
+// 2026-10-03) that this file used to test. Moved after a design audit
+// found the horizontal bar visually losing to the editor's own
+// stronger Tabs row directly below it. Leads/Approvals/Integrations
+// were also in this sub-nav briefly, moved out to the global nav the
+// same day (ADR 0038) once they turned out to be org-wide concepts,
+// not per-bot ones. Switching bots preserves the current page rather
+// than always landing on the editor.
 
 test("the switcher lists every org bot and switching preserves the current page", async ({ page }) => {
   await signUpAndCreateBot(page, "Alpha bot", "topbar-switch");
@@ -37,9 +39,23 @@ test("the nav highlights the active page and links to the others", async ({ page
   await signUpAndCreateBot(page, "Nav Test Bot", "topbar-nav");
 
   await expect(page.getByRole("link", { name: "Editor" })).toBeVisible();
+  await page.getByRole("link", { name: "Actions", exact: true }).click();
+  await expect(page).toHaveURL(/\/bots\/[^/]+\/actions$/);
+  await expect(page.getByRole("heading", { name: "Custom actions" })).toBeVisible();
+});
+
+test("Leads/Approvals/Integrations are global nav items, not under a specific bot (ADR 0038)", async ({ page }) => {
+  await signUpAndCreateBot(page, "Global Nav Test Bot", "global-nav");
+
+  // Still visible and reachable while inside a bot...
   await page.getByRole("link", { name: "Integrations" }).click();
-  await expect(page).toHaveURL(/\/bots\/[^/]+\/integrations$/);
+  await expect(page).toHaveURL(/\/integrations$/);
   await expect(page.getByRole("heading", { name: "Integrations" })).toBeVisible();
+
+  // ...and still visible after leaving that bot entirely (a bot-scoped
+  // link would disappear once there's no active bot in the URL).
+  await expect(page.getByRole("link", { name: "Leads" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Approvals" })).toBeVisible();
 });
 
 test("visiting another org's bot id shows the plain-language error boundary, not a raw 404", async ({ page }) => {

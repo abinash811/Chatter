@@ -336,7 +336,7 @@ Backstage, the Deploy dropdown):**
   Channels = *where the agent talks to people* (embed surface, email,
   phone). Integrations = *what systems it can read/write* (helpdesks,
   CRM, payments, scheduling). We currently conflate both into a single
-  `/bots/[botId]/integrations` page holding just Shopify connect.
+  `/integrations` page holding just Shopify connect.
   Relevant to `docs/roadmap.md`'s "Design pass on `/bots/[botId]/
   integrations`" Next item and ADR 0015's deferred "no email/Slack push
   channel" decision — both were open before this; now there's a named

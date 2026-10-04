@@ -7,13 +7,15 @@ import type { LeadRow } from "@/lib/leads";
 // Linear register (docs/architecture.md §7) — a dense, read-only data
 // list, same pattern as BotsTable. No client interactivity needed (no
 // row click, no actions yet), so this stays a plain server component.
+// ADR 0038: a "Bot" column, since this table now spans every bot in
+// the org, not just one.
 export function LeadsTable({ leads }: { leads: LeadRow[] }) {
   if (leads.length === 0) {
     return (
       <EmptyState
         icon={Users}
         title="No leads yet"
-        description="Contact info your bot collects from visitors will show up here."
+        description="Contact info your bots collect from visitors will show up here."
       />
     );
   }
@@ -27,6 +29,7 @@ export function LeadsTable({ leads }: { leads: LeadRow[] }) {
             <TableHead>Email</TableHead>
             <TableHead>Phone</TableHead>
             <TableHead>Note</TableHead>
+            <TableHead>Bot</TableHead>
             <TableHead className="text-right">Captured</TableHead>
           </TableRow>
         </TableHeader>
@@ -37,6 +40,7 @@ export function LeadsTable({ leads }: { leads: LeadRow[] }) {
               <TableCell className="text-muted-foreground">{lead.email ?? "—"}</TableCell>
               <TableCell className="text-muted-foreground">{lead.phone ?? "—"}</TableCell>
               <TableCell className="max-w-xs truncate text-muted-foreground">{lead.note ?? "—"}</TableCell>
+              <TableCell className="text-muted-foreground">{lead.botName}</TableCell>
               <TableCell className="text-right text-muted-foreground">{relativeTime(lead.createdAt)}</TableCell>
             </TableRow>
           ))}

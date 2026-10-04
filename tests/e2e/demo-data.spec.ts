@@ -16,18 +16,22 @@ test("loading sample data creates a fully populated demo bot", async ({ page }) 
   await page.waitForURL(/\/bots\/[^/]+$/);
   await expect(page.getByText("Published v1")).toBeVisible();
 
+  // Bot-scoped sidebar links first, while still inside this bot (ADR
+  // 0038 — Leads/Conversations below are global nav items, and
+  // navigating to one drops the bot sub-nav since there's no longer an
+  // active bot in the URL).
   await page.click('a:has-text("Data sources")');
   await expect(page.getByRole("heading", { name: "Data sources 3" })).toBeVisible();
-
-  await page.click('a:has-text("Leads")');
-  await expect(page.getByRole("heading", { name: "Leads 2" })).toBeVisible();
-  await expect(page.getByText("Priya Sharma")).toBeVisible();
 
   await page.click('a:has-text("Actions")');
   await expect(page.getByRole("heading", { name: "Custom actions 1" })).toBeVisible();
   await expect(page.getByText("check_appointment_availability")).toBeVisible();
   // Disabled by default — its URL is a placeholder, not a real endpoint.
   await expect(page.getByRole("switch")).not.toBeChecked();
+
+  await page.click('a:has-text("Leads")');
+  await expect(page.getByRole("heading", { name: "Leads 2" })).toBeVisible();
+  await expect(page.getByText("Priya Sharma")).toBeVisible();
 
   await page.click('a:has-text("Conversations")');
   await expect(page.getByRole("heading", { name: "Conversations 2" })).toBeVisible();

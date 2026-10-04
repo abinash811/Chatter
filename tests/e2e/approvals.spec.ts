@@ -1,5 +1,9 @@
 import { test, expect } from "@playwright/test";
-import { signUpAndCreateBot, seedPendingAction, seedWidget } from "./helpers";
+import { signUpAndCreateBot, createSecondBot, seedPendingAction, seedWidget } from "./helpers";
+
+// ADR 0038 (2026-10-04): /approvals is org-wide now, not bot-scoped —
+// same pattern as /conversations and /leads. This file used to test a
+// bot-scoped page.
 
 test("approvals page shows the empty state before any request is queued", async ({ page }) => {
   await signUpAndCreateBot(page, "Empty Approvals Bot");
@@ -7,7 +11,7 @@ test("approvals page shows the empty state before any request is queued", async 
   await expect(page.getByText("Nothing waiting on you")).toBeVisible();
 });
 
-test("a seeded pending request appears with its details", async ({ page }) => {
+test("a seeded pending request appears with its details and its bot", async ({ page }) => {
   await signUpAndCreateBot(page, "Approvals Bot");
   const botId = page.url().match(/\/bots\/([^/]+)/)![1];
 
@@ -17,11 +21,13 @@ test("a seeded pending request appears with its details", async ({ page }) => {
   });
 
   await page.click('a:has-text("Approvals")');
+  await expect(page).toHaveURL(/\/approvals$/);
   await expect(page.getByRole("heading", { name: "Approvals 1 waiting" })).toBeVisible();
   const rows = page.locator("table tbody tr");
   await expect(rows).toHaveCount(1);
   const orderNumber = "1001";
   await expect(rows.first()).toContainText(new RegExp(`Cancel order #${orderNumber}.*Ordered the wrong size`));
+  await expect(rows.first()).toContainText("Approvals Bot");
   await expect(rows.first().getByText("pending", { exact: true })).toBeVisible();
 });
 
@@ -46,7 +52,7 @@ test("approving a request requires confirmation, then executes and shows the rea
   // outcome, never a false "cancelled" success.
   const row = page.locator("table tbody tr").first();
   await expect(row.getByText("failed", { exact: true })).toBeVisible();
-  await expect(row).toContainText("No Shopify store connected for this bot.");
+  await expect(row).toContainText("No Shopify store connected.");
 });
 
 test("rejecting a request needs no confirmation and marks it rejected", async ({ page }) => {
@@ -99,9 +105,30 @@ test("approving a write-capable widget's queued submission calls its real API", 
   await expect(statusBadge).toHaveText(/approved|failed/);
 });
 
-test("a bot's approvals are reachable from the bot editor's sidebar nav", async ({ page }) => {
+test("the bot filter narrows the list to one bot's requests", async ({ page }) => {
+  await signUpAndCreateBot(page, "Alpha Approvals Bot", "approvals-filter");
+  const alphaId = page.url().match(/\/bots\/([^/]+)/)![1];
+  await createSecondBot(page, "Beta Approvals Bot");
+  const betaId = page.url().match(/\/bots\/([^/]+)/)![1];
+
+  await seedPendingAction(alphaId, { toolName: "request_order_cancellation", input: { orderNumber: "1001" } });
+  await seedPendingAction(betaId, { toolName: "request_order_cancellation", input: { orderNumber: "2002" } });
+
+  await page.goto("/approvals");
+  await expect(page.locator("table tbody tr")).toHaveCount(2);
+
+  await page.getByRole("combobox", { name: "Filter by bot" }).click();
+  await page.getByRole("option", { name: "Alpha Approvals Bot" }).click();
+
+  await expect(page).toHaveURL(/botId=/);
+  const rows = page.locator("table tbody tr");
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toContainText("1001");
+});
+
+test("a bot's approvals are reachable from the console nav", async ({ page }) => {
   await signUpAndCreateBot(page, "Nav Approvals Bot");
   await page.click('a:has-text("Approvals")');
-  await expect(page).toHaveURL(/\/bots\/[^/]+\/approvals$/);
+  await expect(page).toHaveURL(/\/approvals$/);
   await expect(page.getByRole("heading", { name: "Approvals", exact: true })).toBeVisible();
 });

@@ -36,6 +36,8 @@ const STATUS_VARIANT: Record<PendingActionRow["status"], "muted" | "default" | "
   failed: "destructive",
 };
 
+// ADR 0038: a "Bot" column, since this table now spans every bot in
+// the org, not just one.
 export function ApprovalsTable({
   actions,
   onApprove,
@@ -52,7 +54,7 @@ export function ApprovalsTable({
       <EmptyState
         icon={ShieldCheck}
         title="Nothing waiting on you"
-        description="A write-capable action your bot proposes — like cancelling an order — shows up here first."
+        description="A write-capable action a bot proposes — like cancelling an order — shows up here first."
       />
     );
   }
@@ -63,6 +65,7 @@ export function ApprovalsTable({
         <TableHeader>
           <TableRow>
             <TableHead>Request</TableHead>
+            <TableHead>Bot</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Requested</TableHead>
             <TableHead className="w-40" />
@@ -77,6 +80,7 @@ export function ApprovalsTable({
                   <p className="mt-0.5 truncate text-xs font-normal text-muted-foreground">{action.result}</p>
                 )}
               </TableCell>
+              <TableCell className="text-muted-foreground">{action.botName}</TableCell>
               <TableCell>
                 <Badge variant={STATUS_VARIANT[action.status]}>{action.status}</Badge>
               </TableCell>

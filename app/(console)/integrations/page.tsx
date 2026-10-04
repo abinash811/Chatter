@@ -5,21 +5,16 @@ import { listIntegrationProviders, getIntegrationProvider } from "@/lib/integrat
 import "@/lib/integrations";
 import { Button, Badge, Input, Label } from "@/components/ui";
 
-// Generic across every platform (Shopify today, WooCommerce/FHIR/etc.
-// later) — this screen renders whatever listIntegrationProviders()
-// returns and whatever connectFields each one declares. Adding a new
-// provider never touches this file.
-export default async function IntegrationsPage({
-  params,
-}: {
-  params: Promise<{ botId: string }>;
-}) {
+// ADR 0038 (2026-10-04): org-wide, not bot-scoped — one Shopify
+// connection shared by every bot in the org, matching how a real
+// Shopify store actually works. Generic across every platform (Shopify
+// today, WooCommerce/FHIR/etc. later) — this screen renders whatever
+// listIntegrationProviders() returns and whatever connectFields each
+// one declares. Adding a new provider never touches this file.
+export default async function IntegrationsPage() {
   const session = await getCurrentSession();
-  const { botId } = await params;
 
-  const integrations = await withOrgContext(session.orgId, (tx) =>
-    tx.integration.findMany({ where: { botId } }),
-  );
+  const integrations = await withOrgContext(session.orgId, (tx) => tx.integration.findMany());
   const connectedByProvider = new Map(integrations.map((i) => [i.provider, i]));
 
   async function connectAction(formData: FormData) {
@@ -33,15 +28,15 @@ export default async function IntegrationsPage({
       input[field.name] = String(formData.get(field.name) ?? "");
     }
 
-    redirect(provider.getAuthorizeUrl(session.orgId, botId, input));
+    redirect(provider.getAuthorizeUrl(session.orgId, input));
   }
 
   async function disconnectAction(formData: FormData) {
     "use server";
     const session = await getCurrentSession();
     const providerName = formData.get("provider") as string;
-    await getIntegrationProvider(providerName).disconnect(session.orgId, botId);
-    redirect(`/bots/${botId}/integrations`);
+    await getIntegrationProvider(providerName).disconnect(session.orgId);
+    redirect("/integrations");
   }
 
   return (
@@ -79,13 +74,14 @@ export default async function IntegrationsPage({
                       <div key={field.name}>
                         {/* field.label existed on the data model but was
                             never rendered — the raw <input> below relied
-                            on its placeholder alone, which isn't an
-                            accessible name (docs/accessibility.md). Kept
-                            visually hidden, not shown above the input, to
-                            preserve the restrained Stripe register this
-                            screen already uses (docs/architecture.md §7) —
-                            a horizontal row of visible labels would add
-                            decoration this register deliberately avoids. */}
+                            on its placeholder alone as the only hint,
+                            which isn't an accessible name
+                            (docs/accessibility.md). Kept visually hidden,
+                            not shown above the input, to preserve the
+                            restrained Stripe register this screen already
+                            uses (docs/architecture.md §7) — a horizontal
+                            row of visible labels would add decoration
+                            this register deliberately avoids. */}
                         <Label htmlFor={fieldId} className="sr-only">
                           {field.label}
                         </Label>

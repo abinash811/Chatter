@@ -24,23 +24,26 @@ export interface ApprovalActionState {
 // cancelOrder.ts's own handle() already imports createPendingAction from
 // there. The next write-capable tool adds one line here, not a change to
 // the generic queue.
+//
+// ADR 0038: executeOrderCancellation no longer takes a botId (Shopify is
+// org-level now) — widget execution still does, since Widget stays
+// bot-scoped, so the two executors genuinely have different shapes here.
 const EXECUTORS: Record<
   string,
   (orgId: string, botId: string, input: Record<string, unknown>) => Promise<{ status: "executed" | "failed"; detail: string }>
 > = {
-  request_order_cancellation: (orgId, botId, input) =>
-    executeOrderCancellation(orgId, botId, input as { orderNumber: string; reason?: string }),
+  request_order_cancellation: (orgId, _botId, input) =>
+    executeOrderCancellation(orgId, input as { orderNumber: string; reason?: string }),
 };
 
 export async function approveAction(
-  botId: string,
   _prevState: ApprovalActionState,
   formData: FormData,
 ): Promise<ApprovalActionState> {
   const id = String(formData.get("id") ?? "");
   try {
     const session = await getCurrentSession();
-    const { toolName, input } = await getPendingActionForExecution(session.orgId, botId, id);
+    const { botId, toolName, input } = await getPendingActionForExecution(session.orgId, id);
     const outcome = toolName.startsWith(WIDGET_SUBMIT_PREFIX)
       ? await executeWidgetSubmission(session.orgId, botId, toolName.slice(WIDGET_SUBMIT_PREFIX.length), input)
       : EXECUTORS[toolName]
@@ -54,12 +57,11 @@ export async function approveAction(
     // distinct outcome so it isn't confused with a rejection.
     await resolvePendingAction(
       session.orgId,
-      botId,
       id,
       outcome.status === "executed" ? "approved" : "failed",
       outcome.detail,
     );
-    revalidatePath(`/bots/${botId}/approvals`);
+    revalidatePath("/approvals");
     return {
       status: outcome.status === "executed" ? "success" : "error",
       message: outcome.detail,
@@ -71,15 +73,14 @@ export async function approveAction(
 }
 
 export async function rejectAction(
-  botId: string,
   _prevState: ApprovalActionState,
   formData: FormData,
 ): Promise<ApprovalActionState> {
   const id = String(formData.get("id") ?? "");
   try {
     const session = await getCurrentSession();
-    await resolvePendingAction(session.orgId, botId, id, "rejected", null);
-    revalidatePath(`/bots/${botId}/approvals`);
+    await resolvePendingAction(session.orgId, id, "rejected", null);
+    revalidatePath("/approvals");
     return { status: "success", message: "Request rejected." };
   } catch (err) {
     console.error("[rejectAction]", err);

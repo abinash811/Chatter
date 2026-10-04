@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { approveAction, rejectAction, type ApprovalActionState } from "./actions";
 import { ApprovalsTable } from "./ApprovalsTable";
+import { BotFilterSelect } from "@/components/console/BotFilterSelect";
 import type { PendingActionRow } from "@/lib/pendingActions";
 import {
   AlertDialog,
@@ -32,9 +33,17 @@ function useActionToast(state: ApprovalActionState) {
 // confirmation — it's the safe, reversible-in-spirit choice (nothing
 // external happens), matching this app's existing pattern of only
 // gating the action that actually does something irreversible.
-export function ApprovalsForm({ botId, actions }: { botId: string; actions: PendingActionRow[] }) {
-  const [approveState, approveFormAction, isApproving] = useActionState(approveAction.bind(null, botId), idleState);
-  const [rejectState, rejectFormAction, isRejecting] = useActionState(rejectAction.bind(null, botId), idleState);
+// ADR 0038 (2026-10-04): org-wide, not bot-scoped — actions no longer
+// bind a single botId; each row carries its own.
+export function ApprovalsForm({
+  actions,
+  bots,
+}: {
+  actions: PendingActionRow[];
+  bots: { id: string; name: string }[];
+}) {
+  const [approveState, approveFormAction, isApproving] = useActionState(approveAction, idleState);
+  const [rejectState, rejectFormAction, isRejecting] = useActionState(rejectAction, idleState);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   useActionToast(approveState);
@@ -53,6 +62,7 @@ export function ApprovalsForm({ botId, actions }: { botId: string; actions: Pend
           Approvals{" "}
           {pendingCount > 0 && <span className="text-sm font-normal text-muted-foreground">{pendingCount} waiting</span>}
         </h1>
+        <BotFilterSelect bots={bots} />
       </div>
 
       <ApprovalsTable
@@ -92,4 +102,3 @@ export function ApprovalsForm({ botId, actions }: { botId: string; actions: Pend
     </div>
   );
 }
-

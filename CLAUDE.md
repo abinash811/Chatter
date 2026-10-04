@@ -35,10 +35,11 @@ reason.)
   registry + chat loop, widget CORS/botKey resolution, Shopify connect.
 - Console: auth (email+password, ADR 0006), onboarding + BYOA + secrets
   encryption (ADR 0012), bots list (search/sort/rename/duplicate/archive
-  — archive not delete, ADR 0018) + editor (draft/publish), a bot-scoped
-  top bar with a bot switcher, knowledge base ingestion (Q&A/file/URL,
-  ADR 0013), integrations page, conversation inbox with plain-language
-  issue detection (ADR 0015/0016), settings.
+  — archive not delete, ADR 0018) + editor (draft/publish), a bot
+  switcher + per-bot page nav in the sidebar (ADR 0037), knowledge base
+  ingestion (Q&A/file/URL, ADR 0013), an org-wide integrations page
+  (ADR 0038), conversation inbox with plain-language issue detection
+  (ADR 0015/0016), settings.
 - Design system: shadcn/ui official source for all 18 primitives, no
   CARE dependency left (ADR 0017); monochrome tokens; sidebar + top bar
   built against real Chatbase/Claude Console screenshots; depth/polish
@@ -570,6 +571,28 @@ reason.)
   baselines regenerated + stable across two runs, real screenshots of
   Editor/Data sources confirming the new nav. Full detail:
   `docs/changelog.md`.
+- Leads/Approvals/Integrations become org-wide (2026-10-04, ADR 0038):
+  reviewing the ADR 0037 sidebar nav, the user named these 3 of its 7
+  items as not belonging nested under one bot. Leads/Approvals moved
+  with no schema change (both already carry an indexed `orgId`) — same
+  global-nav-item + `?botId=` filter + "Bot" column pattern
+  `/conversations` already uses. Integrations got a real schema
+  migration: `Integration.botId` removed, one Shopify connection now
+  shared by every bot in the org (user's explicit choice over a lower-
+  risk combined-view option, since a real store isn't scoped to one
+  bot). Migration run for real via `prisma db execute` +
+  `migrate resolve` (not `migrate dev`, which wanted to reset the whole
+  dev DB over unrelated pgvector/RLS drift — correctly blocked as
+  destructive). `check_order_status`/`cancelOrder.ts` now resolve the
+  Shopify connection by org, not by the calling bot. Real bug caught
+  only by e2e: a demo-data test broke because navigating to a global
+  page (Leads) drops the bot sub-nav, so a later bot-scoped click
+  ("Actions") had nothing to click — fixed by reordering the test, the
+  same real constraint any user would hit. Verified: `tsc` clean, all
+  10 guardrails, `verify-rls.mjs` against a live Postgres, full unit
+  suite (236), full `tests/e2e/` (120/120), `accessibility.spec.ts`
+  (15/15), 14 visual baselines regenerated + stable across two runs,
+  real screenshots of all 3 pages. Full detail: `docs/changelog.md`.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.

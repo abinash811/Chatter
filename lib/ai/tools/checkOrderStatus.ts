@@ -24,9 +24,11 @@ export const checkOrderStatusTool: Tool = {
   async handle(orgId, botId, input) {
     const orderNumber = input.orderNumber as string;
 
+    // ADR 0038: org-level, not per-bot — every bot in the org shares the
+    // same Shopify connection.
     const integration = await withOrgContext(orgId, (tx) =>
       tx.integration.findUnique({
-        where: { botId_provider: { botId, provider: "shopify" } },
+        where: { orgId_provider: { orgId, provider: "shopify" } },
       }),
     );
 
@@ -35,7 +37,7 @@ export const checkOrderStatusTool: Tool = {
     if (!integration) {
       return JSON.stringify({
         status: "handoff_required",
-        reason: "No Shopify store connected for this bot yet.",
+        reason: "No Shopify store connected yet.",
         collected: { orderNumber },
       });
     }

@@ -73,7 +73,7 @@ doc as ADRs land instead of letting decisions live only in chat history.
   `request_order_cancellation` validates the request and writes a
   `pending` row instead of calling the external API itself; the actual
   write happens only when a business owner approves it from
-  `/bots/[botId]/approvals` (`lib/pendingActions.ts`). Read-only and
+  `/approvals` (`lib/pendingActions.ts`). Read-only and
   low-stakes-write tools (lookups, `collect_lead`, custom actions) are
   unaffected — this only applies to a tool whose effect can't be undone
   by "the AI was wrong."
@@ -196,6 +196,9 @@ each a standard OAuth-style flow the business owner completes themselves
 — no developer, no engineering work on our side per business. New
 businesses on an already-supported platform cost us zero engineering;
 only a genuinely new platform needs a connector built once.
+**Org-level, not per-bot** (ADR 0038, 2026-10-04): one connection per
+provider per org, shared by every bot in that org — a real Shopify
+store isn't scoped to one bot, so neither is the connection.
 
 ### 3. Verticals (ADR 0019 — no template layer)
 There is no vertical-template abstraction. The generic bot config

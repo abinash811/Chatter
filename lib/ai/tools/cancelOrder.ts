@@ -48,13 +48,14 @@ export const requestOrderCancellationTool: Tool = {
     const orderNumber = input.orderNumber as string;
     const reason = input.reason as string | undefined;
 
+    // ADR 0038: org-level, not per-bot.
     const integration = await withOrgContext(orgId, (tx) =>
-      tx.integration.findUnique({ where: { botId_provider: { botId, provider: "shopify" } } }),
+      tx.integration.findUnique({ where: { orgId_provider: { orgId, provider: "shopify" } } }),
     );
     if (!integration) {
       return JSON.stringify({
         status: "handoff_required",
-        reason: "No Shopify store connected for this bot yet.",
+        reason: "No Shopify store connected yet.",
         collected: { orderNumber, reason },
       });
     }
@@ -126,13 +127,13 @@ registerTool(requestOrderCancellationTool);
 // (no store has ever been connected in this environment either).
 export async function executeOrderCancellation(
   orgId: string,
-  botId: string,
   input: { orderNumber: string; reason?: string },
 ): Promise<{ status: "executed" | "failed"; detail: string }> {
+  // ADR 0038: org-level, not per-bot — no botId param needed here anymore.
   const integration = await withOrgContext(orgId, (tx) =>
-    tx.integration.findUnique({ where: { botId_provider: { botId, provider: "shopify" } } }),
+    tx.integration.findUnique({ where: { orgId_provider: { orgId, provider: "shopify" } } }),
   );
-  if (!integration) return { status: "failed", detail: "No Shopify store connected for this bot." };
+  if (!integration) return { status: "failed", detail: "No Shopify store connected." };
 
   const accessToken = decrypt(integration.accessToken);
   let order: ShopifyOrderLookup | null;

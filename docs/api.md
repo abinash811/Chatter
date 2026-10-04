@@ -55,9 +55,9 @@ limit (60/min per IP) · `500` generic failure
 
 OAuth callback for connecting a business's platform (Shopify today).
 Never touches the console session — `state` (set when the authorize URL
-was built) carries `orgId`/`botId` through the redirect; see
-`docs/business-logic.md`. Redirects to `/bots/{botId}/integrations` on
-completion, doesn't return JSON.
+was built) carries `orgId` through the redirect; see
+`docs/business-logic.md`. Redirects to `/integrations` on completion
+(org-wide, not per-bot — ADR 0038), doesn't return JSON.
 
 ### `ALL /api/auth/[...nextauth]`
 

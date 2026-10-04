@@ -116,7 +116,7 @@ the real call via `executeWidgetSubmission`. The widgets table shows
 the outcome at a glance: "Message only" / "Calls API" / "Calls API —
 needs approval". **How**: `lib/ai/tools/widget.ts`'s
 `buildWidgetSubmitTool`/`executeWidgetSubmission`,
-`app/(console)/bots/[botId]/approvals/actions.ts` (dispatches on the
+`app/(console)/approvals/actions.ts` (dispatches on the
 `submit_widget_` tool-name prefix). ADR 0028.
 
 **Deliberately not built** (States/multi-view widgets and a richer
@@ -130,16 +130,17 @@ write-capable action tool — the first one, and a new risk category
 validates the order exists and isn't already cancelled, then queues a
 `PendingAction` and tells the visitor a human will review it — it never
 claims the order is cancelled. The business owner reviews and
-approves/rejects from a new per-bot "Approvals" page
-(`/bots/[botId]/approvals`); only approving actually calls Shopify's
-`orderCancel` GraphQL mutation. A failed approved-execution (e.g. no
-Shopify integration connected, or Shopify's own `userErrors`) shows the
+approves/rejects from an org-wide "Approvals" page
+(`/approvals`, spans every bot — ADR 0038); only approving actually
+calls Shopify's `orderCancel` GraphQL mutation. A failed approved-
+execution (e.g. no Shopify integration connected, or Shopify's own
+`userErrors`) shows the
 real failure reason on the row, never a false success. Requires the
 `write_orders` OAuth scope — a store connected before this change must
 reconnect. **How**: `lib/ai/tools/cancelOrder.ts` (the tool + the
 separately-exported `executeOrderCancellation`), `lib/pendingActions.ts`
 (the generic queue, deliberately with no knowledge of any specific
-tool), `app/(console)/bots/[botId]/approvals/` (the console page + the
+tool), `app/(console)/approvals/` (the console page + the
 one place that maps a toolName to its executor), the `PendingAction`
 model. ADR 0023.
 
@@ -161,8 +162,9 @@ uses the same bypass `tests/e2e/helpers.ts` already used per-feature
 (`app/(console)/bots/actions.ts`).
 
 ### Leads
-**Who**: the business owner. **What**: a per-bot "Leads" page
-(`/bots/[botId]/leads`) listing contact info the `collect_lead` tool
+**Who**: the business owner. **What**: an org-wide "Leads" page
+(`/leads`, spans every bot — ADR 0038, with a "Bot" column and an
+optional bot filter) listing contact info the `collect_lead` tool
 captured — name/email/phone/note, most recent first. Matches Chatbase's
 Leads dashboard; no CSV export yet. **How**: `lib/leads.ts`, the `Lead`
 model (`prisma/schema.prisma`).
@@ -225,7 +227,10 @@ trusting the disabled-control convention alone).
 ### Shopify connect flow
 **Who**: an ecommerce business. **What**: self-serve OAuth "Connect
 Shopify" from the console; once connected, `check_order_status` can look
-up real orders instead of falling back to handoff. **How**: `lib/
+up real orders instead of falling back to handoff. Org-wide, not
+per-bot (ADR 0038, 2026-10-04) — one Shopify connection shared by every
+bot in the org, from an org-wide "Integrations" page (`/integrations`),
+matching how a real Shopify store actually works. **How**: `lib/
 integrations/provider.ts` (generic `IntegrationProvider` interface, so
 adding a second platform doesn't touch the console UI), `shopify.ts`
 adapter, `app/api/integrations/[provider]/callback/route.ts`.

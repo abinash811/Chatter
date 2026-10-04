@@ -84,14 +84,14 @@ describe("request_order_cancellation tool — describeForInbox", () => {
 describe("executeOrderCancellation — the approved-execution step", () => {
   it("fails cleanly if no Shopify integration is connected", async () => {
     findUnique.mockResolvedValue(null);
-    const result = await executeOrderCancellation("org-1", "bot-1", { orderNumber: "1001" });
+    const result = await executeOrderCancellation("org-1", { orderNumber: "1001" });
     expect(result).toMatchObject({ status: "failed" });
   });
 
   it("fails if the order can no longer be found (e.g. deleted since the request was queued)", async () => {
     findUnique.mockResolvedValue({ shopDomain: "store.myshopify.com", accessToken: "enc" });
     fetchMock.mockResolvedValue({ ok: true, json: async () => ({ orders: [] }) });
-    const result = await executeOrderCancellation("org-1", "bot-1", { orderNumber: "1001" });
+    const result = await executeOrderCancellation("org-1", { orderNumber: "1001" });
     expect(result).toMatchObject({ status: "failed" });
   });
 
@@ -104,7 +104,7 @@ describe("executeOrderCancellation — the approved-execution step", () => {
         json: async () => ({ data: { orderCancel: { orderCancelUserErrors: [] } } }),
       });
 
-    const result = await executeOrderCancellation("org-1", "bot-1", { orderNumber: "1001" });
+    const result = await executeOrderCancellation("org-1", { orderNumber: "1001" });
 
     expect(result.status).toBe("executed");
     const [url, init] = fetchMock.mock.calls[1];
@@ -124,7 +124,7 @@ describe("executeOrderCancellation — the approved-execution step", () => {
         }),
       });
 
-    const result = await executeOrderCancellation("org-1", "bot-1", { orderNumber: "1001" });
+    const result = await executeOrderCancellation("org-1", { orderNumber: "1001" });
     expect(result).toEqual({ status: "failed", detail: "Order already fulfilled" });
   });
 });

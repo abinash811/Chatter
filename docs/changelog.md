@@ -282,3 +282,64 @@ scale, and the table column header consistency fix.
   rows merged into a single "Sidebar" row in both tables, Depth moved
   🟡→✅ (no second bar left to flatly compare it against).
 
+- **Leads, Approvals, and Integrations become org-wide (2026-10-04,
+  ADR 0038).** Reviewing the just-shipped ADR 0037 sidebar nav, the
+  user named 3 of its 7 items (Leads/Approvals/Integrations) as not
+  actually belonging nested under one bot. Asked directly what "global"
+  meant for each, since they're not the same kind of change: Leads and
+  Approvals are naturally cross-bot concepts (both models already carry
+  an indexed `orgId`), so moving them was a query-scope and page-
+  placement change, no schema touched — same pattern `/conversations`
+  already uses (global nav item, optional `?botId=` filter, a "Bot"
+  column per row). Integrations was a real data-model question:
+  separate per-bot connections with a combined view, offered as the
+  lower-risk option, vs. one Shopify connection genuinely shared by
+  every bot in the org. User chose the shared-connection model — a
+  real store isn't scoped to one bot, so the per-bot schema was the
+  wrong fit from the start, not a convenience tradeoff worth keeping.
+  **Schema migration, run for real** (`prisma/migrations/
+  20261004000000_integrations_org_scoped/`): `Integration.botId`
+  removed, `@@unique([botId, provider])` → `@@unique([orgId,
+  provider])`. `prisma migrate dev` wanted a full dev-database reset
+  over unrelated, expected drift (pgvector/RLS columns this project
+  deliberately applies outside Prisma's own migration history, `db/
+  migrations/`) — correctly refused by the permission system as
+  irreversible local destruction. Worked around it the safe way
+  instead: hand-wrote the migration SQL matching Prisma's own
+  conventions, applied it directly via `prisma db execute` (checked
+  the `integrations` table was empty first — zero real risk), then
+  `prisma migrate resolve --applied` to keep the migration history
+  consistent for next time. `lib/integrations/provider.ts`'s
+  `IntegrationProvider` interface, `shopify.ts`, the OAuth callback
+  route, and `check_order_status`/`cancelOrder.ts`'s Shopify lookups
+  all dropped `botId` to match — `executeOrderCancellation` no longer
+  takes one at all (it only ever used it for the now-org-level
+  Integration lookup). New global `/leads` and `/approvals` pages
+  (`lib/leads.ts`/`lib/pendingActions.ts` gained an optional `botId`
+  filter param + a joined `botName`), a new shared
+  `components/console/BotFilterSelect.tsx` (the single-filter case of
+  `ConversationFilters.tsx`'s URL-param pattern), `AppSidebar.tsx`'s
+  `BOT_NAV_ITEMS` trimmed to the 4 genuinely per-bot pages
+  (Editor/Data sources/Actions/Widgets).
+  **Real bug caught only by e2e, not reasoned about in advance**:
+  `demo-data.spec.ts` broke — clicking "Actions" (still bot-scoped)
+  after visiting "Leads" (now global) timed out, because navigating to
+  a global page drops the bot sub-nav entirely (no active bot in the
+  URL anymore) — a genuine, correct consequence of the design, not a
+  bug in it. Fixed by reordering the test to visit bot-scoped pages
+  before global ones, the real constraint a demo walkthrough (or any
+  user) would actually hit.
+  Verified: `npx tsc --noEmit` clean; all 10 `check:all` guardrails
+  (10/10, including `docs/business-logic.md` trimmed back under the
+  500-line cap); a production build (`/leads`, `/approvals`,
+  `/integrations` routes confirmed top-level, not nested); `node
+  scripts/verify-rls.mjs` run for real against the live Postgres (all 3
+  tenant-isolation assertions passing, confirms the schema migration
+  didn't break RLS); full unit suite (236, 1 new test); the full
+  `tests/e2e/` suite (120/120, including new bot-filter tests for both
+  Leads and Approvals); `accessibility.spec.ts` (15/15, 0 violations);
+  the full `tests/visual/` suite (14 of 19 baselines regenerated — every
+  screen's sidebar nav-item count changed — stable across two runs);
+  real screenshots of Leads/Approvals/Integrations confirming the new
+  layout, the "Bot" columns, and the bot filter.
+

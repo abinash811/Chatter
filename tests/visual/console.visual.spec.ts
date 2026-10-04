@@ -161,9 +161,10 @@ test("approvals page — empty state and a waiting request (ADR 0023)", async ({
   await page.reload();
   await expect(page.getByText(/Cancel order/)).toBeVisible();
   // "Requested" is a relative timestamp ("just now") — same masking
-  // rationale as conversations-list.png's Started column.
+  // rationale as conversations-list.png's Started column. 4th column,
+  // not 3rd — ADR 0038 added a "Bot" column before Status.
   await expect(page).toHaveScreenshot("approvals-pending.png", {
-    mask: [page.locator('[data-slot="table-body"] tr td:nth-child(3)'), ...sidebarMasks(page)],
+    mask: [page.locator('[data-slot="table-body"] tr td:nth-child(4)'), ...sidebarMasks(page)],
   });
 });
 

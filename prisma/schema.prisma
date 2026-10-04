@@ -34,8 +34,9 @@ model Org {
   // raw key — same treatment as Integration.accessToken below.
   anthropicApiKeyEncrypted String?
 
-  memberships Membership[]
-  bots        Bot[]
+  memberships  Membership[]
+  bots         Bot[]
+  integrations Integration[]
 
   @@map("orgs")
 }
@@ -98,7 +99,6 @@ model Bot {
   org            Org                @relation(fields: [orgId], references: [id])
   versions       BotConfigVersion[]
   sources        KnowledgeSource[]
-  integrations   Integration[]
   conversations  Conversation[]
   leads          Lead[]
   customActions  CustomAction[]
@@ -114,19 +114,20 @@ model Bot {
 // self-serve "Connect X" OAuth flow from docs/architecture.md §2 writes
 // here. Tool handlers (lib/ai/tools/) read this to know whether a real
 // integration exists or they must fall back to handoff (guardrail #4).
+// Org-level, not per-bot (ADR 0038, 2026-10-04) — one Shopify
+// connection shared by every bot in the org, matching how a real
+// Shopify store actually works (one store, not one per bot).
 model Integration {
   id          String   @id @default(uuid())
   orgId       String
-  botId       String
   provider    String // "shopify" for v1; more as platforms are added
   shopDomain  String?
   accessToken String // AES-256-GCM via lib/crypto.ts (ADR 0012) — never the raw token
   connectedAt DateTime @default(now())
 
-  bot Bot @relation(fields: [botId], references: [id])
+  org Org @relation(fields: [orgId], references: [id])
 
-  @@unique([botId, provider])
-  @@index([orgId])
+  @@unique([orgId, provider])
   @@map("integrations")
 }
 

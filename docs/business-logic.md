@@ -160,19 +160,20 @@ wrong" — never executes itself. `request_order_cancellation`
 already cancelled) and, if valid, writes a `pending` `PendingAction`
 row instead of calling Shopify; the visitor is told a human will
 review it, never that it's done. A business owner reviews queued
-requests from `/bots/[botId]/approvals` and approves or rejects each
-one. Only approving calls the tool's separately-exported executor
-(`executeOrderCancellation`, the real `orderCancel` GraphQL mutation) —
-rejecting just marks the row `rejected` and does nothing external.
+requests from `/approvals` — org-wide, not per-bot (ADR 0038) — and
+approves or rejects each one. Only approving calls the tool's
+separately-exported executor (`executeOrderCancellation`, the real
+`orderCancel` GraphQL mutation) — rejecting just marks the row
+`rejected` and does nothing external.
 
 `lib/pendingActions.ts` is deliberately generic — it has no knowledge
 of `request_order_cancellation` or any other specific tool, so a
 future write tool's own `handle()` can call `createPendingAction`
 without creating a circular import. The one place that maps a
 `toolName` to its executor is the console layer
-(`app/(console)/bots/[botId]/approvals/actions.ts`'s `EXECUTORS` map)
-— the next write-capable tool adds one line there, not a change to the
-generic queue.
+(`app/(console)/approvals/actions.ts`'s `EXECUTORS` map) — the next
+write-capable tool adds one line there, not a change to the generic
+queue.
 
 ## In-chat widgets (`lib/widgets.ts`, `lib/ai/tools/widget.ts`, ADR 0028)
 
@@ -227,7 +228,7 @@ helper, ADR 0022) directly, returning `{"status":"ok",...}` or
 degrading to `{"status":"handoff_required",...}` on failure (guardrail
 #4). Write-capable: never touches the API from the tool call — queues a
 `PendingAction` (ADR 0023) instead; approving it in
-`/bots/[botId]/approvals` dispatches on the `submit_widget_` prefix to
+`/approvals` dispatches on the `submit_widget_` prefix to
 `executeWidgetSubmission`, which re-resolves the widget fresh by name
 (a `PendingAction` stores only the tool name + input, not the widget's
 URL/headers) and performs the one real call. The Add dialog's "Call an
@@ -491,8 +492,8 @@ bodies are capped at 4000 characters before reaching the console.
 
 ## Shopify connect flow
 
-`app/api/integrations/[provider]/callback/route.ts` deliberately never
-touches the console session. The OAuth `state` parameter (set when the
-authorize URL is built, decoded here) is the only thing carrying
-`orgId`/`botId` through the redirect — the callback route has no other
-way to know which bot this connection belongs to, and needs none.
+Org-wide, not per-bot (ADR 0038): one connection per org, shared by
+every bot. `app/api/integrations/[provider]/callback/route.ts` never
+touches the console session — OAuth `state` carries `orgId` through
+the redirect, and `check_order_status`/`cancelOrder.ts` look up the
+connection by `orgId_provider`.

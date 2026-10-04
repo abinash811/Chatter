@@ -116,9 +116,10 @@ export default async function ConsoleLayout({
       href: firstBotId ? `/bots/${firstBotId}` : "/bots",
     },
     {
+      // ADR 0038: /integrations is org-wide now, not nested under a bot.
       label: "Connect an integration",
       done: hasIntegration,
-      href: firstBotId ? `/bots/${firstBotId}/integrations` : "/bots",
+      href: "/integrations",
     },
   ];
 

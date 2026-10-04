@@ -29,7 +29,7 @@ The generic core plus one concrete vertical template — see
 - RAG retrieval as a tool call, not a hardcoded prompt prepend
 - Five action tools: `search_knowledge_base`, `check_order_status`
   (read-only — see Next), `collect_lead` (write, generic — 2026-09-27,
-  matches Chatbase's "Collect Leads"; see `/bots/[botId]/leads`),
+  matches Chatbase's "Collect Leads"; see `/leads`),
   custom (business-defined) webhook actions (generic — 2026-09-27, ADR
   0022, matches Chatbase's Custom Actions; see `/bots/[botId]/actions`),
   and `request_order_cancellation` (write-capable, ecommerce — **built
@@ -41,7 +41,7 @@ The generic core plus one concrete vertical template — see
   first write tool that can't be undone by "the AI was wrong"
   (`request_order_cancellation`) never executes itself: it queues a
   `PendingAction` and a human approves/rejects from a new
-  `/bots/[botId]/approvals` page before the real Shopify call happens.
+  `/approvals` page before the real Shopify call happens.
   Chosen over full automatic execution after a direct product
   conversation about the risk (an irreversible action a visitor could
   manipulate the bot into taking). See `docs/features.md`'s "Order
