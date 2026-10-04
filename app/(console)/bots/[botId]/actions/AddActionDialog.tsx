@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { FileText } from "lucide-react";
 import {
   Button,
   Input,
@@ -21,7 +22,8 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui";
-import { HTTP_METHODS } from "@/lib/customActionOptions";
+import { OptionCard } from "@/components/console/OptionCard";
+import { HTTP_METHODS, ACTION_TEMPLATES } from "@/lib/customActionOptions";
 import type { CustomActionState, TestActionState } from "./actions";
 
 // Notion register (ADR 0011) — a calm, one-time compose surface, same
@@ -53,9 +55,23 @@ export function AddActionDialog({
   // submitting/validating the create form itself.
   const formRef = useRef<HTMLFormElement>(null);
 
+  // "blank" or an ACTION_TEMPLATES key. Used as the form's own `key` so
+  // picking a template remounts it with fresh `defaultValue`s instead of
+  // needing every field to become a controlled input just for this.
+  const [templateKey, setTemplateKey] = useState("blank");
+  const template = ACTION_TEMPLATES.find((t) => t.key === templateKey) ?? null;
+
+  useEffect(() => {
+    if (!open) setTemplateKey("blank");
+  }, [open]);
+
   function handleTest() {
     if (!formRef.current) return;
     testFormAction(new FormData(formRef.current));
+  }
+
+  function fieldDefaults(index: number) {
+    return template?.fields[index] ?? { name: "", description: "", required: false };
   }
 
   return (
@@ -68,10 +84,59 @@ export function AddActionDialog({
             when to use it based on the description below.
           </DialogDescription>
         </DialogHeader>
-        <form ref={formRef} action={formAction} className="space-y-3">
+
+        {/* A single-column stacked list, not a grid — the dialog is only
+            sm:max-w-lg (512px), and OptionCard's icon+title+description+
+            action layout genuinely needs more width than 3 columns leaves
+            it (caught by a real screenshot: titles wrapped, the
+            "Selected" button overflowed its card border). */}
+        <div className="space-y-2">
+          <OptionCard
+            icon={FileText}
+            title="Start from scratch"
+            description="Define your own endpoint and fields."
+            trailing={
+              <Button
+                type="button"
+                size="sm"
+                variant={templateKey === "blank" ? "default" : "outline"}
+                onClick={() => setTemplateKey("blank")}
+              >
+                {templateKey === "blank" ? "Selected" : "Use"}
+              </Button>
+            }
+          />
+          {ACTION_TEMPLATES.map((t) => (
+            <OptionCard
+              key={t.key}
+              icon={t.icon}
+              title={t.label}
+              description={t.summary}
+              trailing={
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={templateKey === t.key ? "default" : "outline"}
+                  onClick={() => setTemplateKey(t.key)}
+                >
+                  {templateKey === t.key ? "Selected" : "Use"}
+                </Button>
+              }
+            />
+          ))}
+        </div>
+
+        <form ref={formRef} key={templateKey} action={formAction} className="mt-3 space-y-3">
           <div>
             <Label htmlFor="name">Name</Label>
-            <Input id="name" name="name" placeholder="check_availability" className="mt-1" required />
+            <Input
+              id="name"
+              name="name"
+              placeholder="check_availability"
+              defaultValue={template?.name ?? ""}
+              className="mt-1"
+              required
+            />
           </div>
           <div>
             <Label htmlFor="description">When should the bot use this?</Label>
@@ -79,6 +144,7 @@ export function AddActionDialog({
               id="description"
               name="description"
               placeholder="Use this to check appointment availability for a given date."
+              defaultValue={template?.description ?? ""}
               rows={2}
               className="mt-1"
               required
@@ -87,7 +153,7 @@ export function AddActionDialog({
           <div className="flex gap-3">
             <div>
               <Label htmlFor="method">Method</Label>
-              <Select name="method" defaultValue="POST">
+              <Select name="method" defaultValue={template?.method ?? "POST"}>
                 <SelectTrigger id="method" className="mt-1 w-28">
                   <SelectValue />
                 </SelectTrigger>
@@ -119,24 +185,32 @@ export function AddActionDialog({
           <div>
             <Label className="mb-1 block">What should the bot ask the visitor for?</Label>
             <div className="space-y-3 rounded-md border border-border p-2">
-              {[0, 1, 2, 3].map((i) => (
-                <div key={i} className="space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <Input name={`field_name_${i}`} placeholder="field name" className="w-28" />
-                    <Input name={`field_description_${i}`} placeholder="what it is" className="flex-1" />
-                    <Label className="flex items-center gap-1 whitespace-nowrap text-xs font-normal text-muted-foreground">
-                      <Checkbox name={`field_required_${i}`} />
-                      Required
-                    </Label>
+              {[0, 1, 2, 3].map((i) => {
+                const defaults = fieldDefaults(i);
+                return (
+                  <div key={i} className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <Input name={`field_name_${i}`} placeholder="field name" defaultValue={defaults.name} className="w-28" />
+                      <Input
+                        name={`field_description_${i}`}
+                        placeholder="what it is"
+                        defaultValue={defaults.description}
+                        className="flex-1"
+                      />
+                      <Label className="flex items-center gap-1 whitespace-nowrap text-xs font-normal text-muted-foreground">
+                        <Checkbox name={`field_required_${i}`} defaultChecked={defaults.required} />
+                        Required
+                      </Label>
+                    </div>
+                    <Input
+                      name={`test_value_${i}`}
+                      placeholder="Test value (only used by the Test button below)"
+                      className="text-xs"
+                      aria-label={`Test value for field ${i + 1}`}
+                    />
                   </div>
-                  <Input
-                    name={`test_value_${i}`}
-                    placeholder="Test value (only used by the Test button below)"
-                    className="text-xs"
-                    aria-label={`Test value for field ${i + 1}`}
-                  />
-                </div>
-              ))}
+                );
+              })}
             </div>
             <p className="mt-1 text-xs text-muted-foreground">Leave a row's field name blank to skip it.</p>
           </div>

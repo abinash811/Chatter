@@ -72,6 +72,17 @@ runtime `Tool` factory + SSRF guard + shared `performActionRequest`),
 `testCustomActionAction` (`actions.ts`), the `CustomAction` model. ADR
 0022.
 
+**Ready-made templates** (2026-10-04): the Add-action dialog opens with
+a picker — "Start from scratch" or a pre-filled "Cancel appointment"/
+"Reschedule appointment" (`lib/customActionOptions.ts`'s
+`ACTION_TEMPLATES`) — so the common appointment-cancel/-reschedule case
+doesn't mean designing a name/description/field list from a blank form.
+The business still supplies their own `url`; there's no "Shopify of
+scheduling" to integrate against directly (healthcare alone spans Epic/
+Cerner/athenahealth plus generic tools like Calendly/Acuity), so this
+stays a config-time preset, not a new vendor integration — keeps the
+feature fully vertical-agnostic (works for salons/auto shops too).
+
 **Known remaining gaps vs. Chatbase's real custom-action builder**
 (compared against their actual docs, not a summary): no typed inputs
 (everything is a plain string, not Text/Number/Boolean), no separate

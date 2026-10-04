@@ -343,3 +343,45 @@ scale, and the table column header consistency fix.
   real screenshots of Leads/Approvals/Integrations confirming the new
   layout, the "Bot" columns, and the bot filter.
 
+- **Ready-made Custom Action templates (2026-10-04)**: discussed as a
+  pricing/go-to-market question first — user asked whether a flat
+  platform-fee + BYOA-LLM + knowledge-base-usage-tier model made sense,
+  and specifically whether businesses with their own systems (EMRs,
+  booking tools) could integrate via the existing Custom Actions webhook
+  architecture rather than ingesting everything into Chatter's own
+  knowledge base (answer: yes, that's exactly what ADR 0022 already
+  supports). The follow-up, concrete ask: make Custom Actions easier to
+  set up for the appointment-cancel/-reschedule case specifically,
+  without inventing a new vendor integration (there's no single
+  "Shopify of scheduling" — healthcare alone spans Epic/Cerner/
+  athenahealth plus generic tools like Calendly/Acuity). Chose "option
+  1" of 3 explained to the user (pre-built Custom Action templates vs.
+  named scheduling-vendor integrations vs. a new first-class Appointment
+  tool type) — zero new tool-registry/schema surface, stays fully
+  vertical-agnostic (works for salons/auto shops too, not just
+  healthcare), ships same-day. New `ACTION_TEMPLATES` array
+  (`lib/customActionOptions.ts`) — "Cancel appointment" (POST,
+  `appointment_id`/`reason`) and "Reschedule appointment" (POST,
+  `appointment_id`/`new_time`/`reason`), both ≤4 fields
+  (`actions.ts`'s `MAX_FIELDS`). `AddActionDialog.tsx` gained a
+  template picker (`OptionCard` list, "Start from scratch" plus the 2
+  templates) above the existing create form; picking one remounts the
+  form (`key={templateKey}`) with fresh `defaultValue`s for
+  name/description/method/fields — the business still fills in their
+  own `url`, there's no backend being integrated against.
+  **Real bug caught by an actual screenshot, not assumed**: the first
+  pass used a 3-column `grid` of `OptionCard`s, but the dialog is only
+  `sm:max-w-lg` (512px) — titles wrapped, the "Selected" button
+  overflowed its own card border, descriptions were cut to fragments.
+  Fixed by stacking the cards in a single column instead (`OptionCard`'s
+  `trailing` prop for the button, not `action`) — confirmed clean via a
+  second real screenshot. Verified: `tsc` clean, all 10 `check:all`
+  guardrails, a production build, full unit suite (240, 4 new — a
+  `customActionOptions.test.ts` guarding each template's field count and
+  slug shape), the full `actions.spec.ts` (10/10, 2 new tests: picking a
+  template pre-fills the form and switching back to scratch clears it;
+  saving from a template produces a working action),
+  `accessibility.spec.ts` (16/16, 1 new test scanning the open dialog
+  with the template picker). No ADR — additive UI on an already-decided
+  architecture (ADR 0022), no schema or data-model change.
+

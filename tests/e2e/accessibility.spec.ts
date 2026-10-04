@@ -126,6 +126,14 @@ test("actions page has no serious/critical accessibility violations", async ({ p
   await assertNoSeriousViolations(page, page.getByText("check_availability"));
 });
 
+test("add-action dialog's template picker has no serious/critical accessibility violations", async ({ page }) => {
+  await signUpAndCreateBot(page, "A11y Action Templates Bot", "a11y-action-templates");
+  await page.click('a:has-text("Actions")');
+  await expect(page).toHaveURL(/\/actions$/);
+  await page.getByRole("button", { name: "Add action", exact: true }).first().click();
+  await assertNoSeriousViolations(page, page.getByText("Add a custom action"));
+});
+
 test("widgets page has no serious/critical accessibility violations", async ({ page }) => {
   await signUpAndCreateBot(page, "A11y Widgets Bot", "a11y-widgets");
   const botId = page.url().split("/bots/")[1];

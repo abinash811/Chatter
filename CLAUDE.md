@@ -593,6 +593,16 @@ reason.)
   suite (236), full `tests/e2e/` (120/120), `accessibility.spec.ts`
   (15/15), 14 visual baselines regenerated + stable across two runs,
   real screenshots of all 3 pages. Full detail: `docs/changelog.md`.
+- Ready-made Custom Action templates (2026-10-04): the Add-action
+  dialog's `AddActionDialog.tsx` now opens with a template picker —
+  "Start from scratch" or a pre-filled "Cancel appointment"/"Reschedule
+  appointment" (`lib/customActionOptions.ts`'s `ACTION_TEMPLATES`) — so
+  setting up an appointment-tool doesn't mean designing a Custom
+  Action's name/description/fields from a blank form; the business
+  still points `url` at their own booking system. No new integration or
+  tool-registry entry, stays fully vertical-agnostic (no ADR — additive
+  UI on ADR 0022's existing architecture). Full detail:
+  `docs/changelog.md`.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.

@@ -103,6 +103,41 @@ test("Test button runs the same SSRF guard as saving does", async ({ page }) => 
   await expect(page.getByText(/URL isn't allowed/)).toBeVisible();
 });
 
+test("picking a template pre-fills the form, and switching back to scratch clears it", async ({ page }) => {
+  await signUpAndCreateBot(page, "Template Bot");
+  await page.click('a:has-text("Actions")');
+  await page.waitForURL(/\/actions$/);
+  await page.getByRole("button", { name: "Add action", exact: true }).first().click();
+
+  await page.getByRole("dialog").getByRole("button", { name: "Use" }).first().click();
+  await expect(page.locator("#name")).toHaveValue("cancel_appointment");
+  await expect(page.locator('input[name="field_name_0"]')).toHaveValue("appointment_id");
+
+  await page.getByRole("dialog").getByRole("button", { name: "Use" }).last().click();
+  await expect(page.locator("#name")).toHaveValue("reschedule_appointment");
+  await expect(page.locator('input[name="field_name_1"]')).toHaveValue("new_time");
+
+  // "Start from scratch" is the first OptionCard, so once a template is
+  // selected its own button reads "Use" again and is first in DOM order.
+  await page.getByRole("dialog").getByRole("button", { name: "Use" }).first().click();
+  await expect(page.locator("#name")).toHaveValue("");
+  await expect(page.locator('input[name="field_name_0"]')).toHaveValue("");
+});
+
+test("saving from the cancel-appointment template creates a working action", async ({ page }) => {
+  await signUpAndCreateBot(page, "Template Save Bot");
+  await page.click('a:has-text("Actions")');
+  await page.waitForURL(/\/actions$/);
+  await page.getByRole("button", { name: "Add action", exact: true }).first().click();
+
+  await page.getByRole("dialog").getByRole("button", { name: "Use" }).first().click();
+  await page.fill("#url", "https://api.example.com/appointments/cancel");
+  await page.getByRole("dialog").getByRole("button", { name: "Add action" }).click();
+
+  await expect(page.getByText("Action added.")).toBeVisible();
+  await expect(page.getByText("cancel_appointment")).toBeVisible();
+});
+
 test("a bot's custom actions are reachable from the bot editor's sidebar nav", async ({ page }) => {
   await signUpAndCreateBot(page, "Nav Actions Bot");
   await page.click('a:has-text("Actions")');
