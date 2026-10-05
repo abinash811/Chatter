@@ -8,7 +8,7 @@
 // ~4kB every other bot-scoped page is to 149kB.
 
 import type { LucideIcon } from "lucide-react";
-import { CalendarX2, CalendarClock } from "lucide-react";
+import { CalendarSearch, CalendarX2, CalendarClock } from "lucide-react";
 
 export const HTTP_METHODS = ["GET", "POST", "PUT", "PATCH"] as const;
 export type HttpMethod = (typeof HTTP_METHODS)[number];
@@ -41,6 +41,20 @@ export interface ActionTemplate {
 }
 
 export const ACTION_TEMPLATES: ActionTemplate[] = [
+  {
+    key: "check_appointment_availability",
+    label: "Check appointment availability",
+    icon: CalendarSearch,
+    summary: "Let visitors check open appointment slots for a date.",
+    name: "check_appointment_availability",
+    description:
+      "Use this when a visitor asks what appointment times are available. Call it with the date they're asking about (and the service, if they mention one) and tell them the open slots it returns.",
+    method: "GET",
+    fields: [
+      { name: "date", description: "The date the visitor wants availability for", required: true },
+      { name: "service", description: "The type of appointment or service, if the visitor mentions one", required: false },
+    ],
+  },
   {
     key: "cancel_appointment",
     label: "Cancel appointment",

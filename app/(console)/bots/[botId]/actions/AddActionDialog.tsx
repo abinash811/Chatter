@@ -100,6 +100,7 @@ export function AddActionDialog({
                 type="button"
                 size="sm"
                 variant={templateKey === "blank" ? "default" : "outline"}
+                aria-label={templateKey === "blank" ? "Start from scratch (selected)" : "Use the start-from-scratch template"}
                 onClick={() => setTemplateKey("blank")}
               >
                 {templateKey === "blank" ? "Selected" : "Use"}
@@ -117,6 +118,7 @@ export function AddActionDialog({
                   type="button"
                   size="sm"
                   variant={templateKey === t.key ? "default" : "outline"}
+                  aria-label={templateKey === t.key ? `${t.label} (selected)` : `Use the ${t.label} template`}
                   onClick={() => setTemplateKey(t.key)}
                 >
                   {templateKey === t.key ? "Selected" : "Use"}

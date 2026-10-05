@@ -385,3 +385,23 @@ scale, and the table column header consistency fix.
   with the template picker). No ADR — additive UI on an already-decided
   architecture (ADR 0022), no schema or data-model change.
 
+- **Third Custom Action template: "Check appointment availability"
+  (2026-10-05)**: user asked for a matching template for the read-only
+  case that naturally precedes cancel/reschedule in a real booking flow.
+  Added to `ACTION_TEMPLATES` ahead of the other two (GET,
+  `date`/`service` fields, `CalendarSearch` icon). Switched each
+  template's picker button from a plain "Use" label to a template-
+  specific `aria-label` (`Use the ${label} template`/`${label}
+  (selected)`) — the earlier `actions.spec.ts` tests located buttons by
+  position (`.first()`/`.last()`), which broke the moment a 3rd template
+  changed the DOM order; stable accessible names fix this test fragility
+  permanently as more templates get added, not just for this one.
+  Verified: `tsc` clean, all 10 guardrails, full unit suite (240
+  unchanged — `customActionOptions.test.ts` already asserted generically
+  over every template, no edit needed), a production build, 27/27 across
+  `actions.spec.ts` (3 template tests now, incl. a new one confirming
+  the availability template saves as a GET action) and
+  `accessibility.spec.ts` run together, a real screenshot confirming the
+  4-item picker (3 templates + "Start from scratch") still reads cleanly
+  in the dialog's single-column layout.
+

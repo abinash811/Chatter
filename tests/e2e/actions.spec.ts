@@ -108,18 +108,21 @@ test("picking a template pre-fills the form, and switching back to scratch clear
   await page.click('a:has-text("Actions")');
   await page.waitForURL(/\/actions$/);
   await page.getByRole("button", { name: "Add action", exact: true }).first().click();
+  const dialog = page.getByRole("dialog");
 
-  await page.getByRole("dialog").getByRole("button", { name: "Use" }).first().click();
+  await dialog.getByRole("button", { name: "Use the Check appointment availability template" }).click();
+  await expect(page.locator("#name")).toHaveValue("check_appointment_availability");
+  await expect(page.locator('input[name="field_name_0"]')).toHaveValue("date");
+
+  await dialog.getByRole("button", { name: "Use the Cancel appointment template" }).click();
   await expect(page.locator("#name")).toHaveValue("cancel_appointment");
   await expect(page.locator('input[name="field_name_0"]')).toHaveValue("appointment_id");
 
-  await page.getByRole("dialog").getByRole("button", { name: "Use" }).last().click();
+  await dialog.getByRole("button", { name: "Use the Reschedule appointment template" }).click();
   await expect(page.locator("#name")).toHaveValue("reschedule_appointment");
   await expect(page.locator('input[name="field_name_1"]')).toHaveValue("new_time");
 
-  // "Start from scratch" is the first OptionCard, so once a template is
-  // selected its own button reads "Use" again and is first in DOM order.
-  await page.getByRole("dialog").getByRole("button", { name: "Use" }).first().click();
+  await dialog.getByRole("button", { name: "Use the start-from-scratch template" }).click();
   await expect(page.locator("#name")).toHaveValue("");
   await expect(page.locator('input[name="field_name_0"]')).toHaveValue("");
 });
@@ -130,12 +133,27 @@ test("saving from the cancel-appointment template creates a working action", asy
   await page.waitForURL(/\/actions$/);
   await page.getByRole("button", { name: "Add action", exact: true }).first().click();
 
-  await page.getByRole("dialog").getByRole("button", { name: "Use" }).first().click();
+  await page.getByRole("dialog").getByRole("button", { name: "Use the Cancel appointment template" }).click();
   await page.fill("#url", "https://api.example.com/appointments/cancel");
   await page.getByRole("dialog").getByRole("button", { name: "Add action" }).click();
 
   await expect(page.getByText("Action added.")).toBeVisible();
   await expect(page.getByText("cancel_appointment")).toBeVisible();
+});
+
+test("saving from the check-availability template creates a GET action", async ({ page }) => {
+  await signUpAndCreateBot(page, "Template Availability Bot");
+  await page.click('a:has-text("Actions")');
+  await page.waitForURL(/\/actions$/);
+  await page.getByRole("button", { name: "Add action", exact: true }).first().click();
+
+  await page.getByRole("dialog").getByRole("button", { name: "Use the Check appointment availability template" }).click();
+  await page.fill("#url", "https://api.example.com/appointments/availability");
+  await page.getByRole("dialog").getByRole("button", { name: "Add action" }).click();
+
+  await expect(page.getByText("Action added.")).toBeVisible();
+  const row = page.locator("table tbody tr").filter({ hasText: "check_appointment_availability" });
+  await expect(row).toContainText("GET");
 });
 
 test("a bot's custom actions are reachable from the bot editor's sidebar nav", async ({ page }) => {
