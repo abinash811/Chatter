@@ -438,3 +438,49 @@ scale, and the table column header consistency fix.
   visual baselines regenerated + stable across two runs, rest of the
   19-baseline visual suite unchanged.
 
+- **`request_refund` — a sixth action tool (2026-10-05)**: discussed as
+  part of a broader "what's next" roadmap conversation first — of the
+  candidates, this and image input were the two flagged as genuinely
+  buildable without a product decision first; user picked this one to
+  build. `docs/roadmap.md`'s "More write-capable action tools" named "a
+  real Shopify refund call" as exactly this kind of built-in,
+  purpose-specific write tool (distinct from a business wiring its own
+  webhook via Custom Actions, ADR 0022). Reuses `request_order_
+  cancellation`'s exact pattern (ADR 0023) with zero engine changes —
+  `handle()` validates the order (found, not already refunded) and
+  queues a `PendingAction`; the separately-exported `executeRefund`
+  (`lib/ai/tools/requestRefund.ts`) is what actually calls Shopify's
+  `refundCreate` GraphQL mutation once a human approves from
+  `/approvals`. Wiring touched 4 small, generic extension points, not
+  new engine surface: `lib/ai/tools/index.ts` (side-effect import),
+  `app/(console)/approvals/actions.ts`'s `EXECUTORS` map (one line),
+  `ApprovalsTable.tsx`'s `describeRequest` (one case), and
+  `BotEditorForm.tsx`'s `TOOL_ICONS` map (cosmetic only — an unmapped
+  tool already rendered fine via the `Wrench` fallback, confirmed by
+  checking how `request_order_cancellation` itself had been rendering
+  since ADR 0023, with no icon mapped, until this pass). `shopify.dev`
+  stayed blocked by this environment's network egress policy for the
+  `refundCreate` mutation shape — re-confirmed via repeated direct
+  `WebFetch` attempts against shopify.dev and several mirror/community-
+  forum domains (withone.ai, cleverence.com, peerdh.com, community.
+  shopify.com), all blocked — pieced together from WebSearch result
+  summaries instead, same documented caveat as `orderCancel` (ADR
+  0023): unverified against a live store. The refund transaction needs
+  a parent to refund through (the original payment method), so
+  `executeRefund` fetches the order's transactions via the REST
+  endpoint first and refunds through the first successful sale/capture
+  transaction found — fails cleanly with a real reason if none exists.
+  Verified: `tsc` clean, all 10 guardrails, a production build, full
+  unit suite (250, 10 new — mirrors `cancelOrder.test.ts`'s structure:
+  handoff/not-found/already-refunded/queues-pending-approval for
+  `handle()`, no-integration/order-not-found/no-payment-transaction/
+  succeeds/surfaces-userErrors for `executeRefund`), full `tests/e2e/`
+  for `approvals.spec.ts` + `bot-editor.spec.ts` (19/19, 2 new tests: a
+  seeded refund request shows its own description and the real
+  "no Shopify store connected" failure outcome on approval; the tool
+  appears on the Tools tab), `accessibility.spec.ts` (16/16), the full
+  visual suite (19/19, no baseline changes — no visual regression on
+  the Tools-tab grid or approvals table), a real screenshot of the
+  Tools tab confirming the 5-card grid still reads cleanly with the new
+  `Undo2`-icon card added.
+

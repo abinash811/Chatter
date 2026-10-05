@@ -78,6 +78,12 @@ test("a tool's Switch (on the Tools tab) toggles and its state survives a save",
   await expect(page.getByRole("switch", { name: "Disable search_knowledge_base" })).toBeChecked();
 });
 
+test("the request_refund tool (docs/roadmap.md's write-capable action tools) appears on the Tools tab", async ({ page }) => {
+  await signUpAndCreateBot(page, "Refund Tool Visible Bot");
+  await page.click('button[role="tab"]:has-text("Tools")');
+  await expect(page.getByRole("switch", { name: "Enable request_refund" })).toBeVisible();
+});
+
 test("persona template picker fills the persona textarea, replacing existing text", async ({ page }) => {
   await signUpAndCreateBot(page, "Persona Template Test Bot");
   await page.fill("#persona", "some text the picker should overwrite");

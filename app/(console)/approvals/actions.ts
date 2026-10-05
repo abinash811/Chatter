@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentSession } from "@/lib/auth";
 import { getPendingActionForExecution, resolvePendingAction } from "@/lib/pendingActions";
 import { executeOrderCancellation } from "@/lib/ai/tools/cancelOrder";
+import { executeRefund } from "@/lib/ai/tools/requestRefund";
 import { executeWidgetSubmission } from "@/lib/ai/tools/widget";
 
 // Widget submissions (ADR 0028, Phase 2) use a dynamic toolName
@@ -34,6 +35,7 @@ const EXECUTORS: Record<
 > = {
   request_order_cancellation: (orgId, _botId, input) =>
     executeOrderCancellation(orgId, input as { orderNumber: string; reason?: string }),
+  request_refund: (orgId, _botId, input) => executeRefund(orgId, input as { orderNumber: string; reason?: string }),
 };
 
 export async function approveAction(

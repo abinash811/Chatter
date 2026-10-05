@@ -614,6 +614,15 @@ reason.)
   table-header consistency) held up. `docs/design/audit.md` updated with
   a new System-coverage row and onboarding's first-ever Depth/polish
   row. Full detail: `docs/changelog.md`.
+- `request_refund` — sixth action tool (2026-10-05): reuses
+  `request_order_cancellation`'s exact human-approval pattern (ADR
+  0023, `PendingAction` queue + `/approvals`) with zero engine changes
+  — `lib/ai/tools/requestRefund.ts`'s `handle()` queues the request;
+  `executeRefund` calls Shopify's real `refundCreate` mutation once
+  approved. Same unverified-against-a-live-store caveat as `orderCancel`
+  (`shopify.dev` still blocked by this environment's egress policy —
+  re-confirmed, mutation shape pieced together from WebSearch). Full
+  detail: `docs/changelog.md`.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.

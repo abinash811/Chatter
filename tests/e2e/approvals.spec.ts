@@ -55,6 +55,29 @@ test("approving a request requires confirmation, then executes and shows the rea
   await expect(row).toContainText("No Shopify store connected.");
 });
 
+test("a seeded refund request shows its own description, and approving it shows the real outcome", async ({ page }) => {
+  await signUpAndCreateBot(page, "Refund Flow Bot");
+  const botId = page.url().match(/\/bots\/([^/]+)/)![1];
+  const orderNumber = "3003";
+  await seedPendingAction(botId, {
+    toolName: "request_refund",
+    input: { orderNumber, reason: "Item arrived damaged" },
+  });
+
+  await page.click('a:has-text("Approvals")');
+  const row = page.locator("table tbody tr").first();
+  await expect(row).toContainText(new RegExp(`Refund order #${orderNumber}.*Item arrived damaged`));
+
+  await page.getByRole("button", { name: "Approve", exact: true }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Approve" }).click();
+
+  // Same real-outcome guarantee as order cancellation — no Shopify
+  // store is connectable in this environment, so this is the real
+  // failure path (ADR 0023's pattern), never a fabricated success.
+  await expect(row.getByText("failed", { exact: true })).toBeVisible();
+  await expect(row).toContainText("No Shopify store connected.");
+});
+
 test("rejecting a request needs no confirmation and marks it rejected", async ({ page }) => {
   await signUpAndCreateBot(page, "Reject Flow Bot");
   const botId = page.url().match(/\/bots\/([^/]+)/)![1];

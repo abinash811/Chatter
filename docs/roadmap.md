@@ -192,15 +192,23 @@ Validated by competitor research, not yet built:
      to and confirmed by the user — see `docs/ai-tech-radar.md`.
   Prioritized first among the RAG-architecture gaps since it improves
   every chunk already ingested, with no re-ingestion needed.
-- **More write-capable action tools** — issue a refund, update a
-  shipping address, edit/cancel a booking. Order cancellation shipped
-  2026-09-28 (ADR 0023, human-approval-gated — see "Now" above), which
-  also built the general pattern (`PendingAction` queue + `/approvals`
-  page) any future write tool reuses without engine changes. A business
+- **More write-capable action tools** — update a shipping address,
+  edit/cancel a booking. Order cancellation shipped 2026-09-28 (ADR
+  0023, human-approval-gated — see "Now" above), which also built the
+  general pattern (`PendingAction` queue + `/approvals` page) any
+  future write tool reuses without engine changes. **Refunds — built
+  (2026-10-05).** `request_refund` (`lib/ai/tools/requestRefund.ts`)
+  reuses that exact pattern: `handle()` only validates the order and
+  queues a `PendingAction`; `executeRefund` calls Shopify's real
+  `refundCreate` GraphQL mutation once a human approves. Same unverified-
+  against-a-live-store caveat as `orderCancel` (ADR 0023) —
+  `shopify.dev` and every mirror/forum domain tried are blocked by this
+  environment's egress policy, so the mutation shape is pieced together
+  from WebSearch summaries, not read from the primary source. A business
   can also already wire its own write-capable webhook via custom
   actions (ADR 0022) today — this item is about built-in,
-  purpose-specific write tools for platforms we integrate with directly
-  (e.g. a real Shopify refund call), not the general capability.
+  purpose-specific write tools for platforms we integrate with directly,
+  not the general capability.
 - **Resolution-rate analytics** — % of conversations resolved without
   human handoff. Intercom Fin's headline metric; we track nothing like
   it yet. Needs a definition of "resolved" first (closed by visitor

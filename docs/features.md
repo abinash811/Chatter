@@ -28,20 +28,22 @@ prompt caching), `lib/ai/tools/registry.ts` (interface/connector split).
 (generic RAG retrieval, every vertical), `collect_lead` (generic contact-
 info capture, matches Chatbase's "Collect Leads" — every new tool added
 going forward is industry-agnostic by default, per the 2026-09-27
-scoping decision; only `check_order_status` stays ecommerce-specific),
-`check_order_status` (ecommerce, Shopify Admin API, falls back to
-human handoff per guardrail #4 if no integration is connected),
-`request_order_cancellation` (ecommerce, write-capable, queues for
-human approval — see "Order cancellation (approval-gated)" below), and
-**custom (business-defined) webhook actions** — see "Custom actions"
-below. The first four are independently enable/disable-able per bot
-from the bot editor's Tools tab (a card gallery — icon, name,
-description, an enable/disable `Switch` per card, added 2026-09-27 to
-match Chatbase's own Actions-page card layout, confirmed from real
-screenshots, `docs/research/competitive-landscape.md`); custom actions
-have their own enable/disable toggle on their own page instead (ADR
-0022). **How**: `lib/ai/tools/`, `components/console/OptionCard.tsx`
-(the shared card shape, reused by Knowledge's ingestion picker too).
+scoping decision; only `check_order_status`/`request_order_cancellation`/
+`request_refund` stay ecommerce-specific), `check_order_status`
+(ecommerce, Shopify Admin API, falls back to human handoff per
+guardrail #4 if no integration is connected), `request_order_cancellation`
+and `request_refund` (ecommerce, write-capable, both queue for human
+approval — see "Order cancellation (approval-gated)" below, `request_
+refund` reuses the exact same pattern), and **custom (business-defined)
+webhook actions** — see "Custom actions" below. The five built-in tools
+are independently enable/disable-able per bot from the bot editor's
+Tools tab (a card gallery — icon, name, description, an enable/disable
+`Switch` per card, added 2026-09-27 to match Chatbase's own Actions-page
+card layout, confirmed from real screenshots, `docs/research/
+competitive-landscape.md`); custom actions have their own enable/disable
+toggle on their own page instead (ADR 0022). **How**: `lib/ai/tools/`,
+`components/console/OptionCard.tsx` (the shared card shape, reused by
+Knowledge's ingestion picker too).
 
 ### Custom actions
 **Who**: the business owner. **What**: a per-bot "Actions" page
@@ -135,26 +137,35 @@ needs approval". **How**: `lib/ai/tools/widget.ts`'s
 component library beyond the 4 field types above — `docs/open-
 questions.md` #9).
 
-### Order cancellation (approval-gated)
-**Who**: the bot proposes it, the business owner decides. **What**: a
-write-capable action tool — the first one, and a new risk category
-(ADR 0023). `request_order_cancellation` never calls Shopify itself: it
-validates the order exists and isn't already cancelled, then queues a
-`PendingAction` and tells the visitor a human will review it — it never
-claims the order is cancelled. The business owner reviews and
-approves/rejects from an org-wide "Approvals" page
-(`/approvals`, spans every bot — ADR 0038); only approving actually
-calls Shopify's `orderCancel` GraphQL mutation. A failed approved-
-execution (e.g. no Shopify integration connected, or Shopify's own
-`userErrors`) shows the
-real failure reason on the row, never a false success. Requires the
-`write_orders` OAuth scope — a store connected before this change must
-reconnect. **How**: `lib/ai/tools/cancelOrder.ts` (the tool + the
-separately-exported `executeOrderCancellation`), `lib/pendingActions.ts`
-(the generic queue, deliberately with no knowledge of any specific
-tool), `app/(console)/approvals/` (the console page + the
-one place that maps a toolName to its executor), the `PendingAction`
-model. ADR 0023.
+### Order cancellation and refunds (approval-gated)
+**Who**: the bot proposes it, the business owner decides. **What**: two
+write-capable action tools sharing the exact same pattern — order
+cancellation (the first one, and a new risk category, ADR 0023) and
+refunds (2026-10-05, reuses the pattern with zero engine changes, per
+`docs/roadmap.md`'s "More write-capable action tools"). Neither
+`request_order_cancellation` nor `request_refund` ever calls Shopify
+itself: each validates the order (exists, isn't already cancelled/
+refunded), then queues a `PendingAction` and tells the visitor a human
+will review it — never that it's done. The business owner reviews and
+approves/rejects from an org-wide "Approvals" page (`/approvals`, spans
+every bot — ADR 0038); only approving actually calls Shopify (the
+`orderCancel` or `refundCreate` GraphQL mutation respectively). A
+failed approved-execution (no Shopify integration connected, or
+Shopify's own `userErrors`) shows the real failure reason on the row,
+never a false success. Both require the `write_orders` OAuth scope — a
+store connected before ADR 0023 must reconnect. **How**:
+`lib/ai/tools/cancelOrder.ts` / `lib/ai/tools/requestRefund.ts` (each
+tool + its separately-exported `execute*` function),
+`lib/pendingActions.ts` (the generic queue, deliberately with no
+knowledge of any specific tool), `app/(console)/approvals/` (the
+console page + the one place that maps a toolName to its executor —
+adding `request_refund` was a one-line addition to that map, confirming
+the pattern genuinely generalizes), the `PendingAction` model. ADR
+0023. Same unverified-against-a-live-store caveat for both mutations:
+`shopify.dev` and every mirror/forum domain tried are blocked by this
+environment's network egress policy, so both mutation shapes are
+pieced together from WebSearch result summaries, not read from the
+primary source.
 
 ### Demo data ("Load sample data")
 **Who**: a new or non-technical user, or anyone demoing the product.

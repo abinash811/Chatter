@@ -16,6 +16,11 @@ function describeRequest(toolName: string, input: Record<string, unknown>): stri
     const reason = input.reason as string | undefined;
     return reason ? `Cancel order #${orderNumber} — "${reason}"` : `Cancel order #${orderNumber}`;
   }
+  if (toolName === "request_refund") {
+    const orderNumber = input.orderNumber as string;
+    const reason = input.reason as string | undefined;
+    return reason ? `Refund order #${orderNumber} — "${reason}"` : `Refund order #${orderNumber}`;
+  }
   // Widget submissions (ADR 0028, Phase 2) — dynamic per business-
   // authored widget, so the name comes from the toolName itself rather
   // than a hardcoded case per widget.

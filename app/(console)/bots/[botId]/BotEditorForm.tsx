@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Search, UserPlus, Package, Wrench, type LucideIcon } from "lucide-react";
+import { Search, UserPlus, Package, Undo2, Wrench, type LucideIcon } from "lucide-react";
 import { saveDraftAction, publishAction, type SaveDraftState } from "./actions";
 import {
   Button,
@@ -54,6 +54,8 @@ const TOOL_ICONS: Record<string, LucideIcon> = {
   search_knowledge_base: Search,
   collect_lead: UserPlus,
   check_order_status: Package,
+  request_order_cancellation: Undo2,
+  request_refund: Undo2,
 };
 
 // Toasts on every save/publish outcome (previously silent either way —

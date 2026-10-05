@@ -5,3 +5,4 @@ import "@/lib/ai/tools/searchKnowledgeBase";
 import "@/lib/ai/tools/checkOrderStatus";
 import "@/lib/ai/tools/collectLead";
 import "@/lib/ai/tools/cancelOrder";
+import "@/lib/ai/tools/requestRefund";
