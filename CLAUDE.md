@@ -603,6 +603,17 @@ reason.)
   at their own booking system. No new integration or tool-registry
   entry, stays fully vertical-agnostic (no ADR — additive UI on ADR
   0022's existing architecture). Full detail: `docs/changelog.md`.
+- Full-app design audit (2026-10-05): a user-requested complete sweep
+  across every screen's text/colors/layout/spacing/shadows/
+  interactions/animations/consistency, not a touch-triggered check —
+  real screenshots of all 16 screens against `docs/design/principles.md`/
+  `component-checklist.md`/`design-system.md`. Two real findings fixed:
+  onboarding had dropped out of signup's `AuthShell` register (now
+  shares it); the Appearance tab's 3 suggested-reply rows had a
+  duplicate placeholder bug. Everything else (tokens, elevation, motion,
+  table-header consistency) held up. `docs/design/audit.md` updated with
+  a new System-coverage row and onboarding's first-ever Depth/polish
+  row. Full detail: `docs/changelog.md`.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.

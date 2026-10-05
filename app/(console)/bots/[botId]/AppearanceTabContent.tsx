@@ -20,6 +20,13 @@ import {
   type WidgetPosition,
 } from "@/lib/ai/appearanceOptions";
 
+// Three distinct examples, not "What are your hours?" followed by two
+// identical "Track my order" placeholders — a real duplicate found by a
+// full-app design audit (2026-10-05): rows 1 and 2 previously shared one
+// ternary branch (`i === 0 ? ... : "e.g. Track my order"`), so every row
+// past the first showed the same placeholder text.
+const SUGGESTED_REPLY_PLACEHOLDERS = ["What are your hours?", "Track my order", "Talk to a human"];
+
 // Split out of BotEditorForm.tsx (2026-09-27) purely to stay under
 // scripts/check-file-length.mjs's 300-line cap once the persona-template
 // picker was added there — no behavior change, still rendered inside that
@@ -118,7 +125,7 @@ export function AppearanceTabContent({
                 id={`suggestedReply_${i}`}
                 name={`suggestedReply_${i}`}
                 defaultValue={suggestedReplies[i] ?? ""}
-                placeholder={i === 0 ? "e.g. What are your hours?" : "e.g. Track my order"}
+                placeholder={`e.g. ${SUGGESTED_REPLY_PLACEHOLDERS[i]}`}
               />
             </div>
           ))}

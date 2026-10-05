@@ -6,8 +6,10 @@ const TRUST_ITEMS = [
   "Your data never crosses tenants",
 ];
 
-// Split layout per docs/design/preview/auth.html — shared by /login and
-// /signup, the only two pages that need this chrome. Panel is fixed-dark
+// Split layout per docs/design/preview/auth.html — shared by /login,
+// /signup, and /onboarding (added 2026-10-05 — onboarding used to drop
+// to a bare white page with no branding, a real register break right
+// after signup, caught via a full-app design audit). Panel is fixed-dark
 // regardless of light/dark mode (bg-panel, not bg-foreground/background),
 // same reasoning as app/globals.css's --panel comment.
 export function AuthShell({

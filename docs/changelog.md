@@ -405,3 +405,36 @@ scale, and the table column header consistency fix.
   4-item picker (3 templates + "Start from scratch") still reads cleanly
   in the dialog's single-column layout.
 
+- **Full-app design audit (2026-10-05)**: user-requested complete sweep
+  across text/colors/layout structure/spacing/shadows/interactions/
+  animations/consistency — not a touch-triggered per-screen check, the
+  whole console. Built the app, seeded a real demo bot, and screenshotted
+  all 16 screens plus dialog/tab/hover states against
+  `docs/design/principles.md`/`component-checklist.md`/
+  `design-system.md`'s documented bar. Two real findings, both fixed:
+  (1) **Onboarding register break** — `OnboardingForm.tsx` rendered its
+  own `bg-background` + bare `Card` page, dropping all branding right
+  after signup's rich two-panel `AuthShell` (dark hero, value props,
+  trust checklist); fixed by wrapping onboarding in `AuthShell` too
+  (same pattern `SignupForm.tsx`/`LoginForm.tsx` already use — the form
+  component now renders just its fields, no outer page wrapper), so the
+  whole signup→onboarding→console flow reads as one continuous visual
+  language instead of switching registers mid-flow. (2) **Suggested-
+  replies duplicate placeholder** — `AppearanceTabContent.tsx`'s row
+  placeholder ternary only special-cased row 0 ("What are your hours?"),
+  so rows 2 and 3 both showed the identical "e.g. Track my order"
+  example; fixed with a 3-entry `SUGGESTED_REPLY_PLACEHOLDERS` array,
+  one real example per row. Everything else held up on review: table
+  headers/badges/elevation/motion all consistent app-wide, no raw
+  colors anywhere, the Appearance tab's real-hue color swatch confirmed
+  correct (it's the *widget's* configurable brand color — visitor-facing
+  data, not console UI chrome — not a monochrome-system violation).
+  `docs/design/audit.md` gained a new System-coverage row for this pass
+  and a first-ever Onboarding row in the Depth/polish table (it had
+  never been tracked there). Verified: `tsc` clean, all 10 guardrails,
+  full unit suite (240 unchanged), full `tests/e2e/` suite,
+  `accessibility.spec.ts` (all screens including the new onboarding-
+  inside-AuthShell render), `onboarding.png`/`bot-editor-appearance.png`
+  visual baselines regenerated + stable across two runs, rest of the
+  19-baseline visual suite unchanged.
+

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentSession } from "@/lib/auth";
 import { withOrgContext } from "@/lib/db";
+import { AuthShell } from "@/components/auth/AuthShell";
 import { OnboardingForm } from "./OnboardingForm";
 
 export default async function OnboardingPage() {
@@ -17,5 +18,9 @@ export default async function OnboardingPage() {
     redirect("/bots");
   }
 
-  return <OnboardingForm defaultOrgName={org.name} />;
+  return (
+    <AuthShell eyebrow="Get started" title="Welcome to Chatter" subtitle="Let's set up your workspace and your first bot.">
+      <OnboardingForm defaultOrgName={org.name} />
+    </AuthShell>
+  );
 }
