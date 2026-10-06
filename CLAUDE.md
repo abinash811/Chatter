@@ -623,6 +623,14 @@ reason.)
   (`shopify.dev` still blocked by this environment's egress policy —
   re-confirmed, mutation shape pieced together from WebSearch). Full
   detail: `docs/changelog.md`.
+- `withOrgContext`'s transaction timeout widened (2026-10-06):
+  `lib/db.ts`'s `prisma.$transaction` call now passes explicit
+  `maxWait: 10_000, timeout: 20_000` instead of Prisma's defaults
+  (2s/5s) — found while walking a user through running the app against
+  a real remote Postgres (Supabase) for the first time; the tight
+  defaults assumed a same-network database and failed every request
+  with `Unable to start a transaction in the given time` against a
+  pooled connection over the internet. Full detail: `docs/changelog.md`.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.

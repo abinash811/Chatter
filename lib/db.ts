@@ -33,11 +33,23 @@ export async function withOrgContext<T>(
   orgId: string,
   fn: (tx: PrismaClient) => Promise<T>,
 ): Promise<T> {
-  return prisma.$transaction(async (tx) => {
-    // set_config(..., true) scopes the setting to this transaction only.
-    await tx.$executeRaw`select set_config('app.org_id', ${orgId}, true)`;
-    return fn(tx as PrismaClient);
-  });
+  return prisma.$transaction(
+    async (tx) => {
+      // set_config(..., true) scopes the setting to this transaction only.
+      await tx.$executeRaw`select set_config('app.org_id', ${orgId}, true)`;
+      return fn(tx as PrismaClient);
+    },
+    // Prisma's own defaults (maxWait 2s to acquire a connection, timeout
+    // 5s for the whole transaction) assume the database is on the same
+    // machine or network. Real deploys — and any pooled/managed Postgres
+    // reached over the public internet (Supabase, RDS, etc., see
+    // docs/open-questions.md #8) — need real headroom instead; a tight
+    // default here surfaces as a confusing "Unable to start a
+    // transaction in the given time" on every single request, not a
+    // one-off flake. 10s/20s is generous without masking a genuinely
+    // hung connection.
+    { maxWait: 10_000, timeout: 20_000 },
+  );
 }
 
 // The one sanctioned way to query bot_public_keys — the single table
