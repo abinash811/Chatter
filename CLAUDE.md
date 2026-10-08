@@ -654,6 +654,22 @@ reason.)
   gap. Full detail + verification: `docs/changelog.md`. Still open:
   awaiting the user's reaction to the Badge screenshots before any
   further rollout (sync-dot pattern, more token work).
+- Design-drift automation (2026-10-08): 3 new `check:all` guardrails
+  (now 13) closing the actual recurring bug class behind the
+  Badge/`--accent` fixes above — a token reused for the wrong semantic
+  job, which `check-design-tokens.mjs` was never built to catch.
+  `check-token-variant-mapping.mjs` (+ `scripts/token-variant-
+  manifest.json`) fails if a cva variant's token classes drift from a
+  human-verified manifest, scoped to `Badge` for now. `check-variant-
+  visual-coverage.mjs` requires every real-call-sited variant to have
+  an actual `tests/visual/` baseline behind it — found and fixed a real
+  live gap on first run (`success` had zero visual coverage). `check-
+  token-contrast.mjs` (+ `culori`) computes real WCAG AA contrast for
+  15 token pairs straight from `app/globals.css`'s oklch values in both
+  light and dark mode, independent of what's currently screenshotted —
+  found a real dead/wrong-contrast token (`--destructive-foreground`,
+  unused, still broken, flagged not fixed) on first run too. Full
+  detail: `docs/changelog.md`.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.

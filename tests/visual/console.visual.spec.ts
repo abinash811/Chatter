@@ -75,6 +75,38 @@ test("bots list — with a bot (Created column + avatar chip masked, both per-ru
   });
 });
 
+test("bots list — a published bot shows the success-colored badge", async ({ page }) => {
+  // Real coverage gap found while adding scripts/check-variant-visual-
+  // coverage.mjs (docs/changelog.md's 2026-10-08 design-drift-
+  // automation entry): no existing visual baseline ever published a
+  // bot, connected Shopify, or opened a conversation's Details tab, so
+  // Badge's `success` variant — real call sites in BotTableRow.tsx,
+  // integrations/page.tsx, ConversationDetailPanel.tsx — had zero
+  // actual visual-regression coverage despite being genuinely rendered
+  // in the app. This is the cheapest of the three real call sites to
+  // reach in a test (no external Shopify connection or Details-tab
+  // click needed), so it's the one that earns the manifest entry.
+  await signUpAndCreateBot(page, "Support bot", "visual-published-badge");
+  await page.getByRole("button", { name: "Publish", exact: true }).click();
+  await expect(page.getByText("Publish this bot?")).toBeVisible();
+  await page.click('div[role="dialog"] button:has-text("Publish")');
+  await expect(page.getByText("Published v1")).toBeVisible({ timeout: 20000 });
+
+  await page.goto("/bots");
+  // getByText does a case-insensitive substring match by default —
+  // without scoping to the table, this matched the sidebar's own
+  // per-run-unique email prefix ("visual-published-badge-..."), which
+  // contains "published" too. Scope to the status badge itself.
+  await expect(page.locator('[data-slot="table-body"]').getByText("Published", { exact: true })).toBeVisible();
+  await expect(page).toHaveScreenshot("bots-table-published.png", {
+    mask: [
+      page.locator('[data-slot="table-body"] tr td:nth-child(3)'),
+      page.locator('[data-slot="bot-avatar"]'),
+      ...sidebarMasks(page),
+    ],
+  });
+});
+
 test("bot editor page (embed snippet masked — it embeds a random public key)", async ({ page }) => {
   await signUpAndCreateBot(page, "Support bot", "visual-editor");
   await expect(page).toHaveScreenshot("bot-editor.png", { mask: [page.locator("pre"), ...sidebarMasks(page)] });

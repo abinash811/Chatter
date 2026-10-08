@@ -57,132 +57,11 @@ scale, and the table column header consistency fix; `docs/changelog/
 avatar distinction (app-wide consistency items #2 and #3 of 3);
 `docs/changelog/2026-10-part6.md` — the sidebar/top bar depth-polish +
 accessibility pass, and bot-scoped nav moving from `BotTopBar` into the
-sidebar (ADR 0037).
+sidebar (ADR 0037); `docs/changelog/2026-10-part7.md` — Leads/Approvals/
+Integrations becoming org-wide (ADR 0038), and the ready-made Custom
+Action templates.
 
 ---
-
-- **Leads, Approvals, and Integrations become org-wide (2026-10-04,
-  ADR 0038).** Reviewing the just-shipped ADR 0037 sidebar nav, the
-  user named 3 of its 7 items (Leads/Approvals/Integrations) as not
-  actually belonging nested under one bot. Asked directly what "global"
-  meant for each, since they're not the same kind of change: Leads and
-  Approvals are naturally cross-bot concepts (both models already carry
-  an indexed `orgId`), so moving them was a query-scope and page-
-  placement change, no schema touched — same pattern `/conversations`
-  already uses (global nav item, optional `?botId=` filter, a "Bot"
-  column per row). Integrations was a real data-model question:
-  separate per-bot connections with a combined view, offered as the
-  lower-risk option, vs. one Shopify connection genuinely shared by
-  every bot in the org. User chose the shared-connection model — a
-  real store isn't scoped to one bot, so the per-bot schema was the
-  wrong fit from the start, not a convenience tradeoff worth keeping.
-  **Schema migration, run for real** (`prisma/migrations/
-  20261004000000_integrations_org_scoped/`): `Integration.botId`
-  removed, `@@unique([botId, provider])` → `@@unique([orgId,
-  provider])`. `prisma migrate dev` wanted a full dev-database reset
-  over unrelated, expected drift (pgvector/RLS columns this project
-  deliberately applies outside Prisma's own migration history, `db/
-  migrations/`) — correctly refused by the permission system as
-  irreversible local destruction. Worked around it the safe way
-  instead: hand-wrote the migration SQL matching Prisma's own
-  conventions, applied it directly via `prisma db execute` (checked
-  the `integrations` table was empty first — zero real risk), then
-  `prisma migrate resolve --applied` to keep the migration history
-  consistent for next time. `lib/integrations/provider.ts`'s
-  `IntegrationProvider` interface, `shopify.ts`, the OAuth callback
-  route, and `check_order_status`/`cancelOrder.ts`'s Shopify lookups
-  all dropped `botId` to match — `executeOrderCancellation` no longer
-  takes one at all (it only ever used it for the now-org-level
-  Integration lookup). New global `/leads` and `/approvals` pages
-  (`lib/leads.ts`/`lib/pendingActions.ts` gained an optional `botId`
-  filter param + a joined `botName`), a new shared
-  `components/console/BotFilterSelect.tsx` (the single-filter case of
-  `ConversationFilters.tsx`'s URL-param pattern), `AppSidebar.tsx`'s
-  `BOT_NAV_ITEMS` trimmed to the 4 genuinely per-bot pages
-  (Editor/Data sources/Actions/Widgets).
-  **Real bug caught only by e2e, not reasoned about in advance**:
-  `demo-data.spec.ts` broke — clicking "Actions" (still bot-scoped)
-  after visiting "Leads" (now global) timed out, because navigating to
-  a global page drops the bot sub-nav entirely (no active bot in the
-  URL anymore) — a genuine, correct consequence of the design, not a
-  bug in it. Fixed by reordering the test to visit bot-scoped pages
-  before global ones, the real constraint a demo walkthrough (or any
-  user) would actually hit.
-  Verified: `npx tsc --noEmit` clean; all 10 `check:all` guardrails
-  (10/10, including `docs/business-logic.md` trimmed back under the
-  500-line cap); a production build (`/leads`, `/approvals`,
-  `/integrations` routes confirmed top-level, not nested); `node
-  scripts/verify-rls.mjs` run for real against the live Postgres (all 3
-  tenant-isolation assertions passing, confirms the schema migration
-  didn't break RLS); full unit suite (236, 1 new test); the full
-  `tests/e2e/` suite (120/120, including new bot-filter tests for both
-  Leads and Approvals); `accessibility.spec.ts` (15/15, 0 violations);
-  the full `tests/visual/` suite (14 of 19 baselines regenerated — every
-  screen's sidebar nav-item count changed — stable across two runs);
-  real screenshots of Leads/Approvals/Integrations confirming the new
-  layout, the "Bot" columns, and the bot filter.
-
-- **Ready-made Custom Action templates (2026-10-04)**: discussed as a
-  pricing/go-to-market question first — user asked whether a flat
-  platform-fee + BYOA-LLM + knowledge-base-usage-tier model made sense,
-  and specifically whether businesses with their own systems (EMRs,
-  booking tools) could integrate via the existing Custom Actions webhook
-  architecture rather than ingesting everything into Chatter's own
-  knowledge base (answer: yes, that's exactly what ADR 0022 already
-  supports). The follow-up, concrete ask: make Custom Actions easier to
-  set up for the appointment-cancel/-reschedule case specifically,
-  without inventing a new vendor integration (there's no single
-  "Shopify of scheduling" — healthcare alone spans Epic/Cerner/
-  athenahealth plus generic tools like Calendly/Acuity). Chose "option
-  1" of 3 explained to the user (pre-built Custom Action templates vs.
-  named scheduling-vendor integrations vs. a new first-class Appointment
-  tool type) — zero new tool-registry/schema surface, stays fully
-  vertical-agnostic (works for salons/auto shops too, not just
-  healthcare), ships same-day. New `ACTION_TEMPLATES` array
-  (`lib/customActionOptions.ts`) — "Cancel appointment" (POST,
-  `appointment_id`/`reason`) and "Reschedule appointment" (POST,
-  `appointment_id`/`new_time`/`reason`), both ≤4 fields
-  (`actions.ts`'s `MAX_FIELDS`). `AddActionDialog.tsx` gained a
-  template picker (`OptionCard` list, "Start from scratch" plus the 2
-  templates) above the existing create form; picking one remounts the
-  form (`key={templateKey}`) with fresh `defaultValue`s for
-  name/description/method/fields — the business still fills in their
-  own `url`, there's no backend being integrated against.
-  **Real bug caught by an actual screenshot, not assumed**: the first
-  pass used a 3-column `grid` of `OptionCard`s, but the dialog is only
-  `sm:max-w-lg` (512px) — titles wrapped, the "Selected" button
-  overflowed its own card border, descriptions were cut to fragments.
-  Fixed by stacking the cards in a single column instead (`OptionCard`'s
-  `trailing` prop for the button, not `action`) — confirmed clean via a
-  second real screenshot. Verified: `tsc` clean, all 10 `check:all`
-  guardrails, a production build, full unit suite (240, 4 new — a
-  `customActionOptions.test.ts` guarding each template's field count and
-  slug shape), the full `actions.spec.ts` (10/10, 2 new tests: picking a
-  template pre-fills the form and switching back to scratch clears it;
-  saving from a template produces a working action),
-  `accessibility.spec.ts` (16/16, 1 new test scanning the open dialog
-  with the template picker). No ADR — additive UI on an already-decided
-  architecture (ADR 0022), no schema or data-model change.
-
-- **Third Custom Action template: "Check appointment availability"
-  (2026-10-05)**: user asked for a matching template for the read-only
-  case that naturally precedes cancel/reschedule in a real booking flow.
-  Added to `ACTION_TEMPLATES` ahead of the other two (GET,
-  `date`/`service` fields, `CalendarSearch` icon). Switched each
-  template's picker button from a plain "Use" label to a template-
-  specific `aria-label` (`Use the ${label} template`/`${label}
-  (selected)`) — the earlier `actions.spec.ts` tests located buttons by
-  position (`.first()`/`.last()`), which broke the moment a 3rd template
-  changed the DOM order; stable accessible names fix this test fragility
-  permanently as more templates get added, not just for this one.
-  Verified: `tsc` clean, all 10 guardrails, full unit suite (240
-  unchanged — `customActionOptions.test.ts` already asserted generically
-  over every template, no edit needed), a production build, 27/27 across
-  `actions.spec.ts` (3 template tests now, incl. a new one confirming
-  the availability template saves as a GET action) and
-  `accessibility.spec.ts` run together, a real screenshot confirming the
-  4-item picker (3 templates + "Start from scratch") still reads cleanly
-  in the dialog's single-column layout.
 
 - **Full-app design audit (2026-10-05)**: user-requested complete sweep
   across text/colors/layout structure/spacing/shadows/interactions/
@@ -402,4 +281,102 @@ Deliberately not yet touched, pending reaction: this is scoped to
 `Badge` only — no change to `Button`'s own `default` variant (every
 call site already earns its solid-black treatment, confirmed by the
 audit above), no sync-dot pattern, no broader token-system rework.
+
+## Design-drift automation: 3 new guardrails close the real recurring gap (2026-10-08)
+
+User question, prompted directly by the Badge-variant fix above:
+"Where are our designs might get drifted away. And need my inputs which
+all should be automated. I am asking misses." Answered with a scoped
+audit (not a build) first — categorized every known drift risk into
+"already mechanically enforced," "automatable, not yet built," and
+"stays judgment." The grounding finding: every real design bug in this
+project's history (`docs/design/audit.md`'s "System coverage" table —
+Badge `default`→`bg-accent` 2026-09-27, `--muted`/`--accent` collision
+2026-09-28, the `--accent`-on-white ghost-button miss 2026-10-02, Badge
+`default`→`bg-primary` still wrong today's fix) is the *same* failure
+mode: a token or component gets reused for a meaning it wasn't built
+for, and nothing catches it until a screenshot is taken by hand.
+`check-design-tokens.mjs` was only ever built to catch the *literal*
+version of that (a raw hex/arbitrary-Tailwind-color), never the subtler
+"syntactically valid token, wrong job" version — which is what's
+actually recurred. User picked the top 3 proposed automations to build.
+
+**1. `scripts/check-token-variant-mapping.mjs`** (+ `scripts/token-
+variant-manifest.json`): a human-verified manifest recording each cva
+variant's exact color-bearing token classes; fails if a variant's
+actual className in code no longer matches, or if a variant exists with
+no manifest entry. Scoped to `Badge` only for this pass (the component
+that's actually drifted, twice) — deliberately not a speculative
+universal parser for all 26 `components/ui/` primitives, extend the
+manifest file-by-file as another component earns it. Verified it
+actually catches the bug class it exists for: temporarily changed
+`default`'s tokens back to `bg-primary` and confirmed a real FAIL with
+an expected-vs-actual diff, not just a happy-path pass.
+
+**2. `scripts/check-variant-visual-coverage.mjs`**, same manifest's new
+`coveredBy` field: a real call-sited variant must list the `tests/
+visual/` spec file(s) that actually render it; `coveredBy: null` is
+only valid for a variant with zero real call sites (cross-verified
+against the app code, not just trusted). **Found a real, live gap
+immediately**: `success` (Badge's Published/Connected/Ongoing/test-pass
+variant, shipped minutes earlier this same session) had real call
+sites in 3 files and zero visual coverage — none of the 19 existing
+baselines happened to publish a bot, connect Shopify, or open a
+conversation's Details tab. Fixed before committing the check, not
+left to fail on `main`: added a new visual test (`tests/visual/
+console.visual.spec.ts`'s "bots list — a published bot shows the
+success-colored badge") that publishes a real bot and screenshots the
+resulting `Published` badge — the cheapest of the 3 real call sites to
+reach in a test. Caught its own bug while adding it: `getByText
+("Published")` is case-insensitive by default and matched the
+sidebar's own per-run-unique email prefix ("visual-published-badge-
+...@example.com" contains "published") — fixed by scoping the locator
+to the table body with `exact: true`.
+Real false-positive found and fixed while building the detection
+heuristic itself: a naive "is this variant name a quoted string
+anywhere in app code" grep flagged `default` and `alert` as having real
+Badge call sites when they didn't — `default` matched `AddActionDialog
+.tsx`'s own unrelated Button-variant ternaries, `alert` matched
+`alert.tsx`'s `role="alert"`. Fixed by scoping to `app/` + `components/
+console/` only (excluding `components/ui/`'s own primitive-layer prop
+values) plus a tighter windowed-proximity-to-`<Badge`/`Record<...>`-
+type heuristic, not a bare substring search.
+
+**3. `scripts/check-token-contrast.mjs`** (+ `scripts/contrast-
+pairs.json`, + the `culori` dependency, real version checked via `npm
+view` per CLAUDE.md's own rule): computes real WCAG AA contrast for 15
+documented text/background token pairs directly from `app/globals.css`'s
+actual oklch values, in both light and dark mode — independent of
+whether any page happens to render that pairing on a scanned screen,
+closing the "dark mode never verified" gap (`docs/design/audit.md`'s
+own 🟡 row) for contrast specifically. Alpha-tinted pairs (a Badge's
+`bg-X/10`) are composited over their real backdrop using the same
+gamma-space blend a browser performs, verified against culori's real
+API directly (not assumed) before trusting it. **Found a real, live
+bug on first run**: the pair modeled after `--primary-foreground`/
+`--secondary-foreground`'s own shape — `--destructive-foreground` on
+`--destructive` — failed dark mode at 2.63:1. Investigated before
+"fixing" it: a grep confirmed `--destructive-foreground` has zero real
+`text-destructive-foreground` call sites anywhere in the app — Button's
+real destructive variant (verified shadcn stock source) hardcodes
+`text-white` instead, never reads that token. Removed the pair rather
+than chasing a fix for a pairing nothing actually renders (same "only
+test what's real" discipline check 2 applies to `coveredBy: null`) —
+`--destructive-foreground` itself is left as a known-dead, still-
+contrast-wrong token, flagged in the script's own header comment for a
+future pass rather than silently dropped. Verified the check for real
+in both directions: ran it clean against the current tokens (15/15
+pass in both themes), then deliberately lightened `--success-strong`
+in a throwaway edit and confirmed a real FAIL with the actual computed
+ratio (1.20:1), reverted.
+
+All 3 wired into `check:all` (now 13 guardrails) and `.githooks/
+pre-commit`'s existing `npm run check:all` step — no new CI wiring
+needed, it already runs `check:all`. Verified: `tsc` clean, all 13
+guardrails pass, full unit suite (250/250 unchanged), a production
+build, full `tests/visual/` (20/20 — 19 unchanged + the new
+`bots-table-published.png` baseline), full `tests/e2e/` (125/126 — the
+one failure, `knowledge.spec.ts`'s delete-entry test, confirmed the
+same pre-existing CI-contention flake documented elsewhere in this file
+via a clean isolated re-run), `accessibility.spec.ts` (16/16).
 
