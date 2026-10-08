@@ -406,12 +406,14 @@ see ADR 0014's Consequences for why).
   tested in dark mode, and there's still no UI toggle to switch into it.
   Contrast-correct is not the same as visually verified.
 - A real, live reference exists as of 2026-10-08:
-  `app/(console)/design-system/` renders every token via its real
-  Tailwind class — check there before trusting this file's own prose if
-  the two ever disagree (same "the CSS is correct if they differ" rule
-  this file's own intro states, now extended: the live page is correct
-  over this file too, for anything it covers). Tokens section only so
-  far; components and page templates are still prose-only here.
+  `app/(console)/design-system/` renders every token and (as of Phase 2,
+  same day) every `components/ui/` primitive via the real imported
+  component — check there before trusting this file's own prose if the
+  two ever disagree (same "the CSS is correct if they differ" rule this
+  file's own intro states, now extended: the live page is correct over
+  this file too, for anything it covers). Tokens + Components are both
+  built; page templates (and a dedicated registers section) are Phase 3,
+  not yet built.
 - ~~16 of the 18 CARE-derived primitives haven't been re-pulled yet~~
   — resolved by ADR 0017: all 18 are now on shadcn's real source,
   `@base-ui/react` removed entirely.

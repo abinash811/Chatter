@@ -35,6 +35,7 @@ const CHECKS = [
   "./check-token-contrast.mjs",
   "./check-error-copy-structure.mjs",
   "./check-register-assignment.mjs",
+  "./check-design-system-page-coverage.mjs",
 ];
 
 for (const check of CHECKS) {

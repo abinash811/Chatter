@@ -25,6 +25,7 @@
     "check:contrast": "node scripts/check-token-contrast.mjs",
     "check:errorcopy": "node scripts/check-error-copy-structure.mjs",
     "check:register": "node scripts/check-register-assignment.mjs",
+    "check:dscoverage": "node scripts/check-design-system-page-coverage.mjs",
     "check:all": "node scripts/check-all.mjs",
     "check:exemptions": "node scripts/check-guardrail-exemptions.mjs",
     "canary": "node scripts/canary.mjs",

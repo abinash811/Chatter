@@ -176,10 +176,17 @@ test("conversation detail has no serious/critical accessibility violations", asy
   await assertNoSeriousViolations(page);
 });
 
-test("design system page has no serious/critical accessibility violations", async ({ page }) => {
+test("design system page (Tokens tab) has no serious/critical accessibility violations", async ({ page }) => {
   await signUpAndCreateBot(page, "A11y Design System Bot", "a11y-design-system");
   // Not reached via a sidebar link (deliberately not in AppSidebar's
   // main nav) — a direct goto, same as conversation detail above.
   await page.goto("/design-system");
   await assertNoSeriousViolations(page, page.getByRole("heading", { name: "Design system" }));
+});
+
+test("design system page (Components tab) has no serious/critical accessibility violations", async ({ page }) => {
+  await signUpAndCreateBot(page, "A11y Design System Components Bot", "a11y-design-system-components");
+  await page.goto("/design-system");
+  await page.click('button[role="tab"]:has-text("Components")');
+  await assertNoSeriousViolations(page, page.getByText("Buttons & badges"));
 });

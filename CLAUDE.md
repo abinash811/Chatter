@@ -692,29 +692,31 @@ reason.)
   Playwright's `.hover()` helper showed no change; `page.mouse.move` to
   the element's real center confirmed the fix genuinely works. Full
   detail: `docs/changelog.md`.
-- `/design-system` reference page, Phase 1: Tokens (2026-10-08): scoped
-  first (3 explicit tradeoffs — in-house vs. Storybook, auth vs. public,
-  content breadth — explained then asked, per CLAUDE.md's process
-  rule). User picked: in-house live-rendering page, behind console
-  auth, v1 scope = tokens + components + page templates. `app/(console)/
-  design-system/page.tsx` built (Tokens section only so far — every
-  swatch renders the real Tailwind token class, can't drift from
-  `app/globals.css` by construction); Components/page-templates are
-  Phase 2/3. **Real bugs found by building a live reference, not
-  assumed**: 4 solid-fill status foreground tokens
-  (`--destructive-foreground`/`--warning-foreground`/`--alert-
-  foreground`/`--success-foreground`) had never been rendered as real
-  text anywhere before this page — 3 failed WCAG AA on this page's own
-  accessibility scan, fixed for real (switched to black, same direction
-  `--warning-foreground` already used). `--disabled-foreground`/
-  `--placeholder-foreground` turned out to be dead tokens too (`Input`
-  really uses `muted-foreground`) — fixed the page's rendering (real
-  disabled `Button`/`input`, not a plain colored block) rather than the
-  tokens, since WCAG correctly exempts real disabled controls. Also
-  surfaced a real, pre-existing environment flake (a CSS chunk 500,
-  "destination stream closed early" — background noise seen all session
-  — causing an unstyled capture) and confirmed it transient via a clean
-  restart, not a bug in the page. Full detail: `docs/changelog.md`.
+- `/design-system` reference page (2026-10-08, dev-only — see
+  `docs/roadmap.md`'s "Before production launch," must be removed
+  before going live). Scoped first (3 explicit tradeoffs — in-house vs.
+  Storybook, auth vs. public, content breadth — explained then asked,
+  per CLAUDE.md's process rule). User picked: in-house live-rendering
+  page, behind console auth, v1 scope = tokens + components + page
+  templates. **Phase 1 (Tokens)**: every color/type/elevation/motion
+  swatch renders the real Tailwind token class — can't drift from
+  `app/globals.css` by construction. Found 6 real dead/contrast-broken
+  tokens on first render (4 solid-fill status foregrounds failing WCAG
+  AA, fixed to black; `--disabled-foreground`/`--placeholder-foreground`
+  turned out unused — `Input` really uses `muted-foreground` — fixed the
+  page's rendering instead of the tokens, since WCAG exempts real
+  disabled controls). Also surfaced a real, pre-existing environment
+  flake (a CSS chunk 500) and confirmed it transient before trusting a
+  baseline. **Phase 2 (Components)**: all 26 `components/ui/` primitives
+  now render via the real imported component (overlays are real,
+  clickable triggers, not screenshots). Found 2 more real bugs: the
+  page's own `Field` helper had no `htmlFor`/`id` association (fixed);
+  `ScrollArea` — zero real call sites before this page — has a genuine
+  pre-existing keyboard-focus gap in its shadcn stock source (fixed,
+  documented as a delta). New `check-design-system-page-coverage.mjs`
+  guardrail (now 16 total) fails if a manifested primitive is never
+  referenced on the page — caught `Alert` missing on first run. Page
+  templates (Phase 3) not yet built. Full detail: `docs/changelog.md`.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.
