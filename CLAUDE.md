@@ -634,16 +634,26 @@ reason.)
 - Design-system pass, in progress (2026-10-08–): user requested a full,
   production-grade design system after flagging the console as visually
   "basic" (colors/type/hover/interactions/cards). Scoped vertical-agnostic
-  per user instruction (no healthcare-specific components). First real
-  increment shipped: one deliberate accent color, `--success` (green-500,
-  grounded in two convergent real screenshots — Chatbase + an OpenAI-
-  playground-style reference), applied narrowly to `Switch`'s checked
-  state only (on/active signal, not a general brand color). Mid-pass as
-  of this entry: user asked to move further — off the monochrome
-  (ADR 0014/0017) system entirely toward a whiter, Chatbase-style look;
-  not yet scoped or implemented. See `docs/changelog.md` for the
-  accent-color detail; this line will be updated once the white-theme
-  direction is scoped.
+  per user instruction (no healthcare-specific components). Two real
+  increments shipped so far: (1) one deliberate accent color, `--success`
+  (green-500, grounded in two convergent real screenshots — Chatbase +
+  an OpenAI-playground-style reference), applied to `Switch`'s checked
+  state; (2) `Badge`'s `default` variant stopped rendering solid black
+  — a status chip isn't a CTA — now a neutral light pill, with real
+  `success`/`warning`/`alert` variants (light-tint, matching
+  `destructive`'s existing shape) replacing every call site that used
+  solid black for a status signal (Published/Connected/Ongoing/a
+  passing test/pending-approval). New text-contrast tokens
+  `--success-strong`/`--warning-strong`/`--alert-strong` computed from
+  real `tailwindcss/colors` 800-steps, same discipline `--destructive`'s
+  own contrast fix used. Scoped per the user's own choice between 3
+  options: lighten primary emphasis, reserve solid black for one real
+  CTA per screen — not a full non-monochrome accent system. An audit
+  before this increment found `Button`/sidebar-active-state/`BotTopBar`
+  already followed that one-CTA discipline; `Badge` was the one real
+  gap. Full detail + verification: `docs/changelog.md`. Still open:
+  awaiting the user's reaction to the Badge screenshots before any
+  further rollout (sync-dot pattern, more token work).
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.

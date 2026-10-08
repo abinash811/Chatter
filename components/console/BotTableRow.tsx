@@ -71,7 +71,7 @@ export function BotTableRow({
         </div>
       </TableCell>
       <TableCell>
-        <Badge variant={bot.published ? "default" : "muted"}>
+        <Badge variant={bot.published ? "success" : "muted"}>
           {bot.published ? "Published" : "Draft only"}
         </Badge>
       </TableCell>

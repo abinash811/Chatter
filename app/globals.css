@@ -39,6 +39,9 @@
   --color-alert-foreground: var(--alert-foreground);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
+  --color-success-strong: var(--success-strong);
+  --color-warning-strong: var(--warning-strong);
+  --color-alert-strong: var(--alert-strong);
   --color-border: var(--border);
   --color-soft-border: var(--soft-border);
   --color-strong-border: var(--strong-border);
@@ -182,6 +185,18 @@
      not guessed, same discipline as every other token here. */
   --success: oklch(72.3% 0.219 149.579); /* green-500 */
   --success-foreground: oklch(98.2% 0.018 155.826); /* green-50 */
+  /* 2026-10-08: readable text-on-light-tint counterparts for the Badge
+     `success`/`warning`/`alert` variants below — the base warning/alert
+     tokens (amber-500/violet-500) and --success (green-500) are tuned
+     for vivid solid fills (a toggle thumb, a future status dot), too
+     light at that L to pass WCAG AA as standalone text on white or on
+     their own /10 tint (same real problem --destructive's own comment
+     above already solved for red). Darkened the same way: one step
+     further than --destructive's own 45% L landed, picked from
+     tailwindcss/colors' real 800-step for each hue, not guessed. */
+  --success-strong: oklch(44.8% 0.119 151.328); /* green-800 */
+  --warning-strong: oklch(47.3% 0.137 46.201); /* amber-800 */
+  --alert-strong: oklch(43.2% 0.232 292.759); /* violet-800 */
   --soft-border: oklch(97% 0 none); /* neutral-100 */
   --border: oklch(92.2% 0 none); /* neutral-200 */
   --strong-border: oklch(87% 0 none); /* neutral-300 */
@@ -236,6 +251,12 @@
   --alert-foreground: oklch(1 0 0);
   --success: oklch(72.3% 0.219 149.579); /* green-500, unchanged from light mode — same precedent as warning/alert above */
   --success-foreground: oklch(98.2% 0.018 155.826);
+  /* Lightened, not darkened, for dark-mode text-on-tint contrast — same
+     direction --destructive's own dark-mode override takes (red-400,
+     lighter than light mode's red-600-ish 45%). */
+  --success-strong: oklch(79.2% 0.209 151.711); /* green-400 */
+  --warning-strong: oklch(82.8% 0.189 84.429); /* amber-400 */
+  --alert-strong: oklch(70.2% 0.183 293.541); /* violet-400 */
   /* oklch's alpha slash lets a border/input read as a translucent white
      overlay on the near-black background, matching shadcn's own real
      dark-mode values exactly — the old HSL-triplet convention (ADR 0008)

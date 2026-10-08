@@ -61,7 +61,7 @@ export function WidgetsTable({
                     that calls a real API, and whether that call needs
                     approval, reads differently without opening the row. */}
                 {widget.apiUrl ? (
-                  <Badge variant={widget.writeCapable ? "destructive" : "default"}>
+                  <Badge variant={widget.writeCapable ? "destructive" : "muted"}>
                     {widget.writeCapable ? "Calls API — needs approval" : "Calls API"}
                   </Badge>
                 ) : (

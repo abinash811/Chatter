@@ -86,7 +86,7 @@ export function ConversationDetailPanel({ conversation }: { conversation: Conver
           </DetailRow>
           <DetailRow label="Source">{SOURCE_LABEL[conversation.source] ?? conversation.source}</DetailRow>
           <DetailRow label="Status">
-            <Badge variant={isPaused ? "muted" : "default"}>{isPaused ? "Paused" : "Ongoing"}</Badge>
+            <Badge variant={isPaused ? "muted" : "success"}>{isPaused ? "Paused" : "Ongoing"}</Badge>
           </DetailRow>
           <DetailRow label="Sentiment">
             <span className="italic text-muted-foreground">Not analyzed</span>

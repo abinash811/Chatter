@@ -232,7 +232,7 @@ export function AddActionDialog({
               <div className="mt-3 space-y-1">
                 <div className="flex items-center gap-2">
                   {testState.statusCode !== null && (
-                    <Badge variant={testState.status === "success" ? "default" : "destructive"}>
+                    <Badge variant={testState.status === "success" ? "success" : "destructive"}>
                       {testState.statusCode}
                     </Badge>
                   )}

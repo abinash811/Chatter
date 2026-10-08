@@ -54,141 +54,12 @@ typeface + page-title heading hierarchy (ADR 0036), empty-state
 treatment + the documented elevation scale, the documented motion
 scale, and the table column header consistency fix; `docs/changelog/
 2026-10-part5.md` — the hover-elevation rollout and per-item grayscale
-avatar distinction (app-wide consistency items #2 and #3 of 3).
+avatar distinction (app-wide consistency items #2 and #3 of 3);
+`docs/changelog/2026-10-part6.md` — the sidebar/top bar depth-polish +
+accessibility pass, and bot-scoped nav moving from `BotTopBar` into the
+sidebar (ADR 0037).
 
 ---
-
-- **Sidebar/top bar depth/polish + accessibility pass (2026-10-03).**
-  Asked for by name — `docs/design/audit.md`'s last screen with open
-  findings: Active 🟡/Depth 🟡 on the Depth/polish table, keyboard-pass
-  🟡/screen-reader 🔲 on the Responsive & accessibility table.
-  Audited `AppSidebar.tsx` and `BotTopBar.tsx` before changing anything,
-  same discipline as the hover-elevation rollout: `AppSidebar`'s nav,
-  search, Getting Started popover, and logout button are all real
-  shadcn primitives (`Sidebar`/`Input`/`Button`, ADR 0017) — confirmed
-  via a real computed-style check that hover/focus/active already work
-  for every one of them, no code change needed there, the 🟡 was
-  stale. `BotTopBar.tsx`'s horizontal tab nav is the one hand-built
-  piece in either component, and had two real, concrete gaps: no
-  `focus-visible` ring at all (every other custom nav/row element in
-  the app — `ConversationListPane`, `BotTableRow` — has one), and its
-  active tab was signaled by text color alone (component-checklist.md
-  item 4, color-independent state) — weaker than the `Tabs` pill
-  rendered directly below it on the same screen.
-  Fixed both: added `focus-visible:ring-2 ring-ring ring-offset-2`
-  matching the established pattern, plus a `border-b-2` underline
-  (transparent at rest so switching tabs causes no layout shift) and
-  `aria-current="page"` as a non-color, assistive-tech-visible active
-  signal. Verified via a real screenshot confirming the underline
-  genuinely follows the active tab across a real navigation (Editor →
-  Knowledge), not just that the class exists.
-  Did a real keyboard-only pass, not just a code read: a Playwright
-  script tab-walked from a fresh page load through all 15 reachable
-  elements (sidebar search/3 nav items/Getting Started/logout/collapse
-  toggle, bot switcher, all 7 `BotTopBar` tabs) and read each one's
-  live `getComputedStyle()` — every element reachable, visible, and
-  carrying a genuine focus ring (not just an outline reset with
-  nothing behind it).
-  Verified: `npx tsc --noEmit` clean; all 10 `check:all` guardrails;
-  full unit suite (235, unchanged — no logic touched); the full
-  `tests/e2e/` suite (117/117); `accessibility.spec.ts` (15/15, 0
-  violations); `tests/visual/` — the active tab's resting-state
-  underline (`border-b-2 border-foreground`, not just the hover/focus
-  states) does render in every baseline that includes `BotTopBar`, so
-  this touched 10 of the 19 baselines (every bot-scoped screen — bot
-  editor and its Appearance/publish-dialog/preview-sheet variants,
-  Leads, Actions, Knowledge empty+dialog, Approvals empty+pending,
-  Integrations, and the collapsed-sidebar shot, which is also taken
-  from a bot page), all regenerated and confirmed stable across two
-  full runs, the other 9 pixel-unchanged. `docs/design/audit.md`'s
-  Sidebar/top bar rows updated in both tables (Depth/polish Active
-  🟡→✅; Responsive & accessibility keyboard-pass 🟡→✅, screen-reader
-  🔲→🟡 — automated axe coverage via every bot-scoped page's existing
-  scan, still no literal AT pass, same honest standard as every other
-  row).
-
-- **Bot-scoped nav moves from BotTopBar into the sidebar (2026-10-04,
-  ADR 0037).** Triggered by a user-requested full-system audit
-  (process/security/testing/design, via 3 parallel research agents +
-  this session's own fresh design-audit context) — the user then
-  specifically called out the bots section's horizontal tabs as "not
-  that good." Looking closely confirmed a real, previously-uncaught
-  hierarchy problem: `BotTopBar`'s 7 plain-gray-text links sat directly
-  above the editor's own visually *stronger* `<Tabs>` pill row
-  (Persona/Guardrails/Tools/Appearance), so a user's eye landed on the
-  bolder secondary tabs first, not the actual primary page nav above
-  them. Root cause, found while re-reading `docs/design/principles.md`
-  #10 during this review: that principle's "persistent top bar +
-  Tabs" pattern was always about *within-page* section-switching, not
-  cross-page routing — `BotTopBar` had conflated the two jobs, and
-  stacking both directly on top of each other produced the inversion.
-  Presented 3 real alternatives to the user before building anything
-  (per CLAUDE.md's process rule): add icons to the existing bar
-  (GitHub repo-nav precedent, lowest risk), regroup into fewer
-  top-level items, or move the nav into the sidebar (Notion/Linear-
-  style). User chose the sidebar move — the biggest change, and the
-  only one of the three that actually resolves the Tabs collision
-  rather than just making the symptom less visible.
-  `BotTopBar.tsx` deleted outright. `AppSidebar.tsx` gained a
-  contextual `SidebarGroup` (bot switcher + the 7 links, each with a
-  real icon reused from that page's own `EmptyState` — `Users`/
-  `Webhook`/`FormInput`/`ShieldCheck`/`Database`, not invented fresh)
-  rendered only while `usePathname()` matches `/bots/[id]`. 5 pages'
-  page-title heading (`Leads`/`Actions`/`Widgets`/`Approvals`/
-  `Integrations`/`Knowledge`) promoted from `<h2>` to a real `<h1>` —
-  they'd deferred to `BotTopBar`'s sr-only `<h1>` before; that heading
-  now lives in `bots/[botId]/layout.tsx` directly. `BotEditorForm.tsx`
-  gained a real visible "Editor" `<h1>` it never had (previously relied
-  entirely on `BotTopBar`'s heading, the one page with no page-title
-  convention of its own). Also fixed in passing: the nav item still
-  read "Knowledge," stale since the 2026-09-29 "Data sources" rename.
-  **Real, serious bug caught only by the e2e suite, not by any manual
-  check or screenshot**: 3 tests failed after the move —
-  `demo-data.spec.ts`, and the new `bot-sidebar-nav.spec.ts`'s switcher
-  test — both timing out waiting for sidebar links that silently
-  weren't there. The `error-context.md` snapshot showed exactly why:
-  right after creating a brand-new bot (via "Load sample data" or the
-  "New bot" dialog) and landing on its page, `AppSidebar`'s own `bots`
-  list — fetched once by the shared `app/(console)/layout.tsx` — didn't
-  include the bot that had just been created. Root cause, confirmed by
-  reading Next.js's own real `revalidatePath` docs (`node_modules/next/
-  dist/docs/.../revalidatePath.md`), not recalled: `redirect()` alone
-  does not refetch a *shared parent layout's* own server data on a
-  client-side transition — `createBotAction`/`loadSampleDataAction`/
-  `duplicateBotAction` redirected to the new bot with no
-  `revalidatePath` call at all, and `renameBotAction`/`archiveBotAction`
-  only called the default `revalidatePath("/bots")` (page-level,
-  doesn't reach a parent layout). Fixed by adding
-  `revalidatePath("/", "layout")` to all 5 — the documented pattern for
-  busting a *layout's* cached data, not just one page's. This was a
-  real, previously-invisible gap in the architecture `ADR 0037`
-  introduced, not a pre-existing bug — the old `BotTopBar` read its
-  `bots` list from the inner `bots/[botId]/layout.tsx`, which *is*
-  freshly re-run per distinct `botId`, so this exact staleness class
-  never had a chance to surface before.
-  Also fixed a real strict-mode ambiguity in the new
-  `bot-sidebar-nav.spec.ts` test itself: a bare
-  `getByRole("combobox")` on the Data sources page matches 3
-  comboboxes (switcher + filter + sort, the same ambiguity class
-  already documented elsewhere in this app) — disambiguated via the
-  switcher's own `aria-label`. Renamed `bot-top-bar.spec.ts` →
-  `bot-sidebar-nav.spec.ts` to match what it actually tests.
-  Fixed a second, unrelated real bug found while running the full unit
-  suite during this pass: `tests/unit/lib/ai/crawler.test.ts`'s
-  sitemap-discovery test has a real (not mocked) per-page courtesy
-  `setTimeout` in `crawler.ts`, and 4 pages' worth was close enough to
-  vitest's 5000ms default to flake under parallel-worker load —
-  independently confirmed by this session and an earlier audit agent.
-  Given the same explicit extended timeout the file's own
-  `MAX_CRAWL_PAGES` test already uses for the identical reason.
-  Verified: `npx tsc --noEmit` clean; all 10 `check:all` guardrails; a
-  production build; full unit suite (235, the crawler flake now fixed
-  for real, confirmed via a direct re-run); the full `tests/e2e/`
-  suite; `accessibility.spec.ts`; real screenshots of the Editor and
-  Data sources pages confirming the sidebar nav renders correctly and
-  tracks the active route. `docs/design/audit.md`'s "Sidebar/top bar"
-  rows merged into a single "Sidebar" row in both tables, Depth moved
-  🟡→✅ (no second bar left to flatly compare it against).
 
 - **Leads, Approvals, and Integrations become org-wide (2026-10-04,
   ADR 0038).** Reviewing the just-shipped ADR 0037 sidebar nav, the
@@ -448,4 +319,87 @@ avatar distinction (app-wide consistency items #2 and #3 of 3).
   `actions.spec.ts`/`widgets.spec.ts`/`accessibility.spec.ts` (0
   violations), full 19-baseline visual suite unchanged (no currently-
   baselined screen happens to render a checked Switch at rest).
+
+## Second step of the design-system pass: Badge stops being solid-black-by-default (2026-10-08)
+
+Follow-up to the `--success` accent-color entry directly above. After
+seeing the two proof screenshots from that change, the user's next
+instruction was blunt: "Lets move away from monochrome and make it
+whit[e] everything like chatbase." Rather than guess what that meant
+across dozens of files, asked a scoping question first (per CLAUDE.md's
+"explain the tradeoff, then ask" rule for a change this size) — the
+user picked the narrowest of three options: lighten primary emphasis
+(buttons/active states), reserving solid black for one real CTA per
+screen, not a full non-monochrome accent-color system.
+
+**Real audit before touching anything**: grepped every `<Button`,
+`sidebar-primary`, and `bg-primary` call site in `app/`/`components/`
+first, expecting a scattered mess. It wasn't — every dialog already
+used `variant="outline"` for Cancel and `variant="default"` (solid
+black) for exactly one Save/Create button; every `OptionCard` action
+button was already `variant="outline"`; the sidebar's active-item state
+was already a light gray pill (`bg-sidebar-accent`, neutral-100), not
+solid black; `BotTopBar`'s active tab was already an underline +
+`aria-current`, not a background fill (ADR 0037's own prior pass). The
+actual violation was somewhere nobody had looked: `Badge`'s `default`
+variant was `bg-primary text-primary-foreground` (solid black) and was
+being used for real status signals — "Published," "Connected,"
+"Ongoing," a passing custom-action test — none of which are a
+clickable CTA, so none of them should compete with the one real button
+for visual weight. `ApprovalsTable`'s "pending" status used the same
+solid-black `default` too, despite needing to read as "needs attention"
+rather than "the answer."
+
+**Fix, `components/ui/badge.tsx`**: `default` no longer renders solid
+black — it's now a neutral light pill (`bg-secondary
+text-secondary-foreground`), the same visual weight as `muted`, kept
+only so an unset `variant` prop doesn't default back to black. Added
+real `success`/`warning`/`alert` variants (`bg-X/10 text-X-strong`,
+the same light-tint shape `destructive` already used) to put the
+`--warning`/`--alert` tokens — defined in `app/globals.css` since an
+earlier pass but never actually used anywhere — to real work for the
+first time. Every call site that used `default` for a genuine
+positive/active signal moved to `success` (`BotTableRow`'s Published
+badge, `integrations/page.tsx`'s Connected badge,
+`ConversationDetailPanel`'s Ongoing badge, `AddActionDialog`'s passing
+test-result badge); `ApprovalsTable`'s "pending" status moved to the
+new `warning` variant instead of `success`, since "awaiting a human"
+isn't the same signal as "already succeeded"; `WidgetsTable`'s
+non-write-capable badge (never a status worth emphasis) moved to
+`muted`.
+
+**Real contrast work, not guessed**: `--success` (green-500, 72.3% L)
+was deliberately vivid for the Switch's toggle thumb — too light to
+pass WCAG AA as standalone text on white or on its own 10%-opacity
+tint. Rather than reuse it for text and risk a repeat of `--destructive`'s
+own already-documented razor-thin-contrast bug, added three new
+text-only tokens (`--success-strong`/`--warning-strong`/
+`--alert-strong`) computed from the real installed `tailwindcss/colors`
+800-step for each hue (green-800/amber-800/violet-800, 43-48% L) —
+the same lightness neighborhood `--destructive`'s own comment says it
+needed for the identical problem. Dark mode goes the other direction,
+lightened to each hue's 400-step, mirroring `--destructive`'s existing
+light-mode-darkens/dark-mode-lightens pattern exactly.
+
+**Verified**: `tsc` clean, all 10 `check:all` guardrails (the raw-color
+scanner passes — every new value is a named token, not a literal),
+full unit suite (250/250 unchanged), a real production build, full
+`tests/e2e/` (124/126 — the 2 failures, `conversations.spec.ts`'s bot
+filter and `knowledge.spec.ts`'s delete-entry test, both passed clean
+in isolated re-runs, confirming they're the already-documented
+CI-contention flake, not a regression), `accessibility.spec.ts`
+(16/16, 0 violations — axe's own contrast checker independently
+confirms the hand-computed `-strong` token values are actually
+readable in a real browser, not just correct on paper), all 19
+`tests/visual/` baselines (1 regenerated — `approvals-pending.png`,
+the one seeded fixture whose captured viewport happens to show a
+status badge that changed; the other 18 were unaffected because none
+of their seeded fixtures happen to render a now-recolored badge in
+frame). Two real screenshots (bots list, conversation detail) sent for
+reaction before going further.
+
+Deliberately not yet touched, pending reaction: this is scoped to
+`Badge` only — no change to `Button`'s own `default` variant (every
+call site already earns its solid-black treatment, confirmed by the
+audit above), no sync-dot pattern, no broader token-system rework.
 

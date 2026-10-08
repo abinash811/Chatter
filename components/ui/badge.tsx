@@ -10,9 +10,20 @@
 // parts (component-checklist.md item 9). Variant names kept as this
 // app's own (`default`/`muted`/`destructive`, not shadcn's `secondary`/
 // `outline`/`ghost`/`link`) since every call site already depends on
-// them — see docs/design/design-system.md's provenance note on
-// `bg-primary` vs `bg-accent` for why `default` specifically must stay
-// a solid fill, not shadcn's own `default` styling verbatim.
+// them.
+//
+// 2026-10-08: `default` no longer renders as a solid `bg-primary` fill.
+// A Badge is a status chip, never a clickable action — solid black is
+// now reserved for the one real primary-action Button per screen (user
+// directive, moving away from a flat monochrome treatment toward
+// Chatbase's lighter one). Every call site that used `default` for an
+// actual positive/active signal (Published, Connected, Ongoing, a
+// passing test) moved to the new `success` variant instead; `default`
+// itself is now just a neutral light pill, same visual weight as
+// `muted`, kept only so an un-set variant prop doesn't fall back to
+// solid black. Added `success`/`warning`/`alert` as light-tint variants
+// (same `bg-X/10 text-X-strong` shape `destructive` already used) to
+// put the previously-unused `--warning`/`--alert` tokens to real work.
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
@@ -23,8 +34,11 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground",
+        default: "bg-secondary text-secondary-foreground",
         muted: "bg-muted text-muted-foreground",
+        success: "bg-success/10 text-success-strong",
+        warning: "bg-warning/10 text-warning-strong",
+        alert: "bg-alert/10 text-alert-strong",
         destructive: "bg-destructive/10 text-destructive",
       },
     },

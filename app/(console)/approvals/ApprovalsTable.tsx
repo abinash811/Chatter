@@ -34,8 +34,8 @@ function describeRequest(toolName: string, input: Record<string, unknown>): stri
   return toolName;
 }
 
-const STATUS_VARIANT: Record<PendingActionRow["status"], "muted" | "default" | "destructive"> = {
-  pending: "default",
+const STATUS_VARIANT: Record<PendingActionRow["status"], "muted" | "warning" | "destructive"> = {
+  pending: "warning",
   approved: "muted",
   rejected: "muted",
   failed: "destructive",

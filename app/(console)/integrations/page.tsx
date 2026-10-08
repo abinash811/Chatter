@@ -55,7 +55,7 @@ export default async function IntegrationsPage() {
             <div key={provider.name} className="flex h-row items-center justify-between px-2">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium">{provider.displayName}</span>
-                {connection && <Badge variant="default">Connected</Badge>}
+                {connection && <Badge variant="success">Connected</Badge>}
               </div>
 
               {connection ? (
