@@ -273,3 +273,23 @@ scope for v1" for the full list. Notable additions from research:
   system prompt from the start, not bolted on after. Blocked on
   `docs/open-questions.md` #2 (compliance posture for regulated
   verticals) being answered first.
+
+## Before production launch
+
+Action items, not roadmap features — things explicitly decided to be
+dev-time-only and that must happen before a real production deploy, so
+they don't quietly ship by default. Check this list as part of launch
+prep, not just the "Now" scope above.
+
+- **Remove `app/(console)/design-system/` (2026-10-08 user directive).**
+  Built deliberately inside the shipped app during active development
+  (the live reference needs to share the real build/CSS/components for
+  its zero-drift guarantee — see the route's own file header and
+  `docs/changelog.md`'s 2026-10-08 entry for why). Not a production
+  feature: any authenticated user could reach `/design-system` by URL
+  even though it's not in the nav. Before going live, delete the route
+  (and its `tests/e2e`/`tests/visual` coverage) — the design-system
+  reference then lives in this repo only (`docs/design/`, git history),
+  not as something deployed. Don't do this until the Components/Page-
+  templates phases are finished and no longer useful to keep live
+  during development.

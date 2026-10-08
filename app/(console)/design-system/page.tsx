@@ -10,6 +10,15 @@ import { TokensSection } from "./TokensSection";
 // for whoever's building the console, not something a business owner
 // needs in their daily nav. See docs/design/design-system.md for the
 // prose version this page is gradually making redundant.
+//
+// DEV-ONLY, NOT A PRODUCTION FEATURE (user directive, 2026-10-08):
+// kept inside the shipped app during active development for the
+// zero-drift guarantee above, but this route must be removed before
+// the production launch — at that point the reference lives in this
+// repo only (docs/design/, and this file's own history), not as a
+// route any authenticated user can reach. See docs/roadmap.md's
+// "Before production launch" section — don't let this quietly become
+// permanent.
 export default function DesignSystemPage() {
   return (
     <div>
