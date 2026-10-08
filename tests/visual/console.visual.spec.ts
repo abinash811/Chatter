@@ -257,3 +257,12 @@ test("console sidebar — icon-collapsed", async ({ page }) => {
   await page.waitForTimeout(250); // the collapse transition (app/globals.css) is 200ms
   await expect(page).toHaveScreenshot("sidebar-collapsed.png", { mask: sidebarMasks(page) });
 });
+
+test("design system page — Tokens section", async ({ page }) => {
+  await signUpAndCreateBot(page, "Support bot", "visual-design-system");
+  // Direct goto, same as the accessibility scan — not reached via the
+  // sidebar (deliberately not in AppSidebar's main nav).
+  await page.goto("/design-system", { waitUntil: "networkidle" });
+  await expect(page.getByRole("heading", { name: "Design system" })).toBeVisible();
+  await expect(page).toHaveScreenshot("design-system-tokens.png", { fullPage: true, mask: sidebarMasks(page) });
+});

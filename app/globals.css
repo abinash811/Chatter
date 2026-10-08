@@ -174,7 +174,13 @@
   --warning: oklch(76.9% 0.188 70.08); /* amber-500 */
   --warning-foreground: oklch(0% 0 0);
   --alert: oklch(60.6% 0.25 292.717); /* violet-500 */
-  --alert-foreground: oklch(1 0 0);
+  /* 2026-10-08: black, not white — building the design-system page (the
+     first thing to ever actually render --alert-foreground as real
+     text) found white-on-violet-500 is only 4.32:1, just under WCAG
+     AA's 4.5:1. Black clears it at 4.86:1 — same fix direction
+     --warning-foreground already uses for amber-500, a bg light enough
+     that dark text reads better than light. Computed, not guessed. */
+  --alert-foreground: oklch(0% 0 0);
   /* 2026-10-08: the one deliberate accent color in an otherwise
      monochrome system — grounded in two independent real references
      (a Chatbase screenshot, an OpenAI-playground-style comparison
@@ -184,7 +190,12 @@
      Computed from the installed tailwindcss/colors package (green-500),
      not guessed, same discipline as every other token here. */
   --success: oklch(72.3% 0.219 149.579); /* green-500 */
-  --success-foreground: oklch(98.2% 0.018 155.826); /* green-50 */
+  /* 2026-10-08: black, not green-50 — same real bug the --alert-
+     foreground comment above describes, found the same way (the
+     design-system page rendering it as real text for the first time):
+     green-50 text on a green-500 bg was 2.15:1. Black clears it at
+     9.31:1. */
+  --success-foreground: oklch(0% 0 0);
   /* 2026-10-08: readable text-on-light-tint counterparts for the Badge
      `success`/`warning`/`alert` variants below — the base warning/alert
      tokens (amber-500/violet-500) and --success (green-500) are tuned
@@ -244,13 +255,20 @@
   --secondary: oklch(26.9% 0 none); /* neutral-800 */
   --secondary-foreground: oklch(98.5% 0 none);
   --destructive: oklch(70.4% 0.191 22.216); /* red-400 */
-  --destructive-foreground: oklch(97.1% 0.013 17.38);
+  /* 2026-10-08: black, not red-50 — red-50 on red-400 is only 2.63:1.
+     The design-system page rendering this as real text for the first
+     time (nothing else ever has) found all 3 of destructive/alert/
+     success's dark-mode -foreground values failing the same way; black
+     clears all 3 (7.31:1 here) since red-400/violet-500/green-500 are
+     each light enough backgrounds for dark text to read better than
+     light, same direction --warning-foreground already used. */
+  --destructive-foreground: oklch(0% 0 0);
   --warning: oklch(76.9% 0.188 70.08);
   --warning-foreground: oklch(0% 0 0);
   --alert: oklch(60.6% 0.25 292.717);
-  --alert-foreground: oklch(1 0 0);
+  --alert-foreground: oklch(0% 0 0);
   --success: oklch(72.3% 0.219 149.579); /* green-500, unchanged from light mode — same precedent as warning/alert above */
-  --success-foreground: oklch(98.2% 0.018 155.826);
+  --success-foreground: oklch(0% 0 0);
   /* Lightened, not darkened, for dark-mode text-on-tint contrast — same
      direction --destructive's own dark-mode override takes (red-400,
      lighter than light mode's red-600-ish 45%). */

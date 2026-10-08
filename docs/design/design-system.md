@@ -399,11 +399,19 @@ see ADR 0014's Consequences for why).
 
 ## Known gaps
 
-- Dark mode (`.dark` class) tokens are defined and were spot-checked
-  for real HSL→oklch conversion correctness, but no screen actually
-  toggles it yet — no live dark-mode contrast verification has been
-  done (same unverified status as before ADR 0014, not a new gap this
-  introduced).
+- Dark mode (`.dark` class) tokens are defined and, as of 2026-10-08
+  (`scripts/check-token-contrast.mjs`), every documented token pair's
+  *contrast* is mechanically verified in both themes on every commit —
+  but no screen has ever actually been visually rendered or screenshot-
+  tested in dark mode, and there's still no UI toggle to switch into it.
+  Contrast-correct is not the same as visually verified.
+- A real, live reference exists as of 2026-10-08:
+  `app/(console)/design-system/` renders every token via its real
+  Tailwind class — check there before trusting this file's own prose if
+  the two ever disagree (same "the CSS is correct if they differ" rule
+  this file's own intro states, now extended: the live page is correct
+  over this file too, for anything it covers). Tokens section only so
+  far; components and page templates are still prose-only here.
 - ~~16 of the 18 CARE-derived primitives haven't been re-pulled yet~~
   — resolved by ADR 0017: all 18 are now on shadcn's real source,
   `@base-ui/react` removed entirely.

@@ -59,145 +59,12 @@ avatar distinction (app-wide consistency items #2 and #3 of 3);
 accessibility pass, and bot-scoped nav moving from `BotTopBar` into the
 sidebar (ADR 0037); `docs/changelog/2026-10-part7.md` — Leads/Approvals/
 Integrations becoming org-wide (ADR 0038), and the ready-made Custom
-Action templates.
+Action templates; `docs/changelog/2026-10-part8.md` — the full-app
+design audit, `request_refund` (sixth action tool), the
+`withOrgContext` transaction timeout fix, and the first accent-color
+increment of the design-system pass.
 
 ---
-
-- **Full-app design audit (2026-10-05)**: user-requested complete sweep
-  across text/colors/layout structure/spacing/shadows/interactions/
-  animations/consistency — not a touch-triggered per-screen check, the
-  whole console. Built the app, seeded a real demo bot, and screenshotted
-  all 16 screens plus dialog/tab/hover states against
-  `docs/design/principles.md`/`component-checklist.md`/
-  `design-system.md`'s documented bar. Two real findings, both fixed:
-  (1) **Onboarding register break** — `OnboardingForm.tsx` rendered its
-  own `bg-background` + bare `Card` page, dropping all branding right
-  after signup's rich two-panel `AuthShell` (dark hero, value props,
-  trust checklist); fixed by wrapping onboarding in `AuthShell` too
-  (same pattern `SignupForm.tsx`/`LoginForm.tsx` already use — the form
-  component now renders just its fields, no outer page wrapper), so the
-  whole signup→onboarding→console flow reads as one continuous visual
-  language instead of switching registers mid-flow. (2) **Suggested-
-  replies duplicate placeholder** — `AppearanceTabContent.tsx`'s row
-  placeholder ternary only special-cased row 0 ("What are your hours?"),
-  so rows 2 and 3 both showed the identical "e.g. Track my order"
-  example; fixed with a 3-entry `SUGGESTED_REPLY_PLACEHOLDERS` array,
-  one real example per row. Everything else held up on review: table
-  headers/badges/elevation/motion all consistent app-wide, no raw
-  colors anywhere, the Appearance tab's real-hue color swatch confirmed
-  correct (it's the *widget's* configurable brand color — visitor-facing
-  data, not console UI chrome — not a monochrome-system violation).
-  `docs/design/audit.md` gained a new System-coverage row for this pass
-  and a first-ever Onboarding row in the Depth/polish table (it had
-  never been tracked there). Verified: `tsc` clean, all 10 guardrails,
-  full unit suite (240 unchanged), full `tests/e2e/` suite,
-  `accessibility.spec.ts` (all screens including the new onboarding-
-  inside-AuthShell render), `onboarding.png`/`bot-editor-appearance.png`
-  visual baselines regenerated + stable across two runs, rest of the
-  19-baseline visual suite unchanged.
-
-- **`request_refund` — a sixth action tool (2026-10-05)**: discussed as
-  part of a broader "what's next" roadmap conversation first — of the
-  candidates, this and image input were the two flagged as genuinely
-  buildable without a product decision first; user picked this one to
-  build. `docs/roadmap.md`'s "More write-capable action tools" named "a
-  real Shopify refund call" as exactly this kind of built-in,
-  purpose-specific write tool (distinct from a business wiring its own
-  webhook via Custom Actions, ADR 0022). Reuses `request_order_
-  cancellation`'s exact pattern (ADR 0023) with zero engine changes —
-  `handle()` validates the order (found, not already refunded) and
-  queues a `PendingAction`; the separately-exported `executeRefund`
-  (`lib/ai/tools/requestRefund.ts`) is what actually calls Shopify's
-  `refundCreate` GraphQL mutation once a human approves from
-  `/approvals`. Wiring touched 4 small, generic extension points, not
-  new engine surface: `lib/ai/tools/index.ts` (side-effect import),
-  `app/(console)/approvals/actions.ts`'s `EXECUTORS` map (one line),
-  `ApprovalsTable.tsx`'s `describeRequest` (one case), and
-  `BotEditorForm.tsx`'s `TOOL_ICONS` map (cosmetic only — an unmapped
-  tool already rendered fine via the `Wrench` fallback, confirmed by
-  checking how `request_order_cancellation` itself had been rendering
-  since ADR 0023, with no icon mapped, until this pass). `shopify.dev`
-  stayed blocked by this environment's network egress policy for the
-  `refundCreate` mutation shape — re-confirmed via repeated direct
-  `WebFetch` attempts against shopify.dev and several mirror/community-
-  forum domains (withone.ai, cleverence.com, peerdh.com, community.
-  shopify.com), all blocked — pieced together from WebSearch result
-  summaries instead, same documented caveat as `orderCancel` (ADR
-  0023): unverified against a live store. The refund transaction needs
-  a parent to refund through (the original payment method), so
-  `executeRefund` fetches the order's transactions via the REST
-  endpoint first and refunds through the first successful sale/capture
-  transaction found — fails cleanly with a real reason if none exists.
-  Verified: `tsc` clean, all 10 guardrails, a production build, full
-  unit suite (250, 10 new — mirrors `cancelOrder.test.ts`'s structure:
-  handoff/not-found/already-refunded/queues-pending-approval for
-  `handle()`, no-integration/order-not-found/no-payment-transaction/
-  succeeds/surfaces-userErrors for `executeRefund`), full `tests/e2e/`
-  for `approvals.spec.ts` + `bot-editor.spec.ts` (19/19, 2 new tests: a
-  seeded refund request shows its own description and the real
-  "no Shopify store connected" failure outcome on approval; the tool
-  appears on the Tools tab), `accessibility.spec.ts` (16/16), the full
-  visual suite (19/19, no baseline changes — no visual regression on
-  the Tools-tab grid or approvals table), a real screenshot of the
-  Tools tab confirming the 5-card grid still reads cleanly with the new
-  `Undo2`-icon card added.
-
-- **`withOrgContext`'s transaction timeout was too tight for a remote
-  database (2026-10-06)**: found while walking the user through running
-  the app locally against a real Supabase (Postgres) instance for the
-  first time — onboarding failed every time with Prisma's own `Unable
-  to start a transaction in the given time`, not a one-off flake.
-  Root cause: `lib/db.ts`'s `withOrgContext` calls `prisma.$transaction`
-  with no explicit options, so it used Prisma's defaults (`maxWait`
-  2s, `timeout` 5s) — fine for a database on the same machine or
-  network (this session's own dev container, CI), too tight for any
-  pooled/managed Postgres reached over the public internet, which is
-  the normal shape for a real deploy (`docs/open-questions.md` #8 is
-  still open on exactly where the app itself runs, but the database
-  side, AWS RDS, ADR 0021, is already decided and is exactly this
-  shape). Fixed by passing explicit, more generous options (`maxWait:
-  10_000, timeout: 20_000`) — real headroom, not a magic-number
-  workaround for one user's network. Verified: `tsc` clean, all 10
-  guardrails, full unit suite (250 unchanged, no test covers `lib/
-  db.ts` directly). Not yet confirmed end-to-end against the user's
-  live remote Supabase instance that surfaced this — they're retrying
-  with this fix now.
-
-- **First step of a design-system pass: one real accent color
-  (2026-10-08, in progress)**: user pushed back hard on the "basic"
-  feedback from earlier — asked for a full, centralized design system
-  rather than piecemeal fixes, grounded in a real screenshot (declined,
-  then a second real screenshot of an OpenAI-playground-style model
-  comparison UI was supplied instead). That reference's only color was
-  a single green, used in exactly two places: a "Sync" toggle's on
-  state and a cost-meter's filled dots — never on buttons, nav, or
-  text. A separate real screenshot reviewed a few turns earlier
-  (Chatbase's Data sources page) showed the same restrained pattern
-  independently (a tiny green "synced" status dot, nothing else
-  colored) — two independent references agreeing on the same narrow
-  job for the same hue is a real signal, not a coincidence. Healthcare-
-  specific components from the user's original full spec (Doctor/
-  Patient/Appointment cards, etc.) were explicitly dropped — "it's a
-  SaaS, industry shouldn't matter," consistent with the core engine's
-  own existing no-vertical-logic guardrail, now extended to the design
-  system too.
-  Implemented as a real, verified first increment, not a mockup: a new
-  `--success`/`--success-foreground` token pair in `app/globals.css`
-  (green-500, computed from the installed `tailwindcss/colors`
-  package, not guessed — same discipline as every other token here),
-  applied to exactly one place with the most reach today:
-  `components/ui/switch.tsx`'s checked state (`bg-primary` →
-  `bg-success`), documented as a deliberate delta from shadcn's stock
-  source in the file's own header, same pattern already used for every
-  other customized primitive. Deliberately not rolled out further yet
-  (status badges, the sync-dot pattern, buttons) — sent real screenshots
-  of the Tools and Guardrails tabs for the user to react to before
-  continuing, per this project's own "preview before code" principle.
-  Verified: `tsc` clean, all 10 guardrails, full unit suite (250
-  unchanged), a production build, 48/48 across `bot-editor.spec.ts`/
-  `actions.spec.ts`/`widgets.spec.ts`/`accessibility.spec.ts` (0
-  violations), full 19-baseline visual suite unchanged (no currently-
-  baselined screen happens to render a checked Switch at rest).
 
 ## Second step of the design-system pass: Badge stops being solid-black-by-default (2026-10-08)
 
@@ -491,4 +358,89 @@ tab and the Add-action template picker, both covered), full
 `tests/visual/` (20/20 unchanged — no baseline captures a hover state,
 so a resting-state-only change was never expected to move pixels), a
 real before/after screenshot of the hovered card.
+
+## `/design-system` reference page, Phase 1: Tokens (2026-10-08)
+
+Scoped first (per CLAUDE.md's "explain the tradeoff, then ask" rule —
+this is a new pattern with real tradeoffs, not a one-obvious-answer
+build): explained live-rendering-page vs. Storybook, auth-gated vs.
+public, and content scope as 3 explicit choices with tradeoffs before
+building anything. User picked: in-house live-rendering page (no new
+dependency, matches this project's existing lightweight-tooling
+pattern), behind the existing console auth, and a v1 scope covering
+tokens + components + page templates (bundling in the separately-
+tracked "no shared page-template components" gap rather than
+sequencing it later).
+
+**Route**: `app/(console)/design-system/page.tsx` — inherits
+`app/(console)/layout.tsx`'s existing auth check for free, deliberately
+not added to `AppSidebar`'s main nav (a reference tool for whoever's
+building the console, not something a business owner needs in their
+daily nav), reachable by direct URL. Registered in `scripts/register-
+manifest.json` as `notion` (a calm, generous reference surface).
+
+**Phase 1 content** (`TokensSection.tsx` + a reusable `Swatch.tsx`):
+every real color token in `app/globals.css`'s `@theme` block, grouped
+the same way `design-system.md`'s own prose does, each swatch rendered
+via the *real* Tailwind utility class (`bg-primary`, not a copied hex)
+so the page can't drift from the actual tokens by construction — plus
+the documented type scale, 3-tier elevation scale, 3-tier motion scale
+(with one live hover-triggered demo), and the radius/spacing notes.
+Components and page-templates sections are Phase 2/3, not built yet.
+
+**Real bugs found by building a live reference — the whole point of
+one over a hand-written doc**: this page is the first thing to ever
+actually *render* 4 solid-fill status foreground tokens
+(`--destructive-foreground`/`--warning-foreground`/`--alert-foreground`/
+`--success-foreground`) as real text — nothing else in the app uses
+them (Button's real destructive variant hardcodes `text-white`, not
+the token). Its own accessibility scan immediately caught 3 of the 4
+failing WCAG AA: `--success-foreground` (green-50 on green-500,
+2.15:1), `--alert-foreground` (white on violet-500, 4.32:1— just under
+the line), and `--destructive-foreground` in dark mode specifically
+(red-50 on red-400, 2.63:1 — flagged once before during the contrast-
+guardrail work and left unfixed then, since nothing real rendered it
+at the time). Fixed all 3 for real in `app/globals.css` — switched to
+black, the same direction `--warning-foreground` already used (amber-
+500/violet-500/green-500/red-400 are each light enough backgrounds
+that dark text reads better than light) — computed via `culori`, not
+guessed. All 4 solid-fill pairs added to `scripts/contrast-pairs.json`
+now that a real render site exists (19 pairs total, was 15).
+
+**Second real finding, same session**: `--disabled-foreground` and
+`--placeholder-foreground` are *also* dead tokens — zero real call
+sites anywhere; `Input`'s actual placeholder styling uses
+`placeholder:text-muted-foreground` instead. Rendering them as plain
+"Aa" text tripped the same accessibility scan (1.48:1 — they're
+deliberately low-contrast, which WCAG exempts for genuinely disabled
+controls, but a plain `<div>` isn't one). Fixed the page itself, not
+the tokens: rendered them via a real disabled `Button` and a real
+`<input disabled placeholder="Aa">` instead of a plain colored block —
+more accurate to what the tokens are actually for, and the scan
+correctly exempts real disabled/placeholder elements the same way it
+already does everywhere else in the app. Documented the dead-token
+finding in the page's own copy rather than silently working around it.
+
+**Real environment flake surfaced, not caused, by this page**: the
+first two visual-baseline capture attempts rendered the page
+completely unstyled (no colors, no grid, browser-default fonts) —
+traced to the page's CSS chunk returning a real HTTP 500 ("The
+destination stream closed early", digest `3640184059` — the same
+background noise that's appeared in nearly every `[WebServer]` log
+this entire session without previously being tied to a visible
+consequence). Confirmed via `curl`ing the chunk directly (500,
+21-byte body) and via `document.styleSheets`/computed-style checks
+(an `<h1>` showing weight 700, the raw browser-default bold, instead
+of Tailwind's `font-semibold` 600) before accepting a baseline — not
+assumed from a quick glance. A clean server restart + retry produced a
+correctly-styled capture, confirming this is a transient server-side
+streaming issue in this environment, not a bug in the page's code.
+
+Verified: `tsc` clean, all 15 `check:all` guardrails (19 contrast
+pairs now, 1 more than before), a production build, full unit suite
+(250/250 unchanged), full `tests/e2e/` (127/127), `accessibility.spec.ts`
+(17/17, including the new design-system scan — clean only after both
+token fixes), full `tests/visual/` (21/21 — 20 unchanged + the new
+`design-system-tokens.png` baseline, confirmed correctly styled via a
+direct pixel crop before accepting it, not just a thumbnail glance).
 

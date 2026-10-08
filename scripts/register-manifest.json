@@ -10,5 +10,6 @@
   "app/(console)/bots/[botId]/actions/page.tsx": "notion",
   "app/(console)/bots/[botId]/widgets/page.tsx": "notion",
   "app/(console)/integrations/page.tsx": "stripe",
-  "app/(console)/settings/page.tsx": "stripe"
+  "app/(console)/settings/page.tsx": "stripe",
+  "app/(console)/design-system/page.tsx": "notion"
 }

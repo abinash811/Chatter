@@ -690,9 +690,31 @@ reason.)
   same convention `ConversationListPane`/`BotTableRow` already use.
   Re-verification caught a real test-tooling snag along the way:
   Playwright's `.hover()` helper showed no change; `page.mouse.move` to
-  the element's real center confirmed the fix genuinely works. Last
-  item off the "still missing in the design system" list this session
-  worked through. Full detail: `docs/changelog.md`.
+  the element's real center confirmed the fix genuinely works. Full
+  detail: `docs/changelog.md`.
+- `/design-system` reference page, Phase 1: Tokens (2026-10-08): scoped
+  first (3 explicit tradeoffs — in-house vs. Storybook, auth vs. public,
+  content breadth — explained then asked, per CLAUDE.md's process
+  rule). User picked: in-house live-rendering page, behind console
+  auth, v1 scope = tokens + components + page templates. `app/(console)/
+  design-system/page.tsx` built (Tokens section only so far — every
+  swatch renders the real Tailwind token class, can't drift from
+  `app/globals.css` by construction); Components/page-templates are
+  Phase 2/3. **Real bugs found by building a live reference, not
+  assumed**: 4 solid-fill status foreground tokens
+  (`--destructive-foreground`/`--warning-foreground`/`--alert-
+  foreground`/`--success-foreground`) had never been rendered as real
+  text anywhere before this page — 3 failed WCAG AA on this page's own
+  accessibility scan, fixed for real (switched to black, same direction
+  `--warning-foreground` already used). `--disabled-foreground`/
+  `--placeholder-foreground` turned out to be dead tokens too (`Input`
+  really uses `muted-foreground`) — fixed the page's rendering (real
+  disabled `Button`/`input`, not a plain colored block) rather than the
+  tokens, since WCAG correctly exempts real disabled controls. Also
+  surfaced a real, pre-existing environment flake (a CSS chunk 500,
+  "destination stream closed early" — background noise seen all session
+  — causing an unstyled capture) and confirmed it transient via a clean
+  restart, not a bug in the page. Full detail: `docs/changelog.md`.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.

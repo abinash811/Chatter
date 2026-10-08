@@ -175,3 +175,11 @@ test("conversation detail has no serious/critical accessibility violations", asy
   await page.goto(`/conversations/${issueConversationId}`);
   await assertNoSeriousViolations(page);
 });
+
+test("design system page has no serious/critical accessibility violations", async ({ page }) => {
+  await signUpAndCreateBot(page, "A11y Design System Bot", "a11y-design-system");
+  // Not reached via a sidebar link (deliberately not in AppSidebar's
+  // main nav) — a direct goto, same as conversation detail above.
+  await page.goto("/design-system");
+  await assertNoSeriousViolations(page, page.getByRole("heading", { name: "Design system" }));
+});

@@ -24,20 +24,24 @@
 // for CSS opacity — not a linear-light blend, which would give a
 // different, less accurate number.
 //
-// contrast-pairs.json deliberately excludes one pair that was in its
-// first draft: --destructive-foreground on --destructive (modeled
-// after Button's other variants' own foreground/background pairing).
-// Running this check for the first time found it fails dark mode
-// (2.63:1) — but a grep confirmed `--destructive-foreground` has zero
-// real `text-destructive-foreground` call sites anywhere in the app:
-// Button's real destructive variant (components/ui/button.tsx, real
-// shadcn stock source) hardcodes `text-white` instead, never reads
-// that token. Testing it would be testing a pairing nothing actually
-// renders — same "only check what's real" discipline check-variant-
-// visual-coverage.mjs's coveredBy:null applies to Badge variants.
-// --destructive-foreground itself is dead and still real-contrast-
-// wrong in dark mode; left as-is rather than fixed here, since fixing
-// an unused token isn't this check's job — flagged for a future pass.
+// contrast-pairs.json's first draft deliberately excluded --destructive-
+// foreground on --destructive: Button's real destructive variant
+// hardcodes `text-white` instead of that token, and a grep found zero
+// real call sites for the token anywhere — testing it would've tested a
+// pairing nothing rendered. **That changed 2026-10-08**: the new
+// app/(console)/design-system/ reference page is the first thing to
+// ever actually render destructive/warning/alert/success's solid-fill
+// foreground tokens as real text (it renders every token, by design —
+// that's the whole point of a live reference over a hand-written one).
+// Its own accessibility scan immediately caught 3 of the 4 failing —
+// success-foreground (2.15:1), alert-foreground (4.32:1), and
+// destructive-foreground in dark mode specifically (2.63:1, already
+// flagged once before, previously left unfixed because nothing real
+// rendered it). All 3 fixed for real in app/globals.css (switched to
+// black, same direction --warning-foreground already used — amber-500/
+// violet-500/green-500/red-400 are each light enough that dark text
+// reads better than light), and all 4 solid-fill pairs now belong in
+// this file's pairs list since a real render site exists.
 
 import { readFileSync } from "fs";
 import { oklch, rgb, wcagContrast } from "culori";
