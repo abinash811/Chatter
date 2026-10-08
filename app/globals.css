@@ -37,6 +37,8 @@
   --color-warning-foreground: var(--warning-foreground);
   --color-alert: var(--alert);
   --color-alert-foreground: var(--alert-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
   --color-border: var(--border);
   --color-soft-border: var(--soft-border);
   --color-strong-border: var(--strong-border);
@@ -170,6 +172,16 @@
   --warning-foreground: oklch(0% 0 0);
   --alert: oklch(60.6% 0.25 292.717); /* violet-500 */
   --alert-foreground: oklch(1 0 0);
+  /* 2026-10-08: the one deliberate accent color in an otherwise
+     monochrome system — grounded in two independent real references
+     (a Chatbase screenshot, an OpenAI-playground-style comparison
+     screenshot) that both used the exact same real color for the exact
+     same narrow job: an "on/active/synced" state signal (a sync toggle,
+     a status dot) — never a general brand color on buttons/nav/text.
+     Computed from the installed tailwindcss/colors package (green-500),
+     not guessed, same discipline as every other token here. */
+  --success: oklch(72.3% 0.219 149.579); /* green-500 */
+  --success-foreground: oklch(98.2% 0.018 155.826); /* green-50 */
   --soft-border: oklch(97% 0 none); /* neutral-100 */
   --border: oklch(92.2% 0 none); /* neutral-200 */
   --strong-border: oklch(87% 0 none); /* neutral-300 */
@@ -222,6 +234,8 @@
   --warning-foreground: oklch(0% 0 0);
   --alert: oklch(60.6% 0.25 292.717);
   --alert-foreground: oklch(1 0 0);
+  --success: oklch(72.3% 0.219 149.579); /* green-500, unchanged from light mode — same precedent as warning/alert above */
+  --success-foreground: oklch(98.2% 0.018 155.826);
   /* oklch's alpha slash lets a border/input read as a translucent white
      overlay on the near-black background, matching shadcn's own real
      dark-mode values exactly — the old HSL-triplet convention (ADR 0008)

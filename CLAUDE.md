@@ -631,6 +631,19 @@ reason.)
   defaults assumed a same-network database and failed every request
   with `Unable to start a transaction in the given time` against a
   pooled connection over the internet. Full detail: `docs/changelog.md`.
+- Design-system pass, in progress (2026-10-08–): user requested a full,
+  production-grade design system after flagging the console as visually
+  "basic" (colors/type/hover/interactions/cards). Scoped vertical-agnostic
+  per user instruction (no healthcare-specific components). First real
+  increment shipped: one deliberate accent color, `--success` (green-500,
+  grounded in two convergent real screenshots — Chatbase + an OpenAI-
+  playground-style reference), applied narrowly to `Switch`'s checked
+  state only (on/active signal, not a general brand color). Mid-pass as
+  of this entry: user asked to move further — off the monochrome
+  (ADR 0014/0017) system entirely toward a whiter, Chatbase-style look;
+  not yet scoped or implemented. See `docs/changelog.md` for the
+  accent-color detail; this line will be updated once the white-theme
+  direction is scoped.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.

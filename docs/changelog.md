@@ -413,3 +413,39 @@ avatar distinction (app-wide consistency items #2 and #3 of 3).
   live remote Supabase instance that surfaced this — they're retrying
   with this fix now.
 
+- **First step of a design-system pass: one real accent color
+  (2026-10-08, in progress)**: user pushed back hard on the "basic"
+  feedback from earlier — asked for a full, centralized design system
+  rather than piecemeal fixes, grounded in a real screenshot (declined,
+  then a second real screenshot of an OpenAI-playground-style model
+  comparison UI was supplied instead). That reference's only color was
+  a single green, used in exactly two places: a "Sync" toggle's on
+  state and a cost-meter's filled dots — never on buttons, nav, or
+  text. A separate real screenshot reviewed a few turns earlier
+  (Chatbase's Data sources page) showed the same restrained pattern
+  independently (a tiny green "synced" status dot, nothing else
+  colored) — two independent references agreeing on the same narrow
+  job for the same hue is a real signal, not a coincidence. Healthcare-
+  specific components from the user's original full spec (Doctor/
+  Patient/Appointment cards, etc.) were explicitly dropped — "it's a
+  SaaS, industry shouldn't matter," consistent with the core engine's
+  own existing no-vertical-logic guardrail, now extended to the design
+  system too.
+  Implemented as a real, verified first increment, not a mockup: a new
+  `--success`/`--success-foreground` token pair in `app/globals.css`
+  (green-500, computed from the installed `tailwindcss/colors`
+  package, not guessed — same discipline as every other token here),
+  applied to exactly one place with the most reach today:
+  `components/ui/switch.tsx`'s checked state (`bg-primary` →
+  `bg-success`), documented as a deliberate delta from shadcn's stock
+  source in the file's own header, same pattern already used for every
+  other customized primitive. Deliberately not rolled out further yet
+  (status badges, the sync-dot pattern, buttons) — sent real screenshots
+  of the Tools and Guardrails tabs for the user to react to before
+  continuing, per this project's own "preview before code" principle.
+  Verified: `tsc` clean, all 10 guardrails, full unit suite (250
+  unchanged), a production build, 48/48 across `bot-editor.spec.ts`/
+  `actions.spec.ts`/`widgets.spec.ts`/`accessibility.spec.ts` (0
+  violations), full 19-baseline visual suite unchanged (no currently-
+  baselined screen happens to render a checked Switch at rest).
+
