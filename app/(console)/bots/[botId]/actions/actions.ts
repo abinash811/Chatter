@@ -100,7 +100,7 @@ export async function createCustomActionAction(
     const message =
       err instanceof Error && err.message.includes("Unique constraint")
         ? "An action with that name already exists for this bot."
-        : "Couldn't save that action. Please try again.";
+        : "Couldn't save that action — the change didn't save. Please try again.";
     return { status: "error", message };
   }
 }
@@ -119,7 +119,7 @@ export async function toggleCustomActionAction(
     return { status: "success", message: null };
   } catch (err) {
     console.error("[toggleCustomActionAction]", err);
-    return { status: "error", message: "Couldn't update that action. Please try again." };
+    return { status: "error", message: "Couldn't update that action — the change didn't save. Please try again." };
   }
 }
 
@@ -136,7 +136,7 @@ export async function deleteCustomActionAction(
     return { status: "success", message: "Action deleted." };
   } catch (err) {
     console.error("[deleteCustomActionAction]", err);
-    return { status: "error", message: "Couldn't delete that action. Please try again." };
+    return { status: "error", message: "Couldn't delete that action — it wasn't removed. Please try again." };
   }
 }
 

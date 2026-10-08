@@ -119,7 +119,7 @@ export async function createWidgetAction(botId: string, _prevState: WidgetState,
     const message =
       err instanceof Error && err.message.includes("Unique constraint")
         ? "A widget with that name already exists for this bot."
-        : "Couldn't save that widget. Please try again.";
+        : "Couldn't save that widget — the change didn't save. Please try again.";
     return { status: "error", message };
   }
 }
@@ -134,7 +134,7 @@ export async function toggleWidgetAction(botId: string, _prevState: WidgetState,
     return { status: "success", message: null };
   } catch (err) {
     console.error("[toggleWidgetAction]", err);
-    return { status: "error", message: "Couldn't update that widget. Please try again." };
+    return { status: "error", message: "Couldn't update that widget — the change didn't save. Please try again." };
   }
 }
 
@@ -147,6 +147,6 @@ export async function deleteWidgetAction(botId: string, _prevState: WidgetState,
     return { status: "success", message: "Widget deleted." };
   } catch (err) {
     console.error("[deleteWidgetAction]", err);
-    return { status: "error", message: "Couldn't delete that widget. Please try again." };
+    return { status: "error", message: "Couldn't delete that widget — it wasn't removed. Please try again." };
   }
 }

@@ -96,7 +96,7 @@ export async function saveDraftAction(
     return { status: "success", message: "Draft saved." };
   } catch (err) {
     console.error("[saveDraftAction]", err);
-    return { status: "error", message: "Couldn't save your changes. Please try again." };
+    return { status: "error", message: "Couldn't save your changes — the change didn't save. Please try again." };
   }
 }
 
@@ -108,7 +108,7 @@ export async function publishAction(botId: string, _prevState: SaveDraftState): 
     return { status: "success", message: "Published — visitors will see this version now." };
   } catch (err) {
     console.error("[publishAction]", err);
-    return { status: "error", message: "Couldn't publish. Please try again." };
+    return { status: "error", message: "Couldn't publish — the change didn't save. Please try again." };
   }
 }
 
@@ -156,7 +156,7 @@ export async function sendPreviewMessageAction(
     };
   } catch (err) {
     console.error("[sendPreviewMessageAction]", err);
-    let message = "Couldn't get a reply. Please try again.";
+    let message = "Couldn't get a reply — something went wrong on our end. Please try again.";
     if (err instanceof Error && err.message.includes("no published config")) {
       message = "Publish this bot before testing it — the preview uses the published version, same as a real visitor would see.";
     } else if (err instanceof Anthropic.AuthenticationError) {

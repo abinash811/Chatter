@@ -23,6 +23,8 @@
     "check:tokenvariants": "node scripts/check-token-variant-mapping.mjs",
     "check:variantcoverage": "node scripts/check-variant-visual-coverage.mjs",
     "check:contrast": "node scripts/check-token-contrast.mjs",
+    "check:errorcopy": "node scripts/check-error-copy-structure.mjs",
+    "check:register": "node scripts/check-register-assignment.mjs",
     "check:all": "node scripts/check-all.mjs",
     "check:exemptions": "node scripts/check-guardrail-exemptions.mjs",
     "canary": "node scripts/canary.mjs",

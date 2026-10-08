@@ -70,7 +70,7 @@ export async function approveAction(
     };
   } catch (err) {
     console.error("[approveAction]", err);
-    return { status: "error", message: "Couldn't process that approval. Please try again." };
+    return { status: "error", message: "Couldn't process that approval — the change didn't save. Please try again." };
   }
 }
 
@@ -86,6 +86,6 @@ export async function rejectAction(
     return { status: "success", message: "Request rejected." };
   } catch (err) {
     console.error("[rejectAction]", err);
-    return { status: "error", message: "Couldn't reject that request. Please try again." };
+    return { status: "error", message: "Couldn't reject that request — the change didn't save. Please try again." };
   }
 }

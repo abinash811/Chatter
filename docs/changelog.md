@@ -380,3 +380,73 @@ one failure, `knowledge.spec.ts`'s delete-entry test, confirmed the
 same pre-existing CI-contention flake documented elsewhere in this file
 via a clean isolated re-run), `accessibility.spec.ts` (16/16).
 
+## Error-copy structure + register-assignment guardrails (2026-10-08)
+
+Direct follow-up to the design-drift-automation entry above — the user
+picked the two cheapest, most mechanical items off the "still missing"
+list: documented error-copy structure (component-checklist.md item 5)
+and a register-consistency check (Linear/Notion/Stripe, architecture.md
+§7).
+
+**Error copy.** A grep for the one generic-failure template this app
+actually uses ("Couldn't X. Please try again.") found 23 real
+occurrences — only 2 (rename/archive, fixed 2026-09-27, `docs/design/
+audit.md`'s "Bots list — open findings") had the middle "why" clause
+("the change didn't save") that made that fix read as a real 3-part
+error. The other 21, across actions/knowledge/widgets/conversations/
+approvals/settings/`BotsTable.tsx`'s duplicate-failure toast, jumped
+straight from what failed to "try again" with nothing in between.
+Rolled out a reason clause to all 21, picking the real failure class
+each one actually represents — not inventing specifics that don't
+exist: "the change didn't save" for create/save/update/publish
+failures (matching the established rename/archive precedent exactly),
+"it wasn't removed" for deletes, "something went wrong on our end" /
+"something went wrong reading it" / "something went wrong fetching it"
+for the 3 cases that aren't a DB write at all (the preview-chat reply
+failure, and knowledge ingestion's file/crawl/URL catch-alls — these
+already surface a *specific* diagnosed cause via `KnowledgeIngestionError
+.message` when one exists; the generic reason only fires for a truly
+unexpected failure). New `scripts/check-error-copy-structure.mjs`:
+scans every `app/**/actions.ts` and `components/console/**/*.tsx` for a
+string literal starting with "Couldn't" and containing "Please try
+again," and fails if there's no em-dash-separated reason clause between
+them — deliberately narrow (only this one established template, not a
+general prose-quality checker, which can't be done reliably with a
+regex); a validation message that already names the problem directly
+("A name is required.") is a different, legitimate category and isn't
+required to match this template at all. Verified the check actually
+catches the bug class: reverted one message to the old 2-part form,
+confirmed a real FAIL, reverted back.
+
+**Register assignment.** Attempted the fuller ask first — mechanically
+verify a screen's actual density/spacing matches its assigned register
+— and found a real reason it can't be built honestly today without
+inventing new policy: the one candidate mechanical signal in this
+codebase, the `h-row` page-header pattern, turned out to be used
+*identically* across every register's pages (it's this app's universal
+page-header height token, applied for an unrelated reason — every
+page's title row needs a fixed height, regardless of register — not a
+density differentiator at all). No other concrete, already-consistent
+per-register spacing value exists in the real code to check against;
+`BotEditorForm`'s own tabs alone range `space-y-2` through `space-y-6`
+with no documented target. Picking real numeric density targets per
+register is a design decision for the user to make (CLAUDE.md's
+"explain the tradeoff, then ask" rule) — not invented here. Built the
+honest, buildable slice instead: `scripts/register-manifest.json`
+transcribes the already-decided textual assignment (architecture.md
+§7 / `.claude/rules/console-frontend.md` item 3) for all 11 console
+routes into checkable data, and `scripts/check-register-assignment.mjs`
+fails if a route has no entry (or the manifest has a stale one) — so a
+new screen can no longer ship with its register silently never decided,
+even though *verifying* the density itself stays open, flagged
+explicitly rather than silently dropped.
+
+`check:all` is now 15 guardrails. Verified: `tsc` clean, all 15
+guardrails pass (both new ones confirmed to actually fail on a real
+induced bug, then reverted), full unit suite (250/250 unchanged), a
+production build, full `tests/e2e/` (126/126 — the toast-text
+assertions in `knowledge.spec.ts` use a prefix regex, unaffected by the
+added reason clauses), `accessibility.spec.ts` (16/16), full
+`tests/visual/` (20/20 unchanged — these are toast/string changes, no
+visual baseline touches toast copy).
+

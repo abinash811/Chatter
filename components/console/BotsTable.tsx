@@ -94,7 +94,7 @@ export function BotsTable({ bots }: { bots: BotRow[] }) {
         // should surface as a toast.
         unstable_rethrow(err);
         console.error("[duplicateBotAction]", err);
-        toast.error("Couldn't duplicate that bot. Please try again.");
+        toast.error("Couldn't duplicate that bot — the change didn't save. Please try again.");
       }
     });
   }

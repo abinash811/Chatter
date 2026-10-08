@@ -30,7 +30,17 @@ actually uses as part of the design-bar self-check
    the same meaning, so it isn't lost for a colorblind user?
 5. **Error copy** — three required parts: what happened, why, what to
    do next. Plain words, nobody blamed. (`principles.md` #6 sets the
-   tone; this is the structure that tone applies to.)
+   tone; this is the structure that tone applies to.) Mechanically
+   checked for the one recurring generic-failure template this app
+   actually uses ("Couldn't X — reason. Please try again.") by
+   `scripts/check-error-copy-structure.mjs`, added 2026-10-08 after a
+   grep found the "why" clause missing from 21 of 23 real messages —
+   only rename/archive (2026-09-27) had it. A specific, non-generic
+   reason is still better where one's available (a validation message
+   like "That URL isn't allowed..." already names it directly and
+   isn't required to match this template at all); the check only
+   blocks the "what happened. [nothing]. try again" gap, not prose
+   quality.
 6. **Empty-state copy** — always a way forward (a real CTA), never just
    an explanation of absence.
 7. **Keyboard + ARIA** — every state reachable without a mouse

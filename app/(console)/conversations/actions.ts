@@ -28,6 +28,6 @@ export async function toggleConversationPauseAction(
     return { status: "success", message: paused ? "Conversation paused." : "Conversation resumed." };
   } catch (err) {
     console.error("[toggleConversationPauseAction]", err);
-    return { status: "error", message: "Couldn't update this conversation. Please try again." };
+    return { status: "error", message: "Couldn't update this conversation — the change didn't save. Please try again." };
   }
 }

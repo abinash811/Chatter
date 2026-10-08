@@ -58,7 +58,7 @@ export async function createQaAction(
     return { status: "success", message: "Added to the knowledge base." };
   } catch (err) {
     console.error("[createQaAction]", err);
-    return { status: "error", message: "Couldn't save that entry. Please try again.", question, answer };
+    return { status: "error", message: "Couldn't save that entry — the change didn't save. Please try again.", question, answer };
   }
 }
 
@@ -83,7 +83,8 @@ export async function createFileAction(
     return { status: "success", message: "Added to the knowledge base." };
   } catch (err) {
     console.error("[createFileAction]", err);
-    const message = err instanceof KnowledgeIngestionError ? err.message : "Couldn't process that file. Please try again.";
+    const message =
+      err instanceof KnowledgeIngestionError ? err.message : "Couldn't process that file — something went wrong reading it. Please try again.";
     return { status: "error", message };
   }
 }
@@ -110,7 +111,8 @@ export async function createUrlAction(
       return { status: "success", message: `Crawled and added ${count} ${count === 1 ? "page" : "pages"}.` };
     } catch (err) {
       console.error("[createUrlAction/crawl]", err);
-      const message = err instanceof KnowledgeIngestionError ? err.message : "Couldn't crawl that site. Please try again.";
+      const message =
+        err instanceof KnowledgeIngestionError ? err.message : "Couldn't crawl that site — something went wrong fetching it. Please try again.";
       return { status: "error", message, url };
     }
   }
@@ -122,7 +124,8 @@ export async function createUrlAction(
     return { status: "success", message: "Added to the knowledge base." };
   } catch (err) {
     console.error("[createUrlAction]", err);
-    const message = err instanceof KnowledgeIngestionError ? err.message : "Couldn't ingest that URL. Please try again.";
+    const message =
+      err instanceof KnowledgeIngestionError ? err.message : "Couldn't ingest that URL — something went wrong fetching it. Please try again.";
     return { status: "error", message, url };
   }
 }
@@ -145,7 +148,8 @@ export async function createTextAction(
     return { status: "success", message: "Added to the knowledge base." };
   } catch (err) {
     console.error("[createTextAction]", err);
-    const message = err instanceof KnowledgeIngestionError ? err.message : "Couldn't save that snippet. Please try again.";
+    const message =
+      err instanceof KnowledgeIngestionError ? err.message : "Couldn't save that snippet — the change didn't save. Please try again.";
     return { status: "error", message, title, text };
   }
 }
@@ -163,7 +167,7 @@ export async function deleteEntryAction(
     return { status: "success", message: "Deleted." };
   } catch (err) {
     console.error("[deleteEntryAction]", err);
-    return { status: "error", message: "Couldn't delete that entry. Please try again." };
+    return { status: "error", message: "Couldn't delete that entry — it wasn't removed. Please try again." };
   }
 }
 
@@ -189,6 +193,6 @@ export async function bulkDeleteEntriesAction(
     return { status: "success", message: `Deleted ${sourceIds.length} ${sourceIds.length === 1 ? "entry" : "entries"}.` };
   } catch (err) {
     console.error("[bulkDeleteEntriesAction]", err);
-    return { status: "error", message: "Couldn't delete some entries. Please try again." };
+    return { status: "error", message: "Couldn't delete some entries — some weren't removed. Please try again." };
   }
 }

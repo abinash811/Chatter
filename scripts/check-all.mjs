@@ -33,6 +33,8 @@ const CHECKS = [
   "./check-token-variant-mapping.mjs",
   "./check-variant-visual-coverage.mjs",
   "./check-token-contrast.mjs",
+  "./check-error-copy-structure.mjs",
+  "./check-register-assignment.mjs",
 ];
 
 for (const check of CHECKS) {

@@ -670,6 +670,20 @@ reason.)
   found a real dead/wrong-contrast token (`--destructive-foreground`,
   unused, still broken, flagged not fixed) on first run too. Full
   detail: `docs/changelog.md`.
+- Error-copy structure + register-assignment guardrails (2026-10-08):
+  2 more `check:all` guardrails (now 15). `check-error-copy-
+  structure.mjs` requires the "Couldn't X. Please try again." template
+  to carry a reason clause in between — rolled out to all 21 real
+  messages missing one (only rename/archive had it before). `check-
+  register-assignment.mjs` (+ `scripts/register-manifest.json`)
+  requires every console route to have a Linear/Notion/Stripe register
+  assigned (architecture.md §7) — but does NOT verify a page's actual
+  density matches its register: investigated that fuller check first
+  and found no real, already-consistent mechanical signal exists in
+  the codebase to check against (the one candidate, `h-row`, is used
+  identically on every register for an unrelated reason) — picking
+  real per-register numeric targets is a design decision still open,
+  flagged not invented. Full detail: `docs/changelog.md`.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.
