@@ -450,3 +450,45 @@ added reason clauses), `accessibility.spec.ts` (16/16), full
 `tests/visual/` (20/20 unchanged — these are toast/string changes, no
 visual baseline touches toast copy).
 
+## `OptionCard` dead-hover bug fixed (2026-10-08)
+
+Last item off the "still missing in the design system" list the user
+picked through this session — a previously-diagnosed, real, cheap bug
+that had been explicitly deferred pending the broader pass: a
+diagnostic script had found `OptionCard`'s own `box-shadow` computed
+style identical before and after a real hover, confirmed via
+`getComputedStyle()`, not assumed from a screenshot alone.
+
+Fixed with `transition-shadow hover:shadow-sm` added to the `Card` in
+`components/console/OptionCard.tsx` — the same convention
+`ConversationListPane`'s rows and `BotTableRow`'s avatar chip already
+use (a `shadow-xs`→`shadow-sm` bump on hover), not a new pattern
+invented for this one component. No `z-10`-stacking trick needed here
+(unlike `ConversationListPane`'s zero-gap `divide-y` rows) — `OptionCard`
+grids use `gap-3`, so a neighbor's border never clips the lifted
+shadow.
+
+**Real methodology snag while re-verifying**: the first verification
+attempt (Playwright's `.hover()` convenience method, the same call used
+throughout this project's prior hover checks) showed *no* change in the
+computed box-shadow — looked like the fix hadn't taken. Didn't accept
+that at face value and ship a "fixed" claim that wasn't actually true:
+checked the rendered DOM directly first (confirmed `hover:shadow-sm` was
+genuinely present in the element's class list), then re-tested with
+`page.mouse.move` to the element's real bounding-box center instead of
+the `.hover()` helper — that showed the real, different shadow value
+(`0 1px 3px rgba(0,0,0,.1), 0 1px 2px -1px rgba(0,0,0,.1)` vs. the
+resting `0 1px 2px rgba(0,0,0,.05)`), confirmed via
+`el.matches(":hover")` too. The `.hover()` helper's failure here is a
+test-tooling quirk, not a real regression — flagged for awareness, not
+investigated further since it isn't blocking.
+
+Verified: `tsc` clean, all 15 `check:all` guardrails, full unit suite
+(250/250 unchanged), a production build, full `tests/e2e/`
+(`knowledge.spec.ts`/`bot-editor.spec.ts`/`actions.spec.ts`/
+`accessibility.spec.ts`, 55/55 — `OptionCard` is also used on the Tools
+tab and the Add-action template picker, both covered), full
+`tests/visual/` (20/20 unchanged — no baseline captures a hover state,
+so a resting-state-only change was never expected to move pixels), a
+real before/after screenshot of the hovered card.
+

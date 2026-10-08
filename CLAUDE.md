@@ -684,6 +684,15 @@ reason.)
   identically on every register for an unrelated reason) — picking
   real per-register numeric targets is a design decision still open,
   flagged not invented. Full detail: `docs/changelog.md`.
+- `OptionCard` dead-hover bug fixed (2026-10-08): a previously-diagnosed,
+  real bug (its `Card`'s computed `box-shadow` was identical before/
+  after hover) — fixed with `transition-shadow hover:shadow-sm`, the
+  same convention `ConversationListPane`/`BotTableRow` already use.
+  Re-verification caught a real test-tooling snag along the way:
+  Playwright's `.hover()` helper showed no change; `page.mouse.move` to
+  the element's real center confirmed the fix genuinely works. Last
+  item off the "still missing in the design system" list this session
+  worked through. Full detail: `docs/changelog.md`.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.

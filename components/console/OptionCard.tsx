@@ -7,6 +7,18 @@ import { Card, CardContent } from "@/components/ui";
 // action), confirmed from real screenshots (docs/research/competitive-
 // landscape.md's 2026-09-27 update), not a per-screen one-off. First
 // used by the bot editor's Tools tab and Knowledge's Add entry point.
+// 2026-10-08: hover:shadow-sm (Card's resting shadow-xs bumped one tier,
+// same transition-shadow convention ConversationListPane/BotTableRow's
+// chip already use) — a real, previously-flagged dead-hover bug: a
+// diagnostic script compared the card's computed box-shadow before and
+// after a real hover and found it identical, confirmed via
+// getComputedStyle(), not assumed. OptionCard itself isn't the click
+// target (its own action/trailing control is), but it's laid out as a
+// gallery of options (Chatbase's own reference pattern) where the whole
+// card should read as "this is one interactive option," not just the
+// small control inside it. No z-10 stacking trick needed here (unlike
+// ConversationListPane's divide-y adjacent rows) — these sit in a
+// gap-3 grid, so a neighbor's border never clips the lifted shadow.
 export function OptionCard({
   icon: Icon,
   title,
@@ -23,7 +35,7 @@ export function OptionCard({
   action?: React.ReactNode;
 }) {
   return (
-    <Card>
+    <Card className="transition-shadow hover:shadow-sm">
       <CardContent className="flex gap-3 p-4">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-muted">
           <Icon className="h-4 w-4 text-muted-foreground" />
