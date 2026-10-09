@@ -55,7 +55,7 @@
     "@types/node": "^26.6.2",
     "@types/react": "^19.0.0",
     "@vitejs/plugin-react": "^6.1.1",
-    "@vitest/coverage-v8": "^5.0.2",
+    "@vitest/coverage-v8": "^5.0.3",
     "playwright": "^1.63.0",
     "postcss": "^8.4.47",
     "prisma": "^5.20.0",
