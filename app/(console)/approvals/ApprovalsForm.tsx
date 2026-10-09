@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { approveAction, rejectAction, type ApprovalActionState } from "./actions";
 import { ApprovalsTable } from "./ApprovalsTable";
 import { BotFilterSelect } from "@/components/console/BotFilterSelect";
+import { PageHeader } from "@/components/console/PageHeader";
 import type { PendingActionRow } from "@/lib/pendingActions";
 import {
   AlertDialog,
@@ -57,13 +58,11 @@ export function ApprovalsForm({
 
   return (
     <div>
-      <div className="flex h-row items-center justify-between">
-        <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight">
-          Approvals{" "}
-          {pendingCount > 0 && <span className="text-sm font-normal text-muted-foreground">{pendingCount} waiting</span>}
-        </h1>
-        <BotFilterSelect bots={bots} />
-      </div>
+      <PageHeader
+        title="Approvals"
+        count={pendingCount > 0 ? `${pendingCount} waiting` : undefined}
+        action={<BotFilterSelect bots={bots} />}
+      />
 
       <ApprovalsTable
         actions={actions}

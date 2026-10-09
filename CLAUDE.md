@@ -715,8 +715,18 @@ reason.)
   pre-existing keyboard-focus gap in its shadcn stock source (fixed,
   documented as a delta). New `check-design-system-page-coverage.mjs`
   guardrail (now 16 total) fails if a manifested primitive is never
-  referenced on the page — caught `Alert` missing on first run. Page
-  templates (Phase 3) not yet built. Full detail: `docs/changelog.md`.
+  referenced on the page — caught `Alert` missing on first run.
+  **Phase 3 (Page templates, 2026-10-09)**: new shared
+  `components/console/PageHeader.tsx`, extracted from the identical
+  title+count+action header duplicated across Bots/Leads/Approvals/
+  Custom actions/Data sources/Widgets, rolled out to all 6 — `count` is
+  a `ReactNode` since real call sites format it differently ("3" vs.
+  "3 waiting"). The Dialog-creation-flow and `BotEditorForm`'s own
+  header are deliberately documented, not force-extracted — both
+  genuinely vary per real caller. New Registers table reads
+  `scripts/register-manifest.json` directly, so it can't drift from
+  what `check-register-assignment.mjs` enforces. All 3 phases now
+  complete. Full detail: `docs/changelog.md`.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.

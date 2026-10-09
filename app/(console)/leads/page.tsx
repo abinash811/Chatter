@@ -2,6 +2,7 @@ import { getCurrentSession } from "@/lib/auth";
 import { withOrgContext } from "@/lib/db";
 import { listLeads } from "@/lib/leads";
 import { BotFilterSelect } from "@/components/console/BotFilterSelect";
+import { PageHeader } from "@/components/console/PageHeader";
 import { LeadsTable } from "./LeadsTable";
 
 // ADR 0038 (2026-10-04): org-wide, not bot-scoped — a lead is a lead
@@ -24,13 +25,7 @@ export default async function LeadsPage({
 
   return (
     <div>
-      <div className="flex h-row items-center justify-between">
-        <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight">
-          Leads{" "}
-          {leads.length > 0 && <span className="text-sm font-normal text-muted-foreground">{leads.length}</span>}
-        </h1>
-        <BotFilterSelect bots={bots} />
-      </div>
+      <PageHeader title="Leads" count={leads.length > 0 ? leads.length : undefined} action={<BotFilterSelect bots={bots} />} />
       <LeadsTable leads={leads} />
     </div>
   );

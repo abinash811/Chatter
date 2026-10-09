@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { createWidgetAction, toggleWidgetAction, deleteWidgetAction, type WidgetState } from "./actions";
 import { AddWidgetDialog } from "./AddWidgetDialog";
 import { WidgetsTable } from "./WidgetsTable";
+import { PageHeader } from "@/components/console/PageHeader";
 import type { WidgetRow } from "@/lib/widgets";
 import {
   Button,
@@ -50,15 +51,15 @@ export function WidgetsForm({ botId, widgets }: { botId: string; widgets: Widget
 
   return (
     <div>
-      <div className="flex h-row items-center justify-between">
-        <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight">
-          Widgets{" "}
-          {widgets.length > 0 && <span className="text-sm font-normal text-muted-foreground">{widgets.length}</span>}
-        </h1>
-        <Button type="button" size="sm" onClick={() => setAddOpen(true)}>
-          Add widget
-        </Button>
-      </div>
+      <PageHeader
+        title="Widgets"
+        count={widgets.length > 0 ? widgets.length : undefined}
+        action={
+          <Button type="button" size="sm" onClick={() => setAddOpen(true)}>
+            Add widget
+          </Button>
+        }
+      />
 
       <AddWidgetDialog open={addOpen} onOpenChange={setAddOpen} formAction={addFormAction} state={addState} isPending={isAdding} />
 

@@ -190,3 +190,10 @@ test("design system page (Components tab) has no serious/critical accessibility 
   await page.click('button[role="tab"]:has-text("Components")');
   await assertNoSeriousViolations(page, page.getByText("Buttons & badges"));
 });
+
+test("design system page (Page templates tab) has no serious/critical accessibility violations", async ({ page }) => {
+  await signUpAndCreateBot(page, "A11y Design System Templates Bot", "a11y-design-system-templates");
+  await page.goto("/design-system");
+  await page.click('button[role="tab"]:has-text("Page templates")');
+  await assertNoSeriousViolations(page, page.getByRole("heading", { name: "PageHeader" }));
+});

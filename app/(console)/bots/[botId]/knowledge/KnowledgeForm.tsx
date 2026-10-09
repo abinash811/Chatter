@@ -18,6 +18,7 @@ import { AddUrlDialog } from "./AddUrlDialog";
 import { AddTextDialog } from "./AddTextDialog";
 import { KnowledgeTable, type KnowledgeSourceRow } from "./KnowledgeTable";
 import { OptionCard } from "@/components/console/OptionCard";
+import { PageHeader } from "@/components/console/PageHeader";
 import { formatBytes } from "@/lib/utils";
 import {
   Button,
@@ -108,16 +109,16 @@ export function KnowledgeForm({
 
   return (
     <div>
-      <div className="flex h-row items-center justify-between">
-        <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight">
-          Data sources{" "}
-          {entries.length > 0 && <span className="text-sm font-normal text-muted-foreground">{entries.length}</span>}
-        </h1>
-        {/* Informational only, no plan-based cap — docs/open-questions.md
-            #6 (pricing/billing tiers) is unresolved, so there's nothing
-            to show a total against yet, unlike Chatbase's "X KB / 1 MB". */}
-        <p className="text-sm text-muted-foreground">Total size: {formatBytes(totalBytes)}</p>
-      </div>
+      <PageHeader
+        title="Data sources"
+        count={entries.length > 0 ? entries.length : undefined}
+        action={
+          // Informational only, no plan-based cap — docs/open-questions.md
+          // #6 (pricing/billing tiers) is unresolved, so there's nothing
+          // to show a total against yet, unlike Chatbase's "X KB / 1 MB".
+          <p className="text-sm text-muted-foreground">Total size: {formatBytes(totalBytes)}</p>
+        }
+      />
 
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <OptionCard

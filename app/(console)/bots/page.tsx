@@ -2,6 +2,7 @@ import { Bot as BotIcon } from "lucide-react";
 import { getCurrentSession } from "@/lib/auth";
 import { withOrgContext } from "@/lib/db";
 import { BotsTable } from "@/components/console/BotsTable";
+import { PageHeader } from "@/components/console/PageHeader";
 import { NewBotDialog } from "./NewBotDialog";
 import { LoadSampleDataButton } from "./LoadSampleDataButton";
 
@@ -24,20 +25,16 @@ export default async function BotsPage() {
 
   return (
     <div>
-      <div className="flex h-row items-center justify-between">
-        <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight">
-          Bots{" "}
-          {bots.length > 0 && (
-            <span className="text-sm font-normal text-muted-foreground">
-              {bots.length}
-            </span>
-          )}
-        </h1>
-        <div className="flex items-center gap-2">
-          <LoadSampleDataButton />
-          <NewBotDialog />
-        </div>
-      </div>
+      <PageHeader
+        title="Bots"
+        count={bots.length > 0 ? bots.length : undefined}
+        action={
+          <>
+            <LoadSampleDataButton />
+            <NewBotDialog />
+          </>
+        }
+      />
 
       {bots.length === 0 ? (
         // Dialog-based creation flow (docs/design/audit.md's "Bots list

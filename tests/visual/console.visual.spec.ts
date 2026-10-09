@@ -274,3 +274,11 @@ test("design system page — Components section", async ({ page }) => {
   await expect(page.getByText("Buttons & badges")).toBeVisible();
   await expect(page).toHaveScreenshot("design-system-components.png", { fullPage: true, mask: sidebarMasks(page) });
 });
+
+test("design system page — Page templates section", async ({ page }) => {
+  await signUpAndCreateBot(page, "Support bot", "visual-design-system-templates");
+  await page.goto("/design-system", { waitUntil: "networkidle" });
+  await page.click('button[role="tab"]:has-text("Page templates")');
+  await expect(page.getByRole("heading", { name: "PageHeader" })).toBeVisible();
+  await expect(page).toHaveScreenshot("design-system-templates.png", { fullPage: true, mask: sidebarMasks(page) });
+});

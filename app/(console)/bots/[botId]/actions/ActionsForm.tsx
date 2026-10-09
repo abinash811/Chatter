@@ -12,6 +12,7 @@ import {
 } from "./actions";
 import { AddActionDialog } from "./AddActionDialog";
 import { ActionsTable } from "./ActionsTable";
+import { PageHeader } from "@/components/console/PageHeader";
 import type { CustomActionRow } from "@/lib/customActions";
 import {
   Button,
@@ -63,15 +64,15 @@ export function ActionsForm({ botId, actions }: { botId: string; actions: Custom
 
   return (
     <div>
-      <div className="flex h-row items-center justify-between">
-        <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight">
-          Custom actions{" "}
-          {actions.length > 0 && <span className="text-sm font-normal text-muted-foreground">{actions.length}</span>}
-        </h1>
-        <Button type="button" size="sm" onClick={() => setAddOpen(true)}>
-          Add action
-        </Button>
-      </div>
+      <PageHeader
+        title="Custom actions"
+        count={actions.length > 0 ? actions.length : undefined}
+        action={
+          <Button type="button" size="sm" onClick={() => setAddOpen(true)}>
+            Add action
+          </Button>
+        }
+      />
 
       <AddActionDialog
         open={addOpen}

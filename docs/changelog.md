@@ -324,3 +324,63 @@ Sheet, Popover, DropdownMenu, Tooltip-on-hover) and the Toaster demo
 firing a real "Draft saved." toast through the app's actual global
 toaster — not just that the trigger buttons render.
 
+## `/design-system` Phase 3: Page templates + registers (2026-10-09)
+
+Final phase of the 2026-10-08 scoping decision. Investigated before
+building: grepped every real `h-row items-center justify-between`
+title+action header across `app/` and found it duplicated verbatim
+across 6 real pages/forms (Bots, Leads, Approvals, Custom actions,
+Data sources, Widgets) plus their `loading.tsx` skeletons — a genuine,
+identical pattern worth extracting, unlike a hypothetical one.
+
+**New shared component**: `components/console/PageHeader.tsx`
+(`{ title, count?, action? }`), extracted the same way `EmptyState.tsx`
+was — from an existing duplicated pattern, not invented. `count` is a
+`ReactNode`, not a `number`: the real call sites don't all format it
+the same way (a bare "3" on Bots/Leads/Widgets/Custom actions/Data
+sources vs. "3 waiting" on Approvals), so forcing one shape would have
+meant inventing a pluralization/suffix API nothing asked for. Rolled
+out to all 6 real pages/forms; `loading.tsx` skeletons left alone — a
+skeleton has no title/count/action semantics to extract, it's a shape
+mimicking the real header, not a second real caller.
+
+**Deliberately not extracted, documented live instead**: the Dialog-
+based creation flow (`NewBotDialog.tsx`/`AddActionDialog.tsx`/
+`AddWidgetDialog.tsx`/`AddUrlDialog.tsx` all open a real shadcn Dialog
+whose form posts through a server action) and `BotEditorForm.tsx`'s own
+header (title + publish-status Badge + 3 actions — genuinely different
+from every other screen's single-title-plus-action shape, the one
+screen that edits and publishes a bot). Forcing either into
+`PageHeader`'s shape would have meant bending a shared component's API
+around one caller — the same restraint `docs/design/component-
+checklist.md` and this project's "no speculative abstraction" rule
+already call for. Both documented with real prose on the new tab
+instead of a mockup.
+
+**New "Page templates" tab**, `PageTemplatesSection.tsx`: a live,
+real-rendered `PageHeader` instance; the Dialog/editor-header notes
+above; and a **Registers** table — reads `scripts/register-
+manifest.json` directly (the same data `check-register-assignment.mjs`
+enforces), so it can't drift from what the guardrail actually checks,
+plus a 3-card Linear/Notion/Stripe legend.
+
+**Verified**: `tsc` clean, all 16 `check:all` guardrails (unchanged —
+no new guardrail needed this phase; `check-design-system-page-
+coverage.mjs` already covers every primitive used), a production
+build, full unit suite (250/250 unchanged), full `tests/e2e/`
+(128/129 — the one failure, `knowledge.spec.ts`'s delete-entry test,
+confirmed as the already-documented pre-existing CI-contention flake
+by reproducing it identically against the unmodified branch via
+`git stash` before and after this change, not assumed), a new
+accessibility scan for the Page templates tab added to
+`accessibility.spec.ts` (19/19 total, including the 2 existing
+design-system-tab scans), `tests/visual/` (23/23 — 2 existing
+`design-system-*` baselines regenerated for the new 3rd tab's layout
+shift, 1 new `design-system-templates.png` baseline added, all 20
+others byte-for-byte unchanged, confirming the `PageHeader` rollout
+produced identical markup to what it replaced; every regenerated/new
+baseline's real styling confirmed via `sharp` crops before trusting
+it, same discipline established during Phase 1's CSS-chunk-flake
+investigation). All 3 phases of the original 2026-10-08 scoping
+decision are now complete.
+

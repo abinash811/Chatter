@@ -290,6 +290,7 @@ prep, not just the "Now" scope above.
   even though it's not in the nav. Before going live, delete the route
   (and its `tests/e2e`/`tests/visual` coverage) — the design-system
   reference then lives in this repo only (`docs/design/`, git history),
-  not as something deployed. Don't do this until the Components/Page-
-  templates phases are finished and no longer useful to keep live
-  during development.
+  not as something deployed. All 3 phases (Tokens, Components, Page
+  templates) are now built (2026-10-09) — this item is no longer
+  blocked on anything but the actual launch date; don't delete the
+  route before then just because it's finished.

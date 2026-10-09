@@ -411,9 +411,13 @@ see ADR 0014's Consequences for why).
   component — check there before trusting this file's own prose if the
   two ever disagree (same "the CSS is correct if they differ" rule this
   file's own intro states, now extended: the live page is correct over
-  this file too, for anything it covers). Tokens + Components are both
-  built; page templates (and a dedicated registers section) are Phase 3,
-  not yet built.
+  this file too, for anything it covers). Tokens, Components, and (as of
+  Phase 3, same day) Page templates are all built now — a live
+  `PageHeader` demo, the Dialog-creation-flow and editor-header patterns
+  documented as deliberately *not* extracted (they vary per real caller),
+  and a Registers table read straight from
+  `scripts/register-manifest.json`. All 3 phases of the original
+  2026-10-08 scoping decision are complete.
 - ~~16 of the 18 CARE-derived primitives haven't been re-pulled yet~~
   — resolved by ADR 0017: all 18 are now on shadcn's real source,
   `@base-ui/react` removed entirely.
