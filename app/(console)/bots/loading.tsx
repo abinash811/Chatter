@@ -13,6 +13,10 @@ export default function BotsLoading() {
         <Skeleton className="h-row w-20" />
       </div>
 
+      {/* Matches the real org-wide stat row (2026-10-09) — a short
+          summary line, not another table-sized element. */}
+      <Skeleton className="mt-1 h-4 w-56" />
+
       <Skeleton className="mt-4 h-row-sm w-40" />
 
       <div className="mt-3 overflow-hidden rounded-lg border border-border shadow-xs">

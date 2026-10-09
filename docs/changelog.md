@@ -65,264 +65,12 @@ design audit, `request_refund` (sixth action tool), the
 increment of the design-system pass; `docs/changelog/2026-10-part9.md`
 — Badge's `default` variant no longer rendering solid black, and the
 3-guardrail design-drift automation pass (token-variant mapping,
-variant visual coverage, token contrast).
+variant visual coverage, token contrast). `docs/changelog/2026-10-part10.md`
+— error-copy structure + register-assignment guardrails, the
+OptionCard dead-hover fix, and the /design-system reference page's
+Phase 1 (Tokens) and Phase 2 (Components).
 
 ---
-
-## Error-copy structure + register-assignment guardrails (2026-10-08)
-
-Direct follow-up to the design-drift-automation entry above — the user
-picked the two cheapest, most mechanical items off the "still missing"
-list: documented error-copy structure (component-checklist.md item 5)
-and a register-consistency check (Linear/Notion/Stripe, architecture.md
-§7).
-
-**Error copy.** A grep for the one generic-failure template this app
-actually uses ("Couldn't X. Please try again.") found 23 real
-occurrences — only 2 (rename/archive, fixed 2026-09-27, `docs/design/
-audit.md`'s "Bots list — open findings") had the middle "why" clause
-("the change didn't save") that made that fix read as a real 3-part
-error. The other 21, across actions/knowledge/widgets/conversations/
-approvals/settings/`BotsTable.tsx`'s duplicate-failure toast, jumped
-straight from what failed to "try again" with nothing in between.
-Rolled out a reason clause to all 21, picking the real failure class
-each one actually represents — not inventing specifics that don't
-exist: "the change didn't save" for create/save/update/publish
-failures (matching the established rename/archive precedent exactly),
-"it wasn't removed" for deletes, "something went wrong on our end" /
-"something went wrong reading it" / "something went wrong fetching it"
-for the 3 cases that aren't a DB write at all (the preview-chat reply
-failure, and knowledge ingestion's file/crawl/URL catch-alls — these
-already surface a *specific* diagnosed cause via `KnowledgeIngestionError
-.message` when one exists; the generic reason only fires for a truly
-unexpected failure). New `scripts/check-error-copy-structure.mjs`:
-scans every `app/**/actions.ts` and `components/console/**/*.tsx` for a
-string literal starting with "Couldn't" and containing "Please try
-again," and fails if there's no em-dash-separated reason clause between
-them — deliberately narrow (only this one established template, not a
-general prose-quality checker, which can't be done reliably with a
-regex); a validation message that already names the problem directly
-("A name is required.") is a different, legitimate category and isn't
-required to match this template at all. Verified the check actually
-catches the bug class: reverted one message to the old 2-part form,
-confirmed a real FAIL, reverted back.
-
-**Register assignment.** Attempted the fuller ask first — mechanically
-verify a screen's actual density/spacing matches its assigned register
-— and found a real reason it can't be built honestly today without
-inventing new policy: the one candidate mechanical signal in this
-codebase, the `h-row` page-header pattern, turned out to be used
-*identically* across every register's pages (it's this app's universal
-page-header height token, applied for an unrelated reason — every
-page's title row needs a fixed height, regardless of register — not a
-density differentiator at all). No other concrete, already-consistent
-per-register spacing value exists in the real code to check against;
-`BotEditorForm`'s own tabs alone range `space-y-2` through `space-y-6`
-with no documented target. Picking real numeric density targets per
-register is a design decision for the user to make (CLAUDE.md's
-"explain the tradeoff, then ask" rule) — not invented here. Built the
-honest, buildable slice instead: `scripts/register-manifest.json`
-transcribes the already-decided textual assignment (architecture.md
-§7 / `.claude/rules/console-frontend.md` item 3) for all 11 console
-routes into checkable data, and `scripts/check-register-assignment.mjs`
-fails if a route has no entry (or the manifest has a stale one) — so a
-new screen can no longer ship with its register silently never decided,
-even though *verifying* the density itself stays open, flagged
-explicitly rather than silently dropped.
-
-`check:all` is now 15 guardrails. Verified: `tsc` clean, all 15
-guardrails pass (both new ones confirmed to actually fail on a real
-induced bug, then reverted), full unit suite (250/250 unchanged), a
-production build, full `tests/e2e/` (126/126 — the toast-text
-assertions in `knowledge.spec.ts` use a prefix regex, unaffected by the
-added reason clauses), `accessibility.spec.ts` (16/16), full
-`tests/visual/` (20/20 unchanged — these are toast/string changes, no
-visual baseline touches toast copy).
-
-## `OptionCard` dead-hover bug fixed (2026-10-08)
-
-Last item off the "still missing in the design system" list the user
-picked through this session — a previously-diagnosed, real, cheap bug
-that had been explicitly deferred pending the broader pass: a
-diagnostic script had found `OptionCard`'s own `box-shadow` computed
-style identical before and after a real hover, confirmed via
-`getComputedStyle()`, not assumed from a screenshot alone.
-
-Fixed with `transition-shadow hover:shadow-sm` added to the `Card` in
-`components/console/OptionCard.tsx` — the same convention
-`ConversationListPane`'s rows and `BotTableRow`'s avatar chip already
-use (a `shadow-xs`→`shadow-sm` bump on hover), not a new pattern
-invented for this one component. No `z-10`-stacking trick needed here
-(unlike `ConversationListPane`'s zero-gap `divide-y` rows) — `OptionCard`
-grids use `gap-3`, so a neighbor's border never clips the lifted
-shadow.
-
-**Real methodology snag while re-verifying**: the first verification
-attempt (Playwright's `.hover()` convenience method, the same call used
-throughout this project's prior hover checks) showed *no* change in the
-computed box-shadow — looked like the fix hadn't taken. Didn't accept
-that at face value and ship a "fixed" claim that wasn't actually true:
-checked the rendered DOM directly first (confirmed `hover:shadow-sm` was
-genuinely present in the element's class list), then re-tested with
-`page.mouse.move` to the element's real bounding-box center instead of
-the `.hover()` helper — that showed the real, different shadow value
-(`0 1px 3px rgba(0,0,0,.1), 0 1px 2px -1px rgba(0,0,0,.1)` vs. the
-resting `0 1px 2px rgba(0,0,0,.05)`), confirmed via
-`el.matches(":hover")` too. The `.hover()` helper's failure here is a
-test-tooling quirk, not a real regression — flagged for awareness, not
-investigated further since it isn't blocking.
-
-Verified: `tsc` clean, all 15 `check:all` guardrails, full unit suite
-(250/250 unchanged), a production build, full `tests/e2e/`
-(`knowledge.spec.ts`/`bot-editor.spec.ts`/`actions.spec.ts`/
-`accessibility.spec.ts`, 55/55 — `OptionCard` is also used on the Tools
-tab and the Add-action template picker, both covered), full
-`tests/visual/` (20/20 unchanged — no baseline captures a hover state,
-so a resting-state-only change was never expected to move pixels), a
-real before/after screenshot of the hovered card.
-
-## `/design-system` reference page, Phase 1: Tokens (2026-10-08)
-
-Scoped first (per CLAUDE.md's "explain the tradeoff, then ask" rule —
-this is a new pattern with real tradeoffs, not a one-obvious-answer
-build): explained live-rendering-page vs. Storybook, auth-gated vs.
-public, and content scope as 3 explicit choices with tradeoffs before
-building anything. User picked: in-house live-rendering page (no new
-dependency, matches this project's existing lightweight-tooling
-pattern), behind the existing console auth, and a v1 scope covering
-tokens + components + page templates (bundling in the separately-
-tracked "no shared page-template components" gap rather than
-sequencing it later).
-
-**Route**: `app/(console)/design-system/page.tsx` — inherits
-`app/(console)/layout.tsx`'s existing auth check for free, deliberately
-not added to `AppSidebar`'s main nav (a reference tool for whoever's
-building the console, not something a business owner needs in their
-daily nav), reachable by direct URL. Registered in `scripts/register-
-manifest.json` as `notion` (a calm, generous reference surface).
-
-**Phase 1 content** (`TokensSection.tsx` + a reusable `Swatch.tsx`):
-every real color token in `app/globals.css`'s `@theme` block, grouped
-the same way `design-system.md`'s own prose does, each swatch rendered
-via the *real* Tailwind utility class (`bg-primary`, not a copied hex)
-so the page can't drift from the actual tokens by construction — plus
-the documented type scale, 3-tier elevation scale, 3-tier motion scale
-(with one live hover-triggered demo), and the radius/spacing notes.
-Components and page-templates sections are Phase 2/3, not built yet.
-
-**Real bugs found by building a live reference — the whole point of
-one over a hand-written doc**: this page is the first thing to ever
-actually *render* 4 solid-fill status foreground tokens
-(`--destructive-foreground`/`--warning-foreground`/`--alert-foreground`/
-`--success-foreground`) as real text — nothing else in the app uses
-them (Button's real destructive variant hardcodes `text-white`, not
-the token). Its own accessibility scan immediately caught 3 of the 4
-failing WCAG AA: `--success-foreground` (green-50 on green-500,
-2.15:1), `--alert-foreground` (white on violet-500, 4.32:1— just under
-the line), and `--destructive-foreground` in dark mode specifically
-(red-50 on red-400, 2.63:1 — flagged once before during the contrast-
-guardrail work and left unfixed then, since nothing real rendered it
-at the time). Fixed all 3 for real in `app/globals.css` — switched to
-black, the same direction `--warning-foreground` already used (amber-
-500/violet-500/green-500/red-400 are each light enough backgrounds
-that dark text reads better than light) — computed via `culori`, not
-guessed. All 4 solid-fill pairs added to `scripts/contrast-pairs.json`
-now that a real render site exists (19 pairs total, was 15).
-
-**Second real finding, same session**: `--disabled-foreground` and
-`--placeholder-foreground` are *also* dead tokens — zero real call
-sites anywhere; `Input`'s actual placeholder styling uses
-`placeholder:text-muted-foreground` instead. Rendering them as plain
-"Aa" text tripped the same accessibility scan (1.48:1 — they're
-deliberately low-contrast, which WCAG exempts for genuinely disabled
-controls, but a plain `<div>` isn't one). Fixed the page itself, not
-the tokens: rendered them via a real disabled `Button` and a real
-`<input disabled placeholder="Aa">` instead of a plain colored block —
-more accurate to what the tokens are actually for, and the scan
-correctly exempts real disabled/placeholder elements the same way it
-already does everywhere else in the app. Documented the dead-token
-finding in the page's own copy rather than silently working around it.
-
-**Real environment flake surfaced, not caused, by this page**: the
-first two visual-baseline capture attempts rendered the page
-completely unstyled (no colors, no grid, browser-default fonts) —
-traced to the page's CSS chunk returning a real HTTP 500 ("The
-destination stream closed early", digest `3640184059` — the same
-background noise that's appeared in nearly every `[WebServer]` log
-this entire session without previously being tied to a visible
-consequence). Confirmed via `curl`ing the chunk directly (500,
-21-byte body) and via `document.styleSheets`/computed-style checks
-(an `<h1>` showing weight 700, the raw browser-default bold, instead
-of Tailwind's `font-semibold` 600) before accepting a baseline — not
-assumed from a quick glance. A clean server restart + retry produced a
-correctly-styled capture, confirming this is a transient server-side
-streaming issue in this environment, not a bug in the page's code.
-
-Verified: `tsc` clean, all 15 `check:all` guardrails (19 contrast
-pairs now, 1 more than before), a production build, full unit suite
-(250/250 unchanged), full `tests/e2e/` (127/127), `accessibility.spec.ts`
-(17/17, including the new design-system scan — clean only after both
-token fixes), full `tests/visual/` (21/21 — 20 unchanged + the new
-`design-system-tokens.png` baseline, confirmed correctly styled via a
-direct pixel crop before accepting it, not just a thumbnail glance).
-
-## `/design-system` reference page, Phase 2: Components (2026-10-08)
-
-Direct follow-up — all 26 primitives in `scripts/shadcn-manifest.json`
-now render via the real imported component on the page's new
-"Components" tab (`ComponentsSection.tsx` composing 5 category files:
-buttons/badges, form controls, overlays, display, navigation), not
-described. Overlays (Dialog/AlertDialog/Sheet/Popover/DropdownMenu/
-Tooltip) are real, clickable triggers, not static screenshots — Radix
-manages their open state uncontrolled, same as every real call site in
-the app. Sidebar isn't re-demoed in isolation (you're looking at its
-real instance in the same page); Toaster fires a real toast through
-the app's actual global `<Toaster />`.
-
-**Two more real bugs found by building a live reference, not
-assumed** — the page's own Components-tab accessibility scan (added
-alongside the Tokens-tab one from Phase 1) caught both on first run:
-
-1. The page's own `Field` helper (wrapping `Label` + `Input`/`Textarea`
-   demos) rendered the label and control as unassociated siblings — no
-   `htmlFor`/`id` — so a screen reader couldn't tell they were related
-   (axe's `label` rule, critical impact). Fixed by making `id` a
-   required prop and cloning it onto the child, matching the real
-   `htmlFor`/`id` pattern every actual form in this app already uses
-   (`SettingsForm.tsx`).
-2. `ScrollArea` — zero real call sites anywhere before this page — has
-   a genuine, pre-existing gap in its real shadcn stock source: the
-   scrollable `Viewport` already had a `focus-visible` ring class but
-   no `tabIndex`, so keyboard users could never actually reach it to
-   scroll (axe's `scrollable-region-focusable` rule, a known real Radix
-   ScrollArea gap, not an app-specific bug). Fixed with `tabIndex={0}`,
-   documented as a delta from stock in the component's own file header
-   — the same pattern every other intentional shadcn delta in this
-   codebase already follows.
-
-Also added `Alert`/`AlertTitle`/`AlertDescription` to the Display
-section — missed in the first pass, caught by the new `scripts/check-
-design-system-page-coverage.mjs` (built this same session): fails if
-any `shadcn-manifest.json` primitive is never referenced anywhere
-under `app/(console)/design-system/`. Verified it actually catches a
-real gap (not just passes vacuously) by deliberately removing the
-`Alert` demo block and confirming a real FAIL, then restoring it.
-`check:all` is now 16 guardrails.
-
-Verified: `tsc` clean, all 16 guardrails, a production build, full
-unit suite (250/250 unchanged), full `tests/e2e/` (127/128 — the one
-failure, `accessibility.spec.ts`'s onboarding scan, confirmed the same
-pre-existing flake via a clean isolated re-run, nothing to do with this
-page), `accessibility.spec.ts` run alone (18/18, including both new
-Components-tab scans — clean only after both real fixes above),
-`tests/visual/` (22/22 — 21 unchanged + the new `design-system-
-components.png` baseline, each candidate baseline's actual dimensions
-checked via `sharp` before accepting, not just glanced at, after Phase
-1's experience with the environment's CSS-chunk flake). Real
-screenshots of every overlay actually opening (Dialog, AlertDialog,
-Sheet, Popover, DropdownMenu, Tooltip-on-hover) and the Toaster demo
-firing a real "Draft saved." toast through the app's actual global
-toaster — not just that the trigger buttons render.
 
 ## `/design-system` Phase 3: Page templates + registers (2026-10-09)
 
@@ -483,4 +231,60 @@ build, full unit suite (250/250 unchanged), full `tests/e2e/`
 `accessibility.spec.ts` (19/19 unchanged), `tests/visual/` (23/23
 pixel-identical — confirms the `TabsContent` fix only affects the
 `:focus-visible` state, invisible at rest in every baseline).
+
+## Bots list stat row — closes the "feels thin" content gap (2026-10-09)
+
+Last of the open `docs/design/audit.md` findings flagged in the
+previous entry. Its own diagnosis already said this needed "more real
+content (recent activity, a stat), not a styling fix," and that the
+approved mockup (`docs/design/preview/bots-list.html`) didn't solve it
+either — so rather than guess at a fix, explained the real tradeoff to
+the user first, per CLAUDE.md's "explain, then ask" process rule: an
+org-wide stat row (cheapest, no schema change, fits the Linear
+register's dense/no-decoration spirit) vs. a per-bot activity column
+(more useful per-row, but changes the table's existing column shape).
+User picked the stat row.
+
+**Implementation**: `app/(console)/bots/page.tsx` now renders "N
+published · N draft · N conversations this week" directly under
+`PageHeader`, only when `bots.length > 0`. All 3 numbers are real,
+already-available data, not fabricated (guardrail #4): published/draft
+reuse the bots query already fetched for the table; conversations is a
+new `tx.conversation.count({ where: { createdAt: { gte: ... } } })`
+run inside the same `withOrgContext` transaction via `Promise.all`, a
+rolling 7-day window rather than calendar "this week" to sidestep
+timezone ambiguity. `loading.tsx` got a matching skeleton line.
+
+**Real bug caught in the verification script, not the app**: the first
+screenshot attempt showed "1 conversation this week" when 2 should have
+counted. Investigated before trusting it — a direct DB query confirmed
+the real count was genuinely 2, so the discrepancy was in the test's
+own wait logic: `loadSampleDataAction` redirects to the new sample
+bot's editor page on completion (`redirect()`, not an in-place
+re-render), so a fixed `waitForTimeout` before navigating back to
+`/bots` raced the redirect. Fixed by waiting for the real URL change
+(`page.waitForURL(/\/bots\/[^/]+$/)`) before navigating back — the same
+"wait for a real signal, not a timer" discipline this project's test
+suite already uses elsewhere.
+
+**New permanent coverage**, not just a one-off screenshot:
+`tests/e2e/bots-list.spec.ts`'s new test seeds 3 real conversations via
+the existing `seedConversations` helper, asserts the stat row reads "0
+published · 1 draft · 3 conversations this week," then walks the real
+publish flow (Publish button → confirm dialog) and asserts it updates
+to "1 published · 0 drafts · 3 conversations this week" — the exact
+counts, not just that the row renders. 3 visual baselines affected
+(`bots-table.png`, `bots-table-published.png`, `bots-table-mobile.png`)
+regenerated, each confirmed correctly styled via a real `sharp` crop
+before trusting it, same discipline established during the
+`/design-system` Phase 1 CSS-chunk-flake investigation.
+
+Verified: `tsc` clean, all 16 `check:all` guardrails, a production
+build, full unit suite (250/250 unchanged), full `tests/e2e/`
+(143/143 — one flaky run first, `knowledge.spec.ts`'s sidebar-nav test,
+confirmed as the same pre-existing full-suite-contention class via two
+separate isolated re-runs, one against this change and one against
+unmodified code via `git stash`, both passing clean), full
+`accessibility.spec.ts` (19/19), `tests/visual/` (23/23 — 3
+regenerated + stable, 20 unchanged).
 

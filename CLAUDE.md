@@ -746,6 +746,17 @@ reason.)
   built: Bots list "feels thin," no restore-from-archive UI, and dark
   mode's never-rendered tokens all need a real product decision. Full
   detail: `docs/changelog.md`.
+- Bots list stat row closes the "feels thin" gap (2026-10-09): asked
+  the user to choose between an org-wide stat row and a per-bot
+  activity column (tradeoff explained first, per CLAUDE.md's process
+  rule) — they picked the stat row. `app/(console)/bots/page.tsx` now
+  shows "N published · N draft · N conversations this week" under the
+  header, all 3 numbers from data already in the schema (no fabricated
+  content, guardrail #4) — published/draft reuse the existing query,
+  conversations is a 7-day rolling `conversation.count`. New permanent
+  e2e test asserts the exact counts across a real seed + a real
+  publish, not just that text renders. 3 visual baselines regenerated.
+  Full detail: `docs/changelog.md`.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { signUpAndCreateBot, createSecondBot } from "./helpers";
+import { signUpAndCreateBot, createSecondBot, seedConversations } from "./helpers";
 
 // The Table rebuild (components/console/BotsTable.tsx, real CARE Table,
 // ADR 0008) is a client component only for its row-click handler — this
@@ -169,4 +169,26 @@ test("Clear search resets the empty search-results state", async ({ page }) => {
   await page.getByRole("button", { name: "Clear search", exact: true }).click();
   await expect(page.getByLabel("Search bots")).toHaveValue("");
   await expect(page.locator('[data-slot="table-row"]', { hasText: "Alpha bot" })).toBeVisible();
+});
+
+// docs/design/audit.md's "Bots list — open findings": the page "feels
+// thin for its hierarchy" — user picked an org-wide stat row (real
+// data already in the schema, no fabricated numbers, guardrail #4)
+// over a per-bot activity column (2026-10-09). This locks in the real
+// counts, not just that some text renders.
+test("the stat row under the header reflects real published/draft/conversation counts", async ({ page }) => {
+  await signUpAndCreateBot(page, "Published Stat Bot", "botsstats");
+  const botId = page.url().split("/bots/")[1];
+  await seedConversations(botId); // 3 real conversations (normal/issue/paused)
+
+  await page.goto("/bots");
+  await expect(page.getByText("0 published · 1 draft · 3 conversations this week")).toBeVisible();
+
+  await page.goto(`/bots/${botId}`);
+  await page.getByRole("button", { name: "Publish", exact: true }).click();
+  await page.click('div[role="dialog"] button:has-text("Publish")');
+  await expect(page.getByText("Publish this bot?")).toBeHidden();
+
+  await page.goto("/bots");
+  await expect(page.getByText("1 published · 0 drafts · 3 conversations this week")).toBeVisible();
 });

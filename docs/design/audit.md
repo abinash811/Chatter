@@ -147,10 +147,22 @@ Logged the same day they were found, per this file's own rule.
   enhancement — see "System coverage" above.
 - ✅ Empty state has no CTA of its own — fixed 2026-09-27: a real
   `NewBotDialog` trigger now lives inside the empty box.
-- 🔲 Page feels thin for its hierarchy — one header row, a table, then
-  unstructured white space; no supporting copy under "Bots". Still
-  open — genuinely needs more real content (recent activity, a stat),
-  not a styling fix; the approved mockup doesn't solve this either.
+- ✅ Page feels thin for its hierarchy — fixed 2026-10-09 with a real
+  org-wide stat row under the header ("N published · N draft · N
+  conversations this week"), not a styling fix. The approved mockup
+  (`docs/design/preview/bots-list.html`) didn't solve this either, and
+  the fix needed real data, not decoration — asked the user to choose
+  between an org-wide stat row and a per-bot activity column (explained
+  tradeoff per CLAUDE.md's process rule) rather than guessing; they
+  picked the stat row. All 3 numbers come from data already in the
+  schema (published/draft from the existing `versions` query, a 7-day
+  rolling `conversation.count`) — no fabricated content (guardrail #4).
+  Verified via a real screenshot and a new permanent e2e test
+  (`tests/e2e/bots-list.spec.ts`) that seeds 3 real conversations and a
+  real publish, asserting the row's exact counts before and after, not
+  just that text renders. 3 visual baselines regenerated (`bots-table.
+  png`, `bots-table-published.png`, `bots-table-mobile.png`) + real
+  styling confirmed via `sharp` crops before trusting them.
 
 **Component-checklist audit (2026-09-27, `docs/design/component-checklist.md`):**
 - ✅ **Item 1 (states)** — `NewBotDialog`'s "Create" button had no

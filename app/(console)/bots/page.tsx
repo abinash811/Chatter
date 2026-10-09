@@ -10,18 +10,32 @@ import { LoadSampleDataButton } from "./LoadSampleDataButton";
 // height (docs/architecture.md §7), no decoration beyond what's needed
 // to scan a list of bots fast — but still a real shadow state per
 // docs/design/principles.md #5, not a bare bordered box.
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
 export default async function BotsPage() {
   const session = await getCurrentSession();
 
-  const bots = await withOrgContext(session.orgId, (tx) =>
-    tx.bot.findMany({
-      where: { archivedAt: null }, // ADR 0018 — an archived bot never re-appears on its own list
-      orderBy: { createdAt: "desc" },
-      include: {
-        versions: { where: { status: "published" }, take: 1 },
-      },
-    }),
+  const [bots, conversationsThisWeek] = await withOrgContext(session.orgId, (tx) =>
+    Promise.all([
+      tx.bot.findMany({
+        where: { archivedAt: null }, // ADR 0018 — an archived bot never re-appears on its own list
+        orderBy: { createdAt: "desc" },
+        include: {
+          versions: { where: { status: "published" }, take: 1 },
+        },
+      }),
+      // docs/design/audit.md's "Bots list — open findings": the page
+      // "feels thin for its hierarchy," and the approved mockup doesn't
+      // solve it either — needs real content, not styling. User chose
+      // an org-wide stat row over a per-bot activity column (2026-10-09)
+      // — real data already in the schema, no fabricated numbers
+      // (guardrail #4), a rolling 7-day window rather than calendar
+      // "this week" to sidestep timezone ambiguity.
+      tx.conversation.count({ where: { createdAt: { gte: new Date(Date.now() - WEEK_MS) } } }),
+    ]),
   );
+
+  const publishedCount = bots.filter((bot) => bot.versions.length > 0).length;
 
   return (
     <div>
@@ -35,6 +49,13 @@ export default async function BotsPage() {
           </>
         }
       />
+
+      {bots.length > 0 && (
+        <p className="mt-1 text-sm text-muted-foreground">
+          {publishedCount} published · {bots.length - publishedCount} draft{bots.length - publishedCount === 1 ? "" : "s"} ·{" "}
+          {conversationsThisWeek} conversation{conversationsThisWeek === 1 ? "" : "s"} this week
+        </p>
+      )}
 
       {bots.length === 0 ? (
         // Dialog-based creation flow (docs/design/audit.md's "Bots list
