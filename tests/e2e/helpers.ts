@@ -213,6 +213,88 @@ export async function seedWidget(
   );
 }
 
+// Real keyboard-only pass, made permanent and automated instead of a
+// one-off MCP browser session (that's how Sidebar's 2026-10-03 pass was
+// done — docs/design/audit.md's own note says "a Playwright tab-walk,"
+// but nothing committed it as a repeatable check). Tabs forward through
+// a page starting from whatever already has focus on load (including a
+// real `autoFocus` field, same as what a real keyboard user sees), and
+// for each stop records whether the browser is actually painting a
+// visible focus indicator (outline or box-shadow) — the same thing a
+// human doing a real keyboard-only pass would look for, not just that
+// *a* DOM element received focus. Stops early if Tab stops moving focus
+// (reached the end of the document) so callers don't need to know a
+// page's exact control count up front.
+//
+// Deliberately does NOT blur() the active element before starting: an
+// earlier version did, to "reset" to a known starting point, but
+// Chromium doesn't restart sequential tab order from the top of the
+// document after a programmatic blur — it resumes from the blurred
+// element's own position, silently skipping over any real `autoFocus`
+// field (confirmed via a real debug walk on /onboarding, whose
+// `orgName` input has `autoFocus`: blur-then-Tab landed on `botName`
+// first, never `orgName`, even though a real keyboard user loading that
+// page lands on `orgName` immediately). Starting from the page's real
+// initial focus state avoids the quirk entirely and is the more
+// accurate thing to test anyway.
+export async function keyboardWalk(
+  page: Page,
+  maxSteps: number,
+): Promise<Array<{ tag: string; role: string | null; name: string; hasFocusIndicator: boolean }>> {
+  const results: Array<{ tag: string; role: string | null; name: string; hasFocusIndicator: boolean }> = [];
+  let previous: string | null = null;
+
+  const inspect = () =>
+    page.evaluate(() => {
+      const el = document.activeElement as HTMLElement | null;
+      if (!el || el === document.body) return null;
+      const style = getComputedStyle(el);
+      const hasOutline = style.outlineStyle !== "none" && parseFloat(style.outlineWidth) > 0;
+      const hasShadow = style.boxShadow !== "none" && style.boxShadow.trim() !== "";
+      // A real per-node fingerprint, not a text/id heuristic — an
+      // earlier version of this helper used `aria-label ?? id ??
+      // textContent`, which silently collided on every unlabeled
+      // element: a DOM node's `id` is `""` (not `null`) when unset, so
+      // `??` never fell through to textContent, and two different
+      // unlabeled sidebar links both fingerprinted as "A:" — the walk
+      // then mistook real tab progress for a stall and stopped after
+      // one step on every screen. Tagging the actual DOM node instead
+      // can't collide.
+      const marked = el as HTMLElement & { dataset: { kbdWalkId?: string } };
+      if (!marked.dataset.kbdWalkId) {
+        const w = window as unknown as { __kbdWalkCounter?: number };
+        w.__kbdWalkCounter = (w.__kbdWalkCounter ?? 0) + 1;
+        marked.dataset.kbdWalkId = String(w.__kbdWalkCounter);
+      }
+      return {
+        tag: el.tagName.toLowerCase(),
+        role: el.getAttribute("role"),
+        name: (el.getAttribute("aria-label") || el.textContent || "").trim().slice(0, 60),
+        hasFocusIndicator: hasOutline || hasShadow,
+        fingerprint: marked.dataset.kbdWalkId,
+      };
+    });
+
+  // Capture whatever already has focus (e.g. a real `autoFocus` field)
+  // before pressing Tab even once — that's the page's real starting
+  // state for a keyboard user, not something to discard.
+  const initial = await inspect();
+  if (initial) {
+    results.push(initial);
+    previous = initial.fingerprint;
+  }
+
+  for (let i = 0; i < maxSteps; i++) {
+    await page.keyboard.press("Tab");
+    const info = await inspect();
+    if (!info) break;
+    if (info.fingerprint === previous) break;
+    previous = info.fingerprint;
+    results.push(info);
+  }
+  return results;
+}
+
 // A write-capable tool's (request_order_cancellation, ADR 0023) queued
 // request — bypasses calling the real tool, same precedent as seedLead,
 // since there's no live Shopify integration connectable in this

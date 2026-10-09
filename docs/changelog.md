@@ -384,3 +384,103 @@ it, same discipline established during Phase 1's CSS-chunk-flake
 investigation). All 3 phases of the original 2026-10-08 scoping
 decision are now complete.
 
+## Real keyboard-only pass, made permanent + closed 3 open design gaps (2026-10-09)
+
+User asked to work through `docs/design/audit.md`'s open findings.
+"Real keyboard-only pass" was 🔲 (never done) for every screen except
+Sidebar/Bots list/Login-signup — and even Sidebar's own 2026-10-03 pass
+was a one-off MCP browser session, nothing committed as a repeatable
+check. Built a shared `keyboardWalk()` helper (`tests/e2e/helpers.ts`)
+and a new `tests/e2e/keyboard-navigation.spec.ts` covering all 13
+remaining screens (Login, Signup, Bot editor, Data sources,
+Integrations, Leads, Actions, Widgets, Approvals, Settings,
+Conversations list + detail, Onboarding) — tabs through each screen's
+real, populated content (reusing `accessibility.spec.ts`'s own seed
+helpers) and fails if a reachable control paints no visible focus
+indicator or if nothing is reachable at all.
+
+**Two real bugs in the test helper's own methodology, found and fixed
+before trusting any result**, not just in the app:
+1. An early fingerprint (`aria-label ?? id ?? textContent`) silently
+   collided on every unlabeled element — a DOM node's `id` is `""`, not
+   `null`, when unset, so `??` never fell through to `textContent`, and
+   every unlabeled sidebar link fingerprinted identically. The walk
+   then mistook real tab progress for a stall and stopped after one
+   step on every single screen (11/11 initial failures). Fixed by
+   tagging the actual DOM node with a real per-element counter instead
+   of a text/id heuristic — can't collide.
+2. A `blur()`-before-walking "reset" silently skipped past
+   `/onboarding`'s `orgName` field, which has real `autoFocus` —
+   confirmed via a raw debug walk that Chromium doesn't restart
+   sequential tab order from the top of the document after a
+   programmatic blur, it resumes forward from the blurred element's own
+   position. Fixed by starting the walk from whatever already has real
+   focus on page load (including an autofocused field) instead of
+   discarding it — also the more accurate thing to test, since that's
+   exactly what a real keyboard user sees.
+A third, narrower issue: reaching a screen via `page.click('a:has-text(
+...)')` leaves the clicked link holding real focus with no visible
+ring, which is *correct* native `:focus-visible` behavior for a
+mouse-focused element, not a bug — but produced a false failure once
+the walk started inspecting pre-existing focus. Fixed by reaching each
+screen via `page.goto()` instead, the same neutral starting point a
+real keyboard user gets from a fresh page load.
+
+**One real, previously-unverified product bug found once the helper
+was trustworthy**: `components/ui/tabs.tsx`'s `TabsContent` is a
+genuinely focusable Radix element (so arrow/Home/End keys can scroll a
+tall panel into view) but shadcn's own stock source pairs it with a
+bare `outline-none` and nothing to replace it — tabbing into the Bot
+editor's Persona tab or the Conversation detail's Chat tab landed with
+zero visible focus indicator. Same class of gap as the ScrollArea
+viewport fix (2026-10-08, also a genuine pre-existing hole in shadcn's
+real stock source, not an app-specific regression). Fixed with the same
+`focus-visible:ring-[3px] focus-visible:ring-ring/50` every other
+primitive in this app already uses, documented as a delta in the
+file's own header comment.
+
+**Two more design-gap findings closed in the same pass**, both using
+real verification, not assumption:
+- **Hover/Focus on Leads/Actions/Approvals/Widgets** (previously 🔲/🟡
+  in `docs/design/audit.md`'s Depth/polish table): all 4 share the
+  identical `Table`/`TableRow` primitive already credited elsewhere
+  (`hover:bg-muted/50`), but had never been independently re-verified.
+  Confirmed via real `page.mouse.move` + `getComputedStyle()` (not
+  Playwright's `.hover()` convenience method — the same false-negative
+  quirk the `OptionCard` dead-hover investigation had already
+  documented: `.hover()` showed Leads' row background as unchanged,
+  0 alpha before and after, while a real mouse move to the row's
+  bounding-box center showed the genuine 0→0.5 alpha transition). All 4
+  now ✅. Leads' Active column changed from 🔲 to `—` (not applicable):
+  it has no interactive per-row control at all, so there's genuinely
+  nothing to check, not an unverified gap.
+- **Copy structure for errors/empty states** (previously 🟡 in
+  "System coverage," citing "no documented structural rule"): stale —
+  `scripts/check-error-copy-structure.mjs` (2026-10-08) already
+  mechanically enforces the 3-part error template, and
+  `components/console/EmptyState.tsx` (2026-10-02) already gives every
+  empty state a real CTA or deliberately omits one. Re-confirmed both
+  are still true app-wide (grepped all 5 empty-state screens for the
+  shared component, no hand-rolled box found) before flipping the row.
+- **Widgets' Loading column** (previously 🔲): `loading.tsx` exists and
+  matches the same real skeleton pattern already credited on
+  `actions/loading.tsx` — confirmed via direct code read, not assumed
+  missing.
+
+Deliberately left open, not silently closed: Screen-reader pass stays
+🟡 on every screen — no literal assistive-technology pass has ever been
+done, and nothing in this pass claims otherwise. Three other open
+gaps — Bots list "feels thin for its hierarchy" (needs new real
+content, not a styling fix), no restore-from-archive UI, and dark
+mode's tokens never being visually rendered (no UI toggle exists) — all
+need a real product decision, not a mechanical fix, so they're reported
+back to the user rather than guessed at silently, per CLAUDE.md's
+process rule.
+
+Verified: `tsc` clean, all 16 `check:all` guardrails, a production
+build, full unit suite (250/250 unchanged), full `tests/e2e/`
+(142/142, including the full new `keyboard-navigation.spec.ts`, 13/13),
+`accessibility.spec.ts` (19/19 unchanged), `tests/visual/` (23/23
+pixel-identical — confirms the `TabsContent` fix only affects the
+`:focus-visible` state, invisible at rest in every baseline).
+

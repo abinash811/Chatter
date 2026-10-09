@@ -90,15 +90,28 @@ function TabsContent({
   return (
     <TabsPrimitive.Content
       data-slot="tabs-content"
-      // Documented delta from shadcn's stock source (component-
-      // checklist.md item 3, 2026-10-02): the real default has zero
-      // transition on tab switch — content just pops in. Every other
-      // overlay primitive (Dialog/Sheet/Popover/Select/DropdownMenu)
-      // already animates via data-state + tailwindcss-animate; this
-      // brings tab panels in line with that, at the same 200ms/ease
-      // used for the app's other overlay-tier transitions.
+      // Two documented deltas from shadcn's stock source:
+      // 1. (component-checklist.md item 3, 2026-10-02): the real
+      //    default has zero transition on tab switch — content just
+      //    pops in. Every other overlay primitive (Dialog/Sheet/
+      //    Popover/Select/DropdownMenu) already animates via
+      //    data-state + tailwindcss-animate; this brings tab panels in
+      //    line with that, at the same 200ms/ease used for the app's
+      //    other overlay-tier transitions.
+      // 2. (docs/design/audit.md's keyboard-only pass, 2026-10-09):
+      //    Radix's own Content primitive is focusable by design (so
+      //    arrow-key/Home/End navigation can scroll a tall panel into
+      //    view), but shadcn's real stock source pairs that with a
+      //    bare `outline-none` and nothing to replace it — a genuine
+      //    pre-existing gap in shadcn's own source, the same class of
+      //    bug the ScrollArea viewport fix (2026-10-08) found. A real
+      //    keyboard-only tab-walk on the Bot editor and Conversation
+      //    detail screens (both use real Tabs) caught the panel
+      //    receiving focus with zero visible indicator. Fixed with the
+      //    same focus-visible ring every other primitive in this app
+      //    already uses.
       className={cn(
-        "flex-1 outline-none data-[state=active]:animate-in data-[state=active]:fade-in-0 data-[state=active]:duration-200",
+        "flex-1 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 data-[state=active]:animate-in data-[state=active]:fade-in-0 data-[state=active]:duration-200",
         className,
       )}
       {...props}

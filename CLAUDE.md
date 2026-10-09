@@ -727,6 +727,25 @@ reason.)
   `scripts/register-manifest.json` directly, so it can't drift from
   what `check-register-assignment.mjs` enforces. All 3 phases now
   complete. Full detail: `docs/changelog.md`.
+- Real keyboard-only pass, made permanent (2026-10-09): closed
+  `docs/design/audit.md`'s long-open "Real keyboard-only pass" 🔲 gap
+  across all 13 remaining screens — new `tests/e2e/
+  keyboard-navigation.spec.ts` + `helpers.ts`'s `keyboardWalk()` tab
+  through each screen's real content and fail if a reachable control
+  paints no visible focus indicator. Found and fixed one real product
+  bug along the way: `TabsContent` (`components/ui/tabs.tsx`) is a
+  genuinely focusable Radix element with zero focus-visible styling in
+  shadcn's own stock source — same class of gap as the ScrollArea
+  fix. Also closed 2 more audit.md findings the same session:
+  Leads/Actions/Approvals/Widgets' table-row Hover/Focus (real
+  `mouse.move` + computed-style verification — a `.hover()`-based first
+  attempt gave a false negative on Leads, the same quirk the
+  `OptionCard` fix had already documented), and the stale "no
+  documented error/empty-state copy structure" row (both already
+  mechanically enforced, just never credited). Flagged, not silently
+  built: Bots list "feels thin," no restore-from-archive UI, and dark
+  mode's never-rendered tokens all need a real product decision. Full
+  detail: `docs/changelog.md`.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.
