@@ -1,50 +1,75 @@
+/**
+ * @name card
+ * @description Displays a card with header, content, and footer.
+ * @dependencies (none)
+ * @type registry:ui
+ */
+// ADR 0014 + ADR 0017: rebased onto shadcn/ui's real official structure
+// (adds `CardAction`/`CardFooter`, unused today but kept for parity with
+// upstream — no reason to drop exports a future screen might need).
+// Real, deliberate Notion-register deltas kept from the hand-authored
+// version, not shadcn's defaults (docs/design/principles.md #4/#5/#9):
+// `bg-soft-background` instead of shadcn's `bg-card`/`shadow-sm` — a
+// pure-white box with only a border read as a wireframe, not a calm
+// recessed panel; more generous `p-6` padding and a bumped `CardTitle`
+// size (`text-base`, not shadcn's plain `leading-none`) for real
+// section-level hierarchy, matching docs/design/preview/bot-editor.html.
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-// Standard shadcn/ui Card composition (Card/CardHeader/CardTitle/
-// CardDescription/CardContent) — matches docs/design/preview/
-// bot-editor.html's ".card" pattern: one card per concern, not a wall
-// of fields in a single form.
-//
-// Notion-register tuning (docs/design/principles.md #4/#5/#9, per the
-// research-doc recipe in docs/research/design-system-standards.md): a
-// pure-white box with only a border reads as a wireframe with a line
-// around it, not a calm recessed panel. A soft off-white fill
-// (bg-soft-background) does the separation instead of a harsh border,
-// more generous padding gives the "deliberate whitespace" Stripe/
-// Notion are both described as doing, and a bumped CardTitle size
-// gives real section-level hierarchy instead of matching body text.
-export const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
+function Card({ className, ...props }: React.ComponentProps<"div">) {
+  return (
     <div
+      data-slot="card"
       className={cn("rounded-lg border border-border bg-soft-background p-6 shadow-xs", className)}
-      ref={ref}
       {...props}
     />
-  ),
-);
-Card.displayName = "Card";
+  );
+}
 
-export const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => <div className={cn("mb-4 space-y-1.5", className)} ref={ref} {...props} />,
-);
-CardHeader.displayName = "CardHeader";
+function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-header"
+      className={cn(
+        "@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 mb-4 has-data-[slot=card-action]:grid-cols-[1fr_auto]",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
 
-export const CardTitle = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
-  ({ className, ...props }, ref) => (
-    <p className={cn("text-base font-semibold", className)} ref={ref} {...props} />
-  ),
-);
-CardTitle.displayName = "CardTitle";
+function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
+  return <div data-slot="card-title" className={cn("text-base font-semibold leading-none", className)} {...props} />;
+}
 
-export const CardDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
-  ({ className, ...props }, ref) => (
-    <p className={cn("text-sm text-muted-foreground", className)} ref={ref} {...props} />
-  ),
-);
-CardDescription.displayName = "CardDescription";
+function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
+  return <div data-slot="card-description" className={cn("text-sm text-muted-foreground", className)} {...props} />;
+}
 
-export const CardContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => <div className={cn("space-y-4", className)} ref={ref} {...props} />,
-);
-CardContent.displayName = "CardContent";
+function CardAction({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-action"
+      className={cn("col-start-2 row-span-2 row-start-1 self-start justify-self-end", className)}
+      {...props}
+    />
+  );
+}
+
+function CardContent({ className, ...props }: React.ComponentProps<"div">) {
+  return <div data-slot="card-content" className={cn("space-y-4", className)} {...props} />;
+}
+
+function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-footer"
+      className={cn("flex items-center [.border-t]:pt-6", className)}
+      {...props}
+    />
+  );
+}
+
+export { Card, CardHeader, CardFooter, CardTitle, CardAction, CardDescription, CardContent };

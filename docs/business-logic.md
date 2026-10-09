@@ -15,20 +15,39 @@ page to `/onboarding` until that's set — there's no way to reach `/bots`
 (or any other console page) with an unnamed org and zero bots.
 
 `/onboarding` is a single combined screen (workspace name + first bot's
-name), deliberately not a multi-step wizard: only one vertical template
-exists concretely (`docs/product-spec.md`'s phasing), so a template
-picker with one option would be premature UI, and inviting teammates is
-separate, larger scope with no design done yet. Submitting sets
+name), deliberately not a multi-step wizard: there's no template picker
+step at all (ADR 0019 — no vertical-template layer), and inviting
+teammates is separate, larger scope with no design done yet. Submitting sets
 `org.name` + `org.onboardedAt`, creates the first bot, and redirects
 straight into that bot's editor — a brand-new account never sees an
-empty `/bots` list.
+empty `/bots` list at signup, though archiving that first (and only)
+bot reaches it again; see "Bot archiving" below.
 
-**Known side effect**: since onboarding always creates a first bot and
-no bot-delete feature exists yet, `app/(console)/bots/page.tsx`'s "No
-bots yet" empty state is real code with no real user journey that
-reaches it anymore. Left in place — cheap to keep, and reachable again
-the moment bot deletion (or a skippable onboarding path) ships. See
-`tests/e2e/bots-list.spec.ts`'s note.
+## Bot archiving (`app/(console)/bots/actions.ts`, ADR 0018)
+
+Removing a bot from the console sets `Bot.archivedAt`, never a real
+`DELETE` — see ADR 0018 for why (a business's conversation history is
+exactly the data guardrail #6's traceability requirement exists to keep
+around). An archived bot: disappears from `/bots` and every bot picker
+(top-bar switcher, conversations filter), 404s via the plain-language
+error boundary if its console URL is visited directly, and stops
+resolving via the widget's `botKey` (`lib/db.ts`'s
+`resolveBotPublicKey` now checks `archivedAt` after resolving the key,
+returning the same "invalid botKey" response as a key that never
+existed). Its config versions, knowledge sources, integrations, and
+conversations are untouched.
+
+There is no restore path in the console yet — only directly against the
+database. Every bot-fetching query in the app must filter
+`archivedAt: null`; there's no structural enforcement for this the way
+`withOrgContext` enforces tenant isolation, so a new query that forgets
+the filter is a real, silent way for an archived bot to reappear.
+
+**Duplicate** (`duplicateBotAction`) clones a bot's latest persona/
+guardrails/tools/appearance into a brand-new bot and redirects into its
+editor. It deliberately does not copy conversations, knowledge sources,
+or integrations — those belong to the source bot's own history/
+connections, not to "what this bot is configured to do."
 
 ## BYOA — bring your own Anthropic API key (`/settings`, ADR 0012)
 
@@ -102,6 +121,10 @@ in-progress visitor experiences mid-chat — see `lib/ai/botConfig.ts`.
    requests (see `docs/architecture.md`'s scaling note), so any server
    instance can handle any request.
 
+Between step 2 and step 4, two opt-in Guardrails checks run (off by
+default): rate limiting and spam detection —
+`lib/ai/abuseProtection.ts`, ADR 0029, full detail in `docs/changelog.md`.
+
 ## System prompt caching
 
 `buildSystemPrompt` deliberately does plain string concatenation, never
@@ -129,14 +152,103 @@ connected the real integration a tool needs (e.g. Shopify for
 `check_order_status`), the tool falls back to "collect info, hand off
 to a human" — never a fabricated answer.
 
+## Write-capable action tools & approvals (`lib/pendingActions.ts`, ADR 0023)
+
+A write-capable tool — one whose effect can't be undone by "the AI was
+wrong" — never executes itself. `request_order_cancellation`
+(`lib/ai/tools/cancelOrder.ts`) validates the order (exists, not
+already cancelled) and, if valid, writes a `pending` `PendingAction`
+row instead of calling Shopify; the visitor is told a human will
+review it, never that it's done. A business owner reviews queued
+requests from `/approvals` — org-wide, not per-bot (ADR 0038) — and
+approves or rejects each one. Only approving calls the tool's
+separately-exported executor (`executeOrderCancellation`, the real
+`orderCancel` GraphQL mutation) — rejecting just marks the row
+`rejected` and does nothing external.
+
+`lib/pendingActions.ts` is deliberately generic — it has no knowledge
+of `request_order_cancellation` or any other specific tool, so a
+future write tool's own `handle()` can call `createPendingAction`
+without creating a circular import. The one place that maps a
+`toolName` to its executor is the console layer
+(`app/(console)/approvals/actions.ts`'s `EXECUTORS` map) — the next
+write-capable tool adds one line there, not a change to the generic
+queue.
+
+## In-chat widgets (`lib/widgets.ts`, `lib/ai/tools/widget.ts`, ADR 0028)
+
+A widget is a form the bot can render inline in the chat — Phase 1 of
+Chatbase's real "Widgets" feature, read from their actual docs, not
+guessed (ADR 0028): Schema-driven forms only, not yet their fuller
+Functions/States system. Per-bot, not draft/publish-gated, same
+precedent as Custom actions (ADR 0022) — a widget takes effect
+immediately on save/toggle.
+
+**Trigger mechanism — no chat-loop special-casing needed.** A widget
+is built into a real `Tool` the same way a custom action is
+(`buildWidgetTool`, `lib/ai/tools/widget.ts`), merged into every turn's
+tool list by `lib/ai/chat.ts` alongside the static registry and custom
+actions. The tool takes no input — the widget itself collects data
+from the *visitor*, not the model — and its `handle()` returns a
+tagged JSON string, `{"type":"render_widget", widgetId, name,
+submitLabel, schema}`, the exact same structured-signaling pattern
+every other tool already uses for its own output shape
+(`handoff_required`, `ok`/`result`). Because the model sees this tool
+call "succeed" like any other, its own next turn naturally produces
+the accompanying text ("Sure, please fill this out:") — no special
+early-exit branching was needed in the tool loop. `sendMessage` just
+scans each turn's tool results for the tag and attaches the last one
+found to `SendMessageResult.widget`, alongside `reply`.
+
+**Rendering and submission.** `public/widget.js` (vanilla JS, shadow-
+DOM styled) and `PreviewSheet.tsx` (React + `components/ui/`
+primitives) each build a form from the widget's JSON Schema
+(`properties`/`required`/`enum`) independently, matching their own
+surface's design system rather than sharing a renderer neither can use
+directly. On submit, the collected field values are formatted as plain
+text (`"Your name: Priya, Party size: 4"`) and sent as the visitor's
+own next chat message over the existing `/api/chat` endpoint — no new
+endpoint, no separate submission concept.
+
+**Schema format is JSON Schema**, confirmed by the user (2026-09-29)
+over a custom shape mirroring Chatbase's own internal structure — an
+actual standard already used by this codebase's tool-input schemas and
+Claude's own tool-calling API, versus a private format that would only
+buy cosmetic parity with a competitor's builder. `lib/widgets.ts`
+converts between the console's typed field builder (name/label/type/
+required/options) and the stored JSON Schema, the same
+fields-to-schema/schema-to-fields round trip `lib/customActions.ts`
+already established for its own input schema.
+
+**Phase 2 — Functions (2026-09-30).** A widget with an `apiUrl` gets a
+second tool, `submit_widget_<name>` (`buildWidgetSubmitTool`), called
+right after the visitor submits. Non-write-capable: calls
+`performActionRequest` (Custom Actions' SSRF-guarded, encrypted-header
+helper, ADR 0022) directly, returning `{"status":"ok",...}` or
+degrading to `{"status":"handoff_required",...}` on failure (guardrail
+#4). Write-capable: never touches the API from the tool call — queues a
+`PendingAction` (ADR 0023) instead; approving it in
+`/approvals` dispatches on the `submit_widget_` prefix to
+`executeWidgetSubmission`, which re-resolves the widget fresh by name
+(a `PendingAction` stores only the tool name + input, not the widget's
+URL/headers) and performs the one real call. The Add dialog's "Call an
+API when this form is submitted" checkbox is progressive disclosure —
+unchecked, a widget behaves exactly as Phase 1 did. The URL is rejected
+server-side by the same `isBlockedActionUrl` guard before it's ever
+stored.
+
+**Deliberately not built** (`docs/open-questions.md` #9): multi-view
+widgets driven by conditions (States), and field types beyond text/
+number/boolean/dropdown.
+
 ## Knowledge base ingestion
 
 `docs/product-spec.md`'s MVP scope: "file upload and/or manual Q&A at
-minimum for v1" — now fully built, three ways in
-(`lib/ai/knowledgeBase.ts`, `/bots/[botId]/knowledge`). Site crawling
-(multi-page, link-following) stays separate, deferred scope
-(`docs/open-questions.md` #4) — everything here is single-Q&A/single-
-file/single-URL. ADR 0013 covers the file/URL decisions in full.
+minimum for v1" — now fully built, four ways in
+(`lib/ai/knowledgeBase.ts`, `/bots/[botId]/knowledge`, "Data sources"
+as of 2026-09-29). ADR 0013 covers the file/URL decisions in full; ADR
+0030 (below) covers real multi-page site crawling, which the Website
+entry point now also offers.
 
 **Manual Q&A**: one `KnowledgeSource` (`kind: "qa"`, `title` = the
 question) + one `KnowledgeChunk` (`content` = the answer) per pair — no
@@ -155,6 +267,44 @@ pull just the article content — not nav/footer/ad chrome. Guarded by
 `assertPublicHttpUrl` (a basic SSRF check: `http`/`https` only, and the
 literal hostname is rejected if it's `localhost`/loopback/private/link-
 local — see `docs/security.md` for what this guard does *not* cover).
+If that first pass finds suspiciously little text (under 150 chars —
+a JS-framework page's empty-shell signature), it retries once with a
+real headless Chromium (`playwright`, ADR 0031), self-hosted. If even
+that still comes back empty — a site actively resisting automated
+browsers, not just one that needs JS — a third, platform-funded step
+calls Firecrawl with a stealth proxy (ADR 0032), skipped silently when
+`FIRECRAWL_API_KEY` isn't set. Kept deliberately third, not second: if
+every JS-rendered page fell straight to Firecrawl its usage-scaled
+cost would apply to the common case, not just the rare one.
+
+**Text snippet** (`createTextEntry`, 2026-09-29): a title + pasted text,
+no extraction step — reuses the same chunking pipeline as file/URL
+(`kind: "text"`). The smallest of the four entry points since there's
+no file parsing or network fetch involved.
+
+**Multi-page site crawling** (`lib/ai/crawler.ts`'s `crawlSite`, ADR
+0030): the Add URL dialog's "Crawl this site" checkbox routes to
+`createCrawledEntries` (`lib/ai/knowledgeBase.ts`) instead of the
+single-page `createUrlEntry` path. Discovery is sitemap-first
+(`robots.txt`'s `Sitemap:` directive, else a same-origin
+`/sitemap.xml` guess, else a capped same-origin link-following
+fallback), always checking `robots-parser`'s `isAllowed()` first (a
+disallowed homepage throws before discovery starts). Capped at
+`MAX_CRAWL_PAGES` (20), run synchronously (same hard-limits precedent
+as ADR 0013), with a courtesy delay between fetches. Each discovered
+URL reuses `extractUrlText` unchanged (JS-rendering fallback included);
+one page's failure skips that page rather than aborting the crawl
+(same precedent as `bulkDeleteEntriesAction`); `extractUrlText`'s full
+fallback chain (above, including Firecrawl) applies per page
+automatically. Deliberately still out of scope: scheduled re-crawling
+(no background-job infra yet). Behind a swappable `crawlSite(startUrl)
+-> CrawledPage[]` interface so a vendor stays a contained later option.
+
+**Total size indicator** (`getTotalKnowledgeBytes`): sums each stored
+chunk's content length across a bot's sources — informational only, no
+plan-based cap enforced or displayed against it (`docs/open-
+questions.md` #6's billing-tier question is unresolved, so there's
+nothing to cap against yet, unlike Chatbase's "X KB / 1 MB").
 
 **Chunking** (`lib/ai/chunking.ts`'s `chunkText`, file/URL only — a Q&A
 pair never needs it): a hand-rolled recursive splitter, paragraph →
@@ -191,33 +341,12 @@ logged server-side and shown as a generic message instead — never a raw
 error, per guardrail #4.
 
 **Verification note**: this environment's `VOYAGE_API_KEY` is a
-placeholder (same class of gap as the documented missing
-`ANTHROPIC_API_KEY`), so the actual embeddings call has never been
-exercised against the real Voyage API here. Everything up to that
-boundary — the raw SQL vector write/read, the RLS isolation specific to
-`knowledge_sources`/`knowledge_chunks`, the console UI's list/add/
-delete flow, and (for file/URL) the real extraction libraries
-themselves — was verified for real: `pdf-parse` against a real hand-
-built PDF, `mammoth` against a real bundled `.docx` fixture, `jsdom`+
-`@mozilla/readability` against real sample HTML, a directly-seeded
-file/url source+chunk against a real Postgres+pgvector instance
-(confirming `listKnowledgeSources`/`deleteKnowledgeSource`'s generic-
-across-kinds behavior and that `search_knowledge_base`'s raw query
-retrieves file/url chunks the same way as qa chunks), and a real browser
-upload of that same hand-built PDF through the full server-action
-pipeline (multipart file → buffer → `extractFileText` → chunking),
-which correctly reached the embeddings-call boundary rather than
-erroring anywhere in extraction. `tests/e2e/knowledge.spec.ts` covers
-what's reachable without a real key: the empty states, all three Add
-dialogs, a real `.txt` upload's extraction+chunking, the SSRF guard
-rejecting a real `localhost` URL end-to-end, and — a real bug this
-caught, on the qa path — that a failed save doesn't silently wipe the
-question/answer fields a business owner just typed (`useActionState`'s
-`<form>` resets uncontrolled fields on any action completion, success or
-failure, unless the action's returned state re-seeds them via
-`defaultValue`; same fix already shipped for `/login`'s email field).
+placeholder, so the embeddings call itself has never been exercised
+against the real Voyage API here — everything up to that boundary
+(raw SQL vector write/read, RLS, the console UI, the real extraction
+libraries) was verified for real. Full detail: `docs/changelog.md`.
 
-## Conversation inbox (`lib/conversations.ts`, ADR 0015 + ADR 0016)
+## Conversation inbox / Activity (`lib/conversations.ts`, ADR 0015 + ADR 0016 + ADR 0027)
 
 `Conversation`, `Message`, and `ToolCallLog` were written on every chat
 turn since `lib/ai/chat.ts`'s `sendMessage` first shipped, but no console
@@ -226,7 +355,9 @@ route ever read them back — `/conversations` (list) and `/conversations/
 ADR 0015 (resolving the previously-open "human handoff channel" question):
 no email/Slack push in this pass. Built for a non-technical business
 owner to review real conversations and spot problems, per ADR 0016 — not
-a developer debugging screen.
+a developer debugging screen. Rebuilt 2026-09-29 (ADR 0027) into a
+split-pane layout matching Chatbase's own real Activity section, read
+from their actual docs, not guessed.
 
 **List** (`listConversations`): one row per `Conversation`, joined to its
 bot's name and its most recent `Message` for a preview, filterable by
@@ -256,12 +387,50 @@ found.") — the raw tool name/input/output JSON stays real and available
 "Technical details" disclosure, not deleted, so an engineer debugging a
 bad answer can still get at it from the same page a business owner uses.
 
-**Deliberately not built**: a `status`/"resolved" concept. `docs/roadmap.
-md`'s "Resolution-rate analytics" already flagged this as needing a real
-product definition first (closed by visitor leaving satisfied? no
-issue triggered? something else?) — ADR 0015 left it undefined rather
-than silently picking one while building the inbox; tracked as `docs/
-open-questions.md` #7.
+**Pause/resume** (ADR 0027, `setConversationStatus`): a business owner
+can pause a conversation from its Details panel. A paused conversation
+still records incoming visitor messages — `lib/ai/chat.ts`'s
+`sendMessage` persists the user message, then returns `{ reply: null }`
+before any model call or tool loop, matching Chatbase's own documented
+behavior ("stops receiving AI replies but still records incoming
+messages") exactly. `app/api/chat/route.ts` and `public/widget.js`
+degrade gracefully — `appendMessage` is simply skipped when `reply` is
+`null`, no error surfaced to the visitor.
+
+**Source** (`Conversation.source`, `"widget" | "playground"`): set once
+at conversation creation, from whichever caller started it —
+`app/api/chat/route.ts` (defaults to `"widget"`) or
+`sendPreviewMessageAction` (`"playground"`, the bot editor's Test-your-
+bot preview). Shown on the Details tab so a reviewer can tell a real
+visitor conversation from an internal test one.
+
+**Contact** (`getConversationDetail`): resolved from a `Lead` row linked
+by `conversationId`, if `collect_lead` was called during that
+conversation; otherwise shown as "Anonymous" — never fabricated.
+
+**Deliberately not built, grounded in what Chatbase's own UI actually
+shows** (confirmed from real screenshots, not guessed): Sentiment
+analysis and Country/IP geolocation both render as honest "Not
+analyzed"/"Not tracked" states — matching Chatbase's own real
+"unanalyzed" UI, not invented values (guardrail #4). Also not built: a
+Confidence-score metric, voice sessions (out of scope per `docs/north-
+star.md`), and Procedures (a named trigger+ordered-steps workflow — a
+real middle ground between the flat tool registry and the deferred
+visual-flow-builder idea, tracked as a future Build sub-area). A
+`status`/"resolved for analytics" concept (distinct from the new
+ongoing/paused `status` field, which is about AI-reply availability) is
+still not built. `docs/roadmap.md`'s "Resolution-rate analytics" already
+flagged this as needing a real product definition first (closed by
+visitor leaving satisfied? no issue triggered? something else?) — ADR
+0015 left it undefined rather than silently picking one while building
+the inbox; tracked as `docs/open-questions.md` #7.
+
+**Bulk select + export**: the "..." menu's "Select" enters bulk-select
+mode (checkboxes on each list row); selected rows (or, via "Export
+all", every currently-filtered row) export to CSV client-side
+(`lib/csvExport.ts` — a `Blob` + `URL.createObjectURL` + a synthetic
+`<a download>` click, no new API route, since the data is already
+server-rendered into the page).
 
 **Verification note**: conversations can't be created through the
 console UI — they're only ever written by the widget chat API
@@ -271,11 +440,16 @@ base's embeddings call). `tests/e2e/helpers.ts`'s `seedConversations`
 writes directly via Prisma, scoped through the same `withOrgContext` +
 `BotPublicKey` mechanism the app itself uses to bootstrap an `orgId`
 from a `botId` — standing in for a real chat turn, same pattern
-`knowledge.spec.ts` already used for a directly-seeded knowledge entry.
-Every other part of the feature (list rendering, filters, the issue
-derivation for both tools, the plain-language summaries, the detail
-transcript, tenant isolation across orgs) was verified for real against
-a real Postgres instance and a real browser.
+`knowledge.spec.ts` already used for a directly-seeded knowledge entry;
+it now also seeds a third, paused conversation for pause/resume and
+status-filter coverage. Every other part of the feature (list rendering,
+filters, the issue derivation for both tools, the plain-language
+summaries, the detail transcript, tenant isolation across orgs, and the
+2026-09-29 rebuild's pause/resume toggle, Source/Contact fields, and CSV
+export) was verified for real against a real Postgres instance and a
+real browser — including a live functional check that pausing a
+conversation actually suppresses the AI reply end-to-end, not just that
+the `status` column flips.
 
 ## Tenant isolation in practice
 
@@ -294,10 +468,32 @@ Two tables are the deliberate exceptions, both resolvable *before*
 - **`UserOrgAccess`** — resolves which org a *console user* belongs to
   at login, before there's any org context yet.
 
+## Custom action "Test this action" (2026-09-29)
+
+`testCustomActionAction` (`app/(console)/bots/[botId]/actions/actions.ts`)
+fires a real HTTP request against whatever the Add-action dialog
+currently holds — method, URL, headers, and per-field sample values —
+before the action is ever saved. It needs no `orgId`/tenant scoping: it
+never touches the database, only the outside world, so it's a plain
+top-level server action rather than one bound to a `botId`.
+
+It shares `performActionRequest` (`lib/ai/tools/customAction.ts`) with
+the live bot tool call — the same SSRF guard (`isBlockedActionUrl`),
+the same query-params-for-GET/JSON-body-otherwise routing, the same
+10s timeout. That's deliberate: a passing test call and a real saved
+action use the identical request-building code, so "it worked in the
+test" is a real guarantee about how the saved action will behave, not
+a separate code path that could quietly drift from the real one. The
+live tool call wraps the same result in the handoff-JSON contract
+(guardrail #4); the test path returns the raw status/body instead,
+since a business owner debugging their own endpoint needs to see what
+actually came back, not a plain-language fallback message. Response
+bodies are capped at 4000 characters before reaching the console.
+
 ## Shopify connect flow
 
-`app/api/integrations/[provider]/callback/route.ts` deliberately never
-touches the console session. The OAuth `state` parameter (set when the
-authorize URL is built, decoded here) is the only thing carrying
-`orgId`/`botId` through the redirect — the callback route has no other
-way to know which bot this connection belongs to, and needs none.
+Org-wide, not per-bot (ADR 0038): one connection per org, shared by
+every bot. `app/api/integrations/[provider]/callback/route.ts` never
+touches the console session — OAuth `state` carries `orgId` through
+the redirect, and `check_order_status`/`cancelOrder.ts` look up the
+connection by `orgId_provider`.

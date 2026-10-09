@@ -2,7 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentSession } from "@/lib/auth";
-import { createQaEntry, createFileEntry, createUrlEntry, deleteKnowledgeSource } from "@/lib/ai/knowledgeBase";
+import {
+  createQaEntry,
+  createFileEntry,
+  createUrlEntry,
+  createCrawledEntries,
+  createTextEntry,
+  deleteKnowledgeSource,
+} from "@/lib/ai/knowledgeBase";
 import { MAX_FILE_BYTES, KnowledgeIngestionError } from "@/lib/ai/extraction";
 
 export interface KnowledgeActionState {
@@ -19,6 +26,8 @@ export interface KnowledgeActionState {
   question?: string;
   answer?: string;
   url?: string;
+  title?: string;
+  text?: string;
 }
 
 // A "use server" file may only export async functions (Next.js) — the
@@ -49,7 +58,7 @@ export async function createQaAction(
     return { status: "success", message: "Added to the knowledge base." };
   } catch (err) {
     console.error("[createQaAction]", err);
-    return { status: "error", message: "Couldn't save that entry. Please try again.", question, answer };
+    return { status: "error", message: "Couldn't save that entry — the change didn't save. Please try again.", question, answer };
   }
 }
 
@@ -74,7 +83,8 @@ export async function createFileAction(
     return { status: "success", message: "Added to the knowledge base." };
   } catch (err) {
     console.error("[createFileAction]", err);
-    const message = err instanceof KnowledgeIngestionError ? err.message : "Couldn't process that file. Please try again.";
+    const message =
+      err instanceof KnowledgeIngestionError ? err.message : "Couldn't process that file — something went wrong reading it. Please try again.";
     return { status: "error", message };
   }
 }
@@ -89,6 +99,24 @@ export async function createUrlAction(
     return { status: "error", message: "A URL is required.", url };
   }
 
+  // ADR 0030 — the same dialog's "Crawl this site" checkbox routes here
+  // instead of a single-page fetch. Real crawl failures (robots.txt
+  // disallows it, nothing extractable) surface via KnowledgeIngestionError
+  // same as every other ingestion path.
+  if (formData.get("crawl") === "on") {
+    try {
+      const session = await getCurrentSession();
+      const count = await createCrawledEntries(session.orgId, botId, url);
+      revalidatePath(`/bots/${botId}/knowledge`);
+      return { status: "success", message: `Crawled and added ${count} ${count === 1 ? "page" : "pages"}.` };
+    } catch (err) {
+      console.error("[createUrlAction/crawl]", err);
+      const message =
+        err instanceof KnowledgeIngestionError ? err.message : "Couldn't crawl that site — something went wrong fetching it. Please try again.";
+      return { status: "error", message, url };
+    }
+  }
+
   try {
     const session = await getCurrentSession();
     await createUrlEntry(session.orgId, botId, url);
@@ -96,8 +124,33 @@ export async function createUrlAction(
     return { status: "success", message: "Added to the knowledge base." };
   } catch (err) {
     console.error("[createUrlAction]", err);
-    const message = err instanceof KnowledgeIngestionError ? err.message : "Couldn't ingest that URL. Please try again.";
+    const message =
+      err instanceof KnowledgeIngestionError ? err.message : "Couldn't ingest that URL — something went wrong fetching it. Please try again.";
     return { status: "error", message, url };
+  }
+}
+
+export async function createTextAction(
+  botId: string,
+  _prevState: KnowledgeActionState,
+  formData: FormData,
+): Promise<KnowledgeActionState> {
+  const title = String(formData.get("title") ?? "").trim();
+  const text = String(formData.get("text") ?? "").trim();
+  if (!title || !text) {
+    return { status: "error", message: "Both a title and some text are required.", title, text };
+  }
+
+  try {
+    const session = await getCurrentSession();
+    await createTextEntry(session.orgId, botId, title, text);
+    revalidatePath(`/bots/${botId}/knowledge`);
+    return { status: "success", message: "Added to the knowledge base." };
+  } catch (err) {
+    console.error("[createTextAction]", err);
+    const message =
+      err instanceof KnowledgeIngestionError ? err.message : "Couldn't save that snippet — the change didn't save. Please try again.";
+    return { status: "error", message, title, text };
   }
 }
 
@@ -114,6 +167,32 @@ export async function deleteEntryAction(
     return { status: "success", message: "Deleted." };
   } catch (err) {
     console.error("[deleteEntryAction]", err);
-    return { status: "error", message: "Couldn't delete that entry. Please try again." };
+    return { status: "error", message: "Couldn't delete that entry — it wasn't removed. Please try again." };
+  }
+}
+
+// Bulk-select delete (Chatbase's "Bulk select" mode) — one action call
+// for N ids rather than N round trips, and a partial failure still
+// removes whatever it could rather than leaving the whole batch stuck.
+export async function bulkDeleteEntriesAction(
+  botId: string,
+  _prevState: KnowledgeActionState,
+  formData: FormData,
+): Promise<KnowledgeActionState> {
+  const sourceIds = formData.getAll("sourceId").map(String).filter(Boolean);
+  if (sourceIds.length === 0) {
+    return { status: "error", message: "Nothing selected." };
+  }
+
+  try {
+    const session = await getCurrentSession();
+    for (const sourceId of sourceIds) {
+      await deleteKnowledgeSource(session.orgId, botId, sourceId);
+    }
+    revalidatePath(`/bots/${botId}/knowledge`);
+    return { status: "success", message: `Deleted ${sourceIds.length} ${sourceIds.length === 1 ? "entry" : "entries"}.` };
+  } catch (err) {
+    console.error("[bulkDeleteEntriesAction]", err);
+    return { status: "error", message: "Couldn't delete some entries — some weren't removed. Please try again." };
   }
 }

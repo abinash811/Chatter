@@ -18,10 +18,37 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./tests/unit/setup.ts"],
     include: ["tests/unit/**/*.test.{ts,tsx}"],
+    // Deliberately NOT tuning pool/isolate despite vitest's own "jsdom
+    // created 14 times" warning. Tried both documented options and both
+    // broke real correctness, not just perf:
+    //   - pool: "vmThreads" — broke module resolution for an
+    //     ESM-shipped-as-CJS transitive dep (@exodus/bytes, via
+    //     Prisma/crypto) inside the VM context; 2 files failed outright.
+    //   - isolate: false — shares module registry across files in a
+    //     worker; multiple specs here mock "@/lib/db" differently
+    //     (chat.test.ts, conversations.test.ts, knowledgeBase.test.ts,
+    //     etc.), and that mock state bled across files. Passed 3/5 runs,
+    //     failed 2/5 with real assertion failures — a flaky suite is
+    //     worse than a slow one. See docs/research/current-practices.md.
     coverage: {
       provider: "v8",
       include: ["lib/**/*.ts"],
       exclude: ["lib/**/*.d.ts"],
+      // Real thresholds checked via `npm run test:unit:coverage`
+      // (2026-09-27), not invented: current numbers are ~68.5%
+      // statements/lines, 65.5% branches, 62.6% functions — set a few
+      // points below that as a real regression floor, not a target
+      // retroactively demanding tests for files intentionally covered
+      // by tests/e2e/ instead (lib/auth.ts, lib/db.ts, lib/ai/
+      // botConfig.ts, etc. sit at 0% here on purpose — see this file's
+      // own header comment on the unit/e2e split). This only fails CI
+      // if coverage actually regresses from where it already is.
+      thresholds: {
+        statements: 65,
+        lines: 65,
+        functions: 60,
+        branches: 62,
+      },
     },
   },
   resolve: {

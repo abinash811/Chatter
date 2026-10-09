@@ -1,0 +1,21 @@
+[
+  { "label": "Badge default/secondary", "fg": "secondary-foreground", "bg": "secondary" },
+  { "label": "Badge muted", "fg": "muted-foreground", "bg": "muted" },
+  { "label": "Badge success (text-success-strong on bg-success/10)", "fg": "success-strong", "bg": "success", "bgOpacity": 0.1, "compositeOver": "background" },
+  { "label": "Badge warning (text-warning-strong on bg-warning/10)", "fg": "warning-strong", "bg": "warning", "bgOpacity": 0.1, "compositeOver": "background" },
+  { "label": "Badge alert (text-alert-strong on bg-alert/10)", "fg": "alert-strong", "bg": "alert", "bgOpacity": 0.1, "compositeOver": "background" },
+  { "label": "Badge destructive (text-destructive on bg-destructive/10)", "fg": "destructive", "bg": "destructive", "bgOpacity": 0.1, "compositeOver": "background" },
+  { "label": "muted-foreground on background", "fg": "muted-foreground", "bg": "background" },
+  { "label": "destructive text on background", "fg": "destructive", "bg": "background" },
+  { "label": "Button/Badge primary (bg-primary)", "fg": "primary-foreground", "bg": "primary" },
+  { "label": "Status solid fill — destructive", "fg": "destructive-foreground", "bg": "destructive" },
+  { "label": "Status solid fill — warning", "fg": "warning-foreground", "bg": "warning" },
+  { "label": "Status solid fill — alert", "fg": "alert-foreground", "bg": "alert" },
+  { "label": "Status solid fill — success", "fg": "success-foreground", "bg": "success" },
+  { "label": "Card", "fg": "card-foreground", "bg": "card" },
+  { "label": "Popover", "fg": "popover-foreground", "bg": "popover" },
+  { "label": "Sidebar", "fg": "sidebar-foreground", "bg": "sidebar" },
+  { "label": "Sidebar active item (sidebar-accent)", "fg": "sidebar-accent-foreground", "bg": "sidebar-accent" },
+  { "label": "Accent hover chrome", "fg": "accent-foreground", "bg": "accent" },
+  { "label": "Body text", "fg": "foreground", "bg": "background" }
+]

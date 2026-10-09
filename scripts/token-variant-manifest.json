@@ -1,0 +1,32 @@
+{
+  "_comment": "Human-verified map of color-bearing Tailwind token classes per cva variant, for components/*.tsx where a status/weight signal has drifted silently before (Badge's `default`, repeatedly — see docs/design/audit.md's 'System coverage' table). scripts/check-token-variant-mapping.mjs fails if a variant's actual className in code no longer matches the `tokens` list here, or if a variant exists in code with no manifest entry at all — any change to what a variant visually means must be a deliberate edit to this file in the same commit, not a silent one. scripts/check-variant-visual-coverage.mjs reads the same `coveredBy` field: a real call-sited variant must list the tests/visual/ spec file(s) that actually render it, or the check fails; `coveredBy: null` is only valid for a variant with zero real call sites in app/ or components/console/ (both checks cross-verify this against a real grep, not just trusted blindly). Scoped to Badge only for now (the component that's actually drifted) — extend to another cva-based component (e.g. Button) by adding its file path here the same shape.",
+  "components/ui/badge.tsx": {
+    "variantGroup": "variant",
+    "variants": {
+      "default": {
+        "tokens": ["bg-secondary", "text-secondary-foreground"],
+        "coveredBy": null
+      },
+      "muted": {
+        "tokens": ["bg-muted", "text-muted-foreground"],
+        "coveredBy": ["tests/visual/console.visual.spec.ts"]
+      },
+      "success": {
+        "tokens": ["bg-success/10", "text-success-strong"],
+        "coveredBy": ["tests/visual/console.visual.spec.ts"]
+      },
+      "warning": {
+        "tokens": ["bg-warning/10", "text-warning-strong"],
+        "coveredBy": ["tests/visual/console.visual.spec.ts"]
+      },
+      "alert": {
+        "tokens": ["bg-alert/10", "text-alert-strong"],
+        "coveredBy": null
+      },
+      "destructive": {
+        "tokens": ["bg-destructive/10", "text-destructive"],
+        "coveredBy": ["tests/visual/console.visual.spec.ts"]
+      }
+    }
+  }
+}

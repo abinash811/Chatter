@@ -45,7 +45,7 @@ export async function saveSettingsAction(
     return { status: "success", message: apiKey ? "Settings saved — now using your own API key." : "Settings saved." };
   } catch (err) {
     console.error("[saveSettingsAction]", err);
-    return { status: "error", message: "Couldn't save your changes. Please try again." };
+    return { status: "error", message: "Couldn't save your changes — the change didn't save. Please try again." };
   }
 }
 
@@ -59,6 +59,6 @@ export async function removeApiKeyAction(_prevState: SettingsState): Promise<Set
     return { status: "success", message: "Removed — back to our managed API key." };
   } catch (err) {
     console.error("[removeApiKeyAction]", err);
-    return { status: "error", message: "Couldn't remove the key. Please try again." };
+    return { status: "error", message: "Couldn't remove the key — the change didn't save. Please try again." };
   }
 }

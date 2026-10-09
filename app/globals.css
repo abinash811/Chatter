@@ -1,6 +1,17 @@
 @import 'tailwindcss';
 
 @theme {
+  /* ADR 0036 — the real typeface this app runs, not the browser
+     default system-font stack. Inter Variable (self-hosted via
+     @fontsource-variable/inter, imported in app/layout.tsx) first,
+     then Tailwind's own default sans stack as the fallback chain
+     (node_modules/tailwindcss/theme.css) if the font file somehow
+     fails to load. */
+  --font-sans:
+    "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+    "Noto Color Emoji";
+
   --color-background: var(--background);
   --color-soft-background: var(--soft-background);
   --color-muted-background: var(--muted-background);
@@ -26,6 +37,11 @@
   --color-warning-foreground: var(--warning-foreground);
   --color-alert: var(--alert);
   --color-alert-foreground: var(--alert-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-strong: var(--success-strong);
+  --color-warning-strong: var(--warning-strong);
+  --color-alert-strong: var(--alert-strong);
   --color-border: var(--border);
   --color-soft-border: var(--soft-border);
   --color-strong-border: var(--strong-border);
@@ -115,7 +131,13 @@
   --strong-background: oklch(92.2% 0 none); /* neutral-200 */
   --muted: oklch(97% 0 none); /* neutral-100 */
   --foreground: oklch(0% 0 0); /* pure black */
-  --muted-foreground: oklch(55.6% 0 none); /* neutral-500 */
+  /* 48% not the stock neutral-500 (55.6%) — on --muted (97% L) that was a
+     razor-thin 4.34:1 against WCAG AA's 4.5:1, caught by a real a11y test
+     failure after the Next.js 16/Turbopack upgrade (its CSS pipeline's
+     color-mix rounding shifted several already-borderline tokens just
+     under the line at once). Real contrast math (not eyeballed): 48%
+     yields 6.04:1, comfortable margin, not a redesign. */
+  --muted-foreground: oklch(48% 0 none);
   --soft-foreground: oklch(43.9% 0 none); /* neutral-600 */
   --disabled-foreground: oklch(87% 0 none); /* neutral-300 */
   --placeholder-foreground: oklch(55.6% 0 none); /* neutral-500 */
@@ -126,16 +148,66 @@
   --popover-foreground: oklch(0% 0 0);
   --primary: oklch(0% 0 0); /* monochrome — shadcn default + Claude Console's solid-black buttons */
   --primary-foreground: oklch(98.5% 0 none);
-  --accent: oklch(97% 0 none); /* neutral-100 */
+  /* 2026-10-02: darkened from neutral-100 (97%) to neutral-200 (92.2%,
+     the same step already used for `border`/`strong-background`) — the
+     old value was only a 3-point lightness gap from `--background`'s
+     pure white, making every ghost-button hover (and any other
+     bg-accent use) nearly invisible. Confirmed via real contrast math,
+     not guesswork: accent-foreground (20.5% L) still reads ~14:1 on
+     this darker background, comfortably above AA. Dark mode's --accent
+     wasn't touched — this bug was specific to light mode's near-white
+     background, not reported in dark mode. */
+  --accent: oklch(92.2% 0 none); /* neutral-200 */
   --accent-foreground: oklch(20.5% 0 none); /* neutral-900 */
   --secondary: oklch(97% 0 none); /* neutral-100 */
   --secondary-foreground: oklch(20.5% 0 none); /* neutral-900 */
-  --destructive: oklch(57.7% 0.245 27.325); /* red-600 */
+  /* 45% not the stock red-600 (57.7%) — same real-contrast-math fix as
+     --muted-foreground above: text-destructive on white was a razor-thin
+     4.77:1, and the destructive Badge's text-on-10%-tint background was
+     under 4.5:1 outright (4.16 on white, 3.85 on a muted ambient
+     backdrop). 45% clears every real usage site with comfortable margin
+     (white-text-on-solid-button and text-on-white both land ~6.9:1, the
+     tinted badge backgrounds ~5.5-6:1) — checked against each, not just
+     one. */
+  --destructive: oklch(45% 0.245 27.325);
   --destructive-foreground: oklch(97.1% 0.013 17.38); /* red-50 */
   --warning: oklch(76.9% 0.188 70.08); /* amber-500 */
   --warning-foreground: oklch(0% 0 0);
   --alert: oklch(60.6% 0.25 292.717); /* violet-500 */
-  --alert-foreground: oklch(1 0 0);
+  /* 2026-10-08: black, not white — building the design-system page (the
+     first thing to ever actually render --alert-foreground as real
+     text) found white-on-violet-500 is only 4.32:1, just under WCAG
+     AA's 4.5:1. Black clears it at 4.86:1 — same fix direction
+     --warning-foreground already uses for amber-500, a bg light enough
+     that dark text reads better than light. Computed, not guessed. */
+  --alert-foreground: oklch(0% 0 0);
+  /* 2026-10-08: the one deliberate accent color in an otherwise
+     monochrome system — grounded in two independent real references
+     (a Chatbase screenshot, an OpenAI-playground-style comparison
+     screenshot) that both used the exact same real color for the exact
+     same narrow job: an "on/active/synced" state signal (a sync toggle,
+     a status dot) — never a general brand color on buttons/nav/text.
+     Computed from the installed tailwindcss/colors package (green-500),
+     not guessed, same discipline as every other token here. */
+  --success: oklch(72.3% 0.219 149.579); /* green-500 */
+  /* 2026-10-08: black, not green-50 — same real bug the --alert-
+     foreground comment above describes, found the same way (the
+     design-system page rendering it as real text for the first time):
+     green-50 text on a green-500 bg was 2.15:1. Black clears it at
+     9.31:1. */
+  --success-foreground: oklch(0% 0 0);
+  /* 2026-10-08: readable text-on-light-tint counterparts for the Badge
+     `success`/`warning`/`alert` variants below — the base warning/alert
+     tokens (amber-500/violet-500) and --success (green-500) are tuned
+     for vivid solid fills (a toggle thumb, a future status dot), too
+     light at that L to pass WCAG AA as standalone text on white or on
+     their own /10 tint (same real problem --destructive's own comment
+     above already solved for red). Darkened the same way: one step
+     further than --destructive's own 45% L landed, picked from
+     tailwindcss/colors' real 800-step for each hue, not guessed. */
+  --success-strong: oklch(44.8% 0.119 151.328); /* green-800 */
+  --warning-strong: oklch(47.3% 0.137 46.201); /* amber-800 */
+  --alert-strong: oklch(43.2% 0.232 292.759); /* violet-800 */
   --soft-border: oklch(97% 0 none); /* neutral-100 */
   --border: oklch(92.2% 0 none); /* neutral-200 */
   --strong-border: oklch(87% 0 none); /* neutral-300 */
@@ -183,11 +255,26 @@
   --secondary: oklch(26.9% 0 none); /* neutral-800 */
   --secondary-foreground: oklch(98.5% 0 none);
   --destructive: oklch(70.4% 0.191 22.216); /* red-400 */
-  --destructive-foreground: oklch(97.1% 0.013 17.38);
+  /* 2026-10-08: black, not red-50 — red-50 on red-400 is only 2.63:1.
+     The design-system page rendering this as real text for the first
+     time (nothing else ever has) found all 3 of destructive/alert/
+     success's dark-mode -foreground values failing the same way; black
+     clears all 3 (7.31:1 here) since red-400/violet-500/green-500 are
+     each light enough backgrounds for dark text to read better than
+     light, same direction --warning-foreground already used. */
+  --destructive-foreground: oklch(0% 0 0);
   --warning: oklch(76.9% 0.188 70.08);
   --warning-foreground: oklch(0% 0 0);
   --alert: oklch(60.6% 0.25 292.717);
-  --alert-foreground: oklch(1 0 0);
+  --alert-foreground: oklch(0% 0 0);
+  --success: oklch(72.3% 0.219 149.579); /* green-500, unchanged from light mode — same precedent as warning/alert above */
+  --success-foreground: oklch(0% 0 0);
+  /* Lightened, not darkened, for dark-mode text-on-tint contrast — same
+     direction --destructive's own dark-mode override takes (red-400,
+     lighter than light mode's red-600-ish 45%). */
+  --success-strong: oklch(79.2% 0.209 151.711); /* green-400 */
+  --warning-strong: oklch(82.8% 0.189 84.429); /* amber-400 */
+  --alert-strong: oklch(70.2% 0.183 293.541); /* violet-400 */
   /* oklch's alpha slash lets a border/input read as a translucent white
      overlay on the near-black background, matching shadcn's own real
      dark-mode values exactly — the old HSL-triplet convention (ADR 0008)

@@ -1,0 +1,19 @@
+# gitleaks config — extends the default ruleset, only adds allowlist
+# entries for known-fake values already committed on purpose (CI's own
+# placeholder env vars in .github/workflows/ci.yml). Do NOT add a real
+# secret's value here to silence a finding — rotate it instead.
+title = "Chatter gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+regexes = [
+  # ci.yml's ENCRYPTION_KEY placeholder: a real-shaped (32-byte,
+  # base64) key so lib/crypto.ts's length validation passes in CI, but
+  # never used outside this repo's own test runs.
+  '''STDwPEpkjZ\+omIEMcPsyu7co8ATetQhtvGhFY3zp3N8=''',
+]
+paths = [
+  '''\.github/workflows/ci\.yml''',
+]

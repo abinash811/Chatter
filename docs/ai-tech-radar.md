@@ -25,32 +25,117 @@ Each entry names the real thing (library/vendor/technique, checked via
 - **Voyage AI embeddings** (`voyage-3`) — `lib/ai/embeddings.ts`.
   Anthropic's recommended embeddings partner; not yet formalized as its
   own ADR (`lib/ai/embeddings.ts`'s own comment flags this).
-
-**Assess**
-- **Reranking model** — Voyage `rerank-2` (same vendor/key as
-  embeddings, lowest integration cost) vs. Cohere Rerank v3.5 (widely
-  cited as the strongest standalone reranker in isolation). No traffic
-  yet to justify a second AI vendor, so leaning Voyage first — not yet
-  decided. Whichever is picked, build it behind a `RerankProvider`
-  interface (same pattern as `ModelGateway`/`EmbeddingsProvider`) so
-  switching vendors later is a contained swap: one new provider class +
-  one new env var + a factory-line change, no caller code touches the
-  vendor directly.
+- **Voyage AI reranking** (`rerank-2`) — `lib/ai/rerank.ts`, ADR 0035.
+  Same vendor/key as embeddings (no second AI vendor to manage), chosen
+  over Cohere Rerank v3.5 after an explicit tradeoff explained to and
+  confirmed by the user. Behind a `RerankProvider` interface, same
+  pattern as `ModelGateway`/`EmbeddingsProvider` — switching vendors
+  later is one new provider class + one new env var + a factory-line
+  change. Real limitation: `VOYAGE_API_KEY` is a placeholder in this
+  environment, so the real quality impact (vs. hybrid search alone)
+  hasn't been measured for real yet — only that the wiring and its
+  fallback-on-failure path both work, confirmed by running
+  `npm run eval:retrieval` against a live local Postgres.
 
 ## Retrieval & search
 
-**Trial** (prioritized — see `docs/roadmap.md`)
-- **Hybrid retrieval** — Postgres native full-text search (`tsvector`/
-  `tsquery`, no new infra) combined with pgvector's existing cosine-
-  distance search. No dedicated search engine (Elasticsearch/Typesense)
-  needed at this scale.
-- **Reranking** — re-score the top ~30–50 hybrid candidates down to the
-  ~5–8 actually sent to the LLM. Vendor: see Assess above.
-- **Query rewriting** — fold recent conversation turns into a
-  standalone retrieval query before searching (e.g. "what about
-  international orders?" → "refund policy for international orders"),
-  using the existing Claude call already in the loop — no new model
-  needed.
+Sequenced 2026-09-27 into 4 phases (`docs/roadmap.md` has the full
+write-up); rings below reflect where each phase actually stands, updated
+as each ships. Phase 1 shipped same day; phases 2-4 still ahead.
+
+**Adopt**
+- **HNSW index** (`db/migrations/0002_pgvector.sql`) — replaced a real
+  bug, not a straight upgrade: the index used to be IVFFlat, built while
+  the table was empty. IVFFlat's clusters are computed from whatever
+  data exists at build time — building on zero rows makes it silently
+  degenerate, and it doesn't self-correct as data is added (needs a
+  manual `REINDEX`, which nothing here ever ran). HNSW has no
+  training-data requirement, so it doesn't have this empty-table failure
+  mode. Confirmed supported by the pgvector extension version actually
+  installed locally (0.6.0 via `pg_available_extensions`; HNSW has
+  shipped since 0.5.0), not assumed — and functionally verified against
+  a real local Postgres: applied the migration twice (idempotent, one
+  index survives), then ran the exact `ORDER BY embedding <=>` query
+  `searchKnowledgeBase.ts` uses against two real 1536-dim vectors and
+  confirmed the closer one ranks first.
+- **Batched ingestion embeddings** (`lib/ai/embeddings.ts`) —
+  `EmbeddingsProvider` gained `embedBatch()`; ingestion
+  (`lib/ai/knowledgeBase.ts`) now embeds all of a document's chunks in
+  one call (auto-split at Voyage's 128-texts-per-request limit,
+  confirmed via WebSearch not recalled) instead of one HTTP round trip
+  per chunk in a loop.
+- **Query rewriting** (`lib/ai/tools/searchKnowledgeBase.ts`) — no new
+  model call: the tool's `query` parameter description now instructs
+  Claude (which already sees the full conversation when it decides to
+  call this tool) to resolve pronouns/implicit topic into a
+  self-contained query before searching, instead of passing a bare
+  follow-up straight to the embedder. Verifiable only up to what shipped
+  in the schema — whether the model actually follows the instruction
+  needs a real `ANTHROPIC_API_KEY` to observe, the same documented gap
+  as the rest of the engine's end-to-end behavior.
+- **Hybrid retrieval** (`lib/ai/tools/searchKnowledgeBase.ts`,
+  `db/migrations/0003_hybrid_search_fts.sql`) — Postgres native
+  full-text search (a generated `tsvector` column + GIN index) combined
+  with the existing pgvector cosine search via Reciprocal Rank Fusion.
+  Matched precisely against Supabase's own reference implementation
+  (`supabase/supabase`'s `hybrid-search.mdx`, read directly — not just
+  summarized from search results, after an initial pass that only used
+  search snippets missed 3 real details): `ts_rank_cd` (cover density —
+  accounts for term proximity), not plain `ts_rank`; the candidate-pool
+  formula `least(match_count, 30) * 2` (10 here, for our match_count of
+  5), not an arbitrary round number; and their exact join structure
+  (`full_text FULL OUTER JOIN semantic`, then one join to the base
+  table) rather than a less efficient left-join-from-the-base-table
+  version. `rrf_k = 50` and equal `full_text_weight`/`semantic_weight`
+  (both 1, not yet exposed as tunable) match their defaults. Kept as a
+  deliberate divergence: cosine distance (`<=>`, matching our existing
+  `vector_cosine_ops` HNSW index and Voyage embeddings, which aren't
+  guaranteed pre-normalized), not their inner-product example. Deliberately
+  plain `tsvector`, not a BM25 extension — see ADR 0021 and the Hold
+  entry below. Functionally verified against a real local Postgres:
+  applied the migration twice (idempotent), confirmed
+  `websearch_to_tsquery` never throws on empty/malformed input, ran the
+  real corrected query through the actual Prisma `$queryRaw` code path
+  (not just raw psql) confirming the numeric candidate-limit/match-count
+  parameters interpolate correctly, and confirmed an exact keyword match
+  ranked #2 in vector-only search correctly wins the fused ranking.
+- **RAG eval harness** (`scripts/eval-retrieval.ts`, `lib/eval/`) — hand-
+  rolled, not a framework: RAGAS/DeepEval/TruLens are all Python-only
+  (checked their real repos directly, not summaries — DeepEval has
+  native Claude support and the closest-fit metrics, but Python is still
+  a second language/toolchain this all-TypeScript project doesn't have);
+  LangSmith has a real TS SDK but requires a LangSmith account/cloud
+  service (self-hosting is Enterprise-only). Precision@K/Recall@K/MRR
+  are unambiguous, decades-old IR metrics, not something a vendor API
+  can drift on — `lib/eval/retrievalMetrics.ts` is under 40 lines.
+  `lib/ai/retrieval.ts` was extracted out of `search_knowledge_base` so
+  the harness calls the *exact* production hybrid-search query
+  (`retrieveKnowledgeChunks`) instead of a second copy that could drift
+  from it. Scores against a hand-written 8-query labeled test set
+  (`lib/eval/retrievalDataset.ts` — no real production data exists yet).
+  Real limitation, stated in the tool's own output every run: with
+  `VOYAGE_API_KEY` still a placeholder, semantic search can't be
+  measured for real — the script detects this and falls back to a
+  crude hash-based mock embedding so the full pipeline (seed → query →
+  score) still runs end-to-end, loudly labeled as not a real quality
+  signal. Full-text scores are real either way. Verified: ran twice
+  (deterministic, same result both times), confirmed no leftover rows
+  after cleanup.
+- **Reranking** (`lib/ai/rerank.ts`, `lib/ai/retrieval.ts`, ADR 0035) —
+  Voyage `rerank-2` re-scores a 25-document RRF-fused candidate pool
+  down to the `matchCount` (5) actually sent to the model, see Models &
+  embeddings above for the full writeup. Falls back to hybrid search's
+  own order on any failure.
+
+**Hold**
+- **BM25 extension** (`pg_search`/`pg_textsearch`) — explicitly deferred
+  (ADR 0021, 2026-09-27), not rejected outright. AWS RDS for PostgreSQL
+  (the chosen DB host) doesn't support either; getting real BM25 would
+  mean self-managed Postgres, Neon, or Google Cloud SQL/AlloyDB instead,
+  each a bigger decision than the evidence currently justifies. Revisit
+  specifically once the RAG eval harness below can show `ts_rank`'s
+  weaker ranking is an actual bottleneck for real content and queries,
+  not before.
 
 **Assess**
 - **Parent-child / contextual retrieval** — search a small chunk,
@@ -93,12 +178,13 @@ Each entry names the real thing (library/vendor/technique, checked via
 
 ## Eval & ops
 
+**Adopt**
+- **RAG eval harness** (`npm run eval:retrieval`) — built 2026-09-27; see
+  the Retrieval & search section above for the full writeup (why
+  hand-rolled instead of RAGAS/DeepEval/TruLens/LangSmith, the
+  placeholder-key fallback, verification done).
+
 **Assess**
-- **RAG eval harness** — no test-set/regression check exists today.
-  Plan: adopt an open-source framework rather than hand-roll (e.g.
-  RAGAS, DeepEval, TruLens — none evaluated yet, re-check current
-  practice before picking, per CLAUDE.md) once a real labeled Q&A test
-  set exists to run it against.
 - **Production feedback loop** (👍/👎 → gap analysis) — no signal
   capture exists yet; depends on the eval harness's data shape being
   settled first so both share one schema.

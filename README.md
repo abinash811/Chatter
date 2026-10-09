@@ -3,21 +3,14 @@
 Vertical-agnostic AI chat platform. See `CLAUDE.md` and `docs/` for
 product spec, architecture, and decisions (ADRs).
 
-## Deploying to Render (ADR 0005)
+## Deploying
 
-1. In the Render dashboard: **New → Blueprint**, connect this repo.
-   Render reads `render.yaml` and provisions the web service + Postgres
-   automatically, including running the idempotent migrations
-   (`prisma migrate deploy` + `scripts/apply-sql-migrations.mjs`) before
-   each deploy goes live.
-2. After the first deploy, note the assigned URL
-   (`https://<name>.onrender.com`).
-3. In the Render dashboard, fill in the env vars `render.yaml` leaves
-   blank (`sync: false`): `APP_BASE_URL` (the URL from step 2),
-   `ANTHROPIC_API_KEY`, `VOYAGE_API_KEY`, `SHOPIFY_CLIENT_ID`/
-   `SHOPIFY_CLIENT_SECRET`.
-4. Redeploy (or Render auto-redeploys on env var changes) once those
-   are set.
+No deploy target is chosen yet — ADR 0005's Render pick was dropped
+(ADR 0020, `docs/open-questions.md` #8). Whatever host is picked next
+needs: a Node runtime for the Next.js build, a Postgres instance with
+the `vector` extension installable, and a way to run `prisma migrate
+deploy` then `node scripts/apply-sql-migrations.mjs` (both idempotent —
+safe to run on every deploy) before each new instance takes traffic.
 
 ## What's scaffolded so far
 
@@ -111,10 +104,10 @@ Verified end to end on 2026-09-23 (see "Verified by a real run" below).
    app role can't do this itself, even with `CREATEDB`.
 6. `node scripts/apply-sql-migrations.mjs` — applies
    `db/migrations/0001_init_rls.sql` then `0002_pgvector.sql` (RLS and
-   pgvector aren't things Prisma manages directly). The same script
-   Render's `preDeployCommand` and CI run — confirmed idempotent, so
-   re-running it after any `db:migrate` that adds a new tenant-scoped
-   table is always safe.
+   pgvector aren't things Prisma manages directly). The same script CI
+   runs (and whatever deploy pipeline eventually exists — see
+   "Deploying" above) — confirmed idempotent, so re-running it after any
+   `db:migrate` that adds a new tenant-scoped table is always safe.
 7. Set `ANTHROPIC_API_KEY` for `lib/ai/gateway.ts`.
 8. Set `AUTH_SECRET` (any random string — `npx auth secret` generates
    one) for console login. No external app registration needed — visit
@@ -175,7 +168,7 @@ neither catchable by reading the code or by `tsc`:
 
 - **Auth.js rejected `localhost` as an untrusted host.** `signIn()`
   silently failed with `UntrustedHost` on every attempt — Auth.js won't
-  trust the request's `Host` header (needed behind Render's proxy and
+  trust the request's `Host` header (needed behind any reverse proxy and
   for any non-Vercel deployment, dev included) unless told to. This had
   been true since ADR 0004 too; it just was never caught because the
   Google OAuth flow was never actually driven end to end (see the
@@ -218,13 +211,16 @@ Deterministic checks + a browser canary, run at three points so a
 violation is caught as early and as cheaply as possible — reading code
 alone doesn't catch any of these (see "Verified by a real run" above):
 
-- **`.claude/skills/`** (`bot-engine-build`, `console-frontend-build`,
-  `ship-checklist`) — read by Claude Code before touching the relevant
-  layer, so the patterns are followed on the way in, not just checked on
-  the way out.
-- **`.githooks/pre-commit`** — `npm run check:all` + typecheck, before a
-  commit is even made. One-time setup per clone:
-  `git config core.hooksPath .githooks`.
+- **`.claude/rules/`** (`bot-engine.md`, `console-frontend.md`,
+  path-scoped to `lib/ai/`+`lib/integrations/` and `app/(console)/`+
+  `components/ui/` respectively) plus **`.claude/skills/ship-checklist`**
+  — the rules load automatically the moment Claude Code touches a
+  matching file (no reliance on remembering to invoke them), so the
+  patterns are followed on the way in, not just checked on the way out.
+- **`.githooks/pre-commit`** — `npm run check:all` + typecheck + unit
+  tests, before a commit is even made. Installed automatically by
+  `npm install` (`package.json`'s `prepare` script sets
+  `core.hooksPath`) — nothing to configure by hand per clone anymore.
 - **`.github/workflows/ci.yml`** — the same checks plus the RLS
   verification and browser canary, against a real Postgres+pgvector
   service, on every push — the backstop for anything that reaches GitHub

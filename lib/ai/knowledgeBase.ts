@@ -2,11 +2,11 @@ import { withOrgContext } from "@/lib/db";
 import { getEmbeddingsProvider } from "@/lib/ai/embeddings";
 import { chunkText } from "@/lib/ai/chunking";
 import { extractFileText, extractUrlText, KnowledgeIngestionError } from "@/lib/ai/extraction";
+import { crawlSite } from "@/lib/ai/crawler";
 
-// Manual Q&A, file, and URL ingestion (docs/product-spec.md's MVP scope:
-// "file upload and/or manual Q&A at minimum for v1"). Site crawling
-// (multi-page, link-following) stays separate, deferred scope — see
-// docs/open-questions.md #4. ADR 0013 covers the file/URL decisions.
+// Manual Q&A, file, URL, and (ADR 0030) multi-page crawl ingestion
+// (docs/product-spec.md's MVP scope: "file upload and/or manual Q&A at
+// minimum for v1"). ADR 0013 covers the original file/URL decisions.
 //
 // Manual Q&A: one KnowledgeSource + one KnowledgeChunk per pair — no
 // multi-chunk splitting needed, a Q&A pair is already the right
@@ -85,7 +85,7 @@ export async function deleteKnowledgeSource(orgId: string, botId: string, source
 async function createChunkedEntry(
   orgId: string,
   botId: string,
-  kind: "file" | "url",
+  kind: "file" | "url" | "text",
   title: string,
   text: string,
 ): Promise<void> {
@@ -100,15 +100,12 @@ async function createChunkedEntry(
   }
 
   // Embed before opening the transaction below — withOrgContext runs
-  // inside prisma.$transaction, and a sequential embeddings call per
-  // chunk would otherwise hold that transaction (and Prisma's default
-  // transaction timeout) open for however long the embeddings provider
-  // takes across every chunk. createQaEntry has the same shape for the
-  // same reason, just with a single chunk.
-  const embeddings: number[][] = [];
-  for (const content of chunks) {
-    embeddings.push(await getEmbeddingsProvider().embed(content));
-  }
+  // inside prisma.$transaction, and holding it open for however long the
+  // embeddings call takes would risk Prisma's default transaction
+  // timeout. createQaEntry has the same shape for the same reason, just
+  // with a single chunk. embedBatch (not a per-chunk embed() loop) — one
+  // provider round trip per up-to-128 chunks instead of one per chunk.
+  const embeddings = await getEmbeddingsProvider().embedBatch(chunks);
 
   await withOrgContext(orgId, async (tx) => {
     const source = await tx.knowledgeSource.create({ data: { orgId, botId, kind, title } });
@@ -134,4 +131,50 @@ export async function createFileEntry(
 export async function createUrlEntry(orgId: string, botId: string, url: string): Promise<void> {
   const { title, text } = await extractUrlText(url);
   await createChunkedEntry(orgId, botId, "url", title, text);
+}
+
+// Real multi-page site crawling (ADR 0030) — crawlSite (lib/ai/
+// crawler.ts) does discovery + per-page extraction; this just persists
+// each page the same way a single createUrlEntry call already would.
+// One page's own chunking failure (e.g. MAX_CHUNKS) skips that page
+// rather than aborting the whole crawl, same "one bad item doesn't sink
+// the batch" precedent as bulkDeleteEntriesAction (app/(console)/bots/
+// [botId]/knowledge/actions.ts) — returns how many pages actually made
+// it in, so the console can tell a business owner the real outcome.
+export async function createCrawledEntries(orgId: string, botId: string, startUrl: string): Promise<number> {
+  const pages = await crawlSite(startUrl);
+  let created = 0;
+  for (const page of pages) {
+    try {
+      await createChunkedEntry(orgId, botId, "url", page.title, page.text);
+      created++;
+    } catch {
+      // Skip this page — see function comment.
+    }
+  }
+  if (created === 0) {
+    throw new KnowledgeIngestionError("Found pages on that site, but none had content that could be ingested.");
+  }
+  return created;
+}
+
+// Pasted text, no file/URL round trip — the same chunking pipeline as
+// file/URL, just skipping extraction since the text is already plain.
+export async function createTextEntry(orgId: string, botId: string, title: string, text: string): Promise<void> {
+  await createChunkedEntry(orgId, botId, "text", title, text);
+}
+
+// Informational only (docs/open-questions.md #6's pricing/billing-tier
+// question is unresolved, so there's no plan-based cap to enforce or
+// display against — just the raw total, unlike Chatbase's "X KB / 1 MB").
+// Sums each chunk's content length, not the original file/upload size,
+// since that's what's actually stored.
+export async function getTotalKnowledgeBytes(orgId: string, botId: string): Promise<number> {
+  const sources = await withOrgContext(orgId, (tx) =>
+    tx.knowledgeSource.findMany({ where: { botId }, include: { chunks: true } }),
+  );
+  return sources.reduce(
+    (total, source) => total + source.chunks.reduce((sum, chunk) => sum + Buffer.byteLength(chunk.content), 0),
+    0,
+  );
 }

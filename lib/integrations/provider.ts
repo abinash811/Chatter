@@ -30,21 +30,20 @@ export interface IntegrationProvider {
    * shop domain) — deliberately untyped here since it varies per
    * provider; each adapter documents its own shape.
    */
-  getAuthorizeUrl(orgId: string, botId: string, input: Record<string, string>): string;
+  getAuthorizeUrl(orgId: string, input: Record<string, string>): string;
 
   /**
    * Exchanges the OAuth callback for a token and persists an Integration
-   * row. Takes only the callback's query params — not orgId/botId — and
-   * returns them, because `state` (set in getAuthorizeUrl) is the only
+   * row. Takes only the callback's query params — not orgId — and
+   * returns it, because `state` (set in getAuthorizeUrl) is the only
    * thing carrying that context through the redirect; requiring the
-   * caller to also supply orgId/botId would mean the caller has to
-   * decode state itself first, duplicating what this method already
-   * has to do.
+   * caller to also supply orgId would mean the caller has to decode
+   * state itself first, duplicating what this method already has to do.
    */
-  handleCallback(params: URLSearchParams): Promise<{ orgId: string; botId: string }>;
+  handleCallback(params: URLSearchParams): Promise<{ orgId: string }>;
 
   /** Revokes access where the provider supports it and removes the Integration row. */
-  disconnect(orgId: string, botId: string): Promise<void>;
+  disconnect(orgId: string): Promise<void>;
 }
 
 const registry = new Map<string, IntegrationProvider>();

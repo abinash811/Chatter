@@ -11,7 +11,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 enum MembershipRole {
@@ -21,22 +20,23 @@ enum MembershipRole {
 }
 
 model Org {
-  id        String   @id @default(uuid())
-  name      String
-  createdAt DateTime @default(now())
+  id                       String    @id @default(uuid())
+  name                     String
+  createdAt                DateTime  @default(now())
   // Null until the onboarding flow (app/onboarding/) completes — see
   // ADR 0012. app/(console)/layout.tsx redirects here on every request
   // until this is set, so a brand-new org can never reach the console
   // shell without naming itself and creating its first bot.
-  onboardedAt DateTime?
+  onboardedAt              DateTime?
   // Optional BYOA (ADR 0012): null means "use our managed
   // ANTHROPIC_API_KEY"; set means this org's bots call Claude with
   // their own key instead. AES-256-GCM via lib/crypto.ts, never the
   // raw key — same treatment as Integration.accessToken below.
   anthropicApiKeyEncrypted String?
 
-  memberships Membership[]
-  bots        Bot[]
+  memberships  Membership[]
+  bots         Bot[]
+  integrations Integration[]
 
   @@map("orgs")
 }
@@ -85,17 +85,26 @@ model UserOrgAccess {
 }
 
 model Bot {
-  id        String   @id @default(uuid())
-  orgId     String
-  name      String
-  createdAt DateTime @default(now())
+  id         String    @id @default(uuid())
+  orgId      String
+  name       String
+  createdAt  DateTime  @default(now())
+  // Soft delete (ADR 0018) — never hard-deleted. Set when a business
+  // archives a bot from the console; null for a live bot. Every
+  // bot-fetching query in the app must filter archivedAt: null, or an
+  // archived bot silently reappears somewhere (no structural enforcement
+  // for this, unlike withOrgContext for tenant isolation — see the ADR).
+  archivedAt DateTime?
 
-  org           Org                @relation(fields: [orgId], references: [id])
-  versions      BotConfigVersion[]
-  sources       KnowledgeSource[]
-  integrations  Integration[]
-  conversations Conversation[]
-  publicKey     BotPublicKey?
+  org            Org                @relation(fields: [orgId], references: [id])
+  versions       BotConfigVersion[]
+  sources        KnowledgeSource[]
+  conversations  Conversation[]
+  leads          Lead[]
+  customActions  CustomAction[]
+  pendingActions PendingAction[]
+  widgets        Widget[]
+  publicKey      BotPublicKey?
 
   @@index([orgId])
   @@map("bots")
@@ -105,19 +114,20 @@ model Bot {
 // self-serve "Connect X" OAuth flow from docs/architecture.md §2 writes
 // here. Tool handlers (lib/ai/tools/) read this to know whether a real
 // integration exists or they must fall back to handoff (guardrail #4).
+// Org-level, not per-bot (ADR 0038, 2026-10-04) — one Shopify
+// connection shared by every bot in the org, matching how a real
+// Shopify store actually works (one store, not one per bot).
 model Integration {
-  id           String   @id @default(uuid())
-  orgId        String
-  botId        String
-  provider     String // "shopify" for v1; more as platforms are added
-  shopDomain   String?
-  accessToken  String // AES-256-GCM via lib/crypto.ts (ADR 0012) — never the raw token
-  connectedAt  DateTime @default(now())
+  id          String   @id @default(uuid())
+  orgId       String
+  provider    String // "shopify" for v1; more as platforms are added
+  shopDomain  String?
+  accessToken String // AES-256-GCM via lib/crypto.ts (ADR 0012) — never the raw token
+  connectedAt DateTime @default(now())
 
-  bot Bot @relation(fields: [botId], references: [id])
+  org Org @relation(fields: [orgId], references: [id])
 
-  @@unique([botId, provider])
-  @@index([orgId])
+  @@unique([orgId, provider])
   @@map("integrations")
 }
 
@@ -140,6 +150,24 @@ model BotConfigVersion {
   guardrails  String
   tools       Json         @default("[]")
   appearance  Json         @default("{}")
+  // Chatbase's "Build > Instructions" model picker + temperature slider
+  // (docs/research/competitive-landscape.md's 2026-09-28 update). Only a
+  // same-vendor Claude tier, not a multi-provider picker (ADR 0002 scoped
+  // Claude as the only real ModelGateway implementation) — see the new
+  // ADR for this feature. Defaults match what lib/ai/gateway.ts already
+  // hardcoded before this migration, so existing published bots keep
+  // their exact current behavior with no data backfill needed.
+  model       String       @default("claude-sonnet-5")
+  temperature Float        @default(1)
+  // Guardrails Phase 1 (ADR 0029) — rate limiting + spam detection
+  // ("abuse protection"). Deliberately a separate field/name from
+  // `guardrails` above: that column is persona-level content-guardrail
+  // prompt text (CLAUDE.md guardrail #3); this is Chatbase's distinct
+  // "Guardrails" concept (abuse protection), which happens to share the
+  // name at the product level but not the data model. Empty JSON parses
+  // to fully-disabled (lib/ai/abuseProtection.ts) — no behavior change
+  // for an existing bot until opted in.
+  abuseProtection Json     @default("{}")
   publishedAt DateTime?
   createdAt   DateTime     @default(now())
 
@@ -199,12 +227,106 @@ model Conversation {
   // — a publish mid-conversation must not shift an in-flight visitor).
   configVersionId String
   createdAt       DateTime @default(now())
+  // ADR 0027: "ongoing" | "paused" — exactly the two values Chatbase's
+  // own real API documents (their own filter dialog lists more, but
+  // only these two are confirmed from a primary source). A paused
+  // conversation still records incoming Message rows; lib/ai/chat.ts
+  // skips the model call and tool loop while paused.
+  status          String   @default("ongoing")
+  // ADR 0027: "widget" | "playground" — this bot's two real message
+  // origins (app/api/chat/route.ts vs. sendPreviewMessageAction).
+  source          String   @default("widget")
 
   bot      Bot       @relation(fields: [botId], references: [id])
   messages Message[]
 
   @@index([orgId])
   @@map("conversations")
+}
+
+// collect_lead tool (lib/ai/tools/collectLead.ts) — generic across every
+// vertical (guardrail #2), not ecommerce-specific: any business wants a
+// visitor's contact info captured when the bot can't fully help. At
+// least one of name/email/phone is expected to be present (enforced by
+// the tool's input schema, not here) — all nullable at the DB level
+// since a visitor may give only one.
+model Lead {
+  id             String   @id @default(uuid())
+  orgId          String
+  botId          String
+  conversationId String?
+  name           String?
+  email          String?
+  phone          String?
+  note           String?
+  createdAt      DateTime @default(now())
+
+  bot Bot @relation(fields: [botId], references: [id])
+
+  @@index([orgId])
+  @@map("leads")
+}
+
+// Business-defined webhook action (ADR 0022) — matches Chatbase's Custom
+// Actions. Per-bot, not a registry entry: name/description/schema/URL are
+// business-authored data, built into a `Tool` at request time
+// (lib/ai/tools/customAction.ts), not a compile-time addition to
+// lib/ai/tools/registry.ts. Takes effect immediately on save/toggle, same
+// precedent as Integration — not gated behind the bot's draft/publish
+// cycle (ADR 0022's "Consequences").
+model CustomAction {
+  id               String   @id @default(uuid())
+  orgId            String
+  botId            String
+  name             String // slug; the tool name Claude sees is `custom_<name>`
+  description      String
+  method           String // "GET" | "POST" | "PUT" | "PATCH"
+  url              String
+  headersEncrypted String? // AES-256-GCM (lib/crypto.ts), same as Integration.accessToken
+  inputSchema      Json // JSON Schema {properties, required} for what Claude collects
+  enabled          Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  bot Bot @relation(fields: [botId], references: [id])
+
+  @@unique([botId, name])
+  @@index([orgId])
+  @@map("custom_actions")
+}
+
+// In-chat interactive widget (ADR 0028) — a form the bot can render
+// inline in a conversation, matching Chatbase's own "Widgets" feature.
+// Phase 1: a Schema-driven form. Phase 2 (2026-09-30): an optional
+// Function — a real API call on submit, reusing the exact same
+// pipeline as CustomAction (ADR 0022): SSRF guard, encrypted headers,
+// and the PendingAction approval queue (ADR 0023) when write-capable.
+// States (multi-view widgets) remain a separate, larger follow-up.
+// Per-bot, not draft/publish-gated — same precedent as CustomAction:
+// takes effect immediately on save/toggle.
+model Widget {
+  id                 String   @id @default(uuid())
+  orgId              String
+  botId              String
+  name               String // slug; the tool name Claude sees is `render_widget_<name>`
+  triggerDescription String // model-facing: when should the bot show this widget
+  submitLabel        String   @default("Submit")
+  schema             Json // JSON Schema {properties, required} — the form's fields
+  // Phase 2 Function fields — all null/false means "collection only,"
+  // Phase 1's original behavior, preserved by default.
+  apiUrl             String?
+  apiMethod          String? // "GET" | "POST" | "PUT" | "PATCH"
+  headersEncrypted   String? // AES-256-GCM (lib/crypto.ts), same as CustomAction.headersEncrypted
+  writeCapable       Boolean  @default(false) // gates PendingAction approval instead of calling immediately
+  enabled            Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  bot Bot @relation(fields: [botId], references: [id])
+
+  @@unique([botId, name])
+  @@index([orgId])
+  @@map("widgets")
 }
 
 model Message {
@@ -255,4 +377,36 @@ model ToolCallLog {
 
   @@index([orgId])
   @@map("tool_call_logs")
+}
+
+// A write-capable tool's proposed action, queued for human approval
+// (ADR 0023) — never executed by the model directly. `toolName` +
+// `input` are what the model proposed (e.g. "request_order_cancellation",
+// {orderNumber}); `result` is set once resolved (the real API's outcome
+// on approve, or null on reject). No relation to Conversation, same
+// precedent as ToolCallLog above — this is an append-mostly audit-style
+// table, not something joined against conversations in a query today.
+enum PendingActionStatus {
+  pending
+  approved
+  rejected
+  failed
+}
+
+model PendingAction {
+  id             String              @id @default(uuid())
+  orgId          String
+  botId          String
+  conversationId String
+  toolName       String
+  input          Json
+  status         PendingActionStatus @default(pending)
+  result         String?
+  createdAt      DateTime            @default(now())
+  resolvedAt     DateTime?
+
+  bot Bot @relation(fields: [botId], references: [id])
+
+  @@index([orgId])
+  @@map("pending_actions")
 }

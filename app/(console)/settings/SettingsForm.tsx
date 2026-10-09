@@ -26,7 +26,7 @@ export function SettingsForm({ orgName, hasApiKey }: { orgName: string; hasApiKe
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">
-      <h1 className="flex h-row items-center text-lg font-semibold">Settings</h1>
+      <h1 className="flex h-row items-center text-xl font-semibold tracking-tight">Settings</h1>
 
       <form action={saveFormAction}>
         <Card>

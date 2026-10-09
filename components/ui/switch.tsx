@@ -7,6 +7,12 @@
 // ADR 0014 + ADR 0017: real, current source from shadcn/ui's official
 // registry (github.com/shadcn-ui/ui, new-york-v4 style) via
 // scripts/pull-shadcn-component.mjs — not CARE's fork.
+//
+// One documented delta from stock (2026-10-08): the checked state uses
+// bg-success instead of shadcn's default bg-primary — this app's one
+// deliberate accent color, reserved for "on/active" state signals, not
+// applied to buttons/nav/text. See app/globals.css's --success comment
+// for the two real references this was grounded in.
 "use client"
 
 import * as React from "react"
@@ -25,7 +31,7 @@ function Switch({
       data-slot="switch"
       data-size={size}
       className={cn(
-        "peer group/switch inline-flex shrink-0 items-center rounded-full border border-transparent shadow-xs transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-[1.15rem] data-[size=default]:w-8 data-[size=sm]:h-3.5 data-[size=sm]:w-6 data-[state=checked]:bg-primary data-[state=unchecked]:bg-input dark:data-[state=unchecked]:bg-input/80",
+        "peer group/switch inline-flex shrink-0 items-center rounded-full border border-transparent shadow-xs transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-[1.15rem] data-[size=default]:w-8 data-[size=sm]:h-3.5 data-[size=sm]:w-6 data-[state=checked]:bg-success data-[state=unchecked]:bg-input dark:data-[state=unchecked]:bg-input/80",
         className
       )}
       {...props}

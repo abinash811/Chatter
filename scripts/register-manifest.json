@@ -1,0 +1,15 @@
+{
+  "_comment": "Which register (Linear/Notion/Stripe, docs/architecture.md §7 + .claude/rules/console-frontend.md item 3) each console route is assigned to. Transcribes the already-decided textual rule into checkable data — scripts/check-register-assignment.mjs fails if a route under app/(console)/ has no entry here, so a new screen can't ship without someone consciously picking its register. Deliberately does NOT yet check that a page's actual spacing/density matches its assigned register: investigating that while building this file found the one candidate mechanical signal (the h-row page-header pattern) is used identically on every register's pages for an unrelated reason (it's the universal page-header height token, not a density differentiator), and no other concrete, already-consistent density rule exists in the real codebase today to check against — see docs/changelog.md's entry for this file. Picking real numeric density targets per register is a design decision for the user to make, not something to invent here silently (CLAUDE.md's 'explain the tradeoff, then ask' rule). This manifest is the real, honest, buildable slice: assignment coverage, not yet density verification.",
+  "app/(console)/bots/page.tsx": "linear",
+  "app/(console)/conversations/page.tsx": "linear",
+  "app/(console)/conversations/[conversationId]/page.tsx": "linear",
+  "app/(console)/leads/page.tsx": "linear",
+  "app/(console)/approvals/page.tsx": "linear",
+  "app/(console)/bots/[botId]/page.tsx": "notion",
+  "app/(console)/bots/[botId]/knowledge/page.tsx": "notion",
+  "app/(console)/bots/[botId]/actions/page.tsx": "notion",
+  "app/(console)/bots/[botId]/widgets/page.tsx": "notion",
+  "app/(console)/integrations/page.tsx": "stripe",
+  "app/(console)/settings/page.tsx": "stripe",
+  "app/(console)/design-system/page.tsx": "notion"
+}

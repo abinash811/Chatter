@@ -1,0 +1,54 @@
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui";
+import { TokensSection } from "./TokensSection";
+import { ComponentsSection } from "./ComponentsSection";
+import { PageTemplatesSection } from "./PageTemplatesSection";
+
+// A live reference page, not a markdown description of one — every
+// swatch/example below renders the real app/globals.css tokens and
+// real components/ui/ primitives, so it can't silently drift from
+// what's actually shipped the way a hand-written doc can. User-
+// requested (2026-10-08), scoped to 3 phases: Tokens (Phase 1),
+// Components (Phase 2), and Page templates + registers (Phase 3) are
+// all built now. Reachable by direct URL,
+// deliberately not in AppSidebar's main nav — this is a reference tool
+// for whoever's building the console, not something a business owner
+// needs in their daily nav. See docs/design/design-system.md for the
+// prose version this page is gradually making redundant.
+//
+// DEV-ONLY, NOT A PRODUCTION FEATURE (user directive, 2026-10-08):
+// kept inside the shipped app during active development for the
+// zero-drift guarantee above, but this route must be removed before
+// the production launch — at that point the reference lives in this
+// repo only (docs/design/, and this file's own history), not as a
+// route any authenticated user can reach. See docs/roadmap.md's
+// "Before production launch" section — don't let this quietly become
+// permanent.
+export default function DesignSystemPage() {
+  return (
+    <div>
+      <div className="flex h-row items-center justify-between">
+        <h1 className="text-xl font-semibold tracking-tight">Design system</h1>
+      </div>
+      <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+        The real tokens and components this console runs — not a description of them. If something here looks wrong,
+        it's the token or component that's wrong, not this page.
+      </p>
+      <Tabs defaultValue="tokens" className="mt-6">
+        <TabsList>
+          <TabsTrigger value="tokens">Tokens</TabsTrigger>
+          <TabsTrigger value="components">Components</TabsTrigger>
+          <TabsTrigger value="templates">Page templates</TabsTrigger>
+        </TabsList>
+        <TabsContent value="tokens" className="mt-6">
+          <TokensSection />
+        </TabsContent>
+        <TabsContent value="components" className="mt-6">
+          <ComponentsSection />
+        </TabsContent>
+        <TabsContent value="templates" className="mt-6">
+          <PageTemplatesSection />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
