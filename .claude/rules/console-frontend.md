@@ -116,6 +116,23 @@ depending on the model choosing to invoke it — see
    say so explicitly to the user in the same turn, don't let it pass by
    omission. Log the outcome in `docs/design/audit.md` either way.
 
+   **This step must produce a visible, written critique — never a
+   silent internal check that ends in "looks clean."** Added 2026-10-11
+   after a direct root-cause finding: every real design bug in this
+   project's history (`docs/changelog.md`) was caught by a screenshot
+   taken *after* a screen shipped, never by this step catching it
+   first — meaning this step was happening as an unstated internal
+   judgment, if at all, not as real scrutiny. Before calling any
+   touched screen done, write out, in the response itself, what the
+   screenshot showed against each of the 5 items above (a one-line
+   finding or an explicit "clean" per item) — not a bare "screenshot
+   looks good." Writing nothing beyond "looks good" is the same as not
+   having taken the screenshot. `scripts/check-audit-coverage.mjs`
+   (part of `check:all`) mechanically guarantees a screen has a
+   `docs/design/audit.md` row to update — it cannot and does not check
+   that the row's content reflects a real critique; that part is on
+   you, every time, not optional under time pressure.
+
 9. **Check every interactive component you use against
    `docs/design/component-checklist.md`** — item 8 above is "does this
    *look* right," this is "does every component have its required

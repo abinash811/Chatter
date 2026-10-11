@@ -47,7 +47,7 @@ reason.)
   login/signup; Skeleton loading states on 7 routes.
   `docs/design/audit.md` tracks per-screen compliance against the bar —
   check there before assuming a screen is finished.
-- Testing/guardrails: 16 static guardrail checks (`npm run check:all`),
+- Testing/guardrails: 17 static guardrail checks (`npm run check:all`),
   250 unit tests, 146 `tests/e2e/` tests across 18 spec files, 24
   `tests/visual/` baselines, gitleaks + a CI coverage floor, all wired
   into CI (counts as of 2026-10-11 — check for real via `npm run
@@ -135,6 +135,13 @@ reason.)
   workspace's (2026-10-11).
 - Resolved: hosted-SaaS-only hosting model (ADR 0039, 2026-10-11) — no
   self-hosted product option.
+- Design-discipline root-cause fix (2026-10-11): a new
+  `check-audit-coverage.mjs` guardrail (17th) mechanically requires
+  every console route to have a `docs/design/audit.md` row — found and
+  fixed a real, live gap on first run (Archived bots never had one).
+  `.claude/rules/console-frontend.md` item 8 now requires writing the
+  screenshot critique's actual findings into the response, not a
+  silent "looks clean." Full detail: `docs/changelog.md`.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.

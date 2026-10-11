@@ -82,7 +82,15 @@ Before saying a piece of work is done:
    this pass or explicitly telling the user why not — never silent.
    **Update `docs/design/audit.md`'s row for that screen in the same
    turn** — a finding that only exists in chat
-   is a finding that's gone the moment context compacts.
+   is a finding that's gone the moment context compacts. Item 8 now
+   also requires **writing out the critique's actual findings in your
+   response** (a line per item, or an explicit "clean"), not a silent
+   "looks good" — see item 8's own 2026-10-11 addition for why.
+   `npm run check:all` includes `check-audit-coverage.mjs`, which fails
+   if a real console route has no row in either of `docs/design/
+   audit.md`'s living tables — it catches "the row was never created,"
+   not "the row's content is actually a real critique"; that half is
+   still yours to do for real, every time.
 14. **Open Dependabot PRs relevant to what you touched.** ADR 0009: the
    Tailwind v3/v4 mismatch wasn't a detection gap — Dependabot had
    already opened a PR for it — it was a triage gap, nobody looked.

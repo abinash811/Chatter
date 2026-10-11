@@ -14,10 +14,12 @@
 // verified guardrail logic is at risk of a regression from this
 // consolidation.
 //
-// The last 3 (2026-10-08) close a real, repeatedly-demonstrated gap: see
-// each script's own header comment, and docs/changelog.md's design-
-// drift-automation entry, for what each one actually catches and why
-// check-design-tokens.mjs alone was never enough.
+// The 3 before check-audit-coverage.mjs (2026-10-08) close a real,
+// repeatedly-demonstrated gap: see each script's own header comment,
+// and docs/changelog.md's design-drift-automation entry, for what each
+// one actually catches and why check-design-tokens.mjs alone was never
+// enough. check-audit-coverage.mjs (2026-10-11) closes a related but
+// distinct gap — see its own header comment.
 
 const CHECKS = [
   "./check-tenant-isolation.mjs",
@@ -36,6 +38,7 @@ const CHECKS = [
   "./check-error-copy-structure.mjs",
   "./check-register-assignment.mjs",
   "./check-design-system-page-coverage.mjs",
+  "./check-audit-coverage.mjs",
 ];
 
 for (const check of CHECKS) {
