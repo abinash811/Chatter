@@ -243,9 +243,10 @@ These hold regardless of what stack or framework we end up on.
    yourself writing `if industry == "healthcare"` in core code, stop —
    that belongs in config, not the engine.
 3. **Regulated verticals get explicit guardrail prompts, not vibes.**
-   Healthcare/finance/legal templates must refuse diagnosis/legal/financial
+   Healthcare/finance/legal bots must refuse diagnosis/legal/financial
    advice and say so plainly in their default system prompt. This is part
-   of the template definition, not an afterthought bolted on later.
+   of that vertical's own default config from the start (ADR 0019 — no
+   template layer, see guardrail #2), not an afterthought bolted on later.
 4. **Every action tool degrades gracefully.** If a business hasn't wired up
    a real integration (order lookup, booking system, inventory API, etc.),
    the tool falls back to "collect info, hand off to a human" — it never
