@@ -211,9 +211,9 @@ Validated by competitor research, not yet built:
   not the general capability.
 - **Resolution-rate analytics** — % of conversations resolved without
   human handoff. Intercom Fin's headline metric; we track nothing like
-  it yet. Needs a definition of "resolved" first (closed by visitor
-  leaving satisfied? no handoff triggered? — an open question to
-  resolve before building, not a UI task).
+  it yet. Not buildable until `docs/open-questions.md` #7 (the
+  canonical definition of "resolved") is answered — a product decision,
+  not a UI task.
 - **Image input** — a visitor sends a photo (damaged item, wrong item).
   Validated by both Gorgias and Intercom Fin shipping it.
 - **Guardrails Phase 1 (rate limiting + spam detection) — built

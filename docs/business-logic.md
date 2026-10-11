@@ -419,11 +419,10 @@ real middle ground between the flat tool registry and the deferred
 visual-flow-builder idea, tracked as a future Build sub-area). A
 `status`/"resolved for analytics" concept (distinct from the new
 ongoing/paused `status` field, which is about AI-reply availability) is
-still not built. `docs/roadmap.md`'s "Resolution-rate analytics" already
-flagged this as needing a real product definition first (closed by
-visitor leaving satisfied? no issue triggered? something else?) — ADR
-0015 left it undefined rather than silently picking one while building
-the inbox; tracked as `docs/open-questions.md` #7.
+still not built — ADR 0015 left it undefined rather than silently
+picking one while building the inbox. See `docs/open-questions.md` #7
+for the actual open question (the canonical home — don't restate it
+here or in `docs/roadmap.md`, both just point to it).
 
 **Bulk select + export**: the "..." menu's "Select" enters bulk-select
 mode (checkboxes on each list row); selected rows (or, via "Export

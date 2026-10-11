@@ -41,7 +41,7 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
    still-open billing/pricing model question below — a real per-token
    cost display only makes sense once that's answered.
 7. **`Conversation` "resolved" status semantics.** `docs/roadmap.md`'s
-   Next section ("Resolution-rate analytics") needs a real definition
+   "Resolution-rate analytics" (Next section) needs a real definition
    of "resolved" before it's buildable — closed by visitor leaving
    satisfied? no handoff triggered? something else? ADR 0015
    deliberately left this undefined rather than picking a definition
@@ -50,7 +50,11 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
    `Conversation.status` field ("ongoing"/"paused") is a different
    concept — whether the bot is currently generating AI replies — not
    the "resolved for analytics" idea this question asks about. Still
-   open.
+   open. **This is the one canonical copy of this question**
+   (2026-10-11 cleanup: `docs/roadmap.md` and `docs/business-logic.md`
+   both independently restated the same text, which would have drifted
+   the next time one got edited and not the others — both now just
+   point here instead).
 8. **App compute platform** (narrowed 2026-09-27 — the database half is
    resolved: AWS RDS for PostgreSQL, ADR 0021). Cloud provider is AWS;
    still open is where the Next.js app itself runs — AWS App Runner
