@@ -284,15 +284,18 @@ implication:**
 - **A live "test the bot" pane, confirmed real** — the Overview screen
   keeps a docked chat preview to the right of every config screen, with
   "Chat as user" and "Preview" as separate top-bar actions and "Deploy"
-  as the (separately gated) publish action. This validates the "in-
-  console chat playground" feature already recommended in this
-  conversation (not yet built) — Chatbase's version is not a modal or a
-  separate page, it's a persistent split-pane next to whatever you're
-  editing.
+  as the (separately gated) publish action. This validated the "in-
+  console chat playground" feature recommended in this conversation —
+  **built 2026-09-27** (`PreviewSheet.tsx`, a right-side `Sheet`, see
+  `docs/features.md`'s "Test your bot" entry) — Chatbase's version is a
+  persistent split-pane next to whatever you're editing, not a modal or
+  separate page; ours matches that shape.
 - **Suggested-reply chip buttons** under the bot's first message (seen
   in the preview: "Create my ABHA", "Explore Eka.Care EMR", "Get
-  started") — a quick-reply/starter-prompt feature we don't have
-  anywhere (not in `lib/ai/appearanceOptions.ts` or the widget). Configured
+  started") — a quick-reply/starter-prompt feature flagged here as
+  missing at the time — **built 2026-09-27**
+  (`MAX_SUGGESTED_REPLIES`, `lib/ai/appearanceOptions.ts` — the exact
+  file this note once said didn't have it). Configured
   per-bot, shown before the visitor types anything.
 - **Confidence score + "Revise answer" per logged reply** (seen in
   Activity → Conversations → Playground: a score badge like "0.613"
@@ -307,7 +310,10 @@ implication:**
   Temperature slider, Reserved↔Creative) shown alongside "Compare" and
   "Save changes" on the Instructions screen — a concrete UI reference
   for `docs/open-questions.md` #6 (LLM model picker + pricing
-  visibility), which had no UI precedent to point to before this.
+  visibility), which had no UI precedent to point to before this. The
+  model-picker half shipped since (ADR 0026, 2026-09-28 —
+  Sonnet/Haiku/Opus + a temperature slider); pricing visibility is
+  still the open half of #6.
 - **"Compare" button** next to "Save changes" on Instructions — implies
   Chatbase supports diffing instruction versions before committing a
   change, a version-history UX we don't have (we only have draft vs.
@@ -375,14 +381,15 @@ substantial content:
   "unsolicited commercial promotions, scams, repetitive gibberish" by
   default, customizable up to 2,000 characters of guidance), and
   **country blocking** (IP-based, dropdown country picker, applies to
-  the widget + API but not messaging integrations). We have none of
-  this today — guardrail #3 in this project's own CLAUDE.md is about
-  regulated-vertical *prompt* guardrails (refuse diagnosis/legal/
+  the widget + API but not messaging integrations). We had none of
+  this at the time — guardrail #3 in this project's own CLAUDE.md is
+  about regulated-vertical *prompt* guardrails (refuse diagnosis/legal/
   financial advice), a completely different concern from *abuse*
-  guardrails (rate limits, spam, geo-blocking). Worth a
-  `docs/open-questions.md` entry: is abuse protection in scope for v1,
-  or later — right now we have zero defense against someone hammering
-  a bot's API or running up Claude API costs via spam.
+  guardrails (rate limits, spam, geo-blocking). **Rate limiting and
+  spam detection, built (ADR 0029, 2026-09-30)** — opt-in, off by
+  default, on the bot editor's Guardrails tab; see `docs/features.md`.
+  **Country/IP blocking still not built** — needs a geolocation-vendor
+  decision first, `docs/open-questions.md` #10.
 - **Procedures** (`/docs/user-guides/chatbot/procedures`) — a named
   workflow: a **trigger** ("when to use" — the situation that engages
   it) paired with an ordered list of **steps** the agent works through,

@@ -10,6 +10,9 @@ confirmed working** — WebFetch successfully read the homepage and
 several docs pages directly. Re-fetched `your-first-agent` and
 `introducing-ai-actions` live to check the finding below; see "Live
 re-check" section.)
+Resolution (2026-09-27): 3 hardcoded ecommerce persona templates
+(Support/Sales/Lead-gen), persona text only — Chatbase's decoupled
+model, not a bundled template. See `docs/features.md`.
 Status: the core "persona and tools are decoupled" finding holds up
 under a live re-check, though the specific "dropdown of example
 instruction text" UI detail wasn't re-confirmed (the live docs page
@@ -21,8 +24,9 @@ docs describe.
 
 ## Why this research
 
-`docs/open-questions.md` #4 (prompt/persona template scope) needed a real
-answer to "how does the closest competitor actually do this," not a guess,
+`docs/open-questions.md`'s then-#4 (prompt/persona template scope, since
+resolved and removed from the live numbering — see "Resolved") needed a
+real answer to "how does the closest competitor actually do this," not a guess,
 per CLAUDE.md's "check current practice, don't recall it." The initial
 framing in this session assumed a template might bundle persona text
 *together with* a specific tool/action set (e.g. "appointment booking" =
@@ -56,8 +60,9 @@ same generic mechanism, not a distinct configuration object in the product.
 
 ## Implication for us
 
-This directly informs `docs/open-questions.md` #4: the competitor closest
-to our product does **not** validate a persona+tools bundled template — it
+This directly informed the (since-resolved) persona-template-scope
+question: the competitor closest to our product does **not** validate a
+persona+tools bundled template — it
 validates the opposite (keep them decoupled, exactly matching what we
 already have: Tools tab and Persona tab are already separate today).
 

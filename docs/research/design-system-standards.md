@@ -31,10 +31,11 @@ mathematical progression) rather than a fixed list of sizes, so the scale
 stays harmonious as it's extended.
 
 This is the same generic-core-plus-thin-configurable-layer pattern already
-used elsewhere in this project's architecture (vertical templates, the
-tool interface/connector split in
-`docs/research/tool-calling-architecture.md`) — applied to design instead
-of code/product config.
+used elsewhere in this project's architecture (the tool interface/
+connector split in `docs/research/tool-calling-architecture.md`) —
+applied to design instead of code/product config. (A vertical-template
+layer was considered at the time this was written but later dropped
+entirely, ADR 0019 — not the analog anymore.)
 
 ## Foundation: shadcn/ui as the current default for a Next.js + Tailwind
 stack
@@ -43,9 +44,10 @@ Given the stack direction from `docs/research/tech-stack-trends-2026.md`
 (Next.js + Tailwind), **shadcn/ui** (built on Radix UI primitives) is the
 current (2026) default pairing for SaaS admin dashboards on that stack —
 accessible by default, ships with a design-token system, avoids building a
-component library from scratch. Not yet a locked decision — tech stack is
-still open per `docs/open-questions.md` — but the natural fit if that
-direction is confirmed.
+component library from scratch. Both the tech stack and shadcn/ui itself
+were later locked in for real (ADR 0002, ADR 0014/0017) — this was
+written while both were still open and correctly flagged as not yet
+decided at the time; it isn't anymore.
 
 **Known accessibility gap to plan for**: an independent April 2026 audit
 tested all 48 shadcn/ui components for real usability (axe-core,
@@ -212,8 +214,11 @@ not a separate ad hoc list of "did it have hover/focus/depth."
 
 ## TODO — still open
 
-- Confirm the Next.js/Tailwind/shadcn stack decision (blocks locking this
-  in formally) — tracked in `docs/open-questions.md` #1.
+- ~~Confirm the Next.js/Tailwind/shadcn stack decision~~ — resolved:
+  ADR 0002 (tech stack), ADR 0014/0017 (shadcn/ui locked in as the
+  sole component/token source). `docs/open-questions.md` #1 today is
+  an unrelated, separately-resolved hosting-model question (ADR 0039)
+  — the numbering has moved on since this was written.
 - Decide how strictly to enforce contrast on business-chosen widget
   colors (hard validation vs. auto-adjustment vs. a warning) — not yet
   designed.

@@ -2,7 +2,15 @@
 
 Date: 2026-09-14
 Researcher: Claude (web search)
-Status: informs the still-open tech stack decision (docs/open-questions.md #1)
+Status: historical — the tech stack decision this informed is long
+resolved (ADR 0002: Next.js+TS, Postgres+pgvector, shadcn/ui, Claude
+behind a model gateway — see `docs/open-questions.md`'s "Resolved"
+section). Kept for the Rails fact-check and the general 2026
+tech-trends evidence, not as a live-decision input. The open-question
+numbers referenced below (#1, #2) are stale — `docs/open-
+questions.md` has since been renumbered and resolved multiple times;
+#1 today is an unrelated, separately-resolved hosting-model question
+(ADR 0039).
 
 ## Why this research
 
@@ -85,14 +93,14 @@ competitor's choice:
 
 ## Implication for Chatter
 
-Doesn't resolve open question #1 (tech stack) on its own — that's still
-the user's call — but gives a concrete, current default to react to:
-Next.js + Tailwind, Postgres + pgvector, native tool-calls + MCP hybrid
-(already independently reasoned through), FastAPI or full-TS backend
-depending on team fit. Also closes the loop on the Rails question: it was
-a reasonable, deliberate choice for Zipchat's team and speed goals, not
-evidence against Rails generally — whether it's right for us is a
-separate, still-open decision.
+At the time, didn't resolve the tech-stack decision on its own — that
+was still the user's call. ADR 0002 later landed on exactly the
+Next.js + Postgres/pgvector direction this research independently
+pointed to (full-TS, not the FastAPI split), confirming the choice
+rather than being the reason for it. Also closes the loop on the Rails
+question: it was a reasonable, deliberate choice for Zipchat's team and
+speed goals, not evidence against Rails generally — a closed, not
+still-open, side question.
 
 Sources:
 - https://robustdevs.co/reports/state-of-ai-engineering
