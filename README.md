@@ -41,8 +41,9 @@ safe to run on every deploy) before each new instance takes traffic.
   `BotPublicKey`) and every tool call is logged (`ToolCallLog`).
 
 - Console app shell: `app/layout.tsx`, `app/globals.css` (design tokens
-  per `docs/architecture.md` §7 — finalized in ADR 0007, contrast
-  verified), `tailwind.config.ts`, `components/ui/` (Button, Badge).
+  per `docs/architecture.md` §7 — finalized in ADR 0014, contrast
+  verified), `tailwind.config.ts`, `components/ui/` (26 shadcn/ui
+  primitives, ADR 0017/0025).
   First real screen:
   `app/(console)/bots/page.tsx`, a Linear-register dense bot list.
 - Console auth (ADR 0006, superseding ADR 0004): email + password via
@@ -51,10 +52,10 @@ safe to run on every deploy) before each new instance takes traffic.
   `app/login/page.tsx` and `app/signup/page.tsx` are the real entry
   points.
 
-- Shopify connect flow, end to end: `app/(console)/bots/[botId]/
-  integrations/page.tsx` (generic — renders whatever
-  `listIntegrationProviders()` and each provider's `connectFields`
-  describe, no Shopify-specific UI) and
+- Shopify connect flow, end to end: `app/(console)/integrations/
+  page.tsx` (org-wide, not nested under a bot — ADR 0038; generic,
+  renders whatever `listIntegrationProviders()` and each provider's
+  `connectFields` describe, no Shopify-specific UI) and
   `app/api/integrations/[provider]/callback/route.ts`. `state` (not the
   console session) carries orgId/botId through the OAuth redirect —
   `handleCallback` decodes and returns them, so the callback route never
@@ -74,17 +75,20 @@ safe to run on every deploy) before each new instance takes traffic.
   that was missing before, `searchKnowledgeBaseTool` had real retrieval
   but nothing ever wrote a row to search; file upload (PDF/DOCX/`.txt`/
   `.md`) and single-URL ingestion (`jsdom`+`@mozilla/readability`) round
-  out `docs/product-spec.md`'s MVP scope. ADR 0013. Site crawling stays
-  separate, still open.
+  out `docs/product-spec.md`'s MVP scope. ADR 0013. Real multi-page
+  site crawling (sitemap-first, robots.txt-respecting, behind a
+  swappable interface) shipped separately — ADR 0030, with a
+  JS-rendering fallback (ADR 0031) and a Firecrawl last-resort fallback
+  (ADR 0032).
 
 - Onboarding + optional BYOA (bring your own Claude API key): `lib/
   onboarding.ts`, `app/onboarding/`, `app/(console)/settings/`,
   `lib/crypto.ts` (secrets encryption at rest — also closes the old
   plaintext-`Integration.accessToken` gap). ADR 0012.
 
-Not yet built: site crawling, teammate invites/multi-org switcher, the
-appearance/theming editor (persona + guardrails + tools only for now).
-Still blocked on the remaining items in `docs/open-questions.md`.
+Not yet built: password reset, teammate invites/multi-org switcher,
+scheduled re-crawling for Data sources (ADR 0030). Still blocked on the
+remaining items in `docs/open-questions.md`.
 
 ## Local setup
 
