@@ -47,9 +47,12 @@ reason.)
   login/signup; Skeleton loading states on 7 routes.
   `docs/design/audit.md` tracks per-screen compliance against the bar —
   check there before assuming a screen is finished.
-- Testing/guardrails: 10 static guardrail checks (`npm run check:all`),
-  235 unit tests, 89+ `tests/e2e/` specs, 20+ `tests/visual/` baselines,
-  gitleaks + a CI coverage floor, all wired into CI. Known, tracked
+- Testing/guardrails: 16 static guardrail checks (`npm run check:all`),
+  250 unit tests, 146 `tests/e2e/` tests across 18 spec files, 24
+  `tests/visual/` baselines, gitleaks + a CI coverage floor, all wired
+  into CI (counts as of 2026-10-11 — check for real via `npm run
+  check:all`/`npx vitest run`/`npx playwright test --list` rather than
+  trusting this number to stay current). Known, tracked
   flake: a toast-timeout resource-contention issue on CI's 2-vCPU
   runner (`retries: 1` under CI mitigates but doesn't eliminate it) —
   full history in `docs/changelog.md`. Don't chase it further locally;

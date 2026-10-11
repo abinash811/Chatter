@@ -276,10 +276,13 @@ not just application code. **How**: Postgres Row-Level Security,
 ### Console: bot list + bot editor + integrations page
 **Who**: the business owner. **What**: list all bots (search, sort by
 name/status/created, rename/duplicate/archive per row), edit one bot's
-full config, connect/disconnect integrations. **How**: `app/(console)/
-bots/`. Design pass done on bot list + bot editor (`docs/design/
-preview/bots-list.html`, `bot-editor.html`); integrations still open —
-see `docs/roadmap.md`.
+full config, connect/disconnect integrations. Integrations is org-wide,
+not per-bot (ADR 0038, 2026-10-04) — one Shopify connection shared by
+every bot in the org. **How**: `app/(console)/bots/`,
+`app/(console)/integrations/`. Design pass done on all three (bot
+list/editor 2026-09-27, integrations 2026-09-28) — see `docs/design/
+preview/bots-list.html`, `bot-editor.html`, and `docs/design/audit.md`
+for current per-screen status.
 
 ### Bot archiving
 **Who**: the business owner. **What**: removes a bot from the list and
@@ -419,6 +422,7 @@ feature, minus country/IP blocking (deferred, `docs/open-questions.md`
 
 ## Planned
 
-See `docs/roadmap.md` (Now/Next/Later). Notable near-term items: write-
-capable action tools (refund, address update), resolution-rate
-analytics, image input, a design pass on the integrations page.
+See `docs/roadmap.md` (Now/Next/Later). Notable near-term items:
+write-capable action tools beyond order cancellation/refund (e.g.
+address update), resolution-rate analytics (needs `docs/
+open-questions.md` #7 answered first), image input.

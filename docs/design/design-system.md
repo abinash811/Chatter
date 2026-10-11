@@ -299,8 +299,9 @@ screens should be designed and verified at a standard desktop viewport
 
 ## Component inventory
 
-**All 25 primitives in `components/ui/` are now verified shadcn/ui
-sources (ADR 0014 + ADR 0017 + 2026-09-28's provenance closure)** — no
+**All 26 primitives in `components/ui/` are now verified shadcn/ui
+sources (ADR 0014 + ADR 0017 + 2026-09-28's provenance closure; `Alert`
+added later, 2026-10-08)** — no
 hand-rolled primitive exists anywhere in the product, and
 `scripts/check-shadcn-only-primitives.mjs` (part of `check:all`)
 enforces this mechanically: any new `components/ui/*.tsx` file must be
