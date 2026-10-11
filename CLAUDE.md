@@ -276,6 +276,23 @@ These hold regardless of what stack or framework we end up on.
 - Don't scaffold code for a component whose design is still listed in
   `docs/open-questions.md`. Resolve it or explicitly flag the assumption
   you're making first.
+- **When a decision reverses or retires a concept that's already
+  referenced elsewhere** (an ADR superseding another, a term like
+  "vertical template" going away, a question in `docs/open-
+  questions.md` getting resolved and removed), grep the whole repo for
+  that concept/term/number in the same PR — not just the one doc that
+  owns the decision. A 2026-10-11 sweep found the same dead "vertical
+  template" phrase still live in CLAUDE.md, `architecture.md`,
+  `roadmap.md`, a research note, and an ADR, over a month after ADR
+  0019 killed it — nobody had grepped for it once, in any of those
+  PRs.
+- **A doc's own opening summary/status line and its closing sections
+  can quietly disagree** once enough time passes between editing one
+  and the other — `architecture.md`'s top said "concrete tech choices
+  are mostly still open" while its own bottom section correctly said
+  they're "all resolved by now." When editing any section of a living
+  doc, skim the rest of the same file for a claim the edit might now
+  contradict, not just the section being touched.
 - The standard engineering rules already in the system prompt still apply
   in full (no speculative abstraction, no unnecessary error handling,
   minimal comments, etc.) — this file adds project-specific rules on top,
