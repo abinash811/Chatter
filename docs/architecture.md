@@ -1,8 +1,11 @@
 # Architecture (living doc)
 
-Status: conceptual — components below are agreed in shape; concrete tech
-choices are mostly still open (see `docs/open-questions.md`). Update this
-doc as ADRs land instead of letting decisions live only in chat history.
+Status: concrete tech choices (stack, DB/vector store, auth, hosting
+model) are resolved — see `docs/open-questions.md`'s "Resolved" section
+and the ADRs referenced throughout. The remaining open items are
+narrower (app compute platform, nudges scope, pricing display, etc.),
+not architectural fundamentals. Update this doc as ADRs land instead
+of letting decisions live only in chat history.
 
 ## Components
 
@@ -20,7 +23,8 @@ doc as ADRs land instead of letting decisions live only in chat history.
   one page.
 - **Storage**: embeddings for unstructured content (semantic search) +
   structured rows for anything filterable/exact (price, availability,
-  specs). Vector store choice is open — see open questions.
+  specs). Vector store choice is resolved — Postgres + pgvector (ADR
+  0002, ADR 0021), not a dedicated vector DB.
 - **Refresh**: re-ingestion strategy for content that changes over time is
   not yet designed.
 

@@ -15,8 +15,10 @@ it — see `docs/research/competitive-landscape.md` for the full findings.
 
 ## Now (v1 / MVP)
 
-The generic core plus one concrete vertical template — see
-`docs/product-spec.md` for the full MVP scope and phasing rationale.
+The generic core plus ecommerce as the one concrete vertical built so
+far (ADR 0019 — no template layer, just that vertical's own ordinary
+config) — see `docs/product-spec.md` for the full MVP scope and
+phasing rationale.
 
 - Embeddable chat widget (shadow-DOM isolated, per-business theming)
 - Admin console: bot list, bot editor (persona/guardrails/tools/
