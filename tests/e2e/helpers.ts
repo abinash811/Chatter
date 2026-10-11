@@ -157,7 +157,7 @@ export async function seedLead(
 // bypass-the-UI precedent as seedLead above.
 export async function seedCustomAction(
   botId: string,
-  fields: { name: string; description: string; method?: string; url?: string },
+  fields: { name: string; description: string; method?: string; url?: string; requiresApproval?: boolean },
 ): Promise<void> {
   const orgId = await getOrgIdForBot(botId);
   await withOrgContext(orgId, (tx) =>
@@ -170,6 +170,7 @@ export async function seedCustomAction(
         method: fields.method ?? "POST",
         url: fields.url ?? "https://api.example.com/hook",
         inputSchema: { type: "object", properties: {}, required: [], additionalProperties: false },
+        requiresApproval: fields.requiresApproval ?? false,
       },
     }),
   );

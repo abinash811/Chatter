@@ -166,14 +166,19 @@ separately-exported executor (`executeOrderCancellation`, the real
 `orderCancel` GraphQL mutation) — rejecting just marks the row
 `rejected` and does nothing external.
 
-`lib/pendingActions.ts` is deliberately generic — it has no knowledge
-of `request_order_cancellation` or any other specific tool, so a
-future write tool's own `handle()` can call `createPendingAction`
-without creating a circular import. The one place that maps a
-`toolName` to its executor is the console layer
-(`app/(console)/approvals/actions.ts`'s `EXECUTORS` map) — the next
-write-capable tool adds one line there, not a change to the generic
-queue.
+`lib/pendingActions.ts` is deliberately generic — no knowledge of any
+specific tool, so a future write tool's `handle()` can call
+`createPendingAction` without a circular import. `approveAction`
+(`app/(console)/approvals/actions.ts`) maps `toolName` to its executor:
+a static `EXECUTORS` map for compile-time tools, plus two dynamic-
+prefix branches for business-authored names — `submit_widget_<name>`
+(below) and `custom_<name>` (ADR 0040).
+
+**Custom Actions can be approval-gated too (ADR 0040).** Checking
+"requires approval" on a business-defined action queues a
+`PendingAction` (`custom_<name>`) instead of calling
+`performActionRequest` directly; approving it re-resolves the action by
+name, same precedent as `executeWidgetSubmission` below.
 
 ## In-chat widgets (`lib/widgets.ts`, `lib/ai/tools/widget.ts`, ADR 0028)
 
@@ -477,17 +482,13 @@ never touches the database, only the outside world, so it's a plain
 top-level server action rather than one bound to a `botId`.
 
 It shares `performActionRequest` (`lib/ai/tools/customAction.ts`) with
-the live bot tool call — the same SSRF guard (`isBlockedActionUrl`),
-the same query-params-for-GET/JSON-body-otherwise routing, the same
-10s timeout. That's deliberate: a passing test call and a real saved
-action use the identical request-building code, so "it worked in the
-test" is a real guarantee about how the saved action will behave, not
-a separate code path that could quietly drift from the real one. The
-live tool call wraps the same result in the handoff-JSON contract
-(guardrail #4); the test path returns the raw status/body instead,
-since a business owner debugging their own endpoint needs to see what
-actually came back, not a plain-language fallback message. Response
-bodies are capped at 4000 characters before reaching the console.
+the live bot tool call — same SSRF guard, same query-params-for-GET/
+JSON-body-otherwise routing, same 10s timeout — so "it worked in the
+test" is a real guarantee, not a separate code path that could drift.
+The live call wraps the result in the handoff-JSON contract
+(guardrail #4); the test path returns the raw status/body instead, so
+a business owner sees what actually came back. Response bodies are
+capped at 4000 characters before reaching the console.
 
 ## Shopify connect flow
 

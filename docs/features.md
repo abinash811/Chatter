@@ -86,6 +86,23 @@ generic tools like Calendly/Acuity), so this stays a config-time preset,
 not a new vendor integration — keeps the feature fully vertical-agnostic
 (works for salons/auto shops too).
 
+**Approval-gated custom actions** (2026-10-11, ADR 0040): a "This can't
+be undone — require approval before it runs" checkbox in the Add-action
+dialog. When set, a call queues a `PendingAction` instead of firing
+immediately — same human-approval protection `request_order_
+cancellation`/`request_refund` (ADR 0023) give Shopify, extended to any
+business-described API with zero code on our side. A human approves
+from `/approvals`; `performActionRequest` only runs once they do. The
+"Cancel appointment"/"Reschedule appointment" templates default this
+checkbox on, since they're inherently destructive; "Check appointment
+availability" (read-only) doesn't. No edit path exists for custom
+actions, so this is set once at creation, same limitation as every
+other field. **How**: `CustomAction.requiresApproval` (Prisma),
+`buildCustomActionTool`'s `handle()` branch
+(`lib/ai/tools/customAction.ts`), `approveAction`'s `custom_` prefix
+branch + `getCustomActionForExecutionByToolName`
+(`app/(console)/approvals/actions.ts`, `lib/customActions.ts`).
+
 **Known remaining gaps vs. Chatbase's real custom-action builder**
 (compared against their actual docs, not a summary): no typed inputs
 (everything is a plain string, not Text/Number/Boolean), no separate

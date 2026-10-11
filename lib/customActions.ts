@@ -20,6 +20,7 @@ export interface CustomActionRow {
   hasHeaders: boolean;
   fields: ActionField[];
   enabled: boolean;
+  requiresApproval: boolean;
   createdAt: Date;
 }
 
@@ -78,6 +79,7 @@ export async function listCustomActions(orgId: string, botId: string): Promise<C
     hasHeaders: row.headersEncrypted !== null,
     fields: schemaToFields(row.inputSchema),
     enabled: row.enabled,
+    requiresApproval: row.requiresApproval,
     createdAt: row.createdAt,
   }));
 }
@@ -89,6 +91,7 @@ export interface CreateCustomActionInput {
   url: string;
   headers?: Record<string, string>;
   fields: ActionField[];
+  requiresApproval: boolean;
 }
 
 export async function createCustomAction(orgId: string, botId: string, input: CreateCustomActionInput): Promise<void> {
@@ -106,6 +109,7 @@ export async function createCustomAction(orgId: string, botId: string, input: Cr
         url: input.url,
         headersEncrypted,
         inputSchema: fieldsToSchema(input.fields) as unknown as Prisma.InputJsonValue,
+        requiresApproval: input.requiresApproval,
       },
     }),
   );
@@ -131,6 +135,29 @@ export interface CustomActionForExecution {
   url: string;
   headers: Record<string, string>;
   inputSchema: unknown;
+  requiresApproval: boolean;
+}
+
+function toExecutionShape(row: {
+  id: string;
+  name: string;
+  description: string;
+  method: string;
+  url: string;
+  headersEncrypted: string | null;
+  inputSchema: unknown;
+  requiresApproval: boolean;
+}): CustomActionForExecution {
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    method: row.method as HttpMethod,
+    url: row.url,
+    headers: row.headersEncrypted ? (JSON.parse(decrypt(row.headersEncrypted)) as Record<string, string>) : {},
+    inputSchema: row.inputSchema,
+    requiresApproval: row.requiresApproval,
+  };
 }
 
 export async function listEnabledCustomActionsForExecution(
@@ -140,13 +167,18 @@ export async function listEnabledCustomActionsForExecution(
   const rows = await withOrgContext(orgId, (tx) =>
     tx.customAction.findMany({ where: { botId, enabled: true } }),
   );
-  return rows.map((row) => ({
-    id: row.id,
-    name: row.name,
-    description: row.description,
-    method: row.method as HttpMethod,
-    url: row.url,
-    headers: row.headersEncrypted ? (JSON.parse(decrypt(row.headersEncrypted)) as Record<string, string>) : {},
-    inputSchema: row.inputSchema,
-  }));
+  return rows.map(toExecutionShape);
+}
+
+// ADR 0040: the approvals console's executor branches on a dynamic
+// `custom_<name>` toolName (same shape as the submit_widget_ prefix for
+// widget submissions) — it can't key a static map on a business-defined
+// name ahead of time, so it looks the action up by name instead.
+export async function getCustomActionForExecutionByToolName(
+  orgId: string,
+  botId: string,
+  name: string,
+): Promise<CustomActionForExecution | null> {
+  const row = await withOrgContext(orgId, (tx) => tx.customAction.findUnique({ where: { botId_name: { botId, name } } }));
+  return row ? toExecutionShape(row) : null;
 }

@@ -38,6 +38,8 @@ export interface ActionTemplate {
   description: string;
   method: HttpMethod;
   fields: ActionField[];
+  /** ADR 0040 — defaults the "require approval" checkbox for templates that are inherently destructive. */
+  requiresApproval?: boolean;
 }
 
 export const ACTION_TEMPLATES: ActionTemplate[] = [
@@ -68,6 +70,7 @@ export const ACTION_TEMPLATES: ActionTemplate[] = [
       { name: "appointment_id", description: "The appointment or booking ID to cancel", required: true },
       { name: "reason", description: "Why the visitor is cancelling, if they give one", required: false },
     ],
+    requiresApproval: true,
   },
   {
     key: "reschedule_appointment",
@@ -83,5 +86,6 @@ export const ACTION_TEMPLATES: ActionTemplate[] = [
       { name: "new_time", description: "The new requested date or time, in the visitor's own words", required: true },
       { name: "reason", description: "Why the visitor is rescheduling, if they give one", required: false },
     ],
+    requiresApproval: true,
   },
 ];

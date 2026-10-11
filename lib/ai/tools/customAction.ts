@@ -1,5 +1,6 @@
 import type { Tool } from "@/lib/ai/tools/registry";
 import { listEnabledCustomActionsForExecution, type CustomActionForExecution } from "@/lib/customActions";
+import { createPendingAction } from "@/lib/pendingActions";
 
 // Custom (business-defined) webhook tools — ADR 0022. Deliberately not a
 // lib/ai/tools/registry.ts entry: a custom action's name/schema/URL are
@@ -95,7 +96,20 @@ export function buildCustomActionTool(action: CustomActionForExecution): Tool {
     description: action.description,
     inputSchema: action.inputSchema as Tool["inputSchema"],
 
-    async handle(_orgId, _botId, input) {
+    async handle(orgId, botId, input, conversationId) {
+      // ADR 0040: a business can mark their own action write-capable/
+      // destructive, same precedent as request_order_cancellation/
+      // request_refund (ADR 0023) — never fire it directly, queue it for
+      // a human to approve from /approvals instead. The real request only
+      // happens from approveAction's custom_ branch once approved.
+      if (action.requiresApproval) {
+        await createPendingAction(orgId, botId, conversationId ?? "unknown", `custom_${action.name}`, input);
+        return JSON.stringify({
+          status: "pending_approval",
+          message: `A team member will review this before "${action.name}" actually runs.`,
+        });
+      }
+
       const result = await performActionRequest(action.url, action.method, action.headers, input);
 
       if (!result.ok) {

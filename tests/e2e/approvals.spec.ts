@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { signUpAndCreateBot, createSecondBot, seedPendingAction, seedWidget } from "./helpers";
+import { signUpAndCreateBot, createSecondBot, seedPendingAction, seedWidget, seedCustomAction } from "./helpers";
 
 // ADR 0038 (2026-10-04): /approvals is org-wide now, not bot-scoped —
 // same pattern as /conversations and /leads. This file used to test a
@@ -122,6 +122,34 @@ test("approving a write-capable widget's queued submission calls its real API", 
   // constraint as the Shopify approval test's own "no store connected"
   // graceful failure). What matters: the row leaves "pending" for a real
   // terminal state, never a fabricated success.
+  const row = page.locator("table tbody tr").first();
+  const statusBadge = row.locator('[data-slot="badge"]');
+  await expect(statusBadge).not.toHaveText("pending");
+  await expect(statusBadge).toHaveText(/approved|failed/);
+});
+
+// ADR 0040 — an approval-gated custom action's queued call dispatches to
+// executeApprovedCustomAction, which re-resolves the action fresh by
+// name (same "look it up again at execution time" precedent as the
+// widget-submission executor above) and fires the real request.
+test("approving a queued custom action calls its real endpoint", async ({ page }) => {
+  await signUpAndCreateBot(page, "Custom Action Approval Bot");
+  const botId = page.url().match(/\/bots\/([^/]+)/)![1];
+  await seedCustomAction(botId, {
+    name: "cancel_booking",
+    description: "Cancel a booking.",
+    method: "GET",
+    url: "https://api.github.com/zen",
+    requiresApproval: true,
+  });
+  await seedPendingAction(botId, { toolName: "custom_cancel_booking", input: { bookingId: "42" } });
+
+  await page.click('a:has-text("Approvals")');
+  await page.getByRole("button", { name: "Approve", exact: true }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Approve" }).click();
+
+  // A real fetch fires here, same real-outcome guarantee as the widget
+  // and Shopify approval tests above — never a fabricated success.
   const row = page.locator("table tbody tr").first();
   const statusBadge = row.locator('[data-slot="badge"]');
   await expect(statusBadge).not.toHaveText("pending");

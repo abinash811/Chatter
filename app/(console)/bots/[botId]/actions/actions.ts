@@ -92,6 +92,7 @@ export async function createCustomActionAction(
       url,
       headers: readHeaders(headersRaw),
       fields: readFields(formData),
+      requiresApproval: formData.get("requiresApproval") === "on",
     });
     revalidatePath(`/bots/${botId}/actions`);
     return { status: "success", message: "Action added." };

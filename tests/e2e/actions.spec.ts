@@ -139,6 +139,46 @@ test("saving from the cancel-appointment template creates a working action", asy
 
   await expect(page.getByText("Action added.")).toBeVisible();
   await expect(page.getByText("cancel_appointment")).toBeVisible();
+  // ADR 0040: the template defaults "requires approval" on since
+  // cancelling an appointment is destructive — the saved row should
+  // reflect that, not just the dialog's checkbox state.
+  const row = page.locator("table tbody tr").filter({ hasText: "cancel_appointment" });
+  await expect(row).toContainText("POST — needs approval");
+});
+
+// ADR 0040 — any business-described action can require human approval
+// before it runs, same protection order cancellation/refunds get.
+test("the requires-approval checkbox is reflected in the saved action's row", async ({ page }) => {
+  await signUpAndCreateBot(page, "Approval Checkbox Bot");
+  await page.click('a:has-text("Actions")');
+  await page.waitForURL(/\/actions$/);
+  await page.getByRole("button", { name: "Add action", exact: true }).first().click();
+
+  await page.fill("#name", "delete_account");
+  await page.fill("#description", "Delete a customer's account.");
+  await page.fill("#url", "https://api.example.com/delete-account");
+  await page.getByRole("checkbox", { name: /This can't be undone/ }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Add action" }).click();
+
+  await expect(page.getByText("Action added.")).toBeVisible();
+  const row = page.locator("table tbody tr").filter({ hasText: "delete_account" });
+  await expect(row).toContainText("needs approval");
+});
+
+test("the requires-approval checkbox is off by default for a plain action", async ({ page }) => {
+  await signUpAndCreateBot(page, "No Approval Bot");
+  await page.click('a:has-text("Actions")');
+  await page.waitForURL(/\/actions$/);
+  await page.getByRole("button", { name: "Add action", exact: true }).first().click();
+
+  await page.fill("#name", "check_status");
+  await page.fill("#description", "Check a read-only status.");
+  await page.fill("#url", "https://api.example.com/status");
+  await page.getByRole("dialog").getByRole("button", { name: "Add action" }).click();
+
+  await expect(page.getByText("Action added.")).toBeVisible();
+  const row = page.locator("table tbody tr").filter({ hasText: "check_status" });
+  await expect(row).not.toContainText("needs approval");
 });
 
 test("saving from the check-availability template creates a GET action", async ({ page }) => {

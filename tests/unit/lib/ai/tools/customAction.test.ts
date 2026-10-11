@@ -1,4 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+const { createPendingAction } = vi.hoisted(() => ({ createPendingAction: vi.fn() }));
+vi.mock("@/lib/pendingActions", () => ({ createPendingAction }));
+
 import { isBlockedActionUrl, buildCustomActionTool } from "@/lib/ai/tools/customAction";
 import type { CustomActionForExecution } from "@/lib/customActions";
 
@@ -10,6 +13,7 @@ const baseAction: CustomActionForExecution = {
   url: "https://api.example.com/availability",
   headers: { Authorization: "Bearer secret" },
   inputSchema: { type: "object", properties: {}, required: [], additionalProperties: false },
+  requiresApproval: false,
 };
 
 describe("isBlockedActionUrl (SSRF guard)", () => {
@@ -50,6 +54,7 @@ describe("buildCustomActionTool", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     fetchMock.mockReset();
+    createPendingAction.mockReset();
   });
 
   it("exposes the tool name as custom_<action name>", () => {
@@ -106,5 +111,27 @@ describe("buildCustomActionTool", () => {
     const result = await tool.handle("org-1", "bot-1", {});
     expect(fetchMock).not.toHaveBeenCalled();
     expect(JSON.parse(result)).toMatchObject({ status: "handoff_required" });
+  });
+
+  // ADR 0040: a business can mark their own action write-capable, same
+  // human-approval precedent as request_order_cancellation/request_refund.
+  it("queues a PendingAction and never calls fetch when requiresApproval is set", async () => {
+    const tool = buildCustomActionTool({ ...baseAction, requiresApproval: true });
+
+    const result = await tool.handle("org-1", "bot-1", { date: "2026-10-01" }, "conv-1");
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(createPendingAction).toHaveBeenCalledWith("org-1", "bot-1", "conv-1", "custom_check_availability", {
+      date: "2026-10-01",
+    });
+    expect(JSON.parse(result)).toMatchObject({ status: "pending_approval" });
+  });
+
+  it("falls back to conversationId 'unknown' when none is given", async () => {
+    const tool = buildCustomActionTool({ ...baseAction, requiresApproval: true });
+
+    await tool.handle("org-1", "bot-1", {});
+
+    expect(createPendingAction).toHaveBeenCalledWith("org-1", "bot-1", "unknown", "custom_check_availability", {});
   });
 });

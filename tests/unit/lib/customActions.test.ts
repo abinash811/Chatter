@@ -43,6 +43,7 @@ describe("createCustomAction", () => {
       url: "https://api.example.com/book",
       headers: { Authorization: "Bearer secret" },
       fields: [{ name: "partySize", description: "how many people", required: true }],
+      requiresApproval: false,
     });
 
     expect(create).toHaveBeenCalledTimes(1);
@@ -65,9 +66,11 @@ describe("createCustomAction", () => {
       method: "GET",
       url: "https://api.example.com/book",
       fields: [],
+      requiresApproval: true,
     });
 
     expect(create.mock.calls[0][0].data.headersEncrypted).toBeNull();
+    expect(create.mock.calls[0][0].data.requiresApproval).toBe(true);
   });
 });
 
@@ -83,6 +86,7 @@ describe("listCustomActions", () => {
         headersEncrypted: "enc:{\"Authorization\":\"Bearer secret\"}",
         inputSchema: { type: "object", properties: {}, required: [], additionalProperties: false },
         enabled: true,
+        requiresApproval: false,
         createdAt: new Date(),
       },
     ]);

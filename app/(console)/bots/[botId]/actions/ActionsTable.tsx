@@ -51,7 +51,9 @@ export function ActionsTable({
                 <p className="max-w-xs truncate text-xs font-normal text-muted-foreground">{action.description}</p>
               </TableCell>
               <TableCell>
-                <Badge variant="muted">{action.method}</Badge>
+                <Badge variant="muted">
+                  {action.requiresApproval ? `${action.method} — needs approval` : action.method}
+                </Badge>
               </TableCell>
               <TableCell className="max-w-xs truncate text-muted-foreground">{action.url}</TableCell>
               <TableCell>

@@ -206,11 +206,20 @@ Validated by competitor research, not yet built:
   against-a-live-store caveat as `orderCancel` (ADR 0023) —
   `shopify.dev` and every mirror/forum domain tried are blocked by this
   environment's egress policy, so the mutation shape is pieced together
-  from WebSearch summaries, not read from the primary source. A business
-  can also already wire its own write-capable webhook via custom
-  actions (ADR 0022) today — this item is about built-in,
-  purpose-specific write tools for platforms we integrate with directly,
-  not the general capability.
+  from WebSearch summaries, not read from the primary source.
+  **Custom Actions can now be write-capable too — built (2026-10-11,
+  ADR 0040).** A business owner checks "requires approval" when
+  defining their own action (`/bots/[botId]/actions`); every call then
+  queues a `PendingAction` the same way, and a human approves it from
+  `/approvals` before the real request fires — the exact protection
+  order cancellation/refunds get, extended to *any* business-described
+  API with zero code on our side. The two "Cancel appointment"/
+  "Reschedule appointment" templates default the checkbox on, since
+  they're inherently destructive. This item now splits cleanly in two:
+  **built-in, purpose-specific write tools** for platforms we integrate
+  with directly (Shopify today — where we can pin and verify a real API
+  shape) stays an engineering task; **any other business's own write-
+  capable API** is now a console configuration task, not a code change.
 - **Resolution-rate analytics** — % of conversations resolved without
   human handoff. Intercom Fin's headline metric; we track nothing like
   it yet. Not buildable until `docs/open-questions.md` #7 (the

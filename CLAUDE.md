@@ -50,7 +50,7 @@ reason.)
   `docs/design/audit.md` tracks per-screen compliance against the bar —
   check there before assuming a screen is finished.
 - Testing/guardrails: 17 static guardrail checks (`npm run check:all`),
-  250 unit tests, 146 `tests/e2e/` tests across 18 spec files, 24
+  252 unit tests, 149 `tests/e2e/` tests across 18 spec files, 24
   `tests/visual/` baselines, gitleaks + a CI coverage floor, all wired
   into CI (counts as of 2026-10-11 — check for real via `npm run
   check:all`/`npx vitest run`/`npx playwright test --list` rather than
@@ -144,6 +144,11 @@ reason.)
   `.claude/rules/console-frontend.md` item 8 now requires writing the
   screenshot critique's actual findings into the response, not a
   silent "looks clean." Full detail: `docs/changelog.md`.
+- Custom Actions can require human approval before firing (ADR 0040,
+  2026-10-11) — generalizes the `PendingAction`/`/approvals` protection
+  `request_order_cancellation`/`request_refund` get to any business-
+  described API, no code change needed; the two destructive appointment
+  templates default it on.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.

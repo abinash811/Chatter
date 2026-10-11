@@ -285,6 +285,7 @@ model CustomAction {
   headersEncrypted String? // AES-256-GCM (lib/crypto.ts), same as Integration.accessToken
   inputSchema      Json // JSON Schema {properties, required} for what Claude collects
   enabled          Boolean  @default(true)
+  requiresApproval Boolean  @default(false) // ADR 0040: queue a PendingAction instead of firing immediately
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

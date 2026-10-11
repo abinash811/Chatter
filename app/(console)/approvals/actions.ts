@@ -6,12 +6,39 @@ import { getPendingActionForExecution, resolvePendingAction } from "@/lib/pendin
 import { executeOrderCancellation } from "@/lib/ai/tools/cancelOrder";
 import { executeRefund } from "@/lib/ai/tools/requestRefund";
 import { executeWidgetSubmission } from "@/lib/ai/tools/widget";
+import { getCustomActionForExecutionByToolName } from "@/lib/customActions";
+import { performActionRequest } from "@/lib/ai/tools/customAction";
 
 // Widget submissions (ADR 0028, Phase 2) use a dynamic toolName
 // (`submit_widget_<name>`, one per business-authored widget) rather than
 // a fixed key — the static EXECUTORS map below can't key on that ahead
 // of time, so this is checked separately before falling through to it.
 const WIDGET_SUBMIT_PREFIX = "submit_widget_";
+
+// Approval-gated custom actions (ADR 0040) use the same dynamic-prefix
+// shape: `custom_<name>`, one per business-defined action, looked up by
+// name rather than a static EXECUTORS entry.
+const CUSTOM_ACTION_PREFIX = "custom_";
+
+async function executeApprovedCustomAction(
+  orgId: string,
+  botId: string,
+  toolName: string,
+  input: Record<string, unknown>,
+): Promise<{ status: "executed" | "failed"; detail: string }> {
+  const name = toolName.slice(CUSTOM_ACTION_PREFIX.length);
+  const action = await getCustomActionForExecutionByToolName(orgId, botId, name);
+  if (!action) return { status: "failed", detail: `Custom action "${name}" no longer exists.` };
+
+  const result = await performActionRequest(action.url, action.method, action.headers, input);
+  if (!result.ok) {
+    return {
+      status: "failed",
+      detail: result.status ? `The ${name} action failed (${result.status}).` : `Couldn't reach the ${name} action.`,
+    };
+  }
+  return { status: "executed", detail: result.bodyText || "The action ran successfully." };
+}
 
 export interface ApprovalActionState {
   status: "idle" | "success" | "error";
@@ -48,9 +75,11 @@ export async function approveAction(
     const { botId, toolName, input } = await getPendingActionForExecution(session.orgId, id);
     const outcome = toolName.startsWith(WIDGET_SUBMIT_PREFIX)
       ? await executeWidgetSubmission(session.orgId, botId, toolName.slice(WIDGET_SUBMIT_PREFIX.length), input)
-      : EXECUTORS[toolName]
-        ? await EXECUTORS[toolName](session.orgId, botId, input)
-        : { status: "failed" as const, detail: `No executor registered for "${toolName}".` };
+      : toolName.startsWith(CUSTOM_ACTION_PREFIX)
+        ? await executeApprovedCustomAction(session.orgId, botId, toolName, input)
+        : EXECUTORS[toolName]
+          ? await EXECUTORS[toolName](session.orgId, botId, input)
+          : { status: "failed" as const, detail: `No executor registered for "${toolName}".` };
 
     // The executor's "executed" (it actually called the external API and
     // succeeded) maps to PendingAction's "approved" terminal state — a

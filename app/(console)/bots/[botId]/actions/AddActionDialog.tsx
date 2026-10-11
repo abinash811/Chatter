@@ -217,6 +217,20 @@ export function AddActionDialog({
             <p className="mt-1 text-xs text-muted-foreground">Leave a row's field name blank to skip it.</p>
           </div>
 
+          <Label className="flex items-start gap-2 rounded-md border border-border p-3 font-normal">
+            <Checkbox name="requiresApproval" defaultChecked={template?.requiresApproval ?? false} className="mt-0.5" />
+            <span>
+              <span className="block text-sm font-medium text-foreground">
+                This can&apos;t be undone — require approval before it runs
+              </span>
+              <span className="block text-xs text-muted-foreground">
+                A team member reviews and approves every call to this action from{" "}
+                <span className="font-medium">Approvals</span> before it actually fires — same protection order
+                cancellation and refunds already get.
+              </span>
+            </span>
+          </Label>
+
           <div className="rounded-md border border-border p-3">
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium">Test this action</p>
