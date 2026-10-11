@@ -757,6 +757,18 @@ reason.)
   e2e test asserts the exact counts across a real seed + a real
   publish, not just that text renders. 3 visual baselines regenerated.
   Full detail: `docs/changelog.md`.
+- Dark mode removed completely (2026-10-11, explicit user directive):
+  closes the other remaining `docs/design/audit.md` open item — it had
+  sat 🟡 since it was never visually rendered and no UI toggle ever
+  existed to reach it; rather than build a toggle, the user chose to
+  remove the capability instead. `.dark { ... }` deleted from
+  `app/globals.css`; `scripts/check-token-contrast.mjs` now checks
+  `:root` only (was light+dark). shadcn's own stock `dark:` utility
+  classes inside `components/ui/*.tsx` were deliberately left alone —
+  real, unmodified upstream shadcn source (ADR 0014/0017/0025), inert
+  with no `.dark` class ever applied, and stripping them would mean 6
+  new documented deltas from shadcn's real source for zero behavioral
+  benefit. Full detail: `docs/changelog.md`.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.

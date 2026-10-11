@@ -1,7 +1,7 @@
 // Guardrail: every documented text/background token pair in
 // scripts/contrast-pairs.json must pass WCAG AA (4.5:1) for normal
 // text, computed for real from the actual oklch values in
-// app/globals.css — in both the light (:root) and dark (.dark) themes.
+// app/globals.css's :root block.
 //
 // Exists because every contrast fix in this project's history so far
 // (--muted-foreground/--destructive darkened 2026-10-02 ADR 0033,
@@ -10,13 +10,15 @@
 // picked a tailwindcss/colors step, reasoned by analogy to a
 // previously-fixed pair, and the result was only actually verified
 // when it happened to render on a page axe's accessibility.spec.ts
-// scans. A new token pair that never renders on a scanned page — or
-// renders on one only in dark mode, which no automated check covers
-// at all (docs/design/audit.md's "Dark mode 🟡" row) — could silently
-// fail contrast with nothing catching it. This computes every
+// scans. A new token pair that never renders on a scanned page could
+// silently fail contrast with nothing catching it. This computes every
 // documented pair directly from the token values themselves, with no
-// dependency on which pages happen to be scanned or whether dark mode
-// has ever been looked at.
+// dependency on which pages happen to be scanned.
+//
+// Dark mode removed 2026-10-11 (app/globals.css's own comment has the
+// full reasoning — no theme toggle ever existed, `.dark` never
+// activated for a real user) — this check verified both `:root` and
+// `.dark` until then; it's `:root`-only now that `.dark` is gone.
 //
 // Alpha-blended pairs (a Badge's bg-X/10 tint) are composited over
 // their real backdrop (`compositeOver`, almost always --background)
@@ -80,16 +82,12 @@ function parseTokens(block) {
 }
 
 const lightBlock = extractBlock(css, ":root {");
-const darkBlock = extractBlock(css, ".dark {");
-if (!lightBlock || !darkBlock) {
-  console.error(`FAIL: couldn't find ":root {" and ".dark {" blocks in ${GLOBALS_CSS} — this check's parser is stale.`);
+if (!lightBlock) {
+  console.error(`FAIL: couldn't find ":root {" in ${GLOBALS_CSS} — this check's parser is stale.`);
   process.exit(1);
 }
 
-const THEMES = {
-  light: parseTokens(lightBlock),
-  dark: parseTokens(darkBlock),
-};
+const tokens = parseTokens(lightBlock);
 
 function resolve(themeTokens, name) {
   const raw = themeTokens.get(name);
@@ -109,40 +107,37 @@ function composite(fgRgb, alpha, backdropRgb) {
 
 let failed = false;
 
-for (const themeName of Object.keys(THEMES)) {
-  const tokens = THEMES[themeName];
-  for (const pair of pairs) {
-    const fgColor = resolve(tokens, pair.fg);
-    let bgColor = resolve(tokens, pair.bg);
+for (const pair of pairs) {
+  const fgColor = resolve(tokens, pair.fg);
+  let bgColor = resolve(tokens, pair.bg);
 
-    if (!fgColor || !bgColor) {
-      console.error(
-        `FAIL: ${PAIRS_PATH}'s "${pair.label}" references an unknown token (--${pair.fg} or --${pair.bg}) ` +
-          `in the ${themeName} theme — check app/globals.css.`,
-      );
+  if (!fgColor || !bgColor) {
+    console.error(
+      `FAIL: ${PAIRS_PATH}'s "${pair.label}" references an unknown token (--${pair.fg} or --${pair.bg}) ` +
+        `— check app/globals.css.`,
+    );
+    failed = true;
+    continue;
+  }
+
+  if (pair.bgOpacity != null) {
+    const backdrop = resolve(tokens, pair.compositeOver ?? "background");
+    if (!backdrop) {
+      console.error(`FAIL: ${PAIRS_PATH}'s "${pair.label}" has no resolvable compositeOver token.`);
       failed = true;
       continue;
     }
+    bgColor = composite(bgColor, pair.bgOpacity, backdrop);
+  }
 
-    if (pair.bgOpacity != null) {
-      const backdrop = resolve(tokens, pair.compositeOver ?? "background");
-      if (!backdrop) {
-        console.error(`FAIL: ${PAIRS_PATH}'s "${pair.label}" has no resolvable compositeOver token in the ${themeName} theme.`);
-        failed = true;
-        continue;
-      }
-      bgColor = composite(bgColor, pair.bgOpacity, backdrop);
-    }
-
-    const ratio = wcagContrast(fgColor, bgColor);
-    const min = pair.minRatio ?? MIN_RATIO;
-    if (ratio < min) {
-      console.error(
-        `FAIL: ${themeName} mode — "${pair.label}" (--${pair.fg} on --${pair.bg}${pair.bgOpacity != null ? `/${pair.bgOpacity * 100}` : ""}) ` +
-          `is ${ratio.toFixed(2)}:1, below ${min}:1.`,
-      );
-      failed = true;
-    }
+  const ratio = wcagContrast(fgColor, bgColor);
+  const min = pair.minRatio ?? MIN_RATIO;
+  if (ratio < min) {
+    console.error(
+      `FAIL: "${pair.label}" (--${pair.fg} on --${pair.bg}${pair.bgOpacity != null ? `/${pair.bgOpacity * 100}` : ""}) ` +
+        `is ${ratio.toFixed(2)}:1, below ${min}:1.`,
+    );
+    failed = true;
   }
 }
 
@@ -151,4 +146,4 @@ if (failed) {
   process.exit(1);
 }
 
-console.log(`ok: all ${pairs.length} documented token pairs pass WCAG AA contrast in both light and dark mode`);
+console.log(`ok: all ${pairs.length} documented token pairs pass WCAG AA contrast`);

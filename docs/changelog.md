@@ -288,3 +288,70 @@ unmodified code via `git stash`, both passing clean), full
 `accessibility.spec.ts` (19/19), `tests/visual/` (23/23 — 3
 regenerated + stable, 20 unchanged).
 
+## Dark mode removed completely (2026-10-11)
+
+Closes the other remaining open item from the 2026-10-09 design-gap
+sweep — `docs/design/audit.md`'s "Dark mode 🟡" row had sat open since
+2026-10-08: tokens defined and contrast-verified, but never visually
+rendered, no UI toggle ever existed to reach it. Rather than build a
+toggle to close that gap, the user gave an explicit directive instead:
+"Remove dark mode completely."
+
+**Investigated before cutting anything**: confirmed there is no theme
+toggle, no `next-themes`, and no `prefers-color-scheme` media query
+anywhere in the app (`grep` across `app/`/`components/`/`lib/`) — the
+`.dark` class was genuinely inert dead CSS, never applied to any real
+element for any real user. Safe to remove outright, not just deprecate.
+
+**What was removed**: the entire `.dark { ... }` token-override block
+in `app/globals.css` (~60 custom-property overrides). `scripts/
+check-token-contrast.mjs` — which verified every documented token pair
+in both `:root` and `.dark` on every commit — simplified to `:root`
+only (dropped the `THEMES` dual-theme loop, the `darkBlock` extraction,
+and the per-theme error-message branching).
+
+**Deliberately NOT removed, and why**: shadcn's own stock `dark:`
+utility-class variants inside 6 `components/ui/*.tsx` files (`Button`,
+`Select`, `Switch`, `Tabs`, `DropdownMenu`, `RadioGroup`) were left
+untouched. These are real, unmodified upstream shadcn source — the
+exact thing ADR 0014/0017/0025's "shadcn-only, no hand-rolled, pull
+real source" discipline (enforced by `check-shadcn-only-primitives.mjs`
+against `scripts/shadcn-manifest.json`) exists to protect. With no
+`.dark` class ever applied, every `dark:`-prefixed class in those files
+is inert — it matches nothing, costs nothing at runtime. Stripping them
+would have meant hand-editing 6 files away from shadcn's real source,
+creating 6 new documented deltas to maintain, for zero behavioral
+difference. Judged this the correct scope for "remove dark mode
+completely": remove the actual *capability* (the token layer that gave
+`.dark` somewhere to land), not perform cosmetic surgery on inert
+upstream classes that do nothing without it.
+
+**Docs updated** to stop describing a feature that no longer exists:
+`docs/design/design-system.md`'s two color-token tables lost their
+"Dark" column entirely (not just marked stale); its "Known gaps" entry
+rewritten from "never visually verified" to "resolved — removed."
+`docs/design/audit.md`'s "Dark mode" row changed from 🟡 to `—` (not
+applicable, not a lingering gap). `docs/accessibility.md`'s contrast
+rule corrected to stop claiming "both light and dark mode" are
+verified. Stale in-file comments in `app/globals.css` referencing
+`.dark`'s values for comparison (the `--panel` token, the `--accent`
+fix note) rewritten to not reference a block that no longer exists.
+Old ADRs (0007/0008/0009) that mention dark mode as historical context
+left untouched — they're accurate records of decisions made at the
+time, not live claims.
+
+Verified: `tsc` clean, all 16 `check:all` guardrails (the contrast
+guardrail's own output confirms it now checks one theme, not two), a
+production build, full unit suite (250/250 unchanged), full `tests/
+e2e/` (143/143 across two full runs — one `knowledge.spec.ts` flake and
+one `onboarding.spec.ts` flake, a different test each run, both
+confirmed via isolated re-run as the same pre-existing full-suite
+resource-contention class this project has documented repeatedly, not
+a regression — a pure CSS/token removal has no plausible path to a
+dialog-timing or redirect-timing race), `accessibility.spec.ts`
+(19/19), `keyboard-navigation.spec.ts` + `bots-list.spec.ts` (23/23 —
+re-run specifically since focus-ring/contrast CSS was touched),
+`tests/visual/` (23/23, byte-identical — confirms light-mode rendering
+is completely unaffected, as expected for a change that only ever
+touched the unreachable `.dark` block).
+

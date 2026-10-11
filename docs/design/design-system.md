@@ -36,46 +36,46 @@ Every value below is a real Tailwind `neutral`/`red`/`amber`/`violet`
 scale entry, computed from the installed `tailwindcss/colors` package
 (`node -e "console.log(require('tailwindcss/colors').neutral)"`), not
 guessed — same discipline ADR 0008 used. Format is raw `oklch(...)`,
-matching shadcn's own real current convention (its `:root`/`.dark`
-blocks, verified via `raw.githubusercontent.com` — not the older
+matching shadcn's own real current convention (its `:root` block,
+verified via `raw.githubusercontent.com` — not the older
 HSL-triplet-in-a-wrapper convention CARE used, which can't carry an
-alpha channel the way oklch's `/ N%` slash can).
+alpha channel the way oklch's `/ N%` slash can). Light mode only —
+dark mode removed 2026-10-11, see "Known gaps" below.
 
-**Primary is monochrome** — near-black in light mode
-(`oklch(0% 0 0)`), near-white in dark (`oklch(92.2% 0 none)`). This
-isn't a placeholder; it's the deliberate choice, matching both
-shadcn's actual default *and* Claude Console's real screenshots (a
-solid-black "Build an agent"/"Create skill" button — no colored UI
-chrome anywhere, color reserved for sparing illustration accents only).
+**Primary is monochrome** — near-black (`oklch(0% 0 0)`). This isn't a
+placeholder; it's the deliberate choice, matching both shadcn's actual
+default *and* Claude Console's real screenshots (a solid-black "Build
+an agent"/"Create skill" button — no colored UI chrome anywhere, color
+reserved for sparing illustration accents only).
 
-| Token | Light | Dark | Source |
-|---|---|---|---|
-| `background` | `oklch(1 0 0)` white | `oklch(14.5% 0 none)` neutral-950 | shadcn default |
-| `foreground` | `oklch(0% 0 0)` black | `oklch(98.5% 0 none)` neutral-50 | shadcn default |
-| `primary` | `oklch(0% 0 0)` black | `oklch(92.2% 0 none)` neutral-200 | shadcn default |
-| `primary-foreground` | `oklch(98.5% 0 none)` | `oklch(20.5% 0 none)` | shadcn default |
-| `secondary` / `muted` | `oklch(97% 0 none)` neutral-100 | `oklch(26.9%–37.1% 0 none)` neutral-700/800 | shadcn default |
-| `accent` | `oklch(92.2% 0 none)` neutral-200 | `oklch(37.1% 0 none)` neutral-700 (unchanged) | 2026-10-02: darkened from neutral-100 — the old value was only a 3-point lightness gap from `--background`'s pure white, making every ghost-button hover nearly invisible (flagged in this file's own audit, fixed after explaining the tradeoff to the user). Reuses the same neutral-200 step already used for `border`/`strong-background`, not a new raw value. |
-| `muted-foreground` | `oklch(48% 0 none)` (darker than shadcn's stock 55.6%) | `oklch(70.8% 0 none)` neutral-400 | 2026-10-02: the stock value was a razor-thin 4.34:1 against `--muted` (97% L) — see note below |
-| `border` / `input` | `oklch(92.2%/87% 0 none)` neutral-200/300 | `oklch(1 0 0 / 10–15%)` translucent white | shadcn default |
-| `ring` | `oklch(70.8% 0 none)` neutral-400 | `oklch(55.6% 0 none)` neutral-500 | shadcn default |
-| `destructive` | `oklch(45% 0.245 27.325)` (darker than Tailwind's stock red-600, 57.7%) | `oklch(70.4% 0.191 22.216)` red-400 | 2026-10-02: the stock value was 4.0-4.77:1 depending on usage site (text on white, the destructive Badge's tinted background) — see note below |
-| `sidebar` / `sidebar-accent` | neutral-50/100 | neutral-900/800 | shadcn default, monochrome active-item pill (matches Claude Console's subtle gray-pill nav state — no colored active marker) |
+| Token | Value | Source |
+|---|---|---|
+| `background` | `oklch(1 0 0)` white | shadcn default |
+| `foreground` | `oklch(0% 0 0)` black | shadcn default |
+| `primary` | `oklch(0% 0 0)` black | shadcn default |
+| `primary-foreground` | `oklch(98.5% 0 none)` | shadcn default |
+| `secondary` / `muted` | `oklch(97% 0 none)` neutral-100 | shadcn default |
+| `accent` | `oklch(92.2% 0 none)` neutral-200 | 2026-10-02: darkened from neutral-100 — the old value was only a 3-point lightness gap from `--background`'s pure white, making every ghost-button hover nearly invisible (flagged in this file's own audit, fixed after explaining the tradeoff to the user). Reuses the same neutral-200 step already used for `border`/`strong-background`, not a new raw value. |
+| `muted-foreground` | `oklch(48% 0 none)` (darker than shadcn's stock 55.6%) | 2026-10-02: the stock value was a razor-thin 4.34:1 against `--muted` (97% L) — see note below |
+| `border` / `input` | `oklch(92.2%/87% 0 none)` neutral-200/300 | shadcn default |
+| `ring` | `oklch(70.8% 0 none)` neutral-400 | shadcn default |
+| `destructive` | `oklch(45% 0.245 27.325)` (darker than Tailwind's stock red-600, 57.7%) | 2026-10-02: the stock value was 4.0-4.77:1 depending on usage site (text on white, the destructive Badge's tinted background) — see note below |
+| `sidebar` / `sidebar-accent` | neutral-50/100 | shadcn default, monochrome active-item pill (matches Claude Console's subtle gray-pill nav state — no colored active marker) |
 
 **Chatter's own extended vocabulary** (shadcn's leaner default doesn't
 define these — kept from the pre-ADR-0014 token set, re-derived from
 the same neutral/amber/violet scales):
 
-| Token | Light | Dark | Purpose |
-|---|---|---|---|
-| `soft-background` / `strong-background` | neutral-50 / neutral-200 | neutral-900 / neutral-700 | finer-grained background tiers than `background`/`muted` alone |
-| `soft-foreground` | neutral-600 (7.81:1 contrast, verified) | neutral-300 | a step between `foreground` and `muted-foreground` |
-| `disabled-foreground` / `placeholder-foreground` | neutral-300 / neutral-500 | neutral-700 / neutral-500 | form-control states |
-| `inverse-foreground` / `inverse-border` | white | black | text/border meant to sit on the fixed-dark `panel` surface |
-| `warning` | `oklch(76.9% 0.188 70.08)` amber-500 | same | Tailwind `amber` scale — a real hue, unlike the monochrome UI chrome, since this is a semantic status color |
-| `alert` | `oklch(60.6% 0.25 292.717)` violet-500 | same | Tailwind `violet` scale, same reasoning |
-| `panel` / `panel-foreground` | neutral-950 / neutral-50 | *(fixed — doesn't follow light/dark)* | the auth split-layout's dark hero panel (`components/auth/AuthShell.tsx`) — deliberately not theme-following |
-| `primary-50`…`primary-950` | Tailwind `neutral` scale | — | numbered steps some pulled shadcn/CARE components reference directly for hover/active shades, not just the semantic pair |
+| Token | Value | Purpose |
+|---|---|---|
+| `soft-background` / `strong-background` | neutral-50 / neutral-200 | finer-grained background tiers than `background`/`muted` alone |
+| `soft-foreground` | neutral-600 (7.81:1 contrast, verified) | a step between `foreground` and `muted-foreground` |
+| `disabled-foreground` / `placeholder-foreground` | neutral-300 / neutral-500 | form-control states |
+| `inverse-foreground` / `inverse-border` | white | text/border meant to sit on the fixed-dark `panel` surface |
+| `warning` | `oklch(76.9% 0.188 70.08)` amber-500 | Tailwind `amber` scale — a real hue, unlike the monochrome UI chrome, since this is a semantic status color |
+| `alert` | `oklch(60.6% 0.25 292.717)` violet-500 | Tailwind `violet` scale, same reasoning |
+| `panel` / `panel-foreground` | neutral-950 / neutral-50 | the auth split-layout's dark hero panel (`components/auth/AuthShell.tsx`) — deliberately its own fixed-dark token, not a theme-following one |
+| `primary-50`…`primary-950` | Tailwind `neutral` scale | numbered steps some pulled shadcn/CARE components reference directly for hover/active shades, not just the semantic pair |
 
 **Verified for real**, not just computed on paper: a real headless-
 browser check (`getComputedStyle` + a canvas round-trip to get true
@@ -399,12 +399,19 @@ see ADR 0014's Consequences for why).
 
 ## Known gaps
 
-- Dark mode (`.dark` class) tokens are defined and, as of 2026-10-08
-  (`scripts/check-token-contrast.mjs`), every documented token pair's
-  *contrast* is mechanically verified in both themes on every commit —
-  but no screen has ever actually been visually rendered or screenshot-
-  tested in dark mode, and there's still no UI toggle to switch into it.
-  Contrast-correct is not the same as visually verified.
+- ~~Dark mode (`.dark` class) tokens are defined...~~ — resolved
+  2026-10-11 (explicit user directive: "Remove dark mode completely").
+  This had sat here since 2026-10-08 as "contrast-verified but never
+  visually rendered, no UI toggle exists" — rather than build a toggle
+  to close that gap, the user chose to remove the unused capability
+  instead. `.dark { ... }` deleted from `app/globals.css`;
+  `check-token-contrast.mjs` now checks `:root` only. shadcn's own
+  stock `dark:` utility-class variants inside `components/ui/*.tsx`
+  were deliberately left alone — real, unmodified upstream shadcn
+  source (ADR 0014/0017/0025), inert with no `.dark` class ever
+  applied, and stripping them would mean 6 new documented deltas from
+  shadcn's real source for zero behavioral benefit. Full detail:
+  `docs/changelog.md`.
 - A real, live reference exists as of 2026-10-08:
   `app/(console)/design-system/` renders every token and (as of Phase 2,
   same day) every `components/ui/` primitive via the real imported
