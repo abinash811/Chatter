@@ -13,9 +13,11 @@ doc as ADRs land instead of letting decisions live only in chat history.
   attributes, price/availability — flexible enough to be a SKU, a clinic
   service, or a car listing). The console's "Data sources" page (`/bots/
   [botId]/knowledge`, 2026-09-29) also has search/type-filter/sort and a
-  bulk-select+delete mode across these. Multi-page site crawling is a
-  separate, still-open question for v1 (`docs/open-questions.md` #3) —
-  today's "website" source ingests one page only.
+  bulk-select+delete mode across these. Multi-page site crawling was a
+  separate open question at the time this was written — resolved and
+  built since (ADR 0030, 2026-09-30): the "website" source crawls a
+  whole site (sitemap-first, capped, robots.txt-respected), not just
+  one page.
 - **Storage**: embeddings for unstructured content (semantic search) +
   structured rows for anything filterable/exact (price, availability,
   specs). Vector store choice is open — see open questions.

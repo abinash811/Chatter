@@ -52,7 +52,19 @@ Before saying a piece of work is done:
    if something moved out of Next/Later, `docs/architecture.md` if a
    design decision landed, `docs/business-logic.md` if a core flow
    changed, `docs/api.md` if a route was added or its shape changed,
-   `docs/glossary.md` if a new term was introduced.
+   `docs/glossary.md` if a new term was introduced. **Beyond the owning
+   doc**: when shipping something that resolves a claim made elsewhere
+   as "not yet built," "deferred," or "still open" (`docs/research/`
+   notes, `docs/architecture.md`, `docs/design/audit.md`), grep the
+   whole `docs/` tree for the feature's own name/keywords and fix every
+   stale hit, not just the designated owner — a 2026-10-11 sweep found
+   real, consequential misses this way (`architecture.md` still claimed
+   site crawling was unbuilt a full ADR cycle after it shipped). If an
+   `open-questions.md` item got resolved and removed, its number will
+   be reused for something unrelated later — `npm run
+   check:questionrefs` (a visibility report, not a gate) lists every
+   `#N` citation across the docs with whether N is still live; skim it
+   during a sweep.
 10. **A new UI page or pattern** — does a `docs/design/preview/` mockup
    exist for it? If not, one should be added (see CLAUDE.md's design
    rule).

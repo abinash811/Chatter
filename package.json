@@ -29,6 +29,7 @@
     "check:auditcoverage": "node scripts/check-audit-coverage.mjs",
     "check:all": "node scripts/check-all.mjs",
     "check:exemptions": "node scripts/check-guardrail-exemptions.mjs",
+    "check:questionrefs": "node scripts/check-question-ref-drift.mjs",
     "canary": "node scripts/canary.mjs",
     "eval:retrieval": "tsx scripts/eval-retrieval.ts",
     "test:e2e": "playwright test",
