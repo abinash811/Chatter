@@ -40,11 +40,13 @@ reason.)
   ingestion (Q&A/file/URL, ADR 0013), an org-wide integrations page
   (ADR 0038), conversation inbox with plain-language issue detection
   (ADR 0015/0016), settings.
-- Design system: shadcn/ui official source for all 18 primitives, no
-  CARE dependency left (ADR 0017); monochrome tokens; sidebar + top bar
-  built against real Chatbase/Claude Console screenshots; depth/polish
-  pass (principles.md #5/#9) done on the bot editor, bots list, and
-  login/signup; Skeleton loading states on 7 routes.
+- Design system: shadcn/ui official source for all 26 primitives, no
+  CARE dependency left (ADR 0017/0025); monochrome tokens; sidebar
+  (including bot-scoped nav, moved in from the since-deleted
+  `BotTopBar`, ADR 0037) built against real Chatbase/Claude Console
+  screenshots; depth/polish pass (principles.md #5/#9) done on the bot
+  editor, bots list, and login/signup; Skeleton loading states on
+  12 routes.
   `docs/design/audit.md` tracks per-screen compliance against the bar —
   check there before assuming a screen is finished.
 - Testing/guardrails: 17 static guardrail checks (`npm run check:all`),
