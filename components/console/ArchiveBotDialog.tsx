@@ -19,8 +19,9 @@ const idleState: BotActionState = { status: "idle", message: null };
 
 // Split out of BotsTable.tsx (scripts/check-file-length.mjs). ADR 0018:
 // archive, never a hard delete — the copy here is explicit about what
-// stays (conversations, knowledge base) and what doesn't exist yet
-// (a restore button), not just "are you sure?". The idle-state constant
+// stays (conversations, knowledge base) and how to get it back (a real
+// Restore button at /bots/archived, 2026-10-11), not just "are you
+// sure?". The idle-state constant
 // lives here, not in actions.ts — a "use server" file may only export
 // async functions (caught for real: exporting it from actions.ts 500'd
 // every render of /bots).
@@ -50,8 +51,8 @@ export function ArchiveBotDialog({
           <AlertDialogDescription>
             Its embed snippet stops working immediately and it disappears from
             this list. Its conversations and knowledge base are kept, not
-            deleted — this can be undone from the database if archived by
-            mistake, just not yet from this screen.
+            deleted — if archived by mistake, restore it any time from
+            Archived bots.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

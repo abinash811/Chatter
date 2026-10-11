@@ -769,6 +769,20 @@ reason.)
   with no `.dark` class ever applied, and stripping them would mean 6
   new documented deltas from shadcn's real source for zero behavioral
   benefit. Full detail: `docs/changelog.md`.
+- Restore-from-archive UI for bots (2026-10-11, ADR 0018's other half):
+  closes the last item from the 2026-10-09 design-gap sweep. Asked the
+  user to choose between a status filter on `/bots` and a separate
+  dedicated view before building (tradeoff explained first, per
+  CLAUDE.md's process rule) — they picked the separate view. New
+  `/bots/archived` (Linear register, same as `/bots`): name +
+  archived-date + a one-click Restore button per row, no confirm
+  dialog (reversible — can always re-archive). Rows aren't clickable
+  like the main list's — the editor route 404s for an archived bot by
+  design, so there's nowhere for a click to go. `/bots` gets an
+  "N archived" link, shown only when there's somewhere real for it to
+  go. `restoreBotAction` added to `app/(console)/bots/actions.ts`;
+  `ArchiveBotDialog`'s copy updated to point at the real screen instead
+  of promising a future capability. Full detail: `docs/changelog.md`.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.
@@ -778,7 +792,7 @@ reason.)
 - Depth/polish pass not yet done on: integrations content, settings,
   knowledge, conversations, the sidebar itself. Bots list still has
   open polish findings (status-badge contrast, avatar variety) — see
-  `docs/design/audit.md`. No restore-from-archive UI for bots yet.
+  `docs/design/audit.md`.
 - No real end-to-end verified Claude reply yet — blocked on a real
   `ANTHROPIC_API_KEY`.
 - Not built: password reset, teammate invites/multi-org switcher,

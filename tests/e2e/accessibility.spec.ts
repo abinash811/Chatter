@@ -8,6 +8,7 @@ import {
   seedCustomAction,
   seedWidget,
   seedPendingAction,
+  archiveBot,
   uniqueEmail,
   PASSWORD,
 } from "./helpers";
@@ -67,6 +68,14 @@ test("bots list has no serious/critical accessibility violations", async ({ page
 test("bot editor has no serious/critical accessibility violations", async ({ page }) => {
   await signUpAndCreateBot(page, "A11y Editor Bot", "a11y-editor");
   await assertNoSeriousViolations(page);
+});
+
+test("archived bots page has no serious/critical accessibility violations", async ({ page }) => {
+  await signUpAndCreateBot(page, "A11y Archived Bot", "a11y-archived");
+  const botId = page.url().split("/bots/")[1];
+  await archiveBot(botId);
+  await page.goto("/bots/archived");
+  await assertNoSeriousViolations(page, page.getByText("A11y Archived Bot"));
 });
 
 test("the test-your-bot preview sheet has no serious/critical accessibility violations", async ({ page }) => {

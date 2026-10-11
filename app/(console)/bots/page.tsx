@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Bot as BotIcon } from "lucide-react";
 import { getCurrentSession } from "@/lib/auth";
 import { withOrgContext } from "@/lib/db";
@@ -15,7 +16,7 @@ const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 export default async function BotsPage() {
   const session = await getCurrentSession();
 
-  const [bots, conversationsThisWeek] = await withOrgContext(session.orgId, (tx) =>
+  const [bots, conversationsThisWeek, archivedCount] = await withOrgContext(session.orgId, (tx) =>
     Promise.all([
       tx.bot.findMany({
         where: { archivedAt: null }, // ADR 0018 — an archived bot never re-appears on its own list
@@ -32,6 +33,11 @@ export default async function BotsPage() {
       // (guardrail #4), a rolling 7-day window rather than calendar
       // "this week" to sidestep timezone ambiguity.
       tx.conversation.count({ where: { createdAt: { gte: new Date(Date.now() - WEEK_MS) } } }),
+      // ADR 0018's restore half (2026-10-11) — /bots/archived is a
+      // separate dedicated view, not a filter on this list, so the only
+      // thing this page needs is a link to it, and only when there's
+      // somewhere real for it to go.
+      tx.bot.count({ where: { archivedAt: { not: null } } }),
     ]),
   );
 
@@ -54,6 +60,22 @@ export default async function BotsPage() {
         <p className="mt-1 text-sm text-muted-foreground">
           {publishedCount} published · {bots.length - publishedCount} draft{bots.length - publishedCount === 1 ? "" : "s"} ·{" "}
           {conversationsThisWeek} conversation{conversationsThisWeek === 1 ? "" : "s"} this week
+          {archivedCount > 0 && (
+            <>
+              {" "}
+              ·{" "}
+              <Link href="/bots/archived" className="text-foreground underline underline-offset-4">
+                {archivedCount} archived
+              </Link>
+            </>
+          )}
+        </p>
+      )}
+      {bots.length === 0 && archivedCount > 0 && (
+        <p className="mt-1 text-sm text-muted-foreground">
+          <Link href="/bots/archived" className="text-foreground underline underline-offset-4">
+            {archivedCount} archived bot{archivedCount === 1 ? "" : "s"}
+          </Link>
         </p>
       )}
 

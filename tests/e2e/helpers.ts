@@ -316,3 +316,11 @@ export async function seedPendingAction(
     }),
   );
 }
+
+// ADR 0018's restore half (2026-10-11) — bypasses the real archive UI
+// round trip for specs that just need an already-archived bot to exist,
+// same bypass-the-UI precedent as seedLead/seedCustomAction above.
+export async function archiveBot(botId: string): Promise<void> {
+  const orgId = await getOrgIdForBot(botId);
+  await withOrgContext(orgId, (tx) => tx.bot.update({ where: { id: botId }, data: { archivedAt: new Date() } }));
+}

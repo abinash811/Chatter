@@ -192,8 +192,18 @@ this file's own rule):**
 - ✅ Column sort (Name/Status/Created) — shipped 2026-09-27.
 - ✅ Per-row rename/duplicate — shipped 2026-09-27.
 - ✅ Per-row removal — shipped 2026-09-27 as **archive**, not hard
-  delete (ADR 0018, user's explicit choice when asked). No restore UI
-  yet — only directly against the database.
+  delete (ADR 0018, user's explicit choice when asked). Restore shipped
+  2026-10-11 — a separate dedicated view, `/bots/archived` (user's
+  explicit choice over a status filter on this list, explained
+  tradeoff then asked, per CLAUDE.md's process rule): the editor route
+  404s for an archived bot by design, so its rows can't be click-to-
+  editor like the main list's — each row is name + archived-date + a
+  plain "Restore" button instead, matching `ApprovalsTable`'s existing
+  one-action-per-row shape. No confirm dialog on restore — reversible
+  (can always re-archive), same precedent as Settings' "Remove API key"
+  audit note. `ArchiveBotDialog`'s own copy updated to point at it
+  instead of promising a future capability. Full detail:
+  `docs/changelog.md`.
 - ✅ Bot creation is a dialog (`NewBotDialog`), not an inline input —
   shipped 2026-09-27.
 

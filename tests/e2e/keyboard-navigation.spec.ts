@@ -7,6 +7,7 @@ import {
   seedCustomAction,
   seedWidget,
   seedPendingAction,
+  archiveBot,
   keyboardWalk,
   uniqueEmail,
   PASSWORD,
@@ -145,4 +146,13 @@ test("onboarding — real keyboard-only pass", async ({ page }) => {
   // name, Continue) — no sidebar yet, no console chrome. A genuinely
   // smaller minimum than every other screen, not a weaker check.
   assertRealFocusPass(await keyboardWalk(page, 15), 3);
+});
+
+test("archived bots — real keyboard-only pass", async ({ page }) => {
+  await signUpAndCreateBot(page, "Keyboard Archived Bot", "kbd-archived");
+  const botId = page.url().split("/bots/")[1];
+  await archiveBot(botId);
+  await page.goto("/bots/archived");
+  await expect(page.getByText("Keyboard Archived Bot")).toBeVisible();
+  assertRealFocusPass(await keyboardWalk(page, 40));
 });

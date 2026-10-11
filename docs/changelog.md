@@ -355,3 +355,68 @@ re-run specifically since focus-ring/contrast CSS was touched),
 is completely unaffected, as expected for a change that only ever
 touched the unreachable `.dark` block).
 
+## Restore-from-archive UI for bots (2026-10-11)
+
+Closes the last item from the 2026-10-09 design-gap sweep. ADR 0018
+(archive, never delete) shipped 2026-09-27 with no way back except a
+direct database edit — `docs/design/audit.md`'s own "Bots list — open
+findings" had carried "No restore UI yet" since then.
+
+**Scoped before building, per CLAUDE.md's process rule**: two real
+constraints shaped the options. The bots list currently filters to
+non-archived bots and uses client-side search/sort (`@tanstack/
+react-table` + `nuqs`), not Conversations' server-driven URL-filter
+pattern. More importantly, `app/(console)/bots/[botId]/page.tsx`
+deliberately 404s for an archived bot (`archivedAt: null` in its own
+query) — so an archived row can never be click-to-editor the normal
+way, whatever UI holds it. Presented the real fork — a status filter
+on the main list (cheapest, reuses Conversations' established pattern)
+vs. a separate dedicated view (more UI, but matches how this app
+already treats every other list as its own route, and keeps the main
+list from ever showing archived rows that can't behave like the
+others) — and asked. User picked the separate view.
+
+**Implementation**: new `/bots/archived` (Linear register, same as
+`/bots` itself) — `app/(console)/bots/actions.ts`'s new
+`restoreBotAction` sets `archivedAt: null`, FormData-keyed like
+`approvals/actions.ts`'s `rejectAction` (a direct per-row post, not
+`archiveBotAction`'s per-target `.bind()`, since this list has no
+confirm-dialog target to carry through). `ArchivedBotsForm.tsx`
+renders name + archived-date + a plain "Restore" button per row — one
+action, so a `Button`, not a `DropdownMenu`, same one-action-per-row
+shape `ApprovalsTable.tsx`'s Approve/Reject already uses. No confirm
+dialog: restoring is the safe, reversible direction (always
+re-archivable), the same precedent Settings' "Remove API key" audit
+note already established for this app. `/bots` gets a new
+`archivedCount` query (one cheap `tx.bot.count`) and an "N archived"
+link — shown whenever there's somewhere real to send it, including
+from the "No bots yet" empty state (every bot archived is a real,
+reachable case, not hypothetical). `ArchiveBotDialog.tsx`'s own copy
+updated — it used to promise a restore path "not yet from this
+screen"; now it names the real one.
+
+**Real UI confirmed via screenshots before writing a permanent test**:
+archived the only bot, confirmed the "1 archived bot" link renders
+correctly in the resulting empty state (not just the populated-list
+case), followed it to `/bots/archived`, restored the bot, watched the
+real "Bot restored." toast and the list settle back to its own empty
+state. New permanent coverage, not just the screenshot walkthrough:
+`tests/e2e/bots-list.spec.ts`'s new test walks the identical real
+journey and additionally asserts the restored bot comes back as a
+fresh draft (archiving/restoring never silently published it); a new
+`archiveBot()` seed helper (`tests/e2e/helpers.ts`, same bypass-the-UI
+precedent as `seedLead`/`seedCustomAction`) backs a new a11y scan and
+a new `keyboard-navigation.spec.ts` entry for the screen; a new
+`archived-bots.png` visual baseline (a populated row, not just the
+empty state already well covered by Leads'/Actions' own empty-state
+tests) — confirmed correctly styled via a `sharp` crop before
+trusting it. The new route also changed the live `/design-system`
+Registers table's row count, regenerating `design-system-templates.png`
+for real reasons (one more table row), not a flake.
+
+Verified: `tsc` clean, all 16 `check:all` guardrails (register-
+assignment now covers 13 routes), a production build, full unit suite
+(250/250 unchanged), full `tests/e2e/` (146/146), `accessibility.spec.ts`
+(20/20), `tests/visual/` (24/24 — 1 new baseline + 1 regenerated for a
+real content change, 22 unchanged).
+

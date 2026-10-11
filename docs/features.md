@@ -285,9 +285,11 @@ see `docs/roadmap.md`.
 **Who**: the business owner. **What**: removes a bot from the list and
 kills its embed snippet without deleting its conversations, knowledge
 base, or integrations — soft delete, not hard delete (ADR 0018, a
-user-confirmed decision, not silently picked). No restore UI yet, only
-directly against the database. **How**: `app/(console)/bots/actions.ts`'s
-`archiveBotAction`, `Bot.archivedAt`. See `docs/business-logic.md`'s
+user-confirmed decision, not silently picked). Restoring is a real,
+separate page (`/bots/archived`, 2026-10-11) — name + archived-date +
+a one-click Restore button per row, no confirm needed (reversible).
+**How**: `app/(console)/bots/actions.ts`'s `archiveBotAction`/
+`restoreBotAction`, `Bot.archivedAt`. See `docs/business-logic.md`'s
 "Bot archiving" section.
 
 ### Data sources / knowledge base ingestion (Q&A, file, URL, text snippet)

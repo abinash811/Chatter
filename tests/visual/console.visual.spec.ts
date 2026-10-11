@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { signUpAndCreateBot, seedConversations, seedPendingAction, uniqueEmail, PASSWORD } from "../e2e/helpers";
+import { signUpAndCreateBot, seedConversations, seedPendingAction, archiveBot, uniqueEmail, PASSWORD } from "../e2e/helpers";
 
 // Visual regression layer (playwright.config.ts's toHaveScreenshot,
 // see playwright.visual.config.ts for the known cross-environment
@@ -132,6 +132,22 @@ test("bot editor — test-your-bot preview sheet, not-published state", async ({
   await expect(page.getByText("Not published yet")).toBeVisible();
 
   await expect(page).toHaveScreenshot("bot-editor-preview-sheet.png", { mask: sidebarMasks(page) });
+});
+
+test("archived bots page — a restorable row", async ({ page }) => {
+  // ADR 0018's restore half (2026-10-11) — real content, not the empty
+  // state (already well covered by the Leads/Actions empty-state tests
+  // right below, same shared EmptyState component).
+  await signUpAndCreateBot(page, "Archived Visual Bot", "visual-archived");
+  const botId = page.url().split("/bots/")[1];
+  await archiveBot(botId);
+  await page.goto("/bots/archived");
+  await expect(page.getByText("Archived Visual Bot")).toBeVisible();
+  await expect(page).toHaveScreenshot("archived-bots.png", {
+    // "Archived" column is a relative timestamp, same masking rationale
+    // as bots-table.png's Created column.
+    mask: [page.locator('[data-slot="table-body"] tr td:nth-child(2)'), ...sidebarMasks(page)],
+  });
 });
 
 test("leads page — empty state", async ({ page }) => {

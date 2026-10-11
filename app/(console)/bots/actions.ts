@@ -116,6 +116,40 @@ export async function archiveBotAction(
   }
 }
 
+// ADR 0018's restore half — real UI for it added 2026-10-11 (previously
+// only possible by hand against the database, the gap docs/design/
+// audit.md tracked as "no restore-from-archive UI yet"). Lives at
+// /bots/archived, a separate dedicated view (user's explicit choice
+// over a status filter on the main list, 2026-10-11) — the main list's
+// row stays non-clickable there too, since the bot editor route 404s
+// for an archived bot by design, so there's nothing for a row click to
+// navigate to. FormData-keyed like rejectAction (app/(console)/
+// approvals/actions.ts), not bound per-row like archiveBotAction — this
+// list has no confirm dialog to carry a single target through, each row
+// just posts its own id directly.
+export async function restoreBotAction(
+  _prevState: BotActionState,
+  formData: FormData,
+): Promise<BotActionState> {
+  const botId = String(formData.get("botId") ?? "");
+  try {
+    const session = await getCurrentSession();
+    await withOrgContext(session.orgId, (tx) =>
+      tx.bot.update({ where: { id: botId }, data: { archivedAt: null } }),
+    );
+    revalidatePath("/bots");
+    revalidatePath("/bots/archived");
+    revalidatePath("/", "layout"); // same reason as renameBotAction above
+    return { status: "success", message: "Bot restored." };
+  } catch (err) {
+    console.error("[restoreBotAction]", err);
+    return {
+      status: "error",
+      message: "Couldn't restore that bot — the change didn't save. Please try again.",
+    };
+  }
+}
+
 // Clones persona/guardrails/tools/appearance into a brand-new bot and
 // drops straight into its editor — deliberately does not copy
 // conversations, knowledge base entries, or integrations. Those are

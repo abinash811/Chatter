@@ -35,13 +35,13 @@ resolving via the widget's `botKey` (`lib/db.ts`'s
 `resolveBotPublicKey` now checks `archivedAt` after resolving the key,
 returning the same "invalid botKey" response as a key that never
 existed). Its config versions, knowledge sources, integrations, and
-conversations are untouched.
-
-There is no restore path in the console yet — only directly against the
-database. Every bot-fetching query in the app must filter
-`archivedAt: null`; there's no structural enforcement for this the way
-`withOrgContext` enforces tenant isolation, so a new query that forgets
-the filter is a real, silent way for an archived bot to reappear.
+conversations are untouched. **Restoring** (`restoreBotAction`,
+2026-10-11) sets `archivedAt` back to `null` at `/bots/archived`, a
+separate view since the editor 404s for an archived bot, so its rows
+can't be click-to-editor; no confirm (reversible). Every bot-fetching
+query must filter `archivedAt: null` (or `{ not: null }` for the
+archived list) — no structural enforcement like `withOrgContext`'s
+tenant isolation, so a forgotten filter lets one silently reappear.
 
 **Duplicate** (`duplicateBotAction`) clones a bot's latest persona/
 guardrails/tools/appearance into a brand-new bot and redirects into its

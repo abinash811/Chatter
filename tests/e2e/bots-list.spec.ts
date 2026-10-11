@@ -192,3 +192,36 @@ test("the stat row under the header reflects real published/draft/conversation c
   await page.goto("/bots");
   await expect(page.getByText("1 published · 0 drafts · 3 conversations this week")).toBeVisible();
 });
+
+// ADR 0018's restore half (2026-10-11, user's explicit directive) — a
+// separate dedicated view at /bots/archived, not a status filter on
+// this list (the editor route 404s for an archived bot by design, so a
+// row here can't be clickable the normal way). Covers the full real
+// journey: archive the only bot, follow the "N archived" link from the
+// resulting empty state, restore it from there, and confirm it's back
+// on the real list — not just that each screen renders in isolation.
+test("archiving a bot and restoring it from /bots/archived returns it to the list", async ({ page }) => {
+  await signUpAndCreateBot(page, "Archive Me", "botsarchiverestore");
+  await page.goto("/bots");
+
+  const row = page.locator('[data-slot="table-row"]', { hasText: "Archive Me" });
+  await row.getByRole("button", { name: /Actions for/ }).click();
+  await page.getByRole("menuitem", { name: "Archive" }).click();
+  await page.getByRole("button", { name: "Archive", exact: true }).click();
+  await expect(page.getByText("No bots yet")).toBeVisible();
+
+  const archivedLink = page.getByRole("link", { name: /archived/i });
+  await expect(archivedLink).toBeVisible();
+  await archivedLink.click();
+  await expect(page).toHaveURL(/\/bots\/archived$/);
+  await expect(page.getByText("Archive Me")).toBeVisible();
+
+  await page.getByRole("button", { name: "Restore" }).click();
+  await expect(page.getByText("No archived bots")).toBeVisible();
+
+  await page.goto("/bots");
+  await expect(page.locator('[data-slot="table-row"]', { hasText: "Archive Me" })).toBeVisible();
+  // The restored bot is a fresh draft, same as a newly created one —
+  // archiving/restoring never silently published it.
+  await expect(page.locator('[data-slot="table-row"]', { hasText: "Archive Me" }).getByText("Draft only")).toBeVisible();
+});
