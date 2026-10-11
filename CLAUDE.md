@@ -54,741 +54,84 @@ reason.)
   runner (`retries: 1` under CI mitigates but doesn't eliminate it) —
   full history in `docs/changelog.md`. Don't chase it further locally;
   run scoped test files during a session, not the full suite repeatedly.
-- Suggested-reply buttons (2026-09-27): up to 3 chip buttons, configured
-  in the Appearance tab (`MAX_SUGGESTED_REPLIES`,
-  `lib/ai/appearanceOptions.ts`), shown once under the widget's first
-  message (`public/widget.js`) — tapping one sends it exactly like
-  typing it. Matches Chatbase's own reference UI, confirmed from real
-  screenshots. Verified end-to-end against the real embedded widget, not
-  just the console form.
-- Test-your-bot preview (2026-09-27): a "Preview" button in the bot
-  editor opens a slide-over chat (`PreviewSheet.tsx`) wired to the real
-  chat loop (`sendMessage`) via `sendPreviewMessageAction` — degrades to
-  a plain-language message if the bot isn't published or no Claude key
-  is configured. Matches Chatbase's own docked preview, confirmed from
-  real screenshots.
-- Card-gallery redesign (2026-09-27): the bot editor's Tools tab
-  (checkbox list → `OptionCard` grid + `Switch`) and Knowledge's ingestion
-  picker (DropdownMenu → 3 always-visible `OptionCard`s) both redesigned
-  to match Chatbase's own card-gallery pattern (icon/title/description/
-  action), confirmed real via user-supplied screenshots — see `docs/
-  research/competitive-landscape.md`. New shared component:
-  `components/console/OptionCard.tsx`. Real bug caught and fixed before
-  shipping: tool descriptions are model-facing instructions of varying
-  length, so cards had wildly uneven heights until `line-clamp-2` was
-  added. This was grounded in the user's own screenshots at the time,
-  not a live fetch, because `www.chatbase.co` was blocked by this
-  environment's network egress policy then — **that's since changed
-  (2026-09-28): `chatbase.co` access now works**, see the dated entry
-  below and `docs/research/competitive-landscape.md`'s 2026-09-28
-  update.
-- Demo data (2026-09-27): a one-click "Load sample data" button on
-  `/bots` (`lib/demoData.ts`) creates a fully populated example bot —
-  persona, published config, 3 knowledge Q&A entries, 2 leads, one
-  (disabled-by-default) custom action, 2 sample conversations — so any
-  user sees every screen with real content without a live Claude/Voyage
-  key. Resolves the "how broad should seeding be" open item from the
-  2026-09-27 directive.
-- Leads (2026-09-27): third action tool, `collect_lead` — generic
-  contact-info capture (name/email/phone/note), matches Chatbase's
-  "Collect Leads." New per-bot `/bots/[botId]/leads` console page.
-- Custom actions (2026-09-27, ADR 0022): fourth action tool — a
-  business-defined webhook (URL/method/headers/what to collect), per bot,
-  its own `/bots/[botId]/actions` page with an independent enable/disable
-  toggle per action (not the Tools tab, since each is its own object, not
-  a fixed checkbox list). Dynamic, not a `lib/ai/tools/registry.ts` entry
-  — `lib/ai/chat.ts` merges each bot's enabled custom actions with the
-  static registry's tools per turn. SSRF-guarded (https-only, blocks
-  private/loopback/link-local + the cloud metadata IP), headers encrypted
-  at rest. Every tool added from here on is industry-agnostic by default
-  — `check_order_status` and `request_order_cancellation` stay the two
-  deliberate ecommerce exceptions (2026-09-27 scoping decision, see
-  `docs/roadmap.md`). Both tools from the 2026-09-27 directive are now
-  built.
-- Order cancellation / write-capable action tools (2026-09-28, ADR
-  0023): fifth action tool, `request_order_cancellation` — the first
-  write-capable one, and a new risk category the user chose the safe
-  option for directly ("Okay let's have 2" — human approval, not
-  automatic execution). It never calls Shopify itself: it validates the
-  order and queues a `PendingAction` (`lib/pendingActions.ts`, generic,
-  no knowledge of any specific tool — avoids a circular import with the
-  tool's own `handle()`), telling the visitor a human will review it,
-  never that it's done. New `/bots/[botId]/approvals` console page lists
-  queued requests; approving (behind its own confirm dialog — the one
-  moment a real external write happens) calls the real `orderCancel`
-  GraphQL mutation via the separately-exported `executeOrderCancellation`;
-  rejecting needs no confirmation. Requires the `write_orders` Shopify
-  OAuth scope — a store connected before this change must reconnect.
-  Verified end-to-end with real screenshots: empty state, a queued
-  request, the confirm dialog, and the graceful "no Shopify integration"
-  failure outcome on the resolved row (no real Shopify store is
-  connectable in this environment). `shopify.dev` stayed blocked by this
-  environment's network egress policy for the `orderCancel` mutation
-  shape — pieced together via WebSearch instead of the primary source,
-  flagged as unverified against a live store in ADR 0023.
-- Table library pilot (2026-09-28, ADR 0024): `@tanstack/react-table`
-  (row-model logic only, not rendering) + `nuqs` (URL-persisted state)
-  adopted on the bots list first, before any wider rollout to leads/
-  conversations/actions/approvals — sourced from a user-requested review
-  of popular Next.js/shadcn starter templates. Real finding worth
-  remembering: npm's `latest` tag now points to TanStack Table v9, a
-  genuinely different, barely-documented API (`ReactTable`/
-  `createCoreRowModel`) — deliberately pinned to v8.21.3 instead, since
-  shadcn's own documented Data Table pattern and every mainstream
-  tutorial/starter are still written against v8, and the whole point of
-  this adoption was matching a proven pattern, not chasing `latest`.
-  Real, measured cost: `/bots`'s First Load JS grew ~4.9kB → ~23.6kB
-  (confirmed via a real build). Verified: `tsc` clean, all 9
-  `check:all` guardrails (9 at the time — see the shadcn-primitives
-  entry below for the 10th), full unit suite, a new real e2e test proving
-  sort order changes and survives a page reload (`tests/e2e/
-  bots-list.spec.ts`), all 8 existing bots-list specs pass unmodified,
-  a11y scan clean, and all 18 `tests/visual/` baselines pixel-identical
-  to before — confirms this changed only the state-management layer,
-  not the rendered UI. Also evaluated and explicitly declined adopting
-  Clerk/Supabase for auth from the same template review — Chatter's own
-  RLS-backed multi-tenancy (ADR 0003) + custom auth (ADR 0006) is
-  already stronger and a costly reversal for no gain.
-- Shadcn-only primitives, mechanically enforced (2026-09-28, ADR 0025):
-  found and closed a real gap — 7 of 25 `components/ui/` files (`Input`,
-  `Textarea`, `Label`, `Checkbox`, `Card`, `Badge`, `Toaster`) were
-  hand-authored *imitating* shadcn's style but never actually pulled
-  from its real source (unlike the other 18, ADR 0014/0017). User
-  directive: "There shouldn't be any hand rolled in the product... how
-  do we make sure in future we don't miss this." All 7 rebased onto
-  shadcn's real source with deliberate customizations kept as
-  documented deltas, never a blind overwrite (`Card`'s Notion-register
-  tuning, `Badge`'s app-wide variant names, etc.) — `Checkbox` is a real
-  behavior change too, now radix-ui's real primitive
-  (`onChange`→`onCheckedChange` at its 2 call sites). New guardrail,
-  `scripts/check-shadcn-only-primitives.mjs` (`check:all` is now 10
-  checks), backed by `scripts/shadcn-manifest.json` — an explicit,
-  human-verified list, not header-sniffing (shadcn's own `@type
-  registry:` header turned out absent from most of its real source,
-  confirmed by pulling 7 files for real — a check built on it would
-  have missed this exact gap). Real bug caught only by an actual
-  screenshot, not any test: the generic `rounded` utility resolves to
-  this app's 10px `--radius`, which on a 16px checkbox rendered as a
-  full circle indistinguishable from a radio button — fixed to match
-  shadcn's real `rounded-[4px]`. Verified: `tsc` clean, all 10
-  `check:all` guardrails, full unit suite, the complete `tests/e2e/`
-  suite (isolated every ambiguous failure — all were the pre-existing
-  toast-timeout flake, no real regressions), full a11y scan, all 18
-  visual baselines regenerated and stable across two runs.
-- `--muted`/`--accent` conversation-bubble collision fixed (2026-09-28):
-  a real, previously-flagged bug (`docs/design/audit.md`'s "System
-  coverage" table) — `ConversationThread.tsx`'s visitor and bot message
-  bubbles used `bg-muted`/`bg-accent`, which are the literal same
-  monochrome token value, so the two speakers were visually
-  indistinguishable. Fixed with a real decision, not a mechanical
-  token swap: the bot/business voice now gets `bg-primary` (solid
-  black), matching the same high-contrast/active pairing already
-  established for `Badge`'s `default` vs `muted` variants; the visitor
-  keeps the existing muted gray. Verified via a real screenshot and the
-  `conversation-detail.png` visual baseline regenerated + confirmed
-  stable across two runs; e2e and a11y suites for both conversation
-  screens re-run clean.
-- Conversations list depth/polish pass (2026-09-28): `docs/design/
-  audit.md`'s row for this screen upgraded from mostly 🔲 to all ✅. Two
-  real bugs caught only via an actual screenshot: (1) `ConversationsTable.tsx`'s
-  row had only `onClick` — no `tabIndex`/`role`/`onKeyDown` — so it
-  wasn't keyboard-reachable at all, the same gap `BotTableRow.tsx`
-  already fixed elsewhere but never applied here when this screen
-  shipped (ADR 0015); fixed by copying that established accessible
-  whole-row-navigates pattern verbatim, now locked in by a permanent
-  e2e test (`tests/e2e/conversations.spec.ts`); (2) the row's
-  `ChevronRight` used `text-border` (the row-border color, near-white)
-  as its icon color, making it nearly invisible — fixed to
-  `text-muted-foreground`. Hover was already free from shadcn's real
-  `Table` (`hover:bg-muted/50`); Depth was already earned (same
-  `rounded-lg border border-border shadow-xs` wrap as Knowledge/Leads/
-  Actions) but had never been credited in the audit table. Focus ring
-  verified genuinely applying via `getComputedStyle()`/`:focus-visible`
-  inspection, not just a visually-ambiguous screenshot. Verified: `tsc`
-  clean, all 10 `check:all` guardrails, full unit suite (166 tests),
-  the full `conversations.spec.ts` file (7/7, including the new test —
-  caught and fixed its own bug: `[data-slot="table-row"]` also matches
-  the header row, so the new test had to scope to `tbody`), the
-  conversations a11y scan, and all 18 visual baselines confirmed
-  unchanged (the new focus/active classes only apply on interaction,
-  not the resting state the visual suite captures).
-- Knowledge depth/polish pass (2026-09-28): full history moved to
-  `docs/changelog.md` — superseded 2026-09-29 by the Data sources
-  rebuild below. The one still-open finding (a cross-cutting `--accent`-
-  on-white `ghost`-button contrast question, affecting 5 files) is still
-  not committed to.
-- Integrations depth/polish pass (2026-09-28): full history moved to
-  `docs/changelog.md` — 2 real code-level bugs fixed (an unlabeled
-  input, a missing rounded-border/shadow wrap), all states ✅ except
-  Active 🟡.
-- Settings depth/polish pass (2026-09-28): full history moved to
-  `docs/changelog.md` — audit-only, no code changed, all states ✅
-  except Active 🟡 (no bespoke active state, same as other list
-  screens).
-- `chatbase.co` network-block correction (2026-09-28): every prior
-  session's docs claimed `www.chatbase.co`/`chatbase.co` was blocked by
-  this environment's egress policy (`docs/research/competitive-
-  landscape.md`, `docs/research/persona-template-ux.md`, this file) —
-  re-tested directly via `WebFetch` and confirmed it now works (the
-  homepage, several `/docs/user-guides/...` pages, and their public
-  docs index all fetched real content). Verified this is specific to
-  `chatbase.co`, not a general policy change — `ui.shadcn.com`,
-  `docs.langchain.com`, and `shopify.dev` were each re-tested too and
-  are all still genuinely blocked, so those docs' claims were left
-  alone. Corrected the stale claims in both research docs above and
-  this file. Used the new access proactively, not just to fix docs:
-  re-fetched the two `persona-template-ux.md` sources directly (the
-  decoupled persona/tools-steps finding holds up; the specific
-  "instruction-template dropdown" detail didn't re-confirm, flagged as
-  unconfirmed not retracted) and found two previously-unexplored
-  features with real public docs — **Guardrails** (rate limiting, spam
-  detection, country/IP blocking — we have none of this today, a real
-  open question, not yet in `docs/open-questions.md`) and **Procedures**
-  (a named trigger+ordered-steps workflow for high-stakes multi-step
-  interactions like refunds — a real middle ground between our flat
-  tool registry and the already-deferred visual-flow-builder idea, not
-  the same thing at smaller scale). Full detail in `docs/research/
-  competitive-landscape.md`'s 2026-09-28 update. Also deduplicated an
-  accidental verbatim-repeated paragraph in this file's own card-
-  gallery-redesign entry, found while fixing its stale claim.
-- Model tier + temperature picker (2026-09-28, ADR 0026): a "Model" card
-  in the bot editor's Persona tab (Sonnet/Haiku/Opus, Claude-only) + a
-  temperature slider genuinely adjustable only for Haiku (the Anthropic
-  SDK rejects any non-1.0 value for newer models) — UI and server both
-  enforce the lock (guardrail #4).
-- Data sources rebuild (2026-09-29, Phase 1): Knowledge page renamed
-  "Knowledge base" → "Data sources" and rebuilt to match Chatbase's own
-  page — a 4th entry point (**text snippet**, `createTextEntry`, no
-  file/URL round trip) plus search/type-filter/sort/bulk-select-delete
-  on the table (`@tanstack/react-table` + `nuqs`, ADR 0024's pattern)
-  and an informational total-size indicator (no cap — `docs/open-
-  questions.md` #6 is unresolved). Real bug caught by a screenshot
-  before shipping: `OptionCard`'s `line-clamp-2` truncated mid-word once
-  the grid went 3→4 columns — fixed by shortening copy, not widening
-  layout. **Deliberately out of scope, discussed with the user first**:
-  real multi-page site crawling (`docs/open-questions.md` #3, still
-  unresolved) and Notion-page/ticket sources (Notion needs a full OAuth
-  connector; Tickets is Chatbase's own paywalled helpdesk integration).
-  Verified: `tsc` clean, all 10 guardrails, full unit suite, 17
-  `knowledge.spec.ts` tests (6 new), the knowledge a11y scan, both
-  `knowledge-empty.png`/`knowledge-add-dialog.png` visual baselines
-  regenerated + stable across two runs, full 19-baseline visual suite
-  otherwise unchanged.
-- Custom actions "Test this action" (2026-09-29): closed the biggest
-  gap found comparing our existing Custom Actions (ADR 0022, already
-  self-serve, no developer needed) against Chatbase's real docs — no
-  way to test an endpoint before saving. Added a Test button to the
-  Add-action dialog, sharing `performActionRequest` (new shared helper,
-  `lib/ai/tools/customAction.ts`) with the live bot tool call, so a
-  passing test is a real guarantee. Verified end-to-end against a real
-  endpoint (api.github.com). Real layout finding caught by screenshot:
-  a same-row test-value input cramped the field grid — fixed to a
-  two-line stacked row, confirmed via `scrollWidth`/`clientWidth`.
-  Still-open gaps vs. Chatbase, flagged not deferred silently: no typed
-  inputs, no separate query-param section, no JSON body templating.
-  Verified: `tsc` clean, all 10 guardrails, full unit suite, 2 new
-  `actions.spec.ts` tests + a11y scan (22/22), visual suite unchanged.
-- Conversations Activity rebuild (2026-09-29, ADR 0027): `/conversations`
-  rebuilt into a split-pane layout (list left, Chat/Details panel right)
-  from 5 real Chatbase screenshots + their actual docs (not guessed).
-  New `Conversation.status`/`.source` fields power real pause/resume
-  (the bot skips its reply but still records the visitor's message,
-  matching Chatbase's documented behavior) and Widget-vs-Playground
-  tracking. Sentiment/Country deliberately show honest "Not analyzed"/
-  "Not tracked" states rather than fabricated data (guardrail #4).
-  Bulk-select + CSV export added. Full detail, including 3 real bugs
-  caught while verifying: `docs/changelog.md`.
-- In-chat widgets (ADR 0028): a `/bots/[botId]/widgets` page defines a
-  Schema-driven form (JSON Schema, text/number/checkbox/dropdown
-  fields) the bot can render inline in the chat instead of collecting
-  info through plain text — reuses the tool-calling interface unchanged
-  (tagged JSON string), no chat-loop branching. Renders in both
-  `public/widget.js` and `PreviewSheet.tsx`. Phase 1 (2026-09-29):
-  collection-only forms. Phase 2 (2026-09-30): an optional Function — a
-  real API call on submit, reusing Custom Actions' SSRF-guarded
-  `performActionRequest`; write-capable ones queue a `PendingAction`
-  (ADR 0023) instead of calling directly, executed via
-  `executeWidgetSubmission` only once a human approves in
-  `/bots/[botId]/approvals`. States/multi-view widgets still deferred,
-  `docs/open-questions.md` #9. Verified both phases: `tsc` clean, all
-  10 guardrails, full unit suite, RLS verified, real e2e (console CRUD
-  + a real approval-triggered HTTP call). Full detail:
-  `docs/changelog.md`.
-- Self-serve config (roadmap "Self-serve configurability"): widget
-  appearance editor (greeting/accent/avatar/position) and a 3-template
-  persona picker (Support/Sales/Lead-gen), both in the bot editor.
-- RAG hardening pass (2026-09-27): fixed a real dead pgvector index
-  (IVFFlat built on an empty table — now HNSW), batched ingestion
-  embeddings, query rewriting via the retrieval tool's own instructions,
-  hybrid search (tsvector + pgvector via RRF, ADR 0021 — deliberately not
-  BM25), and a hand-rolled RAG eval harness (`npm run eval:retrieval` —
-  RAGAS/DeepEval/TruLens/LangSmith all ruled out after checking their
-  real repos, see `docs/ai-tech-radar.md`). Reranking is next, now
-  unblocked.
-- Deploy target: AWS confirmed; database is AWS RDS for PostgreSQL (ADR
-  0021); app compute (App Runner/ECS/EC2) still open, `docs/open-
-  questions.md` #8.
-- Guardrails Phase 1 — rate limiting + spam detection (2026-09-30, ADR
-  0029): opt-in abuse protection on the bot editor's Guardrails tab
-  (a second "Abuse protection" Card, distinct from the existing content-
-  guardrail textarea) — off by default. Rate limiting caps messages per
-  conversation per window with a custom limit-reached reply; spam
-  detection runs a cheap Haiku classification at message-count
-  checkpoints (2/4/8/16) and auto-pauses a flagged conversation via the
-  same mechanism a human "Pause" click uses (ADR 0027). Per-conversation,
-  not per-device — no persistent visitor identity exists yet. Country/IP
-  blocking deferred, needs a geolocation-vendor decision,
-  `docs/open-questions.md` #10. Verified: `tsc` clean, all 10 guardrails,
-  full unit suite (211, 16 new), RLS verified, real e2e (console toggle/
-  save/reload), a real screenshot of the progressive-disclosure UI.
-- Real multi-page site crawling (2026-09-30, ADR 0030): the Add URL
-  dialog's "Crawl this site" checkbox crawls a whole site (sitemap-
-  first, robots.txt-respected, capped at 20 pages, synchronous —
-  `lib/ai/crawler.ts`'s swappable `crawlSite()`), not just one page.
-  Hand-rolled, not Firecrawl (its cost scales with our own usage); no
-  scheduled re-crawl yet (no background-job infra), deliberate.
-- JS-rendering fallback for URL/crawl ingestion (2026-10-02, ADR 0031):
-  `extractUrlText` retries with a real headless Chromium (`playwright`,
-  now a real production dependency, not dev-only) when a plain fetch
-  finds too little text — closes ADR 0030's named JS-site gap.
-  Self-hosted, not rented. Needs a real Chromium binary wherever this
-  app deploys — a new constraint on `docs/open-questions.md` #8.
-- Firecrawl last-resort fallback (2026-10-02, ADR 0032): a 3rd step in
-  `extractUrlText`, reached only when both the plain fetch and the
-  self-hosted browser above fail — handles sites actively resisting
-  automated browsers, not every JS-rendered one (keeping it 3rd, not
-  2nd, is what keeps Firecrawl's usage-scaled cost rare rather than
-  routine). Platform-funded (`FIRECRAWL_API_KEY`, not BYOA), skipped
-  silently when unset. Found+fixed a real high-severity transitive
-  `axios` CVE in `firecrawl`'s own dependency via a `package.json`
-  `overrides` pin. Verified: `tsc` clean, all 10 guardrails (`npm
-  audit` clean of this change), a production build, full unit suite
-  (231, 5 new). Full detail: `docs/changelog.md`.
-- TypeScript 7 + Next.js 16 upgrade (2026-10-02, ADR 0033): 2 of 4
-  deferred Dependabot majors resolved. Checked
-  against our real code first: neither bump's *documented* breaking
-  changes applied here. But the full verification sweep (not just
-  `tsc`+build) caught two real, undocumented regressions from the new
-  build pipeline: a WCAG AA contrast regression (3 tokens were already
-  razor-thin; fixed with real contrast math —
-  `--muted-foreground`/`--destructive` darkened, `AuthShell.tsx`'s
-  `/45`→`/60`) and a JSX whitespace regression (6 pages' `<h1>Label
-  {count}</h1>`-style headings silently lost their space; fixed with
-  explicit `{" "}`). Also corrected a stale, wrong contrast claim in
-  `docs/design/design-system.md` found while investigating (it had
-  checked `muted-foreground` against the wrong background). Verified:
-  `tsc` clean, all 10 guardrails, a production build, full unit suite
-  (231 unchanged), full `tests/e2e/` (117/117) and
-  `accessibility.spec.ts` (15/15, 0 violations, up from 9 failing),
-  all 19 visual baselines regenerated and hand-reviewed. Full detail:
-  `docs/changelog.md`.
-- Prisma 7 upgrade (2026-10-02, ADR 0034): the last of the 4 originally-
-  deferred Dependabot majors, now all resolved. A real architecture
-  change, not a version bump — a driver adapter (`@prisma/adapter-pg`)
-  is now mandatory at every `PrismaClient` (3 call sites: `lib/db.ts`,
-  `lib/auth.ts`, `scripts/verify-rls.mjs`), connection string moved to
-  a new mandatory `prisma.config.ts`. Kept the existing
-  `prisma-client-js` generator (still works unchanged under 7.10.0) —
-  explained as a real tradeoff, user chose the smaller 3-file blast
-  radius over switching to the new `prisma-client` generator (11 more
-  files) in the same RLS-touching pass; that switch stays a deferred
-  future pass. Pinned to `7.10.0` explicitly, not `latest` (which
-  already points to an `8.0.0` release candidate). Real regression
-  caught only by the full e2e suite: Prisma 5's engine auto-loaded
-  `.env`; with the adapter we read `process.env.DATABASE_URL`
-  ourselves, which broke 31 specs in Playwright's own Node process
-  until `process.loadEnvFile()` was added (same pattern already used
-  elsewhere in this codebase). Found+fixed 2 more real CVEs
-  (`mysql2`, `deepmerge-ts`) via `package.json` overrides. Verified:
-  `tsc` clean, a production build, all 10 guardrails, full unit suite
-  (231 unchanged), `scripts/verify-rls.mjs` run for real against a live
-  Postgres (all 3 tenant-isolation assertions passing), full
-  `tests/e2e/` (117/117) and `accessibility.spec.ts` (15/15). Full
-  detail: `docs/changelog.md`.
-- Reranking via Voyage rerank-2 (2026-10-02, ADR 0035): `lib/ai/
-  rerank.ts`'s new `RerankProvider` re-scores hybrid search's 25-doc RRF
-  candidate pool down to the 5 chunks sent to the model
-  (`lib/ai/retrieval.ts`), falling back to hybrid order on failure.
-  Chosen over Cohere after an explicit tradeoff explained to and
-  confirmed by the user. `VOYAGE_API_KEY` is still a placeholder here,
-  so the fallback path is what's actually verified (via
-  `npm run eval:retrieval` against a live Postgres), not the real
-  quality gain. Full detail: `docs/changelog.md`.
-- `--accent`-on-white contrast fix (2026-10-02): closed the cross-
-  cutting ghost-button-hover finding flagged 2026-09-28 (`docs/design/
-  audit.md`) — `--accent` darkened from neutral-100 (97%) to neutral-200
-  (92.2%, reusing the `border`/`strong-background` step), fixing every
-  `ghost` button's hover across the app at once. Prompted by a design-
-  quality review of Chatbase. Verified via real contrast math,
-  `accessibility.spec.ts`/`tests/visual/` (no regressions), and a real
-  before/after screenshot. Full detail: `docs/changelog.md`.
-- App-wide accent-color/monochrome consistency audit (2026-10-02): a
-  full sweep (grep + real screenshots of 10 screens) confirmed the
-  monochrome system (ADR 0014/0017) holds consistently everywhere — no
-  stray raw colors, `Badge`/`bg-primary`/`bg-accent`/`bg-soft-background`
-  all used for one consistent purpose each. No new bugs found; fixed 2
-  stale code comments still citing the pre-fix `--accent` value. See
-  `docs/design/audit.md`'s "System coverage" table.
-- Inter typeface + page-title heading hierarchy (2026-10-02, ADR 0036,
-  supersedes ADR 0014's typography call): user reviewed the shipped
-  product and called it "a college project" — the consistency audit
-  above had just confirmed internal consistency but missed this
-  entirely, since it checks consistency, not quality. Root-caused: no
-  `font-family` override existed anywhere, and zero page titles used
-  anything above `text-lg` (18px). Adopted Inter, self-hosted via
-  `@fontsource-variable/inter` (zero network dependency, same reason
-  ADR 0014 originally dropped a custom font), wired as `--font-sans`;
-  bumped the 9 genuine page titles to a real `text-xl` tier above
-  dialog/card titles. Verified via real computed-style checks, full
-  `tests/e2e/` (117/117) + `accessibility.spec.ts` (15/15), all 19
-  visual baselines regenerated + stable, manual layout spot-check (no
-  breakage). Still open: a full per-element typography sweep and the
-  motion-policy gap. Full detail: `docs/changelog.md`.
-- Empty-state treatment + documented elevation scale (2026-10-02, the
-  sequenced follow-up to typography above): new shared
-  `components/console/EmptyState.tsx` (icon badge + title +
-  description + real CTA where one exists), extracted from
-  `ConversationDetailPanel.tsx`'s own pre-existing pattern, rolled out
-  to Leads/Actions/Widgets/Approvals/Data sources — replaces each
-  screen's lonely plain-text box. Actions'/Widgets' empty-state CTAs
-  open the real Add dialog, verified via a Playwright click-through.
-  Also documented the real 3-tier elevation scale (surface `shadow-xs`
-  / floating `shadow-md` / modal `shadow-lg`) that already existed via
-  shadcn's untouched defaults — closing `docs/design/audit.md`'s
-  long-tracked gap by writing down what was true, not inventing a new
-  one. Verified: `tsc` clean, all 10 guardrails, full unit suite (235
-  unchanged), full `tests/e2e/` (117/117, fixed 9 test selectors that
-  assumed only one "Add action"/"Add widget" button existed),
-  `accessibility.spec.ts` (15/15), 4 visual baselines regenerated +
-  stable. Still open: rolling the interactive-hover elevation
-  convention beyond `BotTableRow`'s one usage. Full detail:
-  `docs/changelog.md`.
-- Documented motion scale + closed the one real gap (2026-10-02,
-  third "college project" follow-up): the original "zero motion"
-  diagnosis was an overstatement — Dialog/AlertDialog/DropdownMenu/
-  Popover/Select/Sheet already animate via shadcn's untouched
-  defaults (real values confirmed from Tailwind v4's `theme.css`:
-  150ms default, `cubic-bezier(0.4, 0, 0.2, 1)` — Material's own
-  "standard" easing curve). The one real gap: `TabsContent` had zero
-  transition on tab switch — fixed with a 200ms fade
-  (`components/ui/tabs.tsx`, verified safe against
-  `BotEditorForm.tsx`'s `forceMount` usage via `bot-editor.spec.ts`).
-  Documented in `docs/design/design-system.md`'s new Motion section.
-  Verified: `tsc` clean, all 10 guardrails, full unit suite (235
-  unchanged), full `tests/e2e/` (117/117, run fully isolated after an
-  earlier contaminated run — competing manual server processes, not
-  the code — produced false failures), `accessibility.spec.ts`
-  (15/15), `tests/visual/` (19/19 unchanged). Full detail:
-  `docs/changelog.md`.
-- Table column header consistency fix (2026-10-02, app-wide typography
-  sweep #1 of 3): compiled every open design item from `docs/design/
-  audit.md`/`component-checklist.md` for the user (system-wide vs.
-  per-screen vs. accessibility), user picked the typography sweep
-  first. Real finding: Bots list's sortable headers had a small-caps
-  gray treatment (`text-xs uppercase tracking-wide text-muted-
-  foreground`) that Leads/Actions/Widgets/Approvals/Data sources never
-  got — fixed at the shared `TableHead` primitive
-  (`components/ui/table.tsx`), not per-screen, so every column header
-  in the app now reads the same way for free. Verified via real
-  screenshots, `tsc` clean, all 10 guardrails, full unit suite (235
-  unchanged), full `tests/e2e/` (117/117, clean isolated run),
-  `accessibility.spec.ts` (15/15), 3 visual baselines regenerated +
-  stable. Full detail: `docs/changelog.md`.
-- Hover-elevation rollout (2026-10-02, app-wide consistency item #2 of
-  3): audited before building — `BotTableRow`'s hover-lift is specific
-  to its letter-avatar chip, and no second element in the app has one,
-  so the exact pattern had no real second instance. Reported this
-  honestly rather than inventing a chip; user chose a broader,
-  chip-independent convention instead. `ConversationListPane`'s rows
-  (the only other whole-row-navigates element) now get a whole-row
-  `shadow-sm` lift on hover — no resting shadow (adjacent `divide-y`
-  rows would bleed into each other), `relative z-10` on hover so the
-  shadow isn't clipped by the row below. Verified the shadow genuinely
-  applies via a real computed-style check during a simulated hover.
-  Verified: `tsc` clean, all 10 guardrails, full unit suite (235
-  unchanged), full `tests/e2e/` (116/117 first run — the one failure,
-  `bot-top-bar.spec.ts`, confirmed pre-existing flakiness unrelated to
-  this change via an isolated 3/3 re-run), `accessibility.spec.ts`
-  (15/15), `tests/visual/` (19/19 unchanged). Full detail:
-  `docs/changelog.md`.
-- Per-item grayscale avatar distinction (2026-10-03, app-wide
-  consistency item #3 of 3 — completes the list): `BotTableRow.tsx`'s
-  avatar chip now hashes `bot.id` to one of 4 neutral-scale steps
-  (`lib/utils.ts`'s `hashToAvatarShade`) instead of one fixed tint for
-  every row — real per-item distinction, deliberately staying grayscale
-  rather than real hue (the user's explicit choice over reopening ADR
-  0014/0017). Verified via a real screenshot (5 bots, 5 distinct
-  shades) and a real browser contrast check for every candidate step
-  (`primary-50`/`500` excluded — too close to white / fails WCAG AA).
-  Real bug caught only by the visual suite, not by the implementation
-  itself: the chip's shade is hashed from a bot id that's freshly
-  generated per test run, so `bots-table`/`bots-table-mobile.png`
-  flaked on a second run until the chip was masked the same way the
-  Created-timestamp column already is. Verified: `tsc` clean, all 10
-  guardrails, full unit suite (235, one pre-existing unrelated flaky
-  timeout confirmed via isolated re-run), full `tests/e2e/` (117/117),
-  `accessibility.spec.ts` (15/15), `tests/visual/` (2 baselines
-  regenerated + stable across two runs, 17 unchanged). Full detail:
-  `docs/changelog.md`.
-- Sidebar/top bar depth/polish + accessibility pass (2026-10-03): the
-  last screen on `docs/design/audit.md` with open findings. Audited
-  first — `AppSidebar.tsx` turned out already fully covered by real
-  shadcn primitives (nav/search/Getting-Started/logout all had working
-  hover/focus/active for free, no code change needed). `BotTopBar.tsx`'s
-  hand-built tab nav had two real gaps: no `focus-visible` ring at all
-  (unlike every other custom nav/row element in the app), and its
-  active tab was color-only (component-checklist.md item 4). Fixed
-  both — a focus ring matching the established pattern, plus a
-  `border-b-2` underline (transparent at rest, no layout shift) and
-  `aria-current="page"` as a non-color active signal. Did a real
-  keyboard-only pass (a Playwright tab-walk confirming all 15 reachable
-  elements, each with a genuine computed focus ring). Verified: `tsc`
-  clean, all 10 guardrails, full unit suite (235 unchanged), full
-  `tests/e2e/` (117/117), `accessibility.spec.ts` (15/15), 10 of 19
-  visual baselines regenerated (every screen rendering `BotTopBar`) +
-  stable across two runs. Full detail: `docs/changelog.md`.
-- Bot-scoped nav moved from `BotTopBar` into the sidebar (2026-10-04,
-  ADR 0037): a user-requested full-system audit flagged the bots
-  section's horizontal tabs as "not that good" — real finding on
-  review, `BotTopBar`'s 7 links sat directly above the editor's own
-  visually *stronger* Tabs pill row, inverting the intended hierarchy.
-  `BotTopBar.tsx` deleted; its links + bot switcher now live in a
-  contextual `AppSidebar` sub-nav (Notion/Linear-style, real icons
-  reused from each page's own `EmptyState`), rendered only while
-  inside a bot. 5 pages' heading promoted `<h2>`→`<h1>`; `BotEditorForm`
-  gained a real "Editor" `<h1>` it never had. Real bug caught only by
-  e2e, not any manual check: a brand-new bot's sidebar sub-nav was
-  missing entirely right after creation — `app/(console)/layout.tsx`'s
-  `bots` fetch wasn't being refreshed by `redirect()` alone; fixed with
-  `revalidatePath("/", "layout")` on all 5 bot-list-mutating actions
-  (create/duplicate/load-sample-data/rename/archive). Also fixed a
-  real, independently-confirmed `crawler.test.ts` flake (a genuine
-  per-page `setTimeout`, not a mock issue, close enough to vitest's
-  default timeout to flake under parallel load) while running the
-  full suite during this pass. Verified: `tsc` clean, all 10
-  guardrails, full unit suite (235, crawler flake now fixed), full
-  `tests/e2e/` (117/117), `accessibility.spec.ts` (15/15), 10 visual
-  baselines regenerated + stable across two runs, real screenshots of
-  Editor/Data sources confirming the new nav. Full detail:
-  `docs/changelog.md`.
-- Leads/Approvals/Integrations become org-wide (2026-10-04, ADR 0038):
-  reviewing the ADR 0037 sidebar nav, the user named these 3 of its 7
-  items as not belonging nested under one bot. Leads/Approvals moved
-  with no schema change (both already carry an indexed `orgId`) — same
-  global-nav-item + `?botId=` filter + "Bot" column pattern
-  `/conversations` already uses. Integrations got a real schema
-  migration: `Integration.botId` removed, one Shopify connection now
-  shared by every bot in the org (user's explicit choice over a lower-
-  risk combined-view option, since a real store isn't scoped to one
-  bot). Migration run for real via `prisma db execute` +
-  `migrate resolve` (not `migrate dev`, which wanted to reset the whole
-  dev DB over unrelated pgvector/RLS drift — correctly blocked as
-  destructive). `check_order_status`/`cancelOrder.ts` now resolve the
-  Shopify connection by org, not by the calling bot. Real bug caught
-  only by e2e: a demo-data test broke because navigating to a global
-  page (Leads) drops the bot sub-nav, so a later bot-scoped click
-  ("Actions") had nothing to click — fixed by reordering the test, the
-  same real constraint any user would hit. Verified: `tsc` clean, all
-  10 guardrails, `verify-rls.mjs` against a live Postgres, full unit
-  suite (236), full `tests/e2e/` (120/120), `accessibility.spec.ts`
-  (15/15), 14 visual baselines regenerated + stable across two runs,
-  real screenshots of all 3 pages. Full detail: `docs/changelog.md`.
-- Ready-made Custom Action templates (2026-10-04/05): the Add-action
-  dialog's `AddActionDialog.tsx` now opens with a template picker —
-  "Start from scratch" or a pre-filled "Check appointment availability"/
-  "Cancel appointment"/"Reschedule appointment"
-  (`lib/customActionOptions.ts`'s `ACTION_TEMPLATES`) — so setting up an
-  appointment-tool doesn't mean designing a Custom Action's name/
-  description/fields from a blank form; the business still points `url`
-  at their own booking system. No new integration or tool-registry
-  entry, stays fully vertical-agnostic (no ADR — additive UI on ADR
-  0022's existing architecture). Full detail: `docs/changelog.md`.
-- Full-app design audit (2026-10-05): a user-requested complete sweep
-  across every screen's text/colors/layout/spacing/shadows/
-  interactions/animations/consistency, not a touch-triggered check —
-  real screenshots of all 16 screens against `docs/design/principles.md`/
-  `component-checklist.md`/`design-system.md`. Two real findings fixed:
-  onboarding had dropped out of signup's `AuthShell` register (now
-  shares it); the Appearance tab's 3 suggested-reply rows had a
-  duplicate placeholder bug. Everything else (tokens, elevation, motion,
-  table-header consistency) held up. `docs/design/audit.md` updated with
-  a new System-coverage row and onboarding's first-ever Depth/polish
-  row. Full detail: `docs/changelog.md`.
-- `request_refund` — sixth action tool (2026-10-05): reuses
-  `request_order_cancellation`'s exact human-approval pattern (ADR
-  0023, `PendingAction` queue + `/approvals`) with zero engine changes
-  — `lib/ai/tools/requestRefund.ts`'s `handle()` queues the request;
-  `executeRefund` calls Shopify's real `refundCreate` mutation once
-  approved. Same unverified-against-a-live-store caveat as `orderCancel`
-  (`shopify.dev` still blocked by this environment's egress policy —
-  re-confirmed, mutation shape pieced together from WebSearch). Full
-  detail: `docs/changelog.md`.
-- `withOrgContext`'s transaction timeout widened (2026-10-06):
-  `lib/db.ts`'s `prisma.$transaction` call now passes explicit
-  `maxWait: 10_000, timeout: 20_000` instead of Prisma's defaults
-  (2s/5s) — found while walking a user through running the app against
-  a real remote Postgres (Supabase) for the first time; the tight
-  defaults assumed a same-network database and failed every request
-  with `Unable to start a transaction in the given time` against a
-  pooled connection over the internet. Full detail: `docs/changelog.md`.
-- Design-system pass, in progress (2026-10-08–): user requested a full,
-  production-grade design system after flagging the console as visually
-  "basic" (colors/type/hover/interactions/cards). Scoped vertical-agnostic
-  per user instruction (no healthcare-specific components). Two real
-  increments shipped so far: (1) one deliberate accent color, `--success`
-  (green-500, grounded in two convergent real screenshots — Chatbase +
-  an OpenAI-playground-style reference), applied to `Switch`'s checked
-  state; (2) `Badge`'s `default` variant stopped rendering solid black
-  — a status chip isn't a CTA — now a neutral light pill, with real
-  `success`/`warning`/`alert` variants (light-tint, matching
-  `destructive`'s existing shape) replacing every call site that used
-  solid black for a status signal (Published/Connected/Ongoing/a
-  passing test/pending-approval). New text-contrast tokens
-  `--success-strong`/`--warning-strong`/`--alert-strong` computed from
-  real `tailwindcss/colors` 800-steps, same discipline `--destructive`'s
-  own contrast fix used. Scoped per the user's own choice between 3
-  options: lighten primary emphasis, reserve solid black for one real
-  CTA per screen — not a full non-monochrome accent system. An audit
-  before this increment found `Button`/sidebar-active-state/`BotTopBar`
-  already followed that one-CTA discipline; `Badge` was the one real
-  gap. Full detail + verification: `docs/changelog.md`. Still open:
-  awaiting the user's reaction to the Badge screenshots before any
-  further rollout (sync-dot pattern, more token work).
-- Design-drift automation (2026-10-08): 3 new `check:all` guardrails
-  (now 13) closing the actual recurring bug class behind the
-  Badge/`--accent` fixes above — a token reused for the wrong semantic
-  job, which `check-design-tokens.mjs` was never built to catch.
-  `check-token-variant-mapping.mjs` (+ `scripts/token-variant-
-  manifest.json`) fails if a cva variant's token classes drift from a
-  human-verified manifest, scoped to `Badge` for now. `check-variant-
-  visual-coverage.mjs` requires every real-call-sited variant to have
-  an actual `tests/visual/` baseline behind it — found and fixed a real
-  live gap on first run (`success` had zero visual coverage). `check-
-  token-contrast.mjs` (+ `culori`) computes real WCAG AA contrast for
-  15 token pairs straight from `app/globals.css`'s oklch values in both
-  light and dark mode, independent of what's currently screenshotted —
-  found a real dead/wrong-contrast token (`--destructive-foreground`,
-  unused, still broken, flagged not fixed) on first run too. Full
-  detail: `docs/changelog.md`.
-- Error-copy structure + register-assignment guardrails (2026-10-08):
-  2 more `check:all` guardrails (now 15). `check-error-copy-
-  structure.mjs` requires the "Couldn't X. Please try again." template
-  to carry a reason clause in between — rolled out to all 21 real
-  messages missing one (only rename/archive had it before). `check-
-  register-assignment.mjs` (+ `scripts/register-manifest.json`)
-  requires every console route to have a Linear/Notion/Stripe register
-  assigned (architecture.md §7) — but does NOT verify a page's actual
-  density matches its register: investigated that fuller check first
-  and found no real, already-consistent mechanical signal exists in
-  the codebase to check against (the one candidate, `h-row`, is used
-  identically on every register for an unrelated reason) — picking
-  real per-register numeric targets is a design decision still open,
-  flagged not invented. Full detail: `docs/changelog.md`.
-- `OptionCard` dead-hover bug fixed (2026-10-08): a previously-diagnosed,
-  real bug (its `Card`'s computed `box-shadow` was identical before/
-  after hover) — fixed with `transition-shadow hover:shadow-sm`, the
-  same convention `ConversationListPane`/`BotTableRow` already use.
-  Re-verification caught a real test-tooling snag along the way:
-  Playwright's `.hover()` helper showed no change; `page.mouse.move` to
-  the element's real center confirmed the fix genuinely works. Full
-  detail: `docs/changelog.md`.
-- `/design-system` reference page (2026-10-08, dev-only — see
-  `docs/roadmap.md`'s "Before production launch," must be removed
-  before going live). Scoped first (3 explicit tradeoffs — in-house vs.
-  Storybook, auth vs. public, content breadth — explained then asked,
-  per CLAUDE.md's process rule). User picked: in-house live-rendering
-  page, behind console auth, v1 scope = tokens + components + page
-  templates. **Phase 1 (Tokens)**: every color/type/elevation/motion
-  swatch renders the real Tailwind token class — can't drift from
-  `app/globals.css` by construction. Found 6 real dead/contrast-broken
-  tokens on first render (4 solid-fill status foregrounds failing WCAG
-  AA, fixed to black; `--disabled-foreground`/`--placeholder-foreground`
-  turned out unused — `Input` really uses `muted-foreground` — fixed the
-  page's rendering instead of the tokens, since WCAG exempts real
-  disabled controls). Also surfaced a real, pre-existing environment
-  flake (a CSS chunk 500) and confirmed it transient before trusting a
-  baseline. **Phase 2 (Components)**: all 26 `components/ui/` primitives
-  now render via the real imported component (overlays are real,
-  clickable triggers, not screenshots). Found 2 more real bugs: the
-  page's own `Field` helper had no `htmlFor`/`id` association (fixed);
-  `ScrollArea` — zero real call sites before this page — has a genuine
-  pre-existing keyboard-focus gap in its shadcn stock source (fixed,
-  documented as a delta). New `check-design-system-page-coverage.mjs`
-  guardrail (now 16 total) fails if a manifested primitive is never
-  referenced on the page — caught `Alert` missing on first run.
-  **Phase 3 (Page templates, 2026-10-09)**: new shared
-  `components/console/PageHeader.tsx`, extracted from the identical
-  title+count+action header duplicated across Bots/Leads/Approvals/
-  Custom actions/Data sources/Widgets, rolled out to all 6 — `count` is
-  a `ReactNode` since real call sites format it differently ("3" vs.
-  "3 waiting"). The Dialog-creation-flow and `BotEditorForm`'s own
-  header are deliberately documented, not force-extracted — both
-  genuinely vary per real caller. New Registers table reads
-  `scripts/register-manifest.json` directly, so it can't drift from
-  what `check-register-assignment.mjs` enforces. All 3 phases now
-  complete. Full detail: `docs/changelog.md`.
-- Real keyboard-only pass, made permanent (2026-10-09): closed
-  `docs/design/audit.md`'s long-open "Real keyboard-only pass" 🔲 gap
-  across all 13 remaining screens — new `tests/e2e/
-  keyboard-navigation.spec.ts` + `helpers.ts`'s `keyboardWalk()` tab
-  through each screen's real content and fail if a reachable control
-  paints no visible focus indicator. Found and fixed one real product
-  bug along the way: `TabsContent` (`components/ui/tabs.tsx`) is a
-  genuinely focusable Radix element with zero focus-visible styling in
-  shadcn's own stock source — same class of gap as the ScrollArea
-  fix. Also closed 2 more audit.md findings the same session:
-  Leads/Actions/Approvals/Widgets' table-row Hover/Focus (real
-  `mouse.move` + computed-style verification — a `.hover()`-based first
-  attempt gave a false negative on Leads, the same quirk the
-  `OptionCard` fix had already documented), and the stale "no
-  documented error/empty-state copy structure" row (both already
-  mechanically enforced, just never credited). Flagged, not silently
-  built: Bots list "feels thin," no restore-from-archive UI, and dark
-  mode's never-rendered tokens all need a real product decision. Full
-  detail: `docs/changelog.md`.
-- Bots list stat row closes the "feels thin" gap (2026-10-09): asked
-  the user to choose between an org-wide stat row and a per-bot
-  activity column (tradeoff explained first, per CLAUDE.md's process
-  rule) — they picked the stat row. `app/(console)/bots/page.tsx` now
-  shows "N published · N draft · N conversations this week" under the
-  header, all 3 numbers from data already in the schema (no fabricated
-  content, guardrail #4) — published/draft reuse the existing query,
-  conversations is a 7-day rolling `conversation.count`. New permanent
-  e2e test asserts the exact counts across a real seed + a real
-  publish, not just that text renders. 3 visual baselines regenerated.
-  Full detail: `docs/changelog.md`.
-- Dark mode removed completely (2026-10-11, explicit user directive):
-  closes the other remaining `docs/design/audit.md` open item — it had
-  sat 🟡 since it was never visually rendered and no UI toggle ever
-  existed to reach it; rather than build a toggle, the user chose to
-  remove the capability instead. `.dark { ... }` deleted from
-  `app/globals.css`; `scripts/check-token-contrast.mjs` now checks
-  `:root` only (was light+dark). shadcn's own stock `dark:` utility
-  classes inside `components/ui/*.tsx` were deliberately left alone —
-  real, unmodified upstream shadcn source (ADR 0014/0017/0025), inert
-  with no `.dark` class ever applied, and stripping them would mean 6
-  new documented deltas from shadcn's real source for zero behavioral
-  benefit. Full detail: `docs/changelog.md`.
-- Restore-from-archive UI for bots (2026-10-11, ADR 0018's other half):
-  closes the last item from the 2026-10-09 design-gap sweep. Asked the
-  user to choose between a status filter on `/bots` and a separate
-  dedicated view before building (tradeoff explained first, per
-  CLAUDE.md's process rule) — they picked the separate view. New
-  `/bots/archived` (Linear register, same as `/bots`): name +
-  archived-date + a one-click Restore button per row, no confirm
-  dialog (reversible — can always re-archive). Rows aren't clickable
-  like the main list's — the editor route 404s for an archived bot by
-  design, so there's nowhere for a click to go. `/bots` gets an
-  "N archived" link, shown only when there's somewhere real for it to
-  go. `restoreBotAction` added to `app/(console)/bots/actions.ts`;
-  `ArchiveBotDialog`'s copy updated to point at the real screen instead
-  of promising a future capability. Full detail: `docs/changelog.md`.
-- Sidebar brand chip fixed (2026-10-11, user-reported from a live
-  screenshot): the header chip was wired to the signed-in business's
-  own workspace name instead of the product's own name — now always
-  reads "Chatter"; workspace name stays real/editable at Settings, not
-  duplicated in the sidebar. `AppSidebar.tsx` no longer takes an
-  `orgName` prop. Full detail: `docs/changelog.md`.
+- Suggested-reply buttons, test-your-bot preview, and a Chatbase-style
+  card-gallery redesign for Tools/Knowledge (2026-09-27) —
+  `components/console/OptionCard.tsx` is the shared new component.
+- Demo data: one-click "Load sample data" seeds a fully populated
+  example bot (2026-09-27, `lib/demoData.ts`).
+- Leads (`collect_lead`) and custom webhook actions (ADR 0022) — the
+  3rd and 4th action tools (2026-09-27).
+- `request_order_cancellation` (ADR 0023) — first write-capable tool;
+  queues a `PendingAction` for human approval at `/approvals` rather
+  than calling Shopify directly (2026-09-28).
+- `@tanstack/react-table` + `nuqs` piloted on the bots list (ADR 0024,
+  2026-09-28); shadcn-only primitives mechanically enforced (ADR 0025,
+  2026-09-28, closed a real gap — 7 of 25 `components/ui/` files
+  weren't actually pulled from shadcn's source).
+- Conversation-bubble color collision and a keyboard-nav gap fixed on
+  Conversations list (2026-09-28); depth/polish passes on Knowledge/
+  Integrations/Settings (2026-09-28, superseded/absorbed by later
+  rebuilds below).
+- `chatbase.co` network-block corrected — it's reachable now, several
+  stale docs claims fixed (2026-09-28).
+- Model tier + temperature picker (ADR 0026, 2026-09-28).
+- Data sources rebuild, Phase 1: renamed from "Knowledge base," 4th
+  entry point (text snippet), search/filter/sort/bulk-select
+  (2026-09-29).
+- Custom Actions "Test this action" — fires a real request before
+  saving (2026-09-29).
+- Conversations Activity rebuild into a split-pane layout, real pause/
+  resume, Widget-vs-Playground tracking (ADR 0027, 2026-09-29).
+- In-chat widgets (ADR 0028): schema-driven forms (Phase 1, 2026-09-29)
+  + an optional real API call on submit, write-capable ones approval-
+  gated (Phase 2, 2026-09-30). States/multi-view still deferred,
+  `docs/open-questions.md` #9.
+- RAG hardening: HNSW index (was a dead IVFFlat), batched embeddings,
+  query rewriting, hybrid search via RRF (ADR 0021), a hand-rolled eval
+  harness (2026-09-27); reranking via Voyage `rerank-2` (ADR 0035,
+  2026-10-02).
+- Deploy target: AWS confirmed, DB is AWS RDS for PostgreSQL (ADR
+  0021); app compute platform still open, `docs/open-questions.md` #8.
+- Guardrails Phase 1 — rate limiting + spam detection, opt-in (ADR
+  0029, 2026-09-30). Country/IP blocking deferred, `docs/open-
+  questions.md` #10.
+- Real multi-page site crawling (ADR 0030, 2026-09-30), a self-hosted
+  JS-rendering fallback (ADR 0031, 2026-10-02), and a Firecrawl last-
+  resort fallback (ADR 0032, 2026-10-02) for URL/crawl ingestion.
+- TypeScript 7 + Next.js 16 (ADR 0033) and Prisma 7 (ADR 0034) upgrades
+  — both 2026-10-02, both closed real undocumented regressions found
+  only by the full verification sweep, not just `tsc`/build.
+- Monochrome-system consistency pass: `--accent`-on-white contrast fix,
+  an app-wide audit, Inter typeface + heading hierarchy (ADR 0036),
+  documented elevation/motion scales, table-header consistency, a
+  hover-elevation rollout, and per-item grayscale avatar distinction —
+  all 2026-10-02/03, prompted by the user calling the console "a
+  college project."
+- Sidebar/top-bar depth/polish + a11y pass (2026-10-03); bot-scoped nav
+  moved from `BotTopBar` into the sidebar (ADR 0037, 2026-10-04); Leads/
+  Approvals/Integrations became org-wide, Integrations gaining a real
+  org-level schema migration (ADR 0038, 2026-10-04).
+- Ready-made Custom Action templates (2026-10-04/05); a full-app design
+  audit (2026-10-05); `request_refund` as a 6th action tool, reusing
+  the order-cancellation approval pattern (2026-10-05).
+- `withOrgContext`'s transaction timeout widened for pooled/remote
+  Postgres connections (2026-10-06).
+- Design-system pass: `--success` accent color + `Badge`'s
+  default-variant fix (2026-10-08), 5 new design-drift/error-copy/
+  register-assignment guardrails (2026-10-08), an `OptionCard` hover
+  bug fixed (2026-10-08), and a dev-only `/design-system` reference
+  page across 3 phases — tokens, components, page templates
+  (2026-10-08/09) — **must be removed before production launch**, see
+  `docs/roadmap.md`.
+- Real keyboard-only pass made permanent across every screen
+  (2026-10-09); a bots-list stat row closing the "feels thin" gap
+  (2026-10-09).
+- Dark mode removed completely, explicit user directive (2026-10-11);
+  restore-from-archive UI for bots (ADR 0018's other half, 2026-10-11);
+  sidebar brand chip fixed to show the product name, not the
+  workspace's (2026-10-11).
+- Resolved: hosted-SaaS-only hosting model (ADR 0039, 2026-10-11) — no
+  self-hosted product option.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.
@@ -863,11 +206,14 @@ reason.)
 - `docs/design/design-system.md` — current token values + component
   provenance; if it and `app/globals.css` disagree, the CSS is correct
 - `docs/design/preview/` — static HTML mockups, the visual ground truth
-  for a page before it's built in code. **Before writing any new page or
-  UI pattern, check this folder first.** If a preview exists, match it
-  exactly. If none exists, follow the token/component rules in
+  for a page **before** it's built in code. **Before writing any new
+  page or UI pattern, check this folder first.** Every file in it today
+  has already shipped and is frozen/historical (2026-10-11 policy,
+  `docs/design/README.md`) — don't treat any of them as a current
+  reference. If a *new, unshipped* screen's preview exists, match it
+  exactly; if none exists, follow the token/component rules in
   `docs/architecture.md` §7 and `app/globals.css`, then add a preview
-  here after shipping — don't skip the visual pass just because no
+  here before shipping — don't skip the visual pass just because no
   preview exists yet. See `docs/design/README.md`.
 
 ## Non-negotiable guardrails
@@ -879,10 +225,11 @@ These hold regardless of what stack or framework we end up on.
    business's bot context, retrieval results, logs, or dashboard — no
    exceptions, no shortcuts for convenience or speed.
 2. **No vertical-specific logic in the core engine.** Anything specific to
-   ecommerce/healthcare/automotive/etc. goes through the template/config
-   layer (see `docs/adr/0001-generic-base-with-vertical-templates.md`). If
-   you find yourself writing `if industry == "healthcare"` in core code,
-   stop — that belongs in a template, not the engine.
+   ecommerce/healthcare/automotive/etc. is that bot's own config, not a
+   shared-code branch — there is no template layer (ADR 0019 dropped it;
+   ADR 0001 is superseded, see `docs/adr/README.md`). If you find
+   yourself writing `if industry == "healthcare"` in core code, stop —
+   that belongs in config, not the engine.
 3. **Regulated verticals get explicit guardrail prompts, not vibes.**
    Healthcare/finance/legal templates must refuse diagnosis/legal/financial
    advice and say so plainly in their default system prompt. This is part
