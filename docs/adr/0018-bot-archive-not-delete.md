@@ -78,11 +78,15 @@ being findable.
 
 Reversible in the one sense that matters most (a business's own
 mistake, clicking archive on the wrong bot, can be undone by clearing
-`archivedAt` directly against the database) — but there is no "restore"
-button in the console yet, which is a real, intentional gap: adding one
-means a second decision (does an archived bot's data get pruned on a
-retention timer, does the getting-started checklist react to an
-un-archived bot, etc.) not yet asked. Every future bot-fetching query
+`archivedAt` directly against the database) — at the time of this ADR
+there was no "restore" button in the console, a real, intentional gap:
+adding one meant a second decision (does an archived bot's data get
+pruned on a retention timer, does the getting-started checklist react
+to an un-archived bot, etc.) not yet asked. **Closed 2026-10-11**: a
+dedicated `/bots/archived` view ships a real Restore button per row
+(no retention-timer pruning added, no confirm dialog needed since
+restoring is the safe direction) — see `docs/business-logic.md`'s "Bot
+archiving" section. Every future bot-fetching query
 must remember to filter `archivedAt: null`, or a "deleted" bot silently
 reappears somewhere — noted above and in `docs/design/audit.md`, not
 enforced by tooling. Hard-delete-with-cascade remains available as a
