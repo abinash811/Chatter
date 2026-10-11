@@ -6,14 +6,19 @@ import { signUpAndCreateBot } from "./helpers";
 // widget, all backed by real data (no fabricated plan badge/docs link —
 // see docs/north-star.md's sidebar-scope decision).
 test.describe("console sidebar", () => {
-  test("shows the org name and a working nav search filter", async ({ page }) => {
+  test("shows the product brand and a working nav search filter", async ({ page }) => {
     await signUpAndCreateBot(page, "Sidebar Test Bot");
 
-    // Org name is the signup email's default workspace name. The
-    // shadcn Sidebar (components/ui/sidebar.tsx) renders plain <div>s,
-    // not an <aside>, so it's selected by its own data-slot instead.
+    // The brand chip shows the product's own name ("Chatter"), not the
+    // signed-in business's workspace name — a real bug fix (2026-10-11,
+    // user-reported from a live screenshot): it used to render the
+    // workspace name instead, see AppSidebar.tsx's own comment on the
+    // chip for the full reasoning. The workspace name itself is edited
+    // at /settings (tests/e2e/settings.spec.ts), not duplicated here.
+    // The shadcn Sidebar (components/ui/sidebar.tsx) renders plain
+    // <div>s, not an <aside>, so it's selected by its own data-slot.
     const sidebar = page.locator('[data-slot="sidebar"]');
-    await expect(sidebar).toContainText("workspace");
+    await expect(sidebar.getByTestId("sidebar-org-name")).toContainText("Chatter");
 
     await expect(page.getByRole("link", { name: "Bots" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Conversations" })).toBeVisible();

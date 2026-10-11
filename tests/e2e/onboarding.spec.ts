@@ -12,7 +12,13 @@ test("a brand-new signup is redirected to onboarding, not dropped on an empty /b
   await page.fill('input[name="confirmPassword"]', PASSWORD);
   await page.click('button[type="submit"]');
   await expect(page).toHaveURL(/\/onboarding$/);
-  await expect(page.getByText("Welcome to Chatter")).toBeVisible();
+  // getByRole("heading", ...), not getByText — Next's RouteAnnouncer
+  // echoes the new page's heading text into a second, visually-hidden
+  // element on client-side navigation, so a bare text locator
+  // intermittently hits a real strict-mode violation (2 elements) once
+  // it settles. See accessibility.spec.ts's onboarding test for the
+  // full reasoning.
+  await expect(page.getByRole("heading", { name: "Welcome to Chatter" })).toBeVisible();
 });
 
 test("the workspace name field is prefilled with the auto-generated default, editable", async ({ page }) => {

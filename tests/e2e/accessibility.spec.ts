@@ -98,7 +98,15 @@ test("onboarding screen has no serious/critical accessibility violations", async
   await page.fill('input[name="confirmPassword"]', PASSWORD);
   await page.click('button[type="submit"]');
   await expect(page).toHaveURL(/\/onboarding$/);
-  await assertNoSeriousViolations(page, page.getByText("Welcome to Chatter"));
+  // getByRole("heading", ...), not getByText — Next's RouteAnnouncer
+  // (a visually-hidden aria-live region it mounts on every client-side
+  // navigation) echoes the new page's heading text verbatim, so a bare
+  // text locator intermittently resolves to 2 elements once that node
+  // settles (a real strict-mode violation, caught for real while
+  // building tests/e2e/keyboard-navigation.spec.ts's own onboarding
+  // test, 2026-10-09 — same fix applied there). A third, independent
+  // timing race from the two already documented at this file's top.
+  await assertNoSeriousViolations(page, page.getByRole("heading", { name: "Welcome to Chatter" }));
 });
 
 test("settings page has no serious/critical accessibility violations", async ({ page }) => {

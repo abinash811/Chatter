@@ -83,12 +83,10 @@ export interface GettingStartedStep {
 }
 
 export function AppSidebar({
-  orgName,
   userEmail,
   gettingStartedSteps,
   bots,
 }: {
-  orgName: string;
   userEmail: string;
   gettingStartedSteps: GettingStartedStep[];
   bots: { id: string; name: string }[];
@@ -130,11 +128,22 @@ export function AppSidebar({
               the real branded-chip look, not just contrast). Every
               visual-regression baseline masks this exact element (its
               testid), which is exactly why nobody caught it until a
-              real screenshot was checked by hand. */}
+              real screenshot was checked by hand.
+
+              2026-10-11 (real user-reported bug, caught from a live
+              screenshot): this chip was wired to the signed-in
+              business's own workspace name (`org.name`) instead of the
+              product's own name — "the real branded-chip look" above
+              was always the intent, it just got the wrong string piped
+              in. A brand mark reads the product's own identity, not
+              the customer's account name (same convention Chatbase/
+              Claude Console's own reference sidebars use — the
+              workspace name lives in Settings, already real and
+              editable there, not duplicated here). */}
           <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary">
             <MessageCircle className="h-3.5 w-3.5 text-primary-foreground" />
           </div>
-          <span className="truncate text-sm font-semibold group-data-[collapsible=icon]:hidden">{orgName}</span>
+          <span className="truncate text-sm font-semibold group-data-[collapsible=icon]:hidden">Chatter</span>
         </div>
         <div className="relative group-data-[collapsible=icon]:hidden">
           <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />

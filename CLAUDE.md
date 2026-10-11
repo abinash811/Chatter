@@ -783,6 +783,12 @@ reason.)
   go. `restoreBotAction` added to `app/(console)/bots/actions.ts`;
   `ArchiveBotDialog`'s copy updated to point at the real screen instead
   of promising a future capability. Full detail: `docs/changelog.md`.
+- Sidebar brand chip fixed (2026-10-11, user-reported from a live
+  screenshot): the header chip was wired to the signed-in business's
+  own workspace name instead of the product's own name — now always
+  reads "Chatter"; workspace name stays real/editable at Settings, not
+  duplicated in the sidebar. `AppSidebar.tsx` no longer takes an
+  `orgName` prop. Full detail: `docs/changelog.md`.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.

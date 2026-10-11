@@ -420,3 +420,59 @@ assignment now covers 13 routes), a production build, full unit suite
 (20/20), `tests/visual/` (24/24 — 1 new baseline + 1 regenerated for a
 real content change, 22 unchanged).
 
+## Sidebar brand chip fixed (2026-10-11)
+
+User-reported, from a live screenshot of the console sidebar: the
+brand chip (icon + bold text in `SidebarHeader`) was rendering the
+signed-in business's own workspace name (e.g. a test-generated
+"archive-shot-...") instead of the product's own name. The chip's own
+existing code comment already documented the intended treatment as
+"the real branded-chip look" — this was a real mismatch between
+documented intent and what shipped, not a new design decision needing
+a stop-and-ask: the correct product name is unambiguous ("Chatter"),
+and the workspace name remains fully visible/editable at `/settings`,
+so nothing was lost by not duplicating it in the sidebar.
+
+Fix: `AppSidebar.tsx` no longer accepts an `orgName` prop — the chip's
+label is now the literal string `Chatter`. `app/(console)/layout.tsx`
+updated to stop passing `orgName={org.name}` (the `org` variable is
+still used there for the `onboardedAt` redirect check). The
+`data-testid="sidebar-org-name"` attribute was left unchanged to
+minimize blast radius on existing selectors, even though it now labels
+a static brand string rather than the org's name.
+
+**Real flake class found and closed while verifying, not caused by
+this change**: the full e2e suite surfaced a reproducible strict-mode
+violation on the onboarding screen's heading locator —
+`getByText("Welcome to Chatter")` intermittently matched 2 elements
+once Next.js's `__next-route-announcer__` (a visually-hidden
+`aria-live` region it mounts on every client-side navigation, echoing
+the destination page's heading text verbatim) settled. Verified via
+`git stash`/rebuild/isolated-rerun that this is pre-existing and
+timing-dependent, not caused by this change (which touches no
+onboarding behavior) — and recognized it as the same race already
+diagnosed and fixed earlier this session in
+`tests/e2e/keyboard-navigation.spec.ts`'s own onboarding test. Applied
+the same `getByRole("heading", { name: ... })` fix to the two other
+vulnerable locators (`tests/e2e/accessibility.spec.ts`,
+`tests/e2e/onboarding.spec.ts`), closing a third independent instance
+of this race alongside the two already documented at the top of
+`accessibility.spec.ts`.
+
+`tests/e2e/sidebar.spec.ts`'s first test renamed and its assertion
+changed from checking for the literal word "workspace" to asserting
+`sidebar-org-name` contains "Chatter".
+
+The fix is invisible to the pixel-diff visual suite — `console.visual.
+spec.ts`'s `sidebarMasks()` helper already masks
+`[data-testid="sidebar-org-name"]` in every console-shell baseline (it
+was previously per-run-unique text) — so it was confirmed with a real
+screenshot (a temporary debug spec, deleted after use), not just
+passing visual tests.
+
+Verified: `tsc` clean, all 16 `check:all` guardrails, a production
+build, full unit suite (250/250 unchanged), full `tests/e2e/`
+(146/146, including the now-fixed onboarding race), `accessibility.
+spec.ts` (20/20), `tests/visual/` (24/24 unchanged — confirms the
+change is real but masked, as expected).
+

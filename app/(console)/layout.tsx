@@ -129,7 +129,6 @@ export default async function ConsoleLayout({
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
       <AppSidebar
-        orgName={org.name}
         userEmail={userEmail}
         gettingStartedSteps={gettingStartedSteps}
         bots={bots}
