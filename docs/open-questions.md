@@ -12,8 +12,14 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
 ## Product/scope questions
 
 2. **Compliance posture for regulated verticals**, healthcare especially.
-   Do we need real PII/PHI handling rules now, or explicitly scope v1's
-   healthcare template as "not for PHI, informational only" and revisit?
+   Do we need real PII/PHI handling rules now, or explicitly scope
+   healthcare's eventual default config as "not for PHI, informational
+   only" and revisit? Blocks starting healthcare work at all — see
+   `docs/roadmap.md`'s sequencing decision (ecommerce first, healthcare
+   second) and `docs/north-star.md`'s Phase 2 (corrected 2026-10-11 to
+   match that sequencing). No vertical-template layer exists to scope
+   this against (ADR 0019) — whatever's decided here becomes healthcare's
+   own default persona/guardrail config directly, not a template setting.
 5. **Nudges — scope and mechanism** (`docs/roadmap.md`'s "Self-serve
    configurability" #6). What triggers (exit-intent, time-on-page,
    scroll-depth, cart-abandonment)? Generic across verticals or
