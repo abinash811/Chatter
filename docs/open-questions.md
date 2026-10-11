@@ -4,11 +4,6 @@ Decisions not yet made. Owner is the user unless noted. Once answered,
 resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
 `docs/architecture.md`, then delete the entry here.
 
-## Blocking further scaffolding
-
-1. **Hosted SaaS vs. also self-hostable?** Changes how much multi-tenancy
-   and billing infra is needed from day one.
-
 ## Product/scope questions
 
 2. **Compliance posture for regulated verticals**, healthcare especially.
@@ -60,9 +55,10 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
    still open is where the Next.js app itself runs — AWS App Runner
    (closest to Render's simplicity), ECS Fargate (more control), or EC2
    (full control, most ops burden). User said this is "decided later,"
-   not blocking anything today. Distinct from #1 above (that's whether
-   we ever offer self-hosting as a *product* option to businesses; this
-   is where *our own* managed instance runs). Now has a real added
+   not blocking anything today. Distinct from the (now resolved,
+   ADR 0039) hosted-SaaS-only question — that was whether we'd ever
+   offer self-hosting as a *product* option to businesses; this is
+   where *our own* managed instance runs. Now has a real added
    constraint (2026-10-02, ADR 0031): JS-rendering fallback for URL/
    crawl ingestion needs a real Chromium binary available wherever this
    app runs, so whichever target is picked must support that.
@@ -98,6 +94,11 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
 
 ## Resolved
 
+- ~~Hosted SaaS vs. also self-hostable?~~ — hosted SaaS only, no
+  self-hosted deployment option (2026-10-11, surfaced by a docs
+  critique rather than genuinely re-litigated — the architecture, RLS
+  multi-tenancy against one shared database and BYOA scoped to API
+  keys only, had already answered this in practice). See ADR 0039.
 - ~~Which vertical templates ship first~~ — ecommerce ships first as the
   only concrete v1 template; core stays generic throughout. See
   `docs/product-spec.md` § Phasing.

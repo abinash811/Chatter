@@ -254,6 +254,11 @@ engine" — the same discipline guardrail #2 requires for verticals,
 applied here to every future setting.
 
 ### 6. Multi-tenancy — implemented
+- **Hosted SaaS only** (ADR 0039, 2026-10-11): one instance, one shared
+  database, every org RLS-isolated within it — never a per-business
+  deployable unit. There is no self-hosted product option, now or
+  planned. BYOA (ADR 0012) stays scoped to a business bringing its own
+  Anthropic API key/billing account, not infrastructure.
 - Org/business → bot(s) → conversations, with role-based dashboard access
   (`owner`/`admin`/`member` per org, via `Membership`).
 - Tenant isolation (guardrail #1) is enforced by **Postgres Row-Level
@@ -334,6 +339,7 @@ Business owner → Admin dashboard → Backend API (auth'd to their org)
 
 ## Explicitly not decided yet
 
-See `docs/open-questions.md`. Highlights: hosting model (SaaS vs.
-self-hostable), concrete stack (frontend/backend/DB/vector store), auth
-approach, and how action tools reach a business's real systems.
+See `docs/open-questions.md` for the current list — stack, auth, hosting
+model (ADR 0039), and how action tools reach a business's real systems
+are all resolved by now; the remaining open items are narrower (app
+compute platform, nudges scope, pricing display, etc.).
