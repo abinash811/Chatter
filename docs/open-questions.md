@@ -91,6 +91,37 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
   when a business brings its own LLM key) rather than silently building
   around it. BYOA itself shipped (ADR 0012); the pricing question is
   still open.
+- **Internationalization (i18n/l10n)** — flagged 2026-10-11 by a docs
+  critique, not asked about before. Nothing in this codebase or any doc
+  addresses translated console/widget copy, locale-aware date/currency
+  formatting, or RTL — yet `docs/product-spec.md`'s own named
+  inspiration, Zipchat AI, is described there as supporting 95+
+  languages. Needs real scoping before an ADR: does the *console* need
+  translation (who are business owners expected to be), does the
+  *widget* need per-visitor language detection/switching independent of
+  the console's language, and is this a v1 gap or a deliberately
+  deferred one — right now it's neither, it's just unaddressed.
+- **Data residency / regional hosting** — flagged 2026-10-11. `docs/open-
+  questions.md` #8 (app compute platform) picks AWS region/compute
+  purely on ops convenience; nothing anywhere addresses whether an EU
+  (or other region's) business needs its data to physically stay in
+  that region. Distinct from #8 — that's where *our* instance runs by
+  default, this is whether a business ever needs a say in where *their*
+  data lives. Not needed until there's real demand from a specific
+  market, but currently invisible as a question rather than honestly
+  deferred.
+- **GDPR/CCPA data-subject rights (export/delete personal data)** —
+  flagged 2026-10-11, and a real, not-yet-noticed tension: ADR 0018
+  (bot archiving) deliberately preserves every conversation/lead's PII
+  forever, justified by guardrail #6's traceability requirement — but
+  nothing anywhere defines a deletion or export path for a visitor's or
+  lead's personal data. "Keep everything forever for traceability" and
+  "honor a deletion request" are headed for direct conflict the first
+  time either a regulator or a business operating under GDPR/CCPA asks
+  for one. Needs a real decision before it's a launch blocker, not
+  after: does a deletion request anonymize `Message`/`Lead` rows in
+  place (keeping the traceability shape, losing the PII), hard-delete
+  them (losing traceability for that conversation), or something else?
 
 ## Resolved
 

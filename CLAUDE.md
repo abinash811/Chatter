@@ -841,7 +841,9 @@ reason.)
 - `docs/security.md` — tenant isolation, auth, secrets, traceability
 - `docs/accessibility.md` — concrete usability rules
 - `docs/adr/` — Architecture Decision Records; template at
-  `docs/adr/template.md`
+  `docs/adr/template.md`. **Check `docs/adr/README.md` first** — a
+  one-line-per-ADR index of current vs. superseded status, so you don't
+  have to open all 39 files to know which third are dead.
 - `docs/research/` — competitive/technical research;
   `current-practices.md` is checked before adopting any new pattern
 - `docs/open-questions.md` — decisions not yet made; owner is the user

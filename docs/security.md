@@ -133,6 +133,20 @@ single instance's map can't see another instance's count.
   isolation is ever found broken in production).
 - Key-rotation tooling for `ENCRYPTION_KEY` (ADR 0012) — rotating it
   today means re-encrypting every stored secret by hand.
+- **No backup/disaster-recovery policy** — no documented RPO/RTO, no
+  verified restore process. A real pre-launch gap, not a decision made
+  either way.
+- **No GDPR/CCPA data-subject-rights path** (flagged 2026-10-11,
+  `docs/open-questions.md`'s "Not yet asked" section is the canonical
+  home for this — don't restate the question here). A real, unexamined
+  tension: ADR 0018 keeps every conversation/lead's PII forever for
+  guardrail #6 traceability, and nothing defines a deletion or export
+  path for a visitor's or lead's personal data. Needs a real decision
+  before this product operates anywhere GDPR/CCPA applies.
+- **No data-residency story** (`docs/open-questions.md`'s "Not yet
+  asked" section) — nothing addresses whether a business ever needs its
+  data to stay in a specific region; today's hosting is wherever
+  `docs/open-questions.md` #8's app-compute decision lands, full stop.
 - **URL knowledge ingestion's SSRF guard is partial, not complete**
   (ADR 0013, `lib/ai/extraction.ts`'s `assertPublicHttpUrl`). It checks
   the literal hostname a business owner types against `localhost`/
