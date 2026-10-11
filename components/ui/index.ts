@@ -93,6 +93,7 @@ export {
 export { Separator } from "./separator";
 export { Avatar, AvatarImage, AvatarFallback, AvatarGroup, AvatarGroupCount, AvatarBadge } from "./avatar";
 export { Skeleton } from "./skeleton";
+export { Slider } from "./slider";
 export {
   Sidebar,
   SidebarContent,

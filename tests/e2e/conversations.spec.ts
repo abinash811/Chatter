@@ -1,7 +1,9 @@
 import { test, expect } from "@playwright/test";
-import { signUpAndCreateBot, seedConversations } from "./helpers";
+import { signUpAndCreateBot, seedConversations, createSecondBot } from "./helpers";
 
-// ADR 0015: the conversation inbox is dashboard-only for v1, no email/
+// ADR 0027: split-pane Activity layout (list left, Chat/Details panel
+// right) — recreated from Chatbase's own real docs, not guessed. ADR
+// 0015: the conversation inbox is dashboard-only for v1, no email/
 // Slack channel. Conversations can't be created through the console UI
 // (they're only written by the widget chat API, which needs a real
 // ANTHROPIC_API_KEY — a placeholder in this environment, same class of
@@ -25,8 +27,10 @@ test("seeded conversations appear in the list with the right issue indicator", a
 
   await page.goto("/conversations");
   await expect(page.getByRole("heading", { name: "Conversations" })).toBeVisible();
-  await expect(page.locator("table tbody tr")).toHaveCount(2);
-  await expect(page.locator("table tbody").getByText("Issue", { exact: true })).toBeVisible();
+  const list = page.locator('[data-slot="conversation-list"]');
+  await expect(list.locator("> li")).toHaveCount(3);
+  await expect(list.getByText("Issue", { exact: true })).toBeVisible();
+  await expect(list.getByText("Paused", { exact: true })).toBeVisible();
 });
 
 test("has-an-issue filter narrows the list to just the issue conversation", async ({ page }) => {
@@ -37,8 +41,23 @@ test("has-an-issue filter narrows the list to just the issue conversation", asyn
   await page.goto("/conversations");
   await page.locator("#issues-only").click();
   await expect(page).toHaveURL(/issues=1/);
-  await expect(page.locator("table tbody tr")).toHaveCount(1);
-  await expect(page.locator("table tbody").getByText("Issue", { exact: true })).toBeVisible();
+  const list = page.locator('[data-slot="conversation-list"]');
+  await expect(list.locator("> li")).toHaveCount(1);
+  await expect(list.getByText("Issue", { exact: true })).toBeVisible();
+});
+
+test("status filter narrows the list to just the paused conversation", async ({ page }) => {
+  await signUpAndCreateBot(page, "Status Filter Bot");
+  const botId = page.url().split("/bots/")[1];
+  await seedConversations(botId);
+
+  await page.goto("/conversations");
+  await page.getByRole("combobox", { name: "Filter by status" }).click();
+  await page.getByRole("option", { name: "Paused" }).click();
+  await expect(page).toHaveURL(/status=paused/);
+  const list = page.locator('[data-slot="conversation-list"]');
+  await expect(list.locator("> li")).toHaveCount(1);
+  await expect(list.getByText("Paused", { exact: true })).toBeVisible();
 });
 
 test("bot filter narrows the list to only the selected bot's conversations", async ({ page }) => {
@@ -47,12 +66,10 @@ test("bot filter narrows the list to only the selected bot's conversations", asy
   await seedConversations(botIdA);
 
   // A second bot in the same org, with no conversations of its own.
-  await page.goto("/bots");
-  await page.fill('input[name="name"]', "Bot Without Conversations");
-  await Promise.all([page.waitForURL(/\/bots\/[^/]+$/), page.click('button:has-text("New bot")')]);
+  await createSecondBot(page, "Bot Without Conversations");
 
   await page.goto("/conversations");
-  await expect(page.locator("table tbody tr")).toHaveCount(2);
+  await expect(page.locator('[data-slot="conversation-list"] > li')).toHaveCount(3);
 
   await page.locator('[data-slot="select-trigger"]').first().click();
   await page.locator('[data-slot="select-item"]', { hasText: "Bot Without Conversations" }).click();
@@ -60,28 +77,73 @@ test("bot filter narrows the list to only the selected bot's conversations", asy
   await expect(page.getByText("No conversations yet")).toBeVisible();
 });
 
-test("clicking a conversation row opens the full transcript with a plain-language tool call summary", async ({
-  page,
-}) => {
+test("clicking a conversation opens the Chat tab with a plain-language tool call summary", async ({ page }) => {
   await signUpAndCreateBot(page, "Detail View Bot");
   const botId = page.url().split("/bots/")[1];
   const { issueConversationId } = await seedConversations(botId);
 
   await page.goto("/conversations");
-  await page.locator("#issues-only").click();
-  await expect(page).toHaveURL(/issues=1/);
-  await page.locator("table tbody tr").first().click();
+  await page.getByText("Where is my order").click();
   await expect(page).toHaveURL(new RegExp(`/conversations/${issueConversationId}$`));
 
-  await expect(page.getByText("Where is my order #ORD1234?")).toBeVisible();
-  await expect(page.getByText(/Handed off to a human/)).toBeVisible();
-  await expect(page.getByText("Issue", { exact: true })).toBeVisible();
+  const chatPanel = page.getByRole("tabpanel", { name: "Chat" });
+  await expect(chatPanel.getByText("Where is my order #ORD1234?")).toBeVisible();
+  await expect(chatPanel.getByText(/Handed off to a human/)).toBeVisible();
 
   // The raw toolName/JSON is real (guardrail #6 traceability) but tucked
   // behind a disclosure, not shown by default to a non-technical reviewer.
-  await expect(page.getByText("check_order_status")).not.toBeVisible();
+  await expect(chatPanel.getByText("check_order_status")).not.toBeVisible();
   await page.click("summary:has-text('Technical details')");
-  await expect(page.getByText("check_order_status")).toBeVisible();
+  await expect(chatPanel.getByText("check_order_status")).toBeVisible();
+});
+
+test("Details tab shows Source, Status, and honest Not analyzed/Not tracked states", async ({ page }) => {
+  await signUpAndCreateBot(page, "Details Tab Bot");
+  const botId = page.url().split("/bots/")[1];
+  const { normalConversationId } = await seedConversations(botId);
+
+  await page.goto(`/conversations/${normalConversationId}`);
+  await page.getByRole("tab", { name: "Details" }).click();
+  const detailsPanel = page.getByRole("tabpanel");
+  await expect(detailsPanel.getByText("Anonymous")).toBeVisible();
+  await expect(detailsPanel.getByText("Widget", { exact: true })).toBeVisible();
+  await expect(detailsPanel.getByText("Ongoing")).toBeVisible();
+  await expect(detailsPanel.getByText("Not analyzed")).toBeVisible();
+  await expect(detailsPanel.getByText("Not tracked")).toBeVisible();
+  await expect(detailsPanel.getByText(normalConversationId)).toBeVisible();
+});
+
+test("pausing and resuming a conversation flips its status live", async ({ page }) => {
+  await signUpAndCreateBot(page, "Pause Resume Bot");
+  const botId = page.url().split("/bots/")[1];
+  const { normalConversationId } = await seedConversations(botId);
+
+  await page.goto(`/conversations/${normalConversationId}`);
+  await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "Pause", exact: true }).click();
+  await expect(page.getByText("Conversation paused.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Resume", exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "Resume", exact: true }).click();
+  await expect(page.getByText("Conversation resumed.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeVisible();
+});
+
+test("bulk select shows checkboxes and a selection count", async ({ page }) => {
+  await signUpAndCreateBot(page, "Bulk Select Bot");
+  const botId = page.url().split("/bots/")[1];
+  await seedConversations(botId);
+
+  await page.goto("/conversations");
+  await page.getByRole("button", { name: "More options" }).click();
+  await page.getByText("Select", { exact: true }).click();
+
+  const checkboxes = page.locator('[data-slot="conversation-list"] button[role="checkbox"]');
+  await expect(checkboxes).toHaveCount(3);
+  await checkboxes.first().click();
+  await checkboxes.nth(1).click();
+  await expect(page.getByText("2 selected")).toBeVisible();
 });
 
 test("a conversation from another org is not reachable by id (tenant isolation)", async ({ page, browser }) => {

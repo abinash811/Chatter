@@ -3,21 +3,14 @@
 Vertical-agnostic AI chat platform. See `CLAUDE.md` and `docs/` for
 product spec, architecture, and decisions (ADRs).
 
-## Deploying to Render (ADR 0005)
+## Deploying
 
-1. In the Render dashboard: **New → Blueprint**, connect this repo.
-   Render reads `render.yaml` and provisions the web service + Postgres
-   automatically, including running the idempotent migrations
-   (`prisma migrate deploy` + `scripts/apply-sql-migrations.mjs`) before
-   each deploy goes live.
-2. After the first deploy, note the assigned URL
-   (`https://<name>.onrender.com`).
-3. In the Render dashboard, fill in the env vars `render.yaml` leaves
-   blank (`sync: false`): `APP_BASE_URL` (the URL from step 2),
-   `ANTHROPIC_API_KEY`, `VOYAGE_API_KEY`, `SHOPIFY_CLIENT_ID`/
-   `SHOPIFY_CLIENT_SECRET`.
-4. Redeploy (or Render auto-redeploys on env var changes) once those
-   are set.
+No deploy target is chosen yet — ADR 0005's Render pick was dropped
+(ADR 0020, `docs/open-questions.md` #8). Whatever host is picked next
+needs: a Node runtime for the Next.js build, a Postgres instance with
+the `vector` extension installable, and a way to run `prisma migrate
+deploy` then `node scripts/apply-sql-migrations.mjs` (both idempotent —
+safe to run on every deploy) before each new instance takes traffic.
 
 ## What's scaffolded so far
 
@@ -48,8 +41,9 @@ product spec, architecture, and decisions (ADRs).
   `BotPublicKey`) and every tool call is logged (`ToolCallLog`).
 
 - Console app shell: `app/layout.tsx`, `app/globals.css` (design tokens
-  per `docs/architecture.md` §7 — finalized in ADR 0007, contrast
-  verified), `tailwind.config.ts`, `components/ui/` (Button, Badge).
+  per `docs/architecture.md` §7 — finalized in ADR 0014, contrast
+  verified), `tailwind.config.ts`, `components/ui/` (26 shadcn/ui
+  primitives, ADR 0017/0025).
   First real screen:
   `app/(console)/bots/page.tsx`, a Linear-register dense bot list.
 - Console auth (ADR 0006, superseding ADR 0004): email + password via
@@ -58,10 +52,10 @@ product spec, architecture, and decisions (ADRs).
   `app/login/page.tsx` and `app/signup/page.tsx` are the real entry
   points.
 
-- Shopify connect flow, end to end: `app/(console)/bots/[botId]/
-  integrations/page.tsx` (generic — renders whatever
-  `listIntegrationProviders()` and each provider's `connectFields`
-  describe, no Shopify-specific UI) and
+- Shopify connect flow, end to end: `app/(console)/integrations/
+  page.tsx` (org-wide, not nested under a bot — ADR 0038; generic,
+  renders whatever `listIntegrationProviders()` and each provider's
+  `connectFields` describe, no Shopify-specific UI) and
   `app/api/integrations/[provider]/callback/route.ts`. `state` (not the
   console session) carries orgId/botId through the OAuth redirect —
   `handleCallback` decodes and returns them, so the callback route never
@@ -81,17 +75,47 @@ product spec, architecture, and decisions (ADRs).
   that was missing before, `searchKnowledgeBaseTool` had real retrieval
   but nothing ever wrote a row to search; file upload (PDF/DOCX/`.txt`/
   `.md`) and single-URL ingestion (`jsdom`+`@mozilla/readability`) round
-  out `docs/product-spec.md`'s MVP scope. ADR 0013. Site crawling stays
-  separate, still open.
+  out `docs/product-spec.md`'s MVP scope. ADR 0013. Real multi-page
+  site crawling (sitemap-first, robots.txt-respecting, behind a
+  swappable interface) shipped separately — ADR 0030, with a
+  JS-rendering fallback (ADR 0031) and a Firecrawl last-resort fallback
+  (ADR 0032).
 
 - Onboarding + optional BYOA (bring your own Claude API key): `lib/
   onboarding.ts`, `app/onboarding/`, `app/(console)/settings/`,
   `lib/crypto.ts` (secrets encryption at rest — also closes the old
   plaintext-`Integration.accessToken` gap). ADR 0012.
 
-Not yet built: site crawling, teammate invites/multi-org switcher, the
-appearance/theming editor (persona + guardrails + tools only for now).
-Still blocked on the remaining items in `docs/open-questions.md`.
+- Six action tools total in `lib/ai/tools/`: `checkOrderStatus.ts`,
+  `collectLead.ts`, `customAction.ts` (ADR 0022, org-defined webhook
+  calls), `cancelOrder.ts`/`requestRefund.ts` (ADR 0023/the same
+  pattern reused for refunds) and `searchKnowledgeBase.ts`. The two
+  write-capable ones never call Shopify directly — they queue a
+  `PendingAction` for human approval at `app/(console)/approvals/`
+  instead. `widget.ts` backs ADR 0028's schema-driven in-chat forms
+  (an optional real API call on submit, write-capable submissions
+  approval-gated the same way).
+
+- Conversation inbox: `app/(console)/conversations/` — a split-pane
+  activity view (ADR 0027) with plain-language issue detection
+  (ADR 0015/0016), real pause/resume, and Widget-vs-Playground
+  tracking.
+
+- Guardrails Phase 1: `lib/rateLimit.ts` — opt-in rate limiting and
+  spam detection (ADR 0029). Country/IP blocking still open,
+  `docs/open-questions.md` #10.
+
+- RAG hardening beyond the baseline retrieval above: HNSW index,
+  batched embeddings, query rewriting, hybrid search via RRF
+  (ADR 0021), and reranking via Voyage `rerank-2` (ADR 0035) — all in
+  `lib/ai/tools/searchKnowledgeBase.ts` and its supporting modules.
+
+- One-click demo data: `lib/demoData.ts` seeds a fully populated
+  example bot from the bots list.
+
+Not yet built: password reset, teammate invites/multi-org switcher,
+scheduled re-crawling for Data sources (ADR 0030). Still blocked on the
+remaining items in `docs/open-questions.md`.
 
 ## Local setup
 
@@ -111,10 +135,10 @@ Verified end to end on 2026-09-23 (see "Verified by a real run" below).
    app role can't do this itself, even with `CREATEDB`.
 6. `node scripts/apply-sql-migrations.mjs` — applies
    `db/migrations/0001_init_rls.sql` then `0002_pgvector.sql` (RLS and
-   pgvector aren't things Prisma manages directly). The same script
-   Render's `preDeployCommand` and CI run — confirmed idempotent, so
-   re-running it after any `db:migrate` that adds a new tenant-scoped
-   table is always safe.
+   pgvector aren't things Prisma manages directly). The same script CI
+   runs (and whatever deploy pipeline eventually exists — see
+   "Deploying" above) — confirmed idempotent, so re-running it after any
+   `db:migrate` that adds a new tenant-scoped table is always safe.
 7. Set `ANTHROPIC_API_KEY` for `lib/ai/gateway.ts`.
 8. Set `AUTH_SECRET` (any random string — `npx auth secret` generates
    one) for console login. No external app registration needed — visit
@@ -175,7 +199,7 @@ neither catchable by reading the code or by `tsc`:
 
 - **Auth.js rejected `localhost` as an untrusted host.** `signIn()`
   silently failed with `UntrustedHost` on every attempt — Auth.js won't
-  trust the request's `Host` header (needed behind Render's proxy and
+  trust the request's `Host` header (needed behind any reverse proxy and
   for any non-Vercel deployment, dev included) unless told to. This had
   been true since ADR 0004 too; it just was never caught because the
   Google OAuth flow was never actually driven end to end (see the
@@ -218,13 +242,16 @@ Deterministic checks + a browser canary, run at three points so a
 violation is caught as early and as cheaply as possible — reading code
 alone doesn't catch any of these (see "Verified by a real run" above):
 
-- **`.claude/skills/`** (`bot-engine-build`, `console-frontend-build`,
-  `ship-checklist`) — read by Claude Code before touching the relevant
-  layer, so the patterns are followed on the way in, not just checked on
-  the way out.
-- **`.githooks/pre-commit`** — `npm run check:all` + typecheck, before a
-  commit is even made. One-time setup per clone:
-  `git config core.hooksPath .githooks`.
+- **`.claude/rules/`** (`bot-engine.md`, `console-frontend.md`,
+  path-scoped to `lib/ai/`+`lib/integrations/` and `app/(console)/`+
+  `components/ui/` respectively) plus **`.claude/skills/ship-checklist`**
+  — the rules load automatically the moment Claude Code touches a
+  matching file (no reliance on remembering to invoke them), so the
+  patterns are followed on the way in, not just checked on the way out.
+- **`.githooks/pre-commit`** — `npm run check:all` + typecheck + unit
+  tests, before a commit is even made. Installed automatically by
+  `npm install` (`package.json`'s `prepare` script sets
+  `core.hooksPath`) — nothing to configure by hand per clone anymore.
 - **`.github/workflows/ci.yml`** — the same checks plus the RLS
   verification and browser canary, against a real Postgres+pgvector
   service, on every push — the backstop for anything that reaches GitHub

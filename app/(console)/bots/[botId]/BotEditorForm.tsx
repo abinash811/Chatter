@@ -1,14 +1,14 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { Search, UserPlus, Package, Undo2, Wrench, type LucideIcon } from "lucide-react";
 import { saveDraftAction, publishAction, type SaveDraftState } from "./actions";
 import {
   Button,
-  Input,
   Textarea,
   Label,
-  Checkbox,
+  Switch,
   Badge,
   Card,
   CardHeader,
@@ -26,9 +26,37 @@ import {
   DialogDescription,
   DialogFooter,
   DialogClose,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui";
+import { OptionCard } from "@/components/console/OptionCard";
+import type { AvatarEmoji, WidgetPosition } from "@/lib/ai/appearanceOptions";
+import { PERSONA_TEMPLATES } from "@/lib/ai/personaTemplates";
+import { AppearanceTabContent } from "./AppearanceTabContent";
+import { ModelTabContent } from "./ModelTabContent";
+import { AbuseProtectionTabContent } from "./AbuseProtectionTabContent";
+import { PreviewSheet } from "./PreviewSheet";
+import type { AbuseProtectionConfig } from "@/lib/ai/abuseProtectionOptions";
 
 const idleState: SaveDraftState = { status: "idle", message: null };
+
+// Presentation-only lookup (console layer, not the core engine — the
+// tool registry itself stays generic, guardrail #2) — an icon per known
+// built-in tool, matching Chatbase's own Actions-page card language
+// (docs/research/competitive-landscape.md's 2026-09-27 update). Any
+// tool not listed here (a future addition) still renders correctly with
+// the generic Wrench fallback — this map is cosmetic, never a gate on
+// which tools are usable.
+const TOOL_ICONS: Record<string, LucideIcon> = {
+  search_knowledge_base: Search,
+  collect_lead: UserPlus,
+  check_order_status: Package,
+  request_order_cancellation: Undo2,
+  request_refund: Undo2,
+};
 
 // Toasts on every save/publish outcome (previously silent either way —
 // see CLAUDE.md's known-gaps history). Message text is plain language on
@@ -48,24 +76,34 @@ function useActionToast(state: SaveDraftState) {
 // not their healthcare content.
 export function BotEditorForm({
   botId,
-  botName,
   publishedVersion,
   persona,
   guardrails,
+  model,
+  temperature,
   tools,
   greeting,
   accentColor,
+  avatarEmoji,
+  position,
+  suggestedReplies,
   embedSnippet,
+  abuseProtection,
 }: {
   botId: string;
-  botName: string;
   publishedVersion: number | null;
   persona: string;
   guardrails: string;
+  model: string;
+  temperature: number;
   tools: { name: string; description: string; enabled: boolean }[];
   greeting: string;
   accentColor: string;
+  avatarEmoji: AvatarEmoji;
+  position: WidgetPosition;
+  suggestedReplies: string[];
   embedSnippet: string;
+  abuseProtection: AbuseProtectionConfig;
 }) {
   const [saveState, saveFormAction, isSaving] = useActionState(saveDraftAction.bind(null, botId), idleState);
   const [publishState, publishFormAction, isPublishing] = useActionState(
@@ -73,6 +111,7 @@ export function BotEditorForm({
     idleState,
   );
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
+  const personaRef = useRef<HTMLTextAreaElement>(null);
   useActionToast(saveState);
   useActionToast(publishState);
 
@@ -83,17 +122,17 @@ export function BotEditorForm({
   return (
     <div className="mx-auto max-w-2xl">
       <div className="flex h-row items-center justify-between">
-        <div className="flex items-center gap-2">
-          <h1 className="text-lg font-semibold">{botName}</h1>
+        {/* ADR 0037: the bot name + switcher now live in AppSidebar's
+            contextual sub-nav, not a page-level top bar — this is a
+            real page title like every other bot-scoped page's own h1,
+            paired with the publish-status badge since both are
+            page-level facts about the editor specifically. */}
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-semibold tracking-tight">Editor</h1>
           <Badge variant="muted">{publishedVersion ? `Published v${publishedVersion}` : "Never published"}</Badge>
         </div>
         <div className="flex items-center gap-3">
-          <a href={`/bots/${botId}/knowledge`} className="text-sm text-muted-foreground hover:underline">
-            Knowledge
-          </a>
-          <a href={`/bots/${botId}/integrations`} className="text-sm text-muted-foreground hover:underline">
-            Integrations
-          </a>
+          <PreviewSheet botId={botId} published={publishedVersion !== null} />
           <Button type="submit" form="bot-editor-form" variant="outline" size="sm" disabled={isSaving}>
             {isSaving ? "Saving..." : "Save draft"}
           </Button>
@@ -135,7 +174,7 @@ export function BotEditorForm({
             <TabsTrigger value="appearance">Appearance</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="persona" forceMount className="mt-4">
+          <TabsContent value="persona" forceMount className="mt-4 space-y-4 data-[state=inactive]:hidden">
             <Card>
               <CardHeader>
                 <CardTitle>Persona</CardTitle>
@@ -143,16 +182,43 @@ export function BotEditorForm({
                   How should your bot introduce itself and talk to visitors? Write it in your own words.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <Label htmlFor="persona" className="sr-only">
-                  Persona
-                </Label>
-                <Textarea id="persona" name="persona" defaultValue={persona} rows={6} />
+              <CardContent className="space-y-3">
+                <div>
+                  <Label htmlFor="personaTemplate">Start from a template</Label>
+                  <Select
+                    onValueChange={(templateId) => {
+                      const template = PERSONA_TEMPLATES.find((t) => t.id === templateId);
+                      if (template && personaRef.current) {
+                        personaRef.current.value = template.persona;
+                      }
+                    }}
+                  >
+                    <SelectTrigger id="personaTemplate" className="mt-1 w-56" aria-label="Start from a template">
+                      <SelectValue placeholder="Choose a starting point..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PERSONA_TEMPLATES.map((template) => (
+                        <SelectItem key={template.id} value={template.id}>
+                          {template.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="mt-1 text-xs text-muted-foreground">Replaces the text below — edit freely after.</p>
+                </div>
+                <div>
+                  <Label htmlFor="persona" className="sr-only">
+                    Persona
+                  </Label>
+                  <Textarea id="persona" name="persona" defaultValue={persona} rows={6} ref={personaRef} />
+                </div>
               </CardContent>
             </Card>
+
+            <ModelTabContent model={model} temperature={temperature} />
           </TabsContent>
 
-          <TabsContent value="guardrails" forceMount className="mt-4">
+          <TabsContent value="guardrails" forceMount className="mt-4 data-[state=inactive]:hidden">
             <Card>
               <CardHeader>
                 <CardTitle>Guardrails</CardTitle>
@@ -168,66 +234,47 @@ export function BotEditorForm({
                 <Textarea id="guardrails" name="guardrails" defaultValue={guardrails} rows={5} />
               </CardContent>
             </Card>
+
+            <div className="mt-4">
+              <AbuseProtectionTabContent abuseProtection={abuseProtection} />
+            </div>
           </TabsContent>
 
-          <TabsContent value="tools" forceMount className="mt-4">
+          <TabsContent value="tools" forceMount className="mt-4 data-[state=inactive]:hidden">
             <Card>
               <CardHeader>
                 <CardTitle>Tools</CardTitle>
                 <CardDescription>What your bot can look up or do while chatting.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-2">
+              <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {tools.map((tool) => (
-                  <Label
+                  <OptionCard
                     key={tool.name}
-                    className="flex items-center gap-2 rounded px-1 py-1.5 font-normal transition-colors hover:bg-muted"
-                  >
-                    <Checkbox name={`tool_${tool.name}`} defaultChecked={tool.enabled} />
-                    {tool.name}
-                    <span className="text-muted-foreground">— {tool.description}</span>
-                  </Label>
+                    icon={TOOL_ICONS[tool.name] ?? Wrench}
+                    title={tool.name}
+                    description={tool.description}
+                    trailing={
+                      <Switch
+                        name={`tool_${tool.name}`}
+                        defaultChecked={tool.enabled}
+                        aria-label={`${tool.enabled ? "Disable" : "Enable"} ${tool.name}`}
+                      />
+                    }
+                  />
                 ))}
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="appearance" forceMount className="mt-4 space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Appearance</CardTitle>
-                <CardDescription>
-                  What visitors see before they've sent a message, and the widget's accent color.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <Label htmlFor="greeting">Greeting</Label>
-                  <Input id="greeting" name="greeting" defaultValue={greeting} className="mt-1" />
-                </div>
-                <div>
-                  <Label htmlFor="accentColor">Accent color</Label>
-                  <input
-                    id="accentColor"
-                    type="color"
-                    name="accentColor"
-                    defaultValue={accentColor}
-                    className="mt-1 block h-row-sm w-16 rounded border border-border bg-transparent shadow-xs transition-colors hover:border-strong-border"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Embed on your site</CardTitle>
-                <CardDescription>
-                  Paste this before the closing <code>&lt;/body&gt;</code> tag on any page.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <pre className="overflow-x-auto rounded bg-muted p-3 text-xs">{embedSnippet}</pre>
-              </CardContent>
-            </Card>
+          <TabsContent value="appearance" forceMount className="mt-4 space-y-4 data-[state=inactive]:hidden">
+            <AppearanceTabContent
+              greeting={greeting}
+              accentColor={accentColor}
+              avatarEmoji={avatarEmoji}
+              position={position}
+              suggestedReplies={suggestedReplies}
+              embedSnippet={embedSnippet}
+            />
           </TabsContent>
         </Tabs>
       </form>

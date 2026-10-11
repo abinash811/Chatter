@@ -30,6 +30,10 @@ export interface GenerateReplyParams {
   cachedSystemPrompt: string;
   messages: ModelMessage[];
   tools?: ModelTool[];
+  /** A specific model ID (e.g. "claude-sonnet-5"). Omit to use this gateway's own default. */
+  model?: string;
+  /** 0-1, matching Anthropic's own range. Omit to use the API's default (1). */
+  temperature?: number;
 }
 
 export interface GenerateReplyResult {
@@ -68,8 +72,9 @@ class ClaudeGateway implements ModelGateway {
 
   async generateReply(params: GenerateReplyParams): Promise<GenerateReplyResult> {
     const response = await this.client.messages.create({
-      model: "claude-sonnet-5",
+      model: params.model ?? "claude-sonnet-5",
       max_tokens: 4096,
+      ...(params.temperature !== undefined ? { temperature: params.temperature } : {}),
       thinking: { type: "adaptive" },
       system: [
         {

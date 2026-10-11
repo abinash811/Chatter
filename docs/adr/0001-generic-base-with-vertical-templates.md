@@ -1,6 +1,8 @@
 # ADR 0001: Generic knowledge/config base with vertical templates on top
 
-Status: accepted
+Status: superseded by ADR 0019 (the vertical-template layer itself is
+dropped; the generic core / no-industry-branches-in-the-engine parts of
+this decision still hold, restated in ADR 0019)
 
 Date: 2026-09-14
 

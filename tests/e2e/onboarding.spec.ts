@@ -12,7 +12,13 @@ test("a brand-new signup is redirected to onboarding, not dropped on an empty /b
   await page.fill('input[name="confirmPassword"]', PASSWORD);
   await page.click('button[type="submit"]');
   await expect(page).toHaveURL(/\/onboarding$/);
-  await expect(page.getByText("Welcome to Chatter")).toBeVisible();
+  // getByRole("heading", ...), not getByText — Next's RouteAnnouncer
+  // echoes the new page's heading text into a second, visually-hidden
+  // element on client-side navigation, so a bare text locator
+  // intermittently hits a real strict-mode violation (2 elements) once
+  // it settles. See accessibility.spec.ts's onboarding test for the
+  // full reasoning.
+  await expect(page.getByRole("heading", { name: "Welcome to Chatter" })).toBeVisible();
 });
 
 test("the workspace name field is prefilled with the auto-generated default, editable", async ({ page }) => {
@@ -54,7 +60,10 @@ test("completing onboarding sets the workspace name and lands straight in the ne
   await page.click('button:has-text("Continue")');
 
   await expect(page).toHaveURL(/\/bots\/[^/]+$/);
-  await expect(page.getByText("Support bot")).toBeVisible();
+  // getByText would match twice — the (sr-only) page heading
+  // (bots/[botId]/layout.tsx) and the sidebar bot-switcher combobox
+  // (AppSidebar.tsx, ADR 0037) — so assert on the heading specifically.
+  await expect(page.getByRole("heading", { name: "Support bot" })).toBeVisible();
 
   // The name set here shows up in Settings — onboarding and Settings
   // both write the same Org.name field.

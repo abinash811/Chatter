@@ -1,0 +1,18 @@
+{
+  "_comment": "Which docs/design/audit.md row name each console route must appear under, in both the Depth/polish table and the Responsive & accessibility table. scripts/check-audit-coverage.mjs fails if a route in register-manifest.json has no entry here, or if its name doesn't appear in both tables — set up 2026-10-11 after a direct root-cause finding: every real design bug in this project's history was caught by a screenshot taken AFTER shipping, never before, because nothing forced a screen's audit.md row to exist before calling it done. This doesn't replace the actual critique (that's still a judgment call a human or an agent has to do for real, see .claude/rules/console-frontend.md item 8) — it closes the narrower, mechanical half: a screen can no longer ship with its audit.md row simply missing or never created, the same failure mode check-register-assignment.mjs already closed for register assignment. Each value is an array [depthPolishRowName, accessibilityRowName] since the two tables don't always use identical row names for the same screen (a pre-existing inconsistency, not introduced here) — both must be a real row, but they don't have to be spelled identically.",
+  "app/(console)/bots/page.tsx": ["Bots list", "Bots list"],
+  "app/(console)/bots/archived/page.tsx": ["Archived bots", "Archived bots"],
+  "app/(console)/conversations/page.tsx": ["Conversations list", "Conversations list/detail"],
+  "app/(console)/conversations/[conversationId]/page.tsx": ["Conversation detail", "Conversations list/detail"],
+  "app/(console)/leads/page.tsx": ["Leads", "Leads"],
+  "app/(console)/approvals/page.tsx": ["Approvals", "Approvals"],
+  "app/(console)/bots/[botId]/page.tsx": ["Bot editor", "Bot editor"],
+  "app/(console)/bots/[botId]/knowledge/page.tsx": ["Knowledge", "Knowledge"],
+  "app/(console)/bots/[botId]/actions/page.tsx": ["Actions", "Actions"],
+  "app/(console)/bots/[botId]/widgets/page.tsx": ["Widgets", "Widgets"],
+  "app/(console)/integrations/page.tsx": ["Integrations", "Integrations"],
+  "app/(console)/settings/page.tsx": ["Settings", "Settings"],
+  "_exempt": {
+    "app/(console)/design-system/page.tsx": "dev-only self-referential reference page (docs/roadmap.md's 'Before production launch' — removed before going live), not a real product screen to audit against its own documentation"
+  }
+}

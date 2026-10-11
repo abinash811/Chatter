@@ -1,6 +1,6 @@
 # ADR 0014: shadcn/ui's official registry (not CARE) + Claude Console's real layout as design reference
 
-Status: accepted
+Status: accepted (its typography decision superseded by ADR 0036, 2026-10-02 — everything else here still stands)
 
 Date: 2026-09-26
 

@@ -1,6 +1,4 @@
-import { Prisma } from "@prisma/client";
-import { withOrgContext } from "@/lib/db";
-import { getEmbeddingsProvider } from "@/lib/ai/embeddings";
+import { retrieveKnowledgeChunks } from "@/lib/ai/retrieval";
 import { registerTool, type Tool } from "@/lib/ai/tools/registry";
 
 // Generic across every vertical (guardrail #2) — RAG retrieval as a tool
@@ -12,7 +10,19 @@ export const searchKnowledgeBaseTool: Tool = {
   inputSchema: {
     type: "object",
     properties: {
-      query: { type: "string", description: "What to search for." },
+      query: {
+        type: "string",
+        // Query rewriting (docs/ai-tech-radar.md's Retrieval & search
+        // section): the query is embedded and searched on its own, with
+        // no other conversation context — a bare follow-up like "what
+        // about international ones?" embeds and matches poorly on its
+        // own. Since this model already sees the full conversation when
+        // deciding to call this tool, the fix costs no new model call —
+        // just instructing it to resolve context into the query text
+        // itself before searching.
+        description:
+          "What to search for — a fully self-contained question, not a bare follow-up. Resolve any pronouns or implicit topic from earlier in the conversation into the query text itself. For example, if the visitor previously asked about the refund policy and then says \"what about international orders?\", search for \"refund policy for international orders\", not \"international orders\" alone.",
+      },
     },
     required: ["query"],
     additionalProperties: false,
@@ -20,22 +30,7 @@ export const searchKnowledgeBaseTool: Tool = {
 
   async handle(orgId, botId, input) {
     const query = input.query as string;
-    const embedding = await getEmbeddingsProvider().embed(query);
-    const vectorLiteral = `[${embedding.join(",")}]`;
-
-    // withOrgContext sets app.org_id for this transaction, so RLS already
-    // scopes this query to orgId — the botId filter narrows further to
-    // this specific bot's sources within that org.
-    const chunks = await withOrgContext(orgId, (tx) =>
-      tx.$queryRaw<{ content: string; kind: string; title: string }[]>(Prisma.sql`
-        select kc.content, ks.kind, ks.title
-        from knowledge_chunks kc
-        join knowledge_sources ks on ks.id = kc."sourceId"
-        where ks."botId" = ${botId}
-        order by kc.embedding <=> ${vectorLiteral}::vector
-        limit 5
-      `),
-    );
+    const chunks = await retrieveKnowledgeChunks(orgId, botId, query);
 
     if (chunks.length === 0) {
       return "No relevant information found in the knowledge base.";

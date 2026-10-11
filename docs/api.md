@@ -33,12 +33,17 @@ logged server-side, never leaked to this public endpoint)
 ### `GET /api/widget/config?botKey=...`
 
 Cosmetic config the widget needs before rendering (greeting text,
-accent color) — never persona/guardrails/anything internal
-(guardrail #5).
+accent color, avatar emoji, widget position) — never persona/
+guardrails/anything internal (guardrail #5).
 
 **Response `200`**
 ```json
-{ "greeting": "string", "accentColor": "string (hex)" }
+{
+  "greeting": "string",
+  "accentColor": "string (hex)",
+  "avatarEmoji": "string (one of lib/ai/appearanceOptions.ts's AVATAR_EMOJI_OPTIONS)",
+  "position": "\"bottom-right\" | \"bottom-left\""
+}
 ```
 
 **Errors**: `400` missing `botKey` · `401` invalid `botKey` · `429` rate
@@ -50,9 +55,9 @@ limit (60/min per IP) · `500` generic failure
 
 OAuth callback for connecting a business's platform (Shopify today).
 Never touches the console session — `state` (set when the authorize URL
-was built) carries `orgId`/`botId` through the redirect; see
-`docs/business-logic.md`. Redirects to `/bots/{botId}/integrations` on
-completion, doesn't return JSON.
+was built) carries `orgId` through the redirect; see
+`docs/business-logic.md`. Redirects to `/integrations` on completion
+(org-wide, not per-bot — ADR 0038), doesn't return JSON.
 
 ### `ALL /api/auth/[...nextauth]`
 

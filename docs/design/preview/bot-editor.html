@@ -14,14 +14,23 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
 
 .main { flex: 1; padding: 24px 32px 48px; max-width: 680px; }
 
+/* Shared bot-scoped top bar (components/console/BotTopBar.tsx,
+   2026-09-26) — bot switcher + Editor/Knowledge/Integrations nav,
+   persistent across all 3 bot-scoped pages, not just this one. Sits
+   above the page-specific action row below it. */
+.shell-topbar { display: flex; align-items: center; justify-content: space-between; padding: 0 0 12px; margin-bottom: 16px; border-bottom: 1px solid #e5e5e5; }
+.bot-switcher { font-size: 16px; font-weight: 600; color: #0a0a0c; display: flex; align-items: center; gap: 6px; }
+.bot-switcher .chevron { color: #a3a3a3; font-size: 12px; }
+.page-nav { display: flex; gap: 16px; }
+.page-nav .item { font-size: 13px; font-weight: 500; color: #737373; }
+.page-nav .item.active { color: #0a0a0c; }
+
 /* Sticky-feeling action bar — one save method visible at all times, per
    21st.dev's settings-page guidance: don't mix instant + explicit save,
    and keep the primary action (Publish) visually distinct. */
 .topbar { display: flex; align-items: center; justify-content: space-between; padding-bottom: 16px; border-bottom: 1px solid #e5e5e5; margin-bottom: 20px; }
-.bot-title { font-size: 18px; font-weight: 600; color: #0a0a0c; display: flex; align-items: center; gap: 10px; }
 .status-pill { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 4px; background: #f5f5f5; color: #737373; }
 .topbar-actions { display: flex; align-items: center; gap: 8px; }
-.link-muted { font-size: 13px; color: #737373; }
 .btn-outline { height: 32px; padding: 0 14px; border: 1px solid #e5e5e5; background: #fff; border-radius: 6px; font-size: 13px; font-weight: 500; color: #0a0a0c; }
 .btn-primary { height: 32px; padding: 0 14px; background: #065f46; color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 500; }
 
@@ -81,10 +90,13 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
   </div>
 
   <div class="main">
+    <div class="shell-topbar">
+      <div class="bot-switcher">Support bot <span class="chevron">&#9662;</span></div>
+      <div class="page-nav"><span class="item active">Editor</span><span class="item">Knowledge</span><span class="item">Integrations</span></div>
+    </div>
     <div class="topbar">
-      <div class="bot-title">Support bot <span class="status-pill">Published v3</span></div>
+      <div class="status-pill">Published v3</div>
       <div class="topbar-actions">
-        <span class="link-muted">Integrations</span>
         <button class="btn-outline">Save draft</button>
         <button class="btn-primary">Publish</button>
       </div>
@@ -100,6 +112,13 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     <div class="card">
       <div class="card-title">Persona</div>
       <div class="section-sub">How should your bot introduce itself and talk to visitors? Write it in your own words.</div>
+      <div class="field-row" style="margin-bottom:10px;">
+        <div class="field-col" style="flex:0 0 auto;">
+          <label class="field-label-sm">Start from a template</label>
+          <input class="field-input" value="Choose a starting point... &#9662;" readonly style="width:220px;"/>
+          <div style="font-size:11px; color:#a3a3a3; margin-top:4px;">Replaces the text below — edit freely after.</div>
+        </div>
+      </div>
       <textarea class="field-textarea" rows="6" readonly>You're a friendly, concise assistant for a small ecommerce shop. Keep replies short.</textarea>
     </div>
   </div>
@@ -117,10 +136,13 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     <div class="nav-item">Bots</div>
   </div>
   <div class="main">
+    <div class="shell-topbar">
+      <div class="bot-switcher">Support bot <span class="chevron">&#9662;</span></div>
+      <div class="page-nav"><span class="item active">Editor</span><span class="item">Knowledge</span><span class="item">Integrations</span></div>
+    </div>
     <div class="topbar">
-      <div class="bot-title">Support bot <span class="status-pill">Published v3</span></div>
+      <div class="status-pill">Published v3</div>
       <div class="topbar-actions">
-        <span class="link-muted">Integrations</span>
         <button class="btn-outline">Save draft</button>
         <button class="btn-primary">Publish</button>
       </div>
@@ -158,10 +180,13 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     <div class="nav-item">Bots</div>
   </div>
   <div class="main">
+    <div class="shell-topbar">
+      <div class="bot-switcher">Support bot <span class="chevron">&#9662;</span></div>
+      <div class="page-nav"><span class="item active">Editor</span><span class="item">Knowledge</span><span class="item">Integrations</span></div>
+    </div>
     <div class="topbar">
-      <div class="bot-title">Support bot <span class="status-pill">Published v3</span></div>
+      <div class="status-pill">Published v3</div>
       <div class="topbar-actions">
-        <span class="link-muted">Integrations</span>
         <button class="btn-outline">Save draft</button>
         <button class="btn-primary">Publish</button>
       </div>
@@ -175,14 +200,24 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     <div class="card">
       <div class="card-title">Appearance</div>
       <div class="section-sub">What visitors see before they've sent a message, and the widget's accent color.</div>
-      <div class="field-row">
-        <div class="field-col" style="flex:3;">
+      <div class="field-row" style="margin-bottom:12px;">
+        <div class="field-col" style="flex:1;">
           <label class="field-label-sm">Greeting</label>
           <input class="field-input" value="Hi! How can we help today?" readonly/>
         </div>
+      </div>
+      <div class="field-row">
         <div class="field-col" style="flex:0 0 auto;">
-          <label class="field-label-sm">Accent</label>
+          <label class="field-label-sm">Accent color</label>
           <div class="color-swatch"></div>
+        </div>
+        <div class="field-col" style="flex:0 0 auto;">
+          <label class="field-label-sm">Avatar</label>
+          <input class="field-input" value="&#128172; &#9662;" readonly style="width:70px; text-align:center;"/>
+        </div>
+        <div class="field-col" style="flex:0 0 auto;">
+          <label class="field-label-sm">Position on page</label>
+          <input class="field-input" value="Bottom right &#9662;" readonly style="width:150px;"/>
         </div>
       </div>
     </div>

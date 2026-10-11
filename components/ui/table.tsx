@@ -82,8 +82,16 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
   return (
     <th
       data-slot="table-head"
+      // Documented delta from shadcn's stock source (2026-10-02
+      // typography-consistency pass): text-xs/uppercase/tracking-wide/
+      // muted-foreground matches BotsTable.tsx's SortableHead label
+      // styling exactly, so every column header in the app reads the
+      // same way — sortable or not — instead of only Bots list/Data
+      // sources (sort-state-only, same visual gap) having the small-
+      // caps gray treatment while Leads/Actions/Widgets/Approvals
+      // rendered plain full-strength text-sm headers.
       className={cn(
-        "h-10 bg-soft-background px-2 text-left align-middle font-medium whitespace-nowrap text-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        "h-10 bg-soft-background px-2 text-left align-middle text-xs font-medium tracking-wide text-muted-foreground uppercase whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
         className
       )}
       {...props}

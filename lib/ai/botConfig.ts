@@ -1,5 +1,6 @@
 import type { PrismaClient, Prisma } from "@prisma/client";
 import { withOrgContext } from "@/lib/db";
+import { DEFAULT_MODEL_ID, DEFAULT_TEMPERATURE } from "./modelOptions";
 
 // Implements the draft/publish design from docs/architecture.md §5.
 //
@@ -14,14 +15,47 @@ import { withOrgContext } from "@/lib/db";
 // contrast against a business's chosen accentColor is not yet enforced
 // (docs/research/design-system-standards.md's open TODO) — v1 trusts
 // the default, doesn't validate a custom one.
+// Re-exported from appearanceOptions.ts (pure data, no server deps) so
+// existing server-side callers of botConfig.ts don't need a second
+// import path — see that file's header for why the split exists.
+export {
+  AVATAR_EMOJI_OPTIONS,
+  WIDGET_POSITIONS,
+  MAX_SUGGESTED_REPLIES,
+  type AvatarEmoji,
+  type WidgetPosition,
+} from "./appearanceOptions";
+import {
+  AVATAR_EMOJI_OPTIONS,
+  WIDGET_POSITIONS,
+  MAX_SUGGESTED_REPLIES,
+  type AvatarEmoji,
+  type WidgetPosition,
+} from "./appearanceOptions";
+export {
+  DEFAULT_ABUSE_PROTECTION,
+  parseAbuseProtection,
+  type AbuseProtectionConfig,
+} from "./abuseProtectionOptions";
+import { DEFAULT_ABUSE_PROTECTION, type AbuseProtectionConfig } from "./abuseProtectionOptions";
+
 export interface BotAppearance {
   greeting: string;
   accentColor: string;
+  avatarEmoji: AvatarEmoji;
+  position: WidgetPosition;
+  suggestedReplies: string[];
 }
 
-const DEFAULT_APPEARANCE: BotAppearance = {
+// Exported so callers (e.g. the sidebar's "Getting started" checklist)
+// can tell a genuinely customized appearance apart from the one every
+// draft is silently seeded with by getOrCreateDraft below.
+export const DEFAULT_APPEARANCE: BotAppearance = {
   greeting: "Hi! How can I help you today?",
   accentColor: "#065f46", // allow-raw-color — business-customizable default, not console UI (matches ADR 0008's emerald, not left over from ADR 0007's violet)
+  avatarEmoji: "💬",
+  position: "bottom-right",
+  suggestedReplies: [],
 };
 
 export function parseAppearance(value: Prisma.JsonValue): BotAppearance {
@@ -29,6 +63,11 @@ export function parseAppearance(value: Prisma.JsonValue): BotAppearance {
   return {
     greeting: v.greeting ?? DEFAULT_APPEARANCE.greeting,
     accentColor: v.accentColor ?? DEFAULT_APPEARANCE.accentColor,
+    avatarEmoji: v.avatarEmoji && AVATAR_EMOJI_OPTIONS.includes(v.avatarEmoji) ? v.avatarEmoji : DEFAULT_APPEARANCE.avatarEmoji,
+    position: v.position && WIDGET_POSITIONS.includes(v.position) ? v.position : DEFAULT_APPEARANCE.position,
+    suggestedReplies: Array.isArray(v.suggestedReplies)
+      ? v.suggestedReplies.filter((r): r is string => typeof r === "string" && r.trim().length > 0).slice(0, MAX_SUGGESTED_REPLIES)
+      : DEFAULT_APPEARANCE.suggestedReplies,
   };
 }
 
@@ -54,6 +93,9 @@ export async function getOrCreateDraft(orgId: string, botId: string) {
         guardrails: latestPublished?.guardrails ?? "",
         tools: latestPublished?.tools ?? [],
         appearance: (latestPublished?.appearance ?? DEFAULT_APPEARANCE) as Prisma.InputJsonValue,
+        model: latestPublished?.model ?? DEFAULT_MODEL_ID,
+        temperature: latestPublished?.temperature ?? DEFAULT_TEMPERATURE,
+        abuseProtection: (latestPublished?.abuseProtection ?? DEFAULT_ABUSE_PROTECTION) as Prisma.InputJsonValue,
       },
     });
   });
@@ -67,6 +109,9 @@ export async function saveDraft(
     guardrails: string;
     tools: string[];
     appearance: BotAppearance;
+    model: string;
+    temperature: number;
+    abuseProtection: AbuseProtectionConfig;
   },
 ) {
   const draft = await getOrCreateDraft(orgId, botId);
@@ -78,6 +123,9 @@ export async function saveDraft(
         guardrails: fields.guardrails,
         tools: fields.tools,
         appearance: fields.appearance as unknown as Prisma.InputJsonValue,
+        model: fields.model,
+        temperature: fields.temperature,
+        abuseProtection: fields.abuseProtection as unknown as Prisma.InputJsonValue,
       },
     }),
   );

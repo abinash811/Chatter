@@ -10,8 +10,10 @@ Q&A ingestion, `docs/business-logic.md`)
 Manual Q&A ingestion shipped first (one Q&A pair = one chunk, no real
 chunking needed). File/URL ingestion is the remaining MVP scope from
 `docs/product-spec.md`'s "file upload and/or manual Q&A at minimum for
-v1" — **not** site crawling (multi-page, link-following), which stays a
-separate, deferred question (`docs/open-questions.md` #4). This needed
+v1" — **not** site crawling (multi-page, link-following), which was a
+separate question at the time this was written and has since been
+built (ADR 0030, 2026-09-30 — see `docs/business-logic.md`'s
+"Multi-page site crawling" section). This needed
 three real technical choices — a PDF text extractor, a URL→readable-text
 approach, and a chunking strategy — none of which should be picked from
 training-data recall per CLAUDE.md's "check current practice" rule.
@@ -106,9 +108,9 @@ Implementation choices for Chatter's file/URL ingestion:
 - All three packages' versions must be re-verified with `npm view` at
   actual install time — this note's versions are current as of the
   research date and could drift before implementation lands.
-- This is explicitly single-file / single-URL ingestion, not crawling —
-  `docs/open-questions.md` #4 (site crawling) is unaffected by this
-  research and remains a separate, deferred decision.
+- This was explicitly single-file / single-URL ingestion, not crawling,
+  at the time this was written — site crawling was a separate decision
+  then, since resolved and built (ADR 0030).
 
 ## Update (2026-09-26) — DOCX and processing model resolved in ADR 0013
 

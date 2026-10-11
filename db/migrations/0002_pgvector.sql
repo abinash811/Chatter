@@ -17,7 +17,19 @@ create extension if not exists vector;
 
 alter table knowledge_chunks add column if not exists embedding vector(1536);
 
--- ivfflat needs data present to build well; for now this is a placeholder
--- for the index we'll create once real ingestion volume exists.
-create index if not exists knowledge_chunks_embedding_idx on knowledge_chunks
-  using ivfflat (embedding vector_cosine_ops);
+-- Real bug, found 2026-09-27: this used to be an ivfflat index, built
+-- while the table was empty. IVFFlat's clusters are computed from
+-- whatever data exists at build time — building on zero rows makes it
+-- silently degenerate (near-arbitrary clustering), and it doesn't
+-- self-correct as data is added; it needs a manual REINDEX once real
+-- volume exists, which nothing here ever did. Switched to HNSW, which
+-- has no training-data requirement, so it doesn't have this empty-table
+-- failure mode — confirmed supported by the pgvector extension version
+-- actually installed locally (0.6.0, HNSW has shipped since 0.5.0) via
+-- `select installed_version from pg_available_extensions where
+-- name='vector'`, not assumed. The drop is required, not just the
+-- create-if-not-exists below: an existing ivfflat index from a prior
+-- deploy has the same name and isn't replaced by "if not exists".
+drop index if exists knowledge_chunks_embedding_idx;
+create index if not exists knowledge_chunks_embedding_hnsw_idx on knowledge_chunks
+  using hnsw (embedding vector_cosine_ops);

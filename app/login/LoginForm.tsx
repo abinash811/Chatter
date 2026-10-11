@@ -21,7 +21,9 @@ export function LoginForm() {
 
       <p className="text-center text-sm text-muted-foreground">
         No account?{" "}
-        <a href="/signup" className="text-accent hover:underline">
+        {/* font-medium + underline, not text-accent — see
+            components/auth/AuthShell.tsx's comment for why. */}
+        <a href="/signup" className="font-medium text-foreground underline underline-offset-4">
           Sign up
         </a>
       </p>
