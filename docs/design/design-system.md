@@ -300,8 +300,9 @@ screens should be designed and verified at a standard desktop viewport
 ## Component inventory
 
 **All 26 primitives in `components/ui/` are now verified shadcn/ui
-sources (ADR 0014 + ADR 0017 + 2026-09-28's provenance closure; `Alert`
-added later, 2026-10-08)** — no
+sources (ADR 0014 + ADR 0017 + 2026-09-28's provenance closure;
+`Slider` added later, 2026-09-28, for ADR 0026's temperature picker —
+see below)** — no
 hand-rolled primitive exists anywhere in the product, and
 `scripts/check-shadcn-only-primitives.mjs` (part of `check:all`)
 enforces this mechanically: any new `components/ui/*.tsx` file must be
@@ -388,10 +389,12 @@ further changes. The remaining 16
   or the build; a persistent regression test
   (`tests/e2e/knowledge.spec.ts`) now guards it.
 
-Plus Chatter's own hand-authored primitives (never CARE- or
-shadcn-derived): `Input`, `Textarea`, `Label`, `Checkbox`, `Card`/
-`CardHeader`/`CardTitle`/`CardDescription`/`CardContent`, `Badge`,
-`Toaster`.
+**`Slider`** (added 2026-09-28, for ADR 0026's model-tier temperature
+control) — pulled from shadcn's real source like every other
+post-2026-09-28 addition, not hand-authored. A real axe-core failure
+caught its `aria-label` landing on the wrong DOM element before this
+was called done (`docs/design/audit.md`'s Bot editor row); fixed, see
+ADR 0026.
 
 To pull a fresh component from shadcn's real official source:
 `node scripts/pull-shadcn-component.mjs <name>` (stdout by default;

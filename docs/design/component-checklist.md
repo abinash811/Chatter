@@ -63,9 +63,13 @@ actually uses as part of the design-bar self-check
 - ~~No documented elevation scale~~ — fixed 2026-10-02, see item 2 above.
 - ~~No documented motion/duration policy~~ — fixed 2026-10-02, see
   item 3 above. Still no "when not to animate" rule specifically.
-- No documented copy-structure rule for errors/empty states — tone is
-  covered (`principles.md` #6), structure (items 5-6 above) isn't yet
-  written down anywhere else.
+- ~~No documented copy-structure rule for errors/empty states~~ — fixed
+  2026-10-08: item 5's three-part error structure is now mechanically
+  enforced by `scripts/check-error-copy-structure.mjs` (part of
+  `check:all`), rolled out to all 21 messages that were missing it.
+  Item 6's empty-state CTA requirement is a real, consistently-followed
+  convention (`components/console/EmptyState.tsx`) but not yet
+  mechanically checked the way item 5 is — a smaller, still-real gap.
 - Not audited: which components actually style Radix's `data-disabled`
   and other state attributes versus relying on the `disabled` prop
   alone with no visual follow-through.

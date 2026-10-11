@@ -17,8 +17,10 @@ register/quality bar, that file is the completeness checklist.
 2. **Tokens, never raw values.** Every color, radius, and font size
    reads a token (`app/globals.css`, `tailwind.config.ts`). Never a hex
    code, never an arbitrary Tailwind color class. Mechanically checked
-   (`check-design-tokens.mjs`). ADR 0007 is the record of *why* those
-   specific tokens.
+   (`check-design-tokens.mjs`). ADR 0007's original token set is
+   superseded (see `docs/adr/README.md`) — `docs/design/design-
+   system.md` is the current record of *why* today's actual values,
+   ADR 0014 is why shadcn's registry is the source at all.
 
 3. **Preview before code.** A `docs/design/preview/*.html` mockup is
    the visual ground truth for a new page or pattern, checked *before*
