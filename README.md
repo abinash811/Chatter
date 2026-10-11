@@ -86,6 +86,33 @@ safe to run on every deploy) before each new instance takes traffic.
   `lib/crypto.ts` (secrets encryption at rest — also closes the old
   plaintext-`Integration.accessToken` gap). ADR 0012.
 
+- Six action tools total in `lib/ai/tools/`: `checkOrderStatus.ts`,
+  `collectLead.ts`, `customAction.ts` (ADR 0022, org-defined webhook
+  calls), `cancelOrder.ts`/`requestRefund.ts` (ADR 0023/the same
+  pattern reused for refunds) and `searchKnowledgeBase.ts`. The two
+  write-capable ones never call Shopify directly — they queue a
+  `PendingAction` for human approval at `app/(console)/approvals/`
+  instead. `widget.ts` backs ADR 0028's schema-driven in-chat forms
+  (an optional real API call on submit, write-capable submissions
+  approval-gated the same way).
+
+- Conversation inbox: `app/(console)/conversations/` — a split-pane
+  activity view (ADR 0027) with plain-language issue detection
+  (ADR 0015/0016), real pause/resume, and Widget-vs-Playground
+  tracking.
+
+- Guardrails Phase 1: `lib/rateLimit.ts` — opt-in rate limiting and
+  spam detection (ADR 0029). Country/IP blocking still open,
+  `docs/open-questions.md` #10.
+
+- RAG hardening beyond the baseline retrieval above: HNSW index,
+  batched embeddings, query rewriting, hybrid search via RRF
+  (ADR 0021), and reranking via Voyage `rerank-2` (ADR 0035) — all in
+  `lib/ai/tools/searchKnowledgeBase.ts` and its supporting modules.
+
+- One-click demo data: `lib/demoData.ts` seeds a fully populated
+  example bot from the bots list.
+
 Not yet built: password reset, teammate invites/multi-org switcher,
 scheduled re-crawling for Data sources (ADR 0030). Still blocked on the
 remaining items in `docs/open-questions.md`.
