@@ -23,6 +23,15 @@ function parsePositiveInt(value: FormDataEntryValue | null, fallback: number): n
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback;
 }
 
+// Nudges (ADR 0041) — a blank field means "disabled," not a fallback
+// number, so this can't reuse parsePositiveInt above (0 is a real,
+// meaningful value here too — "open immediately" — not just positives).
+function parseOptionalNonNegativeInt(value: FormDataEntryValue | null): number | null {
+  if (value === null || String(value).trim() === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? Math.floor(n) : null;
+}
+
 export interface SaveDraftState {
   status: "idle" | "success" | "error";
   message: string | null;
@@ -75,6 +84,7 @@ export async function saveDraftAction(
         suggestedReplies: Array.from({ length: MAX_SUGGESTED_REPLIES }, (_, i) =>
           String(formData.get(`suggestedReply_${i}`) ?? "").trim(),
         ).filter(Boolean),
+        autoOpenAfterSeconds: parseOptionalNonNegativeInt(formData.get("autoOpenAfterSeconds")),
       },
       abuseProtection: {
         rateLimitEnabled: formData.get("rateLimitEnabled") === "on",

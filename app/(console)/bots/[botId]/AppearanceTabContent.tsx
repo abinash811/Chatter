@@ -39,6 +39,7 @@ export function AppearanceTabContent({
   avatarEmoji,
   position,
   suggestedReplies,
+  autoOpenAfterSeconds,
   embedSnippet,
 }: {
   greeting: string;
@@ -46,6 +47,7 @@ export function AppearanceTabContent({
   avatarEmoji: AvatarEmoji;
   position: WidgetPosition;
   suggestedReplies: string[];
+  autoOpenAfterSeconds: number | null;
   embedSnippet: string;
 }) {
   return (
@@ -103,6 +105,23 @@ export function AppearanceTabContent({
                 </SelectContent>
               </Select>
             </div>
+          </div>
+          <div>
+            <Label htmlFor="autoOpenAfterSeconds">Auto-open after (seconds)</Label>
+            <Input
+              id="autoOpenAfterSeconds"
+              name="autoOpenAfterSeconds"
+              type="number"
+              min={0}
+              step={1}
+              defaultValue={autoOpenAfterSeconds ?? ""}
+              placeholder="Off"
+              className="mt-1 w-28"
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Opens the chat window on its own after a visitor's been on the page this long. Leave blank to turn
+              off. Shown at most once per visitor session.
+            </p>
           </div>
         </CardContent>
       </Card>

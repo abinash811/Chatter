@@ -45,6 +45,11 @@ export interface BotAppearance {
   avatarEmoji: AvatarEmoji;
   position: WidgetPosition;
   suggestedReplies: string[];
+  // Nudges (ADR 0041) — time-on-page auto-open, matching Chatbase's own
+  // real shipped scope (confirmed from their live embed.min.js, not
+  // guessed). null means disabled — no separate boolean kill-switch,
+  // one field instead of two.
+  autoOpenAfterSeconds: number | null;
 }
 
 // Exported so callers (e.g. the sidebar's "Getting started" checklist)
@@ -56,6 +61,7 @@ export const DEFAULT_APPEARANCE: BotAppearance = {
   avatarEmoji: "💬",
   position: "bottom-right",
   suggestedReplies: [],
+  autoOpenAfterSeconds: null,
 };
 
 export function parseAppearance(value: Prisma.JsonValue): BotAppearance {
@@ -68,6 +74,10 @@ export function parseAppearance(value: Prisma.JsonValue): BotAppearance {
     suggestedReplies: Array.isArray(v.suggestedReplies)
       ? v.suggestedReplies.filter((r): r is string => typeof r === "string" && r.trim().length > 0).slice(0, MAX_SUGGESTED_REPLIES)
       : DEFAULT_APPEARANCE.suggestedReplies,
+    autoOpenAfterSeconds:
+      typeof v.autoOpenAfterSeconds === "number" && Number.isFinite(v.autoOpenAfterSeconds) && v.autoOpenAfterSeconds >= 0
+        ? v.autoOpenAfterSeconds
+        : DEFAULT_APPEARANCE.autoOpenAfterSeconds,
   };
 }
 

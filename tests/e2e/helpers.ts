@@ -1,6 +1,6 @@
 import { type Page, expect } from "@playwright/test";
 import type { Prisma } from "@prisma/client";
-import { withOrgContext, getOrgIdForBot } from "@/lib/db";
+import { withOrgContext, getOrgIdForBot, getOrCreateBotPublicKey } from "@/lib/db";
 
 // Shared across every e2e spec that needs a signed-up, onboarded user
 // with a first bot — extracted here (ADR 0012's onboarding change is
@@ -316,6 +316,15 @@ export async function seedPendingAction(
       },
     }),
   );
+}
+
+// The widget's own public botKey (ADR 0041's auto-open spec needs it to
+// embed the real public/widget.js on a standalone test page) — same
+// resolution path the real embed snippet in page.tsx uses, bypassing a
+// DOM-text-parse of the "Embed on your site" card.
+export async function getBotKey(botId: string): Promise<string> {
+  const orgId = await getOrgIdForBot(botId);
+  return getOrCreateBotPublicKey(orgId, botId);
 }
 
 // ADR 0018's restore half (2026-10-11) — bypasses the real archive UI

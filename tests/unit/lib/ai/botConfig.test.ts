@@ -17,6 +17,7 @@ describe("parseAppearance", () => {
       avatarEmoji: "🤖",
       position: "bottom-left",
       suggestedReplies: ["What are your hours?", "Track my order"],
+      autoOpenAfterSeconds: 15,
     };
     expect(parseAppearance(stored)).toEqual(stored);
   });
@@ -44,5 +45,20 @@ describe("parseAppearance", () => {
   it("falls back to no suggested replies when the stored value isn't an array", () => {
     const result = parseAppearance({ suggestedReplies: "not an array" });
     expect(result.suggestedReplies).toEqual([]);
+  });
+
+  // Nudges (ADR 0041) — null means disabled, not a fallback number, so
+  // this needs its own validation branch distinct from every other
+  // field here.
+  it("accepts a valid autoOpenAfterSeconds, including zero", () => {
+    expect(parseAppearance({ autoOpenAfterSeconds: 30 }).autoOpenAfterSeconds).toBe(30);
+    expect(parseAppearance({ autoOpenAfterSeconds: 0 }).autoOpenAfterSeconds).toBe(0);
+  });
+
+  it("falls back to null (disabled) for a missing, negative, or non-numeric autoOpenAfterSeconds", () => {
+    expect(parseAppearance({}).autoOpenAfterSeconds).toBeNull();
+    expect(parseAppearance({ autoOpenAfterSeconds: -5 }).autoOpenAfterSeconds).toBeNull();
+    expect(parseAppearance({ autoOpenAfterSeconds: "30" }).autoOpenAfterSeconds).toBeNull();
+    expect(parseAppearance({ autoOpenAfterSeconds: NaN }).autoOpenAfterSeconds).toBeNull();
   });
 });

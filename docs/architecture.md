@@ -3,8 +3,8 @@
 Status: concrete tech choices (stack, DB/vector store, auth, hosting
 model) are resolved — see `docs/open-questions.md`'s "Resolved" section
 and the ADRs referenced throughout. The remaining open items are
-narrower (app compute platform, nudges scope, pricing display, etc.),
-not architectural fundamentals. Update this doc as ADRs land instead
+narrower (app compute platform, pricing display, etc.), not
+architectural fundamentals. Update this doc as ADRs land instead
 of letting decisions live only in chat history.
 
 ## Components
@@ -348,4 +348,4 @@ Business owner → Admin dashboard → Backend API (auth'd to their org)
 See `docs/open-questions.md` for the current list — stack, auth, hosting
 model (ADR 0039), and how action tools reach a business's real systems
 are all resolved by now; the remaining open items are narrower (app
-compute platform, nudges scope, pricing display, etc.).
+compute platform, pricing display, etc.).

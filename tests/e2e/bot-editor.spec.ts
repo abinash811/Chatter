@@ -127,6 +127,33 @@ test("avatar and position selects (Appearance tab) save and survive a reload", a
   await expect(page.getByRole("combobox", { name: "Widget position" })).toHaveText("Bottom left");
 });
 
+// Nudges (ADR 0041) — blank means disabled, a number means the auto-open
+// delay in seconds, and that distinction must survive a reload, not just
+// render once.
+test("auto-open delay (Appearance tab) saves, survives a reload, and can be cleared back to off", async ({
+  page,
+}) => {
+  await signUpAndCreateBot(page, "Auto-open Test Bot");
+  await page.click('button[role="tab"]:has-text("Appearance")');
+  await expect(page.locator("#autoOpenAfterSeconds")).toHaveValue("");
+
+  await page.fill("#autoOpenAfterSeconds", "20");
+  await page.click('button:has-text("Save draft")');
+  await expect(page.getByText("Draft saved.")).toBeVisible({ timeout: 20000 });
+
+  await page.reload();
+  await page.click('button[role="tab"]:has-text("Appearance")');
+  await expect(page.locator("#autoOpenAfterSeconds")).toHaveValue("20");
+
+  await page.fill("#autoOpenAfterSeconds", "");
+  await page.click('button:has-text("Save draft")');
+  await expect(page.getByText("Draft saved.")).toBeVisible({ timeout: 20000 });
+
+  await page.reload();
+  await page.click('button[role="tab"]:has-text("Appearance")');
+  await expect(page.locator("#autoOpenAfterSeconds")).toHaveValue("");
+});
+
 test("model tier + temperature (Persona tab) save, survive a reload, and lock temperature for a non-Haiku model", async ({
   page,
 }) => {

@@ -15,13 +15,12 @@ page to `/onboarding` until that's set — there's no way to reach `/bots`
 (or any other console page) with an unnamed org and zero bots.
 
 `/onboarding` is a single combined screen (workspace name + first bot's
-name), deliberately not a multi-step wizard: there's no template picker
-step at all (ADR 0019 — no vertical-template layer), and inviting
-teammates is separate, larger scope with no design done yet. Submitting sets
-`org.name` + `org.onboardedAt`, creates the first bot, and redirects
-straight into that bot's editor — a brand-new account never sees an
-empty `/bots` list at signup, though archiving that first (and only)
-bot reaches it again; see "Bot archiving" below.
+name), deliberately not a multi-step wizard: no template picker (ADR
+0019 — no vertical-template layer), and teammate invites are separate,
+larger scope with no design done yet. Submitting sets `org.name` +
+`org.onboardedAt`, creates the first bot, and redirects straight into
+its editor — archiving that first (and only) bot later reaches an empty
+`/bots` list; see "Bot archiving" below.
 
 ## Bot archiving (`app/(console)/bots/actions.ts`, ADR 0018)
 
@@ -95,6 +94,15 @@ what was just published (not blank).
 was published when their conversation started (`Conversation.
 configVersionId`). A business editing their bot never changes what an
 in-progress visitor experiences mid-chat — see `lib/ai/botConfig.ts`.
+
+## Nudges — time-on-page auto-open (ADR 0041)
+
+`BotAppearance.autoOpenAfterSeconds` (null = disabled) reuses the
+existing `appearance` JSON blob. `scheduleAutoOpen()` in
+`public/widget.js` opens the window after that delay unless the visitor
+already toggled it manually, or `sessionStorage` shows it fired this
+session already. Scope matches Chatbase's real `embed.min.js`, read
+directly — see the ADR.
 
 ## The chat loop (`lib/ai/chat.ts`'s `sendMessage`)
 
@@ -206,41 +214,33 @@ scans each turn's tool results for the tag and attaches the last one
 found to `SendMessageResult.widget`, alongside `reply`.
 
 **Rendering and submission.** `public/widget.js` (vanilla JS, shadow-
-DOM styled) and `PreviewSheet.tsx` (React + `components/ui/`
-primitives) each build a form from the widget's JSON Schema
-(`properties`/`required`/`enum`) independently, matching their own
-surface's design system rather than sharing a renderer neither can use
-directly. On submit, the collected field values are formatted as plain
-text (`"Your name: Priya, Party size: 4"`) and sent as the visitor's
-own next chat message over the existing `/api/chat` endpoint — no new
-endpoint, no separate submission concept.
+DOM) and `PreviewSheet.tsx` (React) each build a form from the widget's
+JSON Schema independently, matching their own surface's design system
+rather than sharing a renderer neither can use directly. On submit, the
+field values are formatted as plain text (`"Your name: Priya, Party
+size: 4"`) and sent as the visitor's own next chat message over the
+existing `/api/chat` endpoint — no new endpoint.
 
 **Schema format is JSON Schema**, confirmed by the user (2026-09-29)
-over a custom shape mirroring Chatbase's own internal structure — an
-actual standard already used by this codebase's tool-input schemas and
-Claude's own tool-calling API, versus a private format that would only
-buy cosmetic parity with a competitor's builder. `lib/widgets.ts`
-converts between the console's typed field builder (name/label/type/
-required/options) and the stored JSON Schema, the same
-fields-to-schema/schema-to-fields round trip `lib/customActions.ts`
-already established for its own input schema.
+over a custom shape mirroring Chatbase's internal structure — an actual
+standard already used by this codebase's tool-input schemas and
+Claude's own tool-calling API. `lib/widgets.ts` converts between the
+console's typed field builder and the stored JSON Schema, the same
+round trip `lib/customActions.ts` already established.
 
 **Phase 2 — Functions (2026-09-30).** A widget with an `apiUrl` gets a
 second tool, `submit_widget_<name>` (`buildWidgetSubmitTool`), called
 right after the visitor submits. Non-write-capable: calls
 `performActionRequest` (Custom Actions' SSRF-guarded, encrypted-header
 helper, ADR 0022) directly, returning `{"status":"ok",...}` or
-degrading to `{"status":"handoff_required",...}` on failure (guardrail
-#4). Write-capable: never touches the API from the tool call — queues a
-`PendingAction` (ADR 0023) instead; approving it in
-`/approvals` dispatches on the `submit_widget_` prefix to
-`executeWidgetSubmission`, which re-resolves the widget fresh by name
-(a `PendingAction` stores only the tool name + input, not the widget's
-URL/headers) and performs the one real call. The Add dialog's "Call an
-API when this form is submitted" checkbox is progressive disclosure —
-unchecked, a widget behaves exactly as Phase 1 did. The URL is rejected
-server-side by the same `isBlockedActionUrl` guard before it's ever
-stored.
+degrading to `{"status":"handoff_required",...}` (guardrail #4).
+Write-capable: queues a `PendingAction` (ADR 0023) instead of calling
+the API directly; approving it in `/approvals` dispatches on the
+`submit_widget_` prefix to `executeWidgetSubmission`, which re-resolves
+the widget fresh by name and performs the one real call. The Add
+dialog's "Call an API when this form is submitted" checkbox is
+progressive disclosure — unchecked, a widget behaves exactly as Phase 1
+did.
 
 **Deliberately not built** (`docs/open-questions.md` #9): multi-view
 widgets driven by conditions (States), and field types beyond text/

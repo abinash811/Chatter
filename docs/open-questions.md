@@ -15,14 +15,6 @@ resolve into an ADR (`docs/adr/`, use the `new-adr` skill) and update
    match that sequencing). No vertical-template layer exists to scope
    this against (ADR 0019) — whatever's decided here becomes healthcare's
    own default persona/guardrail config directly, not a template setting.
-5. **Nudges — scope and mechanism** (`docs/roadmap.md`'s "Self-serve
-   configurability" #6). What triggers (exit-intent, time-on-page,
-   scroll-depth, cart-abandonment)? Generic across verticals or
-   ecommerce-specific to start? Where does the business owner configure
-   them — a new console section, or folded into the appearance editor?
-   No recommendation yet — needs real scoping (and likely a small
-   competitor check: how Intercom/Drift/Tidio actually expose this)
-   before an ADR.
 6. **Pricing display** (`docs/roadmap.md`'s "Self-serve configurability"
    #7 — the model-picker half of this item is now built, ADR 0026: a
    Sonnet/Haiku/Opus tier picker + a temperature slider that's only

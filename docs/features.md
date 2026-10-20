@@ -237,6 +237,24 @@ option lists — split out from `botConfig.ts` so this client-facing form
 doesn't pull in server-only DB code), `GET /api/widget/config`
 (`docs/api.md`).
 
+### Nudges (time-on-page auto-open)
+**Who**: the business owner. **What**: an optional per-bot delay
+(seconds) after which the embedded widget opens itself for a visitor,
+shown at most once per browser session, cancelled if the visitor
+already manually toggled the bubble before the timer fires. Scope
+resolved 2026-10-20 (ADR 0041) by inspecting Chatbase's real, live
+`embed.min.js` directly (via the REA reverse-engineering MCP tool) —
+their shipped widget only has this one trigger (no exit-intent, no
+scroll-depth), so Chatter matches that real scope rather than the
+broader speculative one `docs/open-questions.md` #5 used to list. One
+field in the bot editor's Appearance tab, blank means off — no separate
+on/off toggle. **How**: `BotAppearance.autoOpenAfterSeconds`
+(`lib/ai/botConfig.ts`, reuses the same `appearance` JSON blob every
+other theming field lives in — no schema change), `scheduleAutoOpen()`
+in `public/widget.js` (the `sessionStorage` guard + `setTimeout`),
+`GET /api/widget/config` ships it automatically since it already
+returns the whole parsed `BotAppearance` object.
+
 ### Persona template picker
 **Who**: the business owner writing a bot's persona for the first time.
 **What**: a "Start from a template" dropdown above the Persona tab's

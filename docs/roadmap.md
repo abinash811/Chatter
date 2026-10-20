@@ -122,12 +122,14 @@ marked with real status (not aspirational):
    Deliberately no `status`/"resolved" filter yet — see `docs/open-
    questions.md` #7. No email/Slack push channel — that was the other
    half of the open question ADR 0015 resolved, deferred by choice.
-6. **Nudges** — **not built at all**, not even in the schema. New
-   concept beyond `docs/product-spec.md`'s original scope (the existing
-   "Later" list only had a vague "proactive triggers (exit intent,
-   time-on-page)" line). Needs real scoping before an ADR: trigger
-   types, whether ecommerce-specific (cart abandonment) or generic,
-   and where the config UI lives. See `docs/open-questions.md`.
+6. **Nudges — built (2026-10-20, ADR 0041).** Time-on-page auto-open
+   only — a per-bot delay (seconds) in `BotAppearance`, session-guarded
+   so it fires at most once per visitor session — matching Chatbase's
+   real production scope exactly, confirmed by inspecting their live
+   `embed.min.js` (not guessed from marketing copy). No exit-intent or
+   scroll-depth trigger: their shipped script doesn't have one either.
+   Generic across verticals, configured in the bot editor's Appearance
+   tab, not a new console section.
 7. **LLM model picker — built (2026-09-28, ADR 0026).** A Sonnet/Haiku/
    Opus tier picker + temperature slider in the bot editor's Persona
    tab, Claude-only (not multi-vendor — ADR 0002's scope). Temperature
@@ -142,8 +144,8 @@ marked with real status (not aspirational):
 
 Sequencing once each open question above is answered: appearance editor
 and tool enable/disable's "nothing to do" make #2/#3 the fastest wins;
-the conversation inbox (#5) is done; prompt templates (#1), nudges (#6),
-and model/pricing (#7) each need a scoping decision before they're
+the conversation inbox (#5) and nudges (#6) are done; prompt templates
+(#1) and model/pricing (#7) each need a scoping decision before they're
 buildable, not just time.
 
 ## Next

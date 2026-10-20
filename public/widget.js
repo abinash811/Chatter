@@ -37,7 +37,40 @@
     avatarEmoji: "💬",
     position: "bottom-right",
     suggestedReplies: [],
+    autoOpenAfterSeconds: null,
   };
+
+  // Nudges (ADR 0041) — matches Chatbase's own real shipped scope
+  // (confirmed from their live embed.min.js): a time-on-page delay,
+  // shown at most once per visitor session, cancelled if the visitor
+  // already toggled the bubble themselves before the timer fires (not
+  // present in Chatbase's script as observed, but a low-risk
+  // improvement — never force the window back open on someone who
+  // already closed it).
+  var userToggledBubble = false;
+  function scheduleAutoOpen() {
+    var seconds = appearance.autoOpenAfterSeconds;
+    if (typeof seconds !== "number" || !isFinite(seconds) || seconds < 0) return;
+    var storageKey = "chatter_nudge_" + botKey;
+    try {
+      if (sessionStorage.getItem(storageKey)) return;
+    } catch (err) {
+      // Storage can throw in a locked-down embedding context (e.g. a
+      // strict privacy mode) — degrade to "never auto-open" rather than
+      // letting an exception stop the rest of the widget from loading.
+      return;
+    }
+    setTimeout(function () {
+      if (userToggledBubble) return;
+      windowEl.classList.add("open");
+      try {
+        sessionStorage.setItem(storageKey, "1");
+      } catch (err) {
+        // Same degrade-gracefully reasoning as above — a failed write
+        // just means it might show again next time, not a hard error.
+      }
+    }, seconds * 1000);
+  }
 
   // Applies position to the host element itself (not just CSS inside the
   // shadow root) since it controls which side of the *page* the bubble
@@ -253,6 +286,7 @@
   }
 
   bubble.addEventListener("click", function () {
+    userToggledBubble = true;
     windowEl.classList.toggle("open");
   });
 
@@ -272,6 +306,7 @@
     .then(function (config) {
       appearance = config;
       applyAppearance();
+      scheduleAutoOpen();
     })
     .catch(function (err) {
       console.error("[Chatter widget] Failed to load appearance config, using defaults.", err);

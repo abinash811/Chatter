@@ -50,7 +50,7 @@ reason.)
   `docs/design/audit.md` tracks per-screen compliance against the bar —
   check there before assuming a screen is finished.
 - Testing/guardrails: 17 static guardrail checks (`npm run check:all`),
-  252 unit tests, 149 `tests/e2e/` tests across 18 spec files, 24
+  254 unit tests, 153 `tests/e2e/` tests across 19 spec files, 24
   `tests/visual/` baselines, gitleaks + a CI coverage floor, all wired
   into CI (counts as of 2026-10-11 — check for real via `npm run
   check:all`/`npx vitest run`/`npx playwright test --list` rather than
@@ -149,6 +149,13 @@ reason.)
   `request_order_cancellation`/`request_refund` get to any business-
   described API, no code change needed; the two destructive appointment
   templates default it on.
+- Nudges — time-on-page auto-open (ADR 0041, 2026-10-20): a per-bot
+  delay in `BotAppearance`, shown at most once per visitor session.
+  Scope resolved by inspecting Chatbase's real, live `embed.min.js`
+  directly (via the REA reverse-engineering MCP tool), not guessed —
+  their shipped widget has this one trigger only, no exit-intent or
+  scroll-depth, so Chatter matches that real scope. Resolves
+  `docs/open-questions.md` #5.
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.

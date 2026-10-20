@@ -70,6 +70,7 @@ export default async function BotPage({
       avatarEmoji={appearance.avatarEmoji}
       position={appearance.position}
       suggestedReplies={appearance.suggestedReplies}
+      autoOpenAfterSeconds={appearance.autoOpenAfterSeconds}
       embedSnippet={embedSnippet}
       abuseProtection={abuseProtection}
     />

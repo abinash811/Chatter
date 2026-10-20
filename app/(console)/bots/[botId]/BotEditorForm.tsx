@@ -87,6 +87,7 @@ export function BotEditorForm({
   avatarEmoji,
   position,
   suggestedReplies,
+  autoOpenAfterSeconds,
   embedSnippet,
   abuseProtection,
 }: {
@@ -102,6 +103,7 @@ export function BotEditorForm({
   avatarEmoji: AvatarEmoji;
   position: WidgetPosition;
   suggestedReplies: string[];
+  autoOpenAfterSeconds: number | null;
   embedSnippet: string;
   abuseProtection: AbuseProtectionConfig;
 }) {
@@ -273,6 +275,7 @@ export function BotEditorForm({
               avatarEmoji={avatarEmoji}
               position={position}
               suggestedReplies={suggestedReplies}
+              autoOpenAfterSeconds={autoOpenAfterSeconds}
               embedSnippet={embedSnippet}
             />
           </TabsContent>
