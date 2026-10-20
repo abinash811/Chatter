@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { startTransition, useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { approveAction, rejectAction, type ApprovalActionState } from "./actions";
 import { ApprovalsTable } from "./ApprovalsTable";
@@ -70,7 +70,7 @@ export function ApprovalsForm({
         onReject={(id) => {
           const formData = new FormData();
           formData.set("id", id);
-          rejectFormAction(formData);
+          startTransition(() => rejectFormAction(formData));
         }}
         isResolving={isApproving || isRejecting}
       />
@@ -90,7 +90,7 @@ export function ApprovalsForm({
               onClick={() => {
                 const formData = new FormData();
                 formData.set("id", confirmingId ?? "");
-                approveFormAction(formData);
+                startTransition(() => approveFormAction(formData));
               }}
             >
               {isApproving ? "Approving..." : "Approve"}

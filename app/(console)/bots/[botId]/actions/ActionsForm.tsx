@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { startTransition, useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   createCustomActionAction,
@@ -91,7 +91,7 @@ export function ActionsForm({ botId, actions }: { botId: string; actions: Custom
           const formData = new FormData();
           formData.set("id", id);
           formData.set("enabled", String(enabled));
-          toggleFormAction(formData);
+          startTransition(() => toggleFormAction(formData));
         }}
         onDelete={setDeletingId}
         onAdd={() => setAddOpen(true)}
@@ -114,7 +114,7 @@ export function ActionsForm({ botId, actions }: { botId: string; actions: Custom
               onClick={() => {
                 const formData = new FormData();
                 formData.set("id", deletingId ?? "");
-                deleteFormAction(formData);
+                startTransition(() => deleteFormAction(formData));
               }}
             >
               {isDeleting ? "Deleting..." : "Delete"}

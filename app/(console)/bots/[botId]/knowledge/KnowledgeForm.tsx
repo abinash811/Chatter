@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { startTransition, useActionState, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { HelpCircle, FileText, Link as LinkIcon, Type } from "lucide-react";
 import {
@@ -213,7 +213,7 @@ export function KnowledgeForm({
               onClick={() => {
                 const formData = new FormData();
                 formData.set("sourceId", deletingId ?? "");
-                deleteFormAction(formData);
+                startTransition(() => deleteFormAction(formData));
               }}
             >
               {isDeleting ? "Deleting..." : "Delete"}
@@ -238,7 +238,7 @@ export function KnowledgeForm({
               onClick={() => {
                 const formData = new FormData();
                 for (const id of bulkDeleteIds ?? []) formData.append("sourceId", id);
-                bulkDeleteFormAction(formData);
+                startTransition(() => bulkDeleteFormAction(formData));
               }}
             >
               {isBulkDeleting ? "Deleting..." : "Delete"}

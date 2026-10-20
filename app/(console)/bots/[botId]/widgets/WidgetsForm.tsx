@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { startTransition, useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { createWidgetAction, toggleWidgetAction, deleteWidgetAction, type WidgetState } from "./actions";
 import { AddWidgetDialog } from "./AddWidgetDialog";
@@ -69,7 +69,7 @@ export function WidgetsForm({ botId, widgets }: { botId: string; widgets: Widget
           const formData = new FormData();
           formData.set("id", id);
           formData.set("enabled", String(enabled));
-          toggleFormAction(formData);
+          startTransition(() => toggleFormAction(formData));
         }}
         onDelete={setDeletingId}
         onAdd={() => setAddOpen(true)}
@@ -89,7 +89,7 @@ export function WidgetsForm({ botId, widgets }: { botId: string; widgets: Widget
               onClick={() => {
                 const formData = new FormData();
                 formData.set("id", deletingId ?? "");
-                deleteFormAction(formData);
+                startTransition(() => deleteFormAction(formData));
               }}
             >
               {isDeleting ? "Deleting..." : "Delete"}
