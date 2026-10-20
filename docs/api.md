@@ -42,7 +42,9 @@ guardrails/anything internal (guardrail #5).
   "greeting": "string",
   "accentColor": "string (hex)",
   "avatarEmoji": "string (one of lib/ai/appearanceOptions.ts's AVATAR_EMOJI_OPTIONS)",
-  "position": "\"bottom-right\" | \"bottom-left\""
+  "position": "\"bottom-right\" | \"bottom-left\"",
+  "suggestedReplies": "string[] (up to MAX_SUGGESTED_REPLIES, shown once under the greeting)",
+  "autoOpenAfterSeconds": "number | null (ADR 0041 — null means the auto-open nudge is off)"
 }
 ```
 

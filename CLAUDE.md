@@ -156,6 +156,12 @@ reason.)
   their shipped widget has this one trigger only, no exit-intent or
   scroll-depth, so Chatter matches that real scope. Resolves
   `docs/open-questions.md` #5.
+- Visual system map (2026-10-20): a published Artifact + checked-in
+  `docs/architecture-overview.md` — request flow, schema, every API
+  route/payload, AI stack, tenant isolation, real rate limits, all
+  traced to real code, readable by a technical stranger with no other
+  context. Latency deliberately labeled "not yet measured" rather than
+  invented (no real `ANTHROPIC_API_KEY` run has ever completed).
 - Product docs: `docs/north-star.md`, `docs/roadmap.md`,
   `docs/features.md`, `docs/ai-tech-radar.md`, `docs/security.md`,
   `docs/accessibility.md`.
@@ -200,6 +206,13 @@ reason.)
   same PR as the code it describes
 - `docs/api.md` — every HTTP route, one place
 - `docs/architecture.md` — system design, living doc
+- `docs/architecture-overview.md` — visual companion: request flow,
+  schema, every API route, AI stack, tenant isolation, rate limits, one
+  page a technical stranger can read without other context. Links to
+  the published Artifact that carries the real diagrams; this file is
+  the checked-in text summary. Keep both current in the same PR as any
+  meaningful architectural change — see its own "Keeping this current"
+  section and `ship-checklist`.
 - `docs/roadmap.md` — Now/Next/Later priorities
 - `docs/ai-tech-radar.md` — adopt/trial/assess/hold tracker for AI/RAG
   tech specifically (what's true about our stack now, not what's next)

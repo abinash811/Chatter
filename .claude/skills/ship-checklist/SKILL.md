@@ -52,9 +52,15 @@ Before saying a piece of work is done:
    if something moved out of Next/Later, `docs/architecture.md` if a
    design decision landed, `docs/business-logic.md` if a core flow
    changed, `docs/api.md` if a route was added or its shape changed,
-   `docs/glossary.md` if a new term was introduced. **Beyond the owning
-   doc**: when shipping something that resolves a claim made elsewhere
-   as "not yet built," "deferred," or "still open" (`docs/research/`
+   `docs/glossary.md` if a new term was introduced,
+   `docs/architecture-overview.md` (plus republishing its companion
+   Artifact, same `file_path`/`url` so the link stays stable) if a
+   route, schema, AI-stack piece, or rate limit changed — this one
+   doc/Artifact pair is a technical stranger's one-page map of the
+   whole system, so it goes stale the moment one of those facts does,
+   same as README.md's "What's scaffolded" list above. **Beyond the
+   owning doc**: when shipping something that resolves a claim made
+   elsewhere as "not yet built," "deferred," or "still open" (`docs/research/`
    notes, `docs/architecture.md`, `docs/design/audit.md`), grep the
    whole `docs/` tree for the feature's own name/keywords and fix every
    stale hit, not just the designated owner — a 2026-10-11 sweep found
