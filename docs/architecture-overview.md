@@ -1,11 +1,16 @@
 # Architecture overview — visual companion
 
-A single visual reference for the whole system — request flow, schema,
-every HTTP route and its real payload shape, the AI stack, tenant
-isolation, webhooks/write-capable actions, and real rate limits — meant
-to be readable by a technical stranger with no other context.
+A single interactive flow map of the whole system — a top-level diagram
+of 6 real flows (chat message, knowledge ingestion, bot config draft/
+publish, actions & approvals, auth & tenant isolation, Shopify connect);
+clicking a flow drills into its own diagram, and clicking any node or
+arrow pops up its exact technical detail (API payload, rate limit, file
+reference). No prose panels — every fact is reached by clicking, not by
+reading paragraphs (2026-10-20 rebuild, replacing an earlier scrolling-
+document version per explicit user direction that it should be "just
+flow diagram interactive ones," not text explanation).
 
-**Live version (diagrams + full detail):**
+**Live version (click to explore):**
 https://claude.ai/artifact/VXMbRaBqRm3iwTx6MjPsFa
 
 This file is the checked-in, text-only companion — it survives
@@ -62,8 +67,8 @@ opt-in, off by default (`lib/rateLimit.ts`, `lib/ai/abuseProtection.ts`).
 **Latency: not yet measured.** This app has never completed a real
 end-to-end Claude reply (no real `ANTHROPIC_API_KEY` used yet — the
 same known gap CLAUDE.md's "Known gaps" already tracks). The Artifact's
-Limits & latency section lists the real call sequence instead of an
-invented number; the first real measurement needs a live key.
+chat-flow diagram's node details list the real call sequence instead of
+an invented number; the first real measurement needs a live key.
 
 ## Keeping this current
 
