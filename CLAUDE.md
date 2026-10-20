@@ -278,6 +278,13 @@ These hold regardless of what stack or framework we end up on.
   doesn't auto-load for it — don't critique from visual impression alone
   when a documented findings list already exists; check it before
   answering, not just when writing code.
+- **Before starting a medium-or-larger build** (a new feature, a new
+  console page/section, a schema change, a multi-file change, anything
+  pulled from `docs/roadmap.md`) — use the `feature-brief` skill to
+  scope it and get the user's explicit sign-off before writing any
+  code. Skip it for small fixes: a single bug fix, a doc-only edit, a
+  copy change, a dependency bump, a one-file change with no new
+  user-facing behavior or schema.
 - Record every hard-to-reverse decision (data model shape, storage choice,
   auth model, multi-tenancy strategy, vendor choice) as an ADR using the
   `new-adr` skill and `docs/adr/template.md`.
