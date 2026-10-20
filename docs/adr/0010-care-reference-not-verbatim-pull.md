@@ -1,6 +1,7 @@
 # ADR 0010: Use CARE as a reference, stop pulling component source verbatim
 
-Status: accepted
+Status: superseded by ADR 0014 (CARE dropped entirely as a visual
+reference, not just as a verbatim component source)
 
 Date: 2026-09-25
 

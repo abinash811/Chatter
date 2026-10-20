@@ -1,6 +1,7 @@
 # ADR 0008: Adopt CARE's exact design system — supersedes ADR 0007
 
-Status: accepted
+Status: superseded by ADR 0014 (CARE dropped entirely as a component
+source and visual reference)
 
 Date: 2026-09-25
 

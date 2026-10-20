@@ -72,3 +72,19 @@ describe("search_knowledge_base tool — describeForInbox", () => {
     expect(isIssue).toBe(true);
   });
 });
+
+// Query rewriting (docs/ai-tech-radar.md's Retrieval & search section):
+// no new model call — the fix is instructing the model, which already
+// sees the full conversation, to resolve context into the query text
+// before searching. This can only verify the instruction actually
+// shipped in the tool schema Claude receives; it can't verify the model
+// follows it without a real ANTHROPIC_API_KEY (documented known gap).
+describe("search_knowledge_base tool — query field asks for a self-contained query", () => {
+  it("instructs resolving conversational context (pronouns/implicit topic) into the query text", () => {
+    const queryDescription = (
+      searchKnowledgeBaseTool.inputSchema.properties as { query: { description: string } }
+    ).query.description;
+    expect(queryDescription).toMatch(/self-contained/i);
+    expect(queryDescription).toMatch(/pronoun|implicit topic/i);
+  });
+});

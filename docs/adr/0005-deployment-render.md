@@ -1,6 +1,7 @@
 # ADR 0005: Deploy to Render for a real, browsable environment
 
-Status: accepted
+Status: superseded by ADR 0020 (Render is no longer the deploy target;
+hosting is undecided again)
 
 Date: 2026-09-24
 

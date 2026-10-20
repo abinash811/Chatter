@@ -30,9 +30,10 @@ This needed four real decisions, not one:
    had flagged this as unresearched and deferred it to this ADR.
 
 Site crawling (multi-page, link-following) is explicitly **not** in
-scope here — that stays `docs/open-questions.md` #4, a separate,
-deferred decision. This ADR covers single-file-upload and
-single-URL-fetch only.
+scope here — that was a separate, deferred decision at the time
+(`docs/open-questions.md` #4, since resolved and removed from the live
+numbering — site crawling shipped via ADR 0030, 2026-09-30). This ADR
+covers single-file-upload and single-URL-fetch only.
 
 ## Decision
 

@@ -4,7 +4,10 @@ The bar every screen is checked against — sharp and opinionated on
 purpose, not a summary of the deeper docs. For the "why," see
 `docs/architecture.md` §7 and `docs/research/design-system-standards.md`.
 For the mechanical "how," see `docs/conventions.md` and
-`docs/accessibility.md`.
+`docs/accessibility.md`. For whether a single component/screen is
+*structurally* complete (states, elevation, motion, copy structure),
+see `docs/design/component-checklist.md` — these principles are the
+register/quality bar, that file is the completeness checklist.
 
 1. **One component, one way.** Every button is `<Button>`, every text
    field `<Input>`/`<Textarea>`, every checkbox `<Checkbox>`. No raw
@@ -14,8 +17,10 @@ For the mechanical "how," see `docs/conventions.md` and
 2. **Tokens, never raw values.** Every color, radius, and font size
    reads a token (`app/globals.css`, `tailwind.config.ts`). Never a hex
    code, never an arbitrary Tailwind color class. Mechanically checked
-   (`check-design-tokens.mjs`). ADR 0007 is the record of *why* those
-   specific tokens.
+   (`check-design-tokens.mjs`). ADR 0007's original token set is
+   superseded (see `docs/adr/README.md`) — `docs/design/design-
+   system.md` is the current record of *why* today's actual values,
+   ADR 0014 is why shadcn's registry is the source at all.
 
 3. **Preview before code.** A `docs/design/preview/*.html` mockup is
    the visual ground truth for a new page or pattern, checked *before*

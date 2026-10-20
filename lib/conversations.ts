@@ -14,6 +14,8 @@ export interface ConversationListFilters {
   botId?: string;
   issuesOnly?: boolean;
   fromDate?: Date;
+  /** ADR 0027 — "ongoing" | "paused"; omit for both. */
+  status?: string;
 }
 
 export interface ConversationListRow {
@@ -24,6 +26,8 @@ export interface ConversationListRow {
   messageCount: number;
   lastMessagePreview: string | null;
   hasIssue: boolean;
+  status: string;
+  source: string;
 }
 
 // ADR 0016: each tool decides for itself what a plain-language summary
@@ -53,6 +57,7 @@ export async function listConversations(
       where: {
         botId: filters.botId,
         createdAt: filters.fromDate ? { gte: filters.fromDate } : undefined,
+        status: filters.status,
       },
       orderBy: { createdAt: "desc" },
       include: {
@@ -81,6 +86,8 @@ export async function listConversations(
         messageCount: conversation._count.messages,
         lastMessagePreview: conversation.messages[0]?.content.slice(0, 140) ?? null,
         hasIssue: issueConversationIds.has(conversation.id),
+        status: conversation.status,
+        source: conversation.source,
       }))
       .filter((row) => !filters.issuesOnly || row.hasIssue);
   });
@@ -110,6 +117,14 @@ export interface ConversationDetail {
   createdAt: Date;
   messages: ConversationDetailMessage[];
   toolCalls: ConversationDetailToolCall[];
+  status: string;
+  source: string;
+  /** ADR 0027 — the linked Lead's name/email/phone, or null if none was
+   * ever collected for this conversation ("Anonymous" in the UI). */
+  contact: string | null;
+  /** ADR 0027 — MAX(messages.createdAt), no separate column: always
+   * accurate, never goes stale relative to the real message log. */
+  lastActivityAt: Date | null;
 }
 
 export async function getConversationDetail(
@@ -126,16 +141,22 @@ export async function getConversationDetail(
     });
     if (!conversation) return null;
 
-    const toolCalls = await tx.toolCallLog.findMany({
-      where: { conversationId },
-      orderBy: { createdAt: "asc" },
-    });
+    const [toolCalls, lead] = await Promise.all([
+      tx.toolCallLog.findMany({ where: { conversationId }, orderBy: { createdAt: "asc" } }),
+      tx.lead.findFirst({ where: { conversationId } }),
+    ]);
+
+    const lastMessage = conversation.messages[conversation.messages.length - 1];
 
     return {
       id: conversation.id,
       botId: conversation.botId,
       botName: conversation.bot.name,
       createdAt: conversation.createdAt,
+      status: conversation.status,
+      source: conversation.source,
+      contact: lead ? (lead.name ?? lead.email ?? lead.phone) : null,
+      lastActivityAt: lastMessage?.createdAt ?? null,
       messages: conversation.messages.map((m) => ({
         id: m.id,
         role: m.role,
@@ -156,4 +177,18 @@ export async function getConversationDetail(
       }),
     };
   });
+}
+
+// ADR 0027 — pause/resume. Scoped to botId, not just orgId: a
+// conversationId is client-supplied (same reasoning as lib/ai/chat.ts's
+// own cross-bot check), and an org can have multiple bots.
+export async function setConversationStatus(
+  orgId: string,
+  botId: string,
+  conversationId: string,
+  status: "ongoing" | "paused",
+): Promise<void> {
+  await withOrgContext(orgId, (tx) =>
+    tx.conversation.updateMany({ where: { id: conversationId, botId }, data: { status } }),
+  );
 }

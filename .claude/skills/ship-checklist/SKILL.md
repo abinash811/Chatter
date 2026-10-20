@@ -7,10 +7,11 @@ description: Final gate before calling any slice of Chatter "done" — run befor
 
 Before saying a piece of work is done:
 
-1. **`npm run check:all`** — the seven guardrail checks (tenant
+1. **`npm run check:all`** — the nine guardrail checks (tenant
    isolation, no vertical logic, no client secrets, design tokens, no
-   raw `<button>`, barrel-only component imports, no file over 300
-   lines).
+   raw `<button>`, barrel-only component imports, no code file over 300
+   lines, no living doc over 500 lines, every orgId-bearing table has an
+   RLS policy).
 2. **`npx tsc --noEmit`**.
 3. **`npm run test:unit`** (`tests/unit/`, Vitest) — always, it's fast
    (~3s). Touched `lib/ai/` (the chat loop, gateway, tool registry,
@@ -42,14 +43,34 @@ Before saying a piece of work is done:
    shared chrome; add one when a genuinely new page/pattern ships (same
    bar as `docs/design/preview/`).
 9. **Docs still accurate?** — CLAUDE.md's "Current state" section
-   (update it — this is the one most likely to silently go stale),
+   (update it — this is the one most likely to silently go stale; keep
+   the entry to a line or two with a pointer, the full story goes in
+   `docs/changelog.md` — CLAUDE.md is an index, not a narrative log),
    README.md's "What's scaffolded so far" list, `docs/open-questions.md`
    (resolve or add an entry for anything newly discovered),
    `docs/features.md` if a feature shipped or changed, `docs/roadmap.md`
    if something moved out of Next/Later, `docs/architecture.md` if a
    design decision landed, `docs/business-logic.md` if a core flow
    changed, `docs/api.md` if a route was added or its shape changed,
-   `docs/glossary.md` if a new term was introduced.
+   `docs/glossary.md` if a new term was introduced,
+   `docs/architecture-overview.md` (plus republishing its companion
+   Artifact, same `file_path`/`url` so the link stays stable) if a
+   route, schema, AI-stack piece, or rate limit changed — this one
+   doc/Artifact pair is a technical stranger's one-page map of the
+   whole system, so it goes stale the moment one of those facts does,
+   same as README.md's "What's scaffolded" list above. **Beyond the
+   owning doc**: when shipping something that resolves a claim made
+   elsewhere as "not yet built," "deferred," or "still open" (`docs/research/`
+   notes, `docs/architecture.md`, `docs/design/audit.md`), grep the
+   whole `docs/` tree for the feature's own name/keywords and fix every
+   stale hit, not just the designated owner — a 2026-10-11 sweep found
+   real, consequential misses this way (`architecture.md` still claimed
+   site crawling was unbuilt a full ADR cycle after it shipped). If an
+   `open-questions.md` item got resolved and removed, its number will
+   be reused for something unrelated later — `npm run
+   check:questionrefs` (a visibility report, not a gate) lists every
+   `#N` citation across the docs with whether N is still live; skim it
+   during a sweep.
 10. **A new UI page or pattern** — does a `docs/design/preview/` mockup
    exist for it? If not, one should be added (see CLAUDE.md's design
    rule).
@@ -61,7 +82,34 @@ Before saying a piece of work is done:
    feature that silently degrades below what a guardrail requires
    (tenant isolation, traceability, graceful tool fallback) is not done
    even if it compiles and runs.
-13. **Open Dependabot PRs relevant to what you touched.** ADR 0009: the
+13. **Explicit design-bar self-check for any UI change** — this is
+   `.claude/rules/console-frontend.md` items 7-9, which auto-load for
+   any `app/(console)/**`/`components/ui/**` touch, so it isn't opt-in.
+   Confirm all three were actually done, not skimmed: hover/focus/active/
+   loading/depth + keyboard-only (item 7 — the <900px resize check is
+   retired for console screens, 2026-09-27 user decision, `docs/
+   product-spec.md`); the senior-
+   designer critique against principles.md #9 — hierarchy, status/
+   semantic color coverage, per-item visual distinction, density-vs-
+   register match, interactive-affordance clarity (item 8); and every
+   interactive component checked against
+   `docs/design/component-checklist.md`'s completeness bar — states,
+   elevation, motion, color-independent signaling, error/empty copy
+   structure, keyboard+ARIA (item 9). If the screen already had open
+   findings in `docs/design/audit.md`, item 8 requires fixing them in
+   this pass or explicitly telling the user why not — never silent.
+   **Update `docs/design/audit.md`'s row for that screen in the same
+   turn** — a finding that only exists in chat
+   is a finding that's gone the moment context compacts. Item 8 now
+   also requires **writing out the critique's actual findings in your
+   response** (a line per item, or an explicit "clean"), not a silent
+   "looks good" — see item 8's own 2026-10-11 addition for why.
+   `npm run check:all` includes `check-audit-coverage.mjs`, which fails
+   if a real console route has no row in either of `docs/design/
+   audit.md`'s living tables — it catches "the row was never created,"
+   not "the row's content is actually a real critique"; that half is
+   still yours to do for real, every time.
+14. **Open Dependabot PRs relevant to what you touched.** ADR 0009: the
    Tailwind v3/v4 mismatch wasn't a detection gap — Dependabot had
    already opened a PR for it — it was a triage gap, nobody looked.
    Applies to any dependency (a framework, a UI library, a build tool),
@@ -74,7 +122,7 @@ Before saying a piece of work is done:
    framework major (Next.js, Prisma, TypeScript) needs its own
    dedicated migration effort — say so and leave it open, don't bundle
    it in silently and don't silently ignore it either.
-14. **`npm run check:exemptions`** — a visibility report (not a gate,
+15. **`npm run check:exemptions`** — a visibility report (not a gate,
    always exits 0) over every file currently trusted rather than
    mechanically enforced by a guardrail. Pulled a new CARE component,
    or added a new named allowlist entry to any check-*.mjs script? Run

@@ -55,10 +55,20 @@ export function ConversationThread({
               {entry.message.role === "user" ? "Visitor" : "Bot"} · {relativeTime(entry.message.createdAt)}
             </span>
             <div
+              // `--muted` and `--accent` are the literal same value in
+              // this monochrome system (oklch(97%), app/globals.css) —
+              // using them for two different speakers made the visitor
+              // and bot bubbles visually indistinguishable
+              // (docs/design/audit.md's "System coverage" table, found
+              // 2026-09-27). Bot gets the solid `bg-primary` treatment
+              // instead — the same high-contrast/active pairing already
+              // established for Badge's "default" vs "muted" variants
+              // elsewhere in this app — visitor keeps the existing
+              // muted gray, unchanged.
               className={`max-w-lg rounded-lg px-3 py-2 text-sm ${
                 entry.message.role === "user"
                   ? "bg-muted text-foreground"
-                  : "bg-accent text-accent-foreground"
+                  : "bg-primary text-primary-foreground"
               }`}
             >
               {entry.message.content}

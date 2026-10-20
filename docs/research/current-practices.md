@@ -36,7 +36,7 @@ update it in place rather than leaving it to rot.
   server-side for the API route handling that submission — one schema,
   not two hand-maintained copies. *Checked 2026-09-25.*
 - **Rate limiting**: in-memory works for a single-instance deployment
-  (Render, Chatter's case); serverless/edge (Vercel) needs a shared
+  (Chatter's case — deploy host TBD, ADR 0020); serverless/edge (Vercel) needs a shared
   store (Redis/Upstash) since each invocation is isolated. Adopted
   2026-09-25: in-memory sliding-window (`lib/rateLimit.ts`), applied to
   both public widget routes. Revisit if Chatter ever moves to multiple
@@ -47,7 +47,13 @@ update it in place rather than leaving it to rot.
 - **Multi-tenant row-level security**: index the tenant-id column on
   every RLS-protected table — without it, every RLS-filtered query scans
   the full table. Standard advice wherever Postgres RLS is used for
-  multi-tenancy. Chatter has none yet. *Checked 2026-09-25.*
+  multi-tenancy. Adopted: every `orgId`-bearing table in
+  `prisma/schema.prisma` carries a real `@@index([orgId])`, confirmed
+  directly against the real schema 2026-10-11 — this specific index is
+  *not* itself mechanically checked (`check-rls-coverage.mjs`, part of
+  `check:all`, verifies the RLS *policy* exists per table, not that its
+  `orgId` column is indexed), so a new table adding the policy without
+  the index wouldn't be caught automatically. *Checked 2026-09-25.*
 
 ## Dependency hygiene
 

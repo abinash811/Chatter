@@ -183,8 +183,9 @@ already has MCP servers: an open-source one (WSO2's `fhir-mcp-server`), an
 official one from AWS (HealthLake), and Anthropic itself launched **Claude
 for Healthcare** in January 2026 with HIPAA-ready product options and FHIR
 dev resources — directly relevant to guardrail #3 and worth investigating
-before building the healthcare template's compliance guardrails from
-scratch.
+before building healthcare's own compliance guardrails (a direct config/
+code addition when that vertical starts, ADR 0019 — not a "template")
+from scratch.
 
 **Revised implication**: the "connector/integration layer" described above
 is, in practice, mostly **us acting as an MCP client connecting to
@@ -207,11 +208,15 @@ need one connector each, not one per customer.
 - Whether to build one shared multi-tenant MCP server or per-vertical
   instances — still needs an answer from how the user's own company's
   existing console+MCP pattern handles this, asked but not yet answered.
-- Vector DB choice for multi-tenant RAG at scale (separate open question,
-  tracked in `docs/open-questions.md`).
+- ~~Vector DB choice for multi-tenant RAG at scale~~ — resolved:
+  Postgres + pgvector (ADR 0002, ADR 0021), not a dedicated vector DB.
 - Investigate Claude for Healthcare (Jan 2026) directly — may inform or
-  replace parts of the planned healthcare vertical template's guardrails
-  and FHIR connectivity rather than building both from scratch.
+  replace parts of healthcare's eventual default guardrail prompts and
+  FHIR connectivity rather than building both from scratch. (Worded as
+  "vertical template" originally — ADR 0019 later dropped the
+  template-layer concept entirely; healthcare's guardrails/tools will
+  be a direct code/config change when that work starts, not a
+  template, per `docs/roadmap.md`'s sequencing.)
 - Investigate whether other planned/likely verticals (automotive, etc.)
   have similarly mature platform MCP servers already, or whether that
   vertical would need more custom connector work.

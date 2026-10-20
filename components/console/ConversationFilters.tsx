@@ -3,17 +3,27 @@
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Checkbox, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui";
 
-// Filters are URL-driven (?botId=&range=&issues=1) so the list page
-// stays a server component that refetches on navigation, matching this
-// codebase's existing pattern (no client-side data fetching layer
-// introduced just for this screen). ADR 0015: deliberately no "status"
-// filter — that concept doesn't exist yet.
+// Filters are URL-driven (?botId=&range=&issues=1&status=) so the list
+// page stays a server component that refetches on navigation, matching
+// this codebase's existing pattern (no client-side data fetching layer
+// introduced just for this screen). Inline selects, not Chatbase's own
+// "Filter by" modal (ADR 0027) — our filter set is 4 fields, not their
+// 10+, and every other list screen in this app (bots, knowledge
+// sources) already uses an inline bar; a modal would be inconsistent
+// with our own design system for a set this small.
 
 const RANGE_OPTIONS = [
   { value: "all", label: "All time" },
   { value: "24h", label: "Last 24 hours" },
   { value: "7d", label: "Last 7 days" },
   { value: "30d", label: "Last 30 days" },
+];
+
+// ADR 0027 — the two real values Chatbase's own API documents.
+const STATUS_OPTIONS = [
+  { value: "all", label: "Any status" },
+  { value: "ongoing", label: "Ongoing" },
+  { value: "paused", label: "Paused" },
 ];
 
 export function ConversationFilters({ bots }: { bots: { id: string; name: string }[] }) {
@@ -34,6 +44,7 @@ export function ConversationFilters({ bots }: { bots: { id: string; name: string
   const botId = searchParams.get("botId") ?? "all";
   const range = searchParams.get("range") ?? "all";
   const issuesOnly = searchParams.get("issues") === "1";
+  const status = searchParams.get("status") ?? "all";
 
   // ADR 0017: radix-ui's real <Select.Value> resolves the selected
   // item's label directly (registered internally, not dependent on the
@@ -44,7 +55,15 @@ export function ConversationFilters({ bots }: { bots: { id: string; name: string
   return (
     <div className="flex items-center gap-3">
       <Select value={botId} onValueChange={(value) => setParam("botId", value)}>
-        <SelectTrigger size="sm" className="w-40">
+        {/* aria-label, not just SelectValue's rendered text — same fix
+            as AppSidebar.tsx's bot switcher: a real axe-core scan
+            (tests/e2e/accessibility.spec.ts) caught this trigger
+            intermittently rendering with no accessible name at all
+            (critical "button-name" violation, ~40% reproduction rate)
+            before SelectValue's child label finishes resolving. An
+            explicit label removes the race instead of just working
+            around it in the test. */}
+        <SelectTrigger size="sm" aria-label="Filter by bot" className="w-40">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -57,7 +76,7 @@ export function ConversationFilters({ bots }: { bots: { id: string; name: string
       </Select>
 
       <Select value={range} onValueChange={(value) => setParam("range", value)}>
-        <SelectTrigger size="sm" className="w-36">
+        <SelectTrigger size="sm" aria-label="Filter by date range" className="w-36">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -69,11 +88,24 @@ export function ConversationFilters({ bots }: { bots: { id: string; name: string
         </SelectContent>
       </Select>
 
+      <Select value={status} onValueChange={(value) => setParam("status", value)}>
+        <SelectTrigger size="sm" aria-label="Filter by status" className="w-32">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {STATUS_OPTIONS.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
       <div className="flex items-center gap-2">
         <Checkbox
           id="issues-only"
           checked={issuesOnly}
-          onChange={(e) => setParam("issues", e.target.checked ? "1" : null)}
+          onCheckedChange={(checked) => setParam("issues", checked ? "1" : null)}
         />
         <Label htmlFor="issues-only" className="text-sm font-normal text-muted-foreground">
           Has an issue

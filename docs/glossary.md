@@ -13,10 +13,12 @@ thing in conversation.
 **Bot** — one configured AI assistant belonging to an org. A business
 can have more than one (e.g. a support bot and a sales bot).
 
-**Vertical / vertical template** — an industry (ecommerce, healthcare,
-automotive). A template is a starting-point config for that industry
-(default persona, guardrails, suggested tools) — see ADR 0001. The core
-engine never has industry-specific code; only templates do.
+**Vertical** — an industry (ecommerce, healthcare, automotive). No
+template abstraction exists (ADR 0019, supersedes ADR 0001) — a vertical
+is just that bot's own config (persona, guardrails, tools), or, for a
+future vertical, a direct code/config change to the engine when it's
+actually built. The core engine never has industry-specific branches
+(CLAUDE.md guardrail #2), independent of the template question.
 
 **Draft / publish** — a bot has one draft version being edited and, once
 published, an immutable published version that's actually live. Editing

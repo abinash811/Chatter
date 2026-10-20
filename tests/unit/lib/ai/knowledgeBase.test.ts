@@ -30,8 +30,9 @@ vi.mock("@/lib/db", () => ({
 }));
 
 const embed = vi.fn();
+const embedBatch = vi.fn();
 vi.mock("@/lib/ai/embeddings", () => ({
-  getEmbeddingsProvider: () => ({ embed }),
+  getEmbeddingsProvider: () => ({ embed, embedBatch }),
 }));
 
 const { extractFileText, extractUrlText, KnowledgeIngestionError } = vi.hoisted(() => ({
@@ -41,11 +42,15 @@ const { extractFileText, extractUrlText, KnowledgeIngestionError } = vi.hoisted(
 }));
 vi.mock("@/lib/ai/extraction", () => ({ extractFileText, extractUrlText, KnowledgeIngestionError }));
 
+const { crawlSite } = vi.hoisted(() => ({ crawlSite: vi.fn() }));
+vi.mock("@/lib/ai/crawler", () => ({ crawlSite }));
+
 import {
   listKnowledgeSources,
   createQaEntry,
   createFileEntry,
   createUrlEntry,
+  createCrawledEntries,
   deleteKnowledgeSource,
 } from "@/lib/ai/knowledgeBase";
 
@@ -90,9 +95,9 @@ describe("createQaEntry", () => {
 });
 
 describe("createFileEntry", () => {
-  it("extracts text, chunks it, embeds each chunk, and creates one source with one chunk per piece", async () => {
+  it("extracts text, chunks it, embeds all chunks in one batch call, and creates one source with one chunk per piece", async () => {
     extractFileText.mockResolvedValue("Short handbook content.");
-    embed.mockResolvedValue([0.1, 0.2]);
+    embedBatch.mockResolvedValue([[0.1, 0.2]]);
     sourceCreate.mockResolvedValue({ id: "src-1" });
     chunkCreate.mockResolvedValue({ id: "chunk-1" });
 
@@ -107,20 +112,26 @@ describe("createFileEntry", () => {
     expect(chunkCreate).toHaveBeenCalledWith({
       data: { orgId: "org-1", sourceId: "src-1", content: "Short handbook content." },
     });
+    expect(embedBatch).toHaveBeenCalledTimes(1);
     expect(executeRaw).toHaveBeenCalledTimes(1);
   });
 
-  it("creates one chunk per split piece for long text, embedding each", async () => {
+  it("creates one chunk per split piece for long text, embedding all of them in a single batch call", async () => {
     const longText = Array.from({ length: 5 }, (_, i) => `Paragraph ${i}. `.repeat(200)).join("\n\n");
     extractFileText.mockResolvedValue(longText);
-    embed.mockResolvedValue([0.1]);
+    // chunkText's real output length isn't known ahead of time here, so
+    // return a same-shaped array lazily based on what's actually passed.
+    embedBatch.mockImplementation((chunks: string[]) => Promise.resolve(chunks.map(() => [0.1])));
     sourceCreate.mockResolvedValue({ id: "src-1" });
     chunkCreate.mockResolvedValue({ id: "chunk-x" });
 
     await createFileEntry("org-1", "bot-1", "big.txt", "text/plain", Buffer.from(longText));
 
     expect(chunkCreate.mock.calls.length).toBeGreaterThan(1);
-    expect(embed).toHaveBeenCalledTimes(chunkCreate.mock.calls.length);
+    // One embedBatch call total, not one per chunk — the whole point of
+    // this pass.
+    expect(embedBatch).toHaveBeenCalledTimes(1);
+    expect(embedBatch.mock.calls[0][0]).toHaveLength(chunkCreate.mock.calls.length);
   });
 
   it("throws a plain-language error instead of creating anything when extraction yields no text", async () => {
@@ -136,7 +147,7 @@ describe("createFileEntry", () => {
 describe("createUrlEntry", () => {
   it("extracts the article's title+text, then chunks and embeds it the same way as a file", async () => {
     extractUrlText.mockResolvedValue({ title: "Our Return Policy", text: "You can return items within 30 days." });
-    embed.mockResolvedValue([0.1, 0.2]);
+    embedBatch.mockResolvedValue([[0.1, 0.2]]);
     sourceCreate.mockResolvedValue({ id: "src-1" });
     chunkCreate.mockResolvedValue({ id: "chunk-1" });
 
@@ -149,6 +160,52 @@ describe("createUrlEntry", () => {
     expect(chunkCreate).toHaveBeenCalledWith({
       data: { orgId: "org-1", sourceId: "src-1", content: "You can return items within 30 days." },
     });
+  });
+});
+
+describe("createCrawledEntries", () => {
+  it("persists every crawled page the same way a single URL entry would, and returns how many were created", async () => {
+    crawlSite.mockResolvedValue([
+      { url: "https://example.com/", title: "Home", text: "Welcome to our store." },
+      { url: "https://example.com/about", title: "About", text: "We've been around since 2010." },
+    ]);
+    embedBatch.mockResolvedValue([[0.1, 0.2]]);
+    sourceCreate.mockResolvedValue({ id: "src-1" });
+    chunkCreate.mockResolvedValue({ id: "chunk-1" });
+
+    const count = await createCrawledEntries("org-1", "bot-1", "https://example.com");
+
+    expect(crawlSite).toHaveBeenCalledWith("https://example.com");
+    expect(count).toBe(2);
+    expect(sourceCreate).toHaveBeenCalledWith({
+      data: { orgId: "org-1", botId: "bot-1", kind: "url", title: "Home" },
+    });
+    expect(sourceCreate).toHaveBeenCalledWith({
+      data: { orgId: "org-1", botId: "bot-1", kind: "url", title: "About" },
+    });
+  });
+
+  it("skips a page whose own chunking/embedding fails rather than losing the whole crawl's results", async () => {
+    crawlSite.mockResolvedValue([
+      { url: "https://example.com/", title: "Home", text: "Welcome." },
+      { url: "https://example.com/broken", title: "Broken", text: "x" },
+    ]);
+    embedBatch.mockResolvedValueOnce([[0.1]]).mockRejectedValueOnce(new Error("embeddings provider down"));
+    sourceCreate.mockResolvedValue({ id: "src-1" });
+    chunkCreate.mockResolvedValue({ id: "chunk-1" });
+
+    const count = await createCrawledEntries("org-1", "bot-1", "https://example.com");
+
+    expect(count).toBe(1);
+  });
+
+  it("throws a plain-language error when the crawl itself found nothing ingestible", async () => {
+    crawlSite.mockResolvedValue([{ url: "https://example.com/empty", title: "Empty", text: "" }]);
+    // chunkText("") yields zero chunks, so createChunkedEntry throws for this one page.
+    embedBatch.mockResolvedValue([]);
+
+    await expect(createCrawledEntries("org-1", "bot-1", "https://example.com")).rejects.toThrow(KnowledgeIngestionError);
+    expect(sourceCreate).not.toHaveBeenCalled();
   });
 });
 

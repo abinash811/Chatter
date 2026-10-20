@@ -31,10 +31,11 @@ mathematical progression) rather than a fixed list of sizes, so the scale
 stays harmonious as it's extended.
 
 This is the same generic-core-plus-thin-configurable-layer pattern already
-used elsewhere in this project's architecture (vertical templates, the
-tool interface/connector split in
-`docs/research/tool-calling-architecture.md`) — applied to design instead
-of code/product config.
+used elsewhere in this project's architecture (the tool interface/
+connector split in `docs/research/tool-calling-architecture.md`) —
+applied to design instead of code/product config. (A vertical-template
+layer was considered at the time this was written but later dropped
+entirely, ADR 0019 — not the analog anymore.)
 
 ## Foundation: shadcn/ui as the current default for a Next.js + Tailwind
 stack
@@ -43,9 +44,10 @@ Given the stack direction from `docs/research/tech-stack-trends-2026.md`
 (Next.js + Tailwind), **shadcn/ui** (built on Radix UI primitives) is the
 current (2026) default pairing for SaaS admin dashboards on that stack —
 accessible by default, ships with a design-token system, avoids building a
-component library from scratch. Not yet a locked decision — tech stack is
-still open per `docs/open-questions.md` — but the natural fit if that
-direction is confirmed.
+component library from scratch. Both the tech stack and shadcn/ui itself
+were later locked in for real (ADR 0002, ADR 0014/0017) — this was
+written while both were still open and correctly flagged as not yet
+decided at the time; it isn't anymore.
 
 **Known accessibility gap to plan for**: an independent April 2026 audit
 tested all 48 shadcn/ui components for real usability (axe-core,
@@ -133,15 +135,112 @@ Additional sources for this update:
 - https://gunpowderlabs.com/2024/12/22/linear-delightful-patterns
 - https://getdesign.md/linear.app/design-md
 
+## Update 2026-09-27: component-completeness standards from Apple HIG,
+Material Design 3, Ant Design, and Radix/shadcn
+
+Follow-up: everything above is about *aesthetic register* (which of
+Linear/Notion/Stripe to feel like). It never answered a narrower,
+more mechanical question the user raised — has anyone checked what
+established, written design systems consider a *structurally complete*
+component (every required state/variant/motion/copy rule), independent
+of visual style? No prior session had. This is that check, not a
+style study — we're not adopting Apple's or Google's look, just the
+shape of their completeness bar.
+
+**States (Material Design 3)**: a component's full state set is
+default, hover, focus, pressed/active, dragged, disabled, and loading —
+hover/focus/pressed can combine (e.g. hovered *and* focused), and
+disabled means genuinely inert (no focus, no drag, no press response),
+not just dimmed. M3 implements these via a "state layer" — a
+consistent opacity overlay applied uniformly across components, not a
+bespoke color per component per state.
+
+**Elevation (Ant Design)**: three layers only — Layer 0 (flush with
+the page, no shadow — inputs), Layer 1 (a low hover-triggered float —
+cards), Layer 2 (a stronger layer that expands and tracks its
+reference element — menus/popovers). The lesson isn't the exact
+numbers, it's that elevation is **finite and tied to interaction
+state**, not an ad hoc `shadow-xs`/`shadow-sm` pick per component (our
+own `docs/design/audit.md` "System coverage" table already flags this
+exact gap: "`shadow-xs` etc. applied ad hoc, not from a documented
+scale").
+
+**Motion (Ant Design)**: animation exists only to reinforce hierarchy,
+give feedback, or direct attention — never decoration. Concretely: low
+transition times, must not cost perceived performance, and "avoid
+animations that don't add value" is stated as a rule, not a suggestion.
+We have zero documented motion policy today — transitions exist
+per-component (`transition-shadow`, `transition-opacity`) with no
+stated duration/easing standard or "when not to animate" rule.
+
+**Color-independent state (Apple HIG)**: never communicate state
+through color alone — an error or a status difference needs an icon or
+text label too, not just a color swap. Directly relevant to the
+Published/Draft badge bug this session: even after fixing contrast, a
+colorblind user should ideally get more than color distinguishing the
+two states (we currently rely on the word itself — "Published" vs.
+"Draft only" — which already satisfies this, but it's copy doing the
+work, not spelled out as a rule anywhere).
+
+**Copy (Material/UX-writing consensus, not one single named spec)**:
+an error message has three required parts — what happened, why, and
+what to do next — in plain words, with nobody blamed. An empty state is
+framed as an opportunity, not a dead end: always give a way forward
+(a CTA), never just an explanation of absence. `docs/design/
+principles.md` #6 ("plain language, always") already states the tone
+rule; it doesn't yet state the *structural* rule (three parts, always a
+next step) — that's the gap.
+
+**Radix/shadcn (what we're actually built on)**: state is expressed
+through `data-state`/`data-disabled` attributes plus real ARIA, and
+visual styling hooks off those same attributes (`data-[state=open]:...`)
+— state and accessibility are one mechanism, not two systems kept in
+sync by hand. This is already how our components work (see e.g.
+`dropdown-menu.tsx`'s `data-[state=open]:bg-accent`); the gap isn't the
+mechanism, it's that we don't yet audit whether every component
+*uses* the full state set Radix exposes (e.g. do we ever style
+`data-disabled`? — not checked before this research).
+
+## Implication for Chatter
+
+None of this is a style change. It's a completeness checklist a
+component or screen should be checked against, independent of which
+register (Linear/Notion/Stripe) it uses. Proposed as
+`docs/design/component-checklist.md` — see that file for the concrete
+per-component checklist derived from the above, and
+`docs/design/principles.md` for the pointer into it. `docs/design/
+audit.md`'s per-screen rows should reference the same checklist,
+not a separate ad hoc list of "did it have hover/focus/depth."
+
 ## TODO — still open
 
-- Confirm the Next.js/Tailwind/shadcn stack decision (blocks locking this
-  in formally) — tracked in `docs/open-questions.md` #1.
+- ~~Confirm the Next.js/Tailwind/shadcn stack decision~~ — resolved:
+  ADR 0002 (tech stack), ADR 0014/0017 (shadcn/ui locked in as the
+  sole component/token source). `docs/open-questions.md` #1 today is
+  an unrelated, separately-resolved hosting-model question (ADR 0039)
+  — the numbering has moved on since this was written.
 - Decide how strictly to enforce contrast on business-chosen widget
   colors (hard validation vs. auto-adjustment vs. a warning) — not yet
   designed.
+- Direct fetches of m3.material.io and ant.design were blocked by this
+  environment's egress proxy — the M3/Ant Design findings above come
+  from search-result summaries, not the primary spec pages read
+  directly. Worth a direct re-read once network access allows it,
+  especially M3's exact state-layer opacity values if we ever adopt
+  that mechanism literally.
+- No single check was done for a *B2B admin console specifically*
+  (Linear/Stripe/Notion cover this, Apple/Material/Ant Design skew
+  consumer/mobile) — flagged, not filled, since the aesthetic-register
+  research above already fills this role for Chatter's console.
 
 Sources:
+- https://m3.material.io/foundations/interaction/states/applying-states
+- https://ant.design/docs/spec/motion
+- https://ant.design/docs/spec/shadow/
+- https://ant.design/docs/spec/values/
+- https://usersnap.com/blog/error-messages-best-practices/
+- https://cxl.com/blog/error-messages/
+- https://vercel.com/academy/shadcn-ui/what-are-radix-primitives
 - https://www.duskolicanin.com/blog/shadcn-ui-saas-admin-dashboards-2026
 - https://thefrontkit.com/apps/saas-starter-kit
 - https://uxdesign.cc/mastering-typography-in-design-systems-with-semantic-tokens-and-responsive-scaling-6ccd598d9f21

@@ -1,6 +1,8 @@
 # ADR 0011: CARE's live product is unreachable — work from documented Linear/Notion/Stripe knowledge instead
 
-Status: accepted
+Status: superseded by ADR 0014 (Claude Console's real screenshots
+replaced documented Linear/Notion/Stripe knowledge as the actual
+layout reference)
 
 Date: 2026-09-25
 

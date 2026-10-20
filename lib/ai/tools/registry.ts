@@ -5,7 +5,11 @@ import type { ModelTool } from "@/lib/ai/gateway";
 // stable; `handle` is the swappable fulfillment (direct API call today,
 // an MCP client call later) — never inline that choice at the call site.
 export interface Tool extends ModelTool {
-  handle(orgId: string, botId: string, input: Record<string, unknown>): Promise<string>;
+  // conversationId is optional — most tools don't need it (see
+  // collectLead.ts's own note on this). Added 2026-09-28 for write-
+  // capable tools that queue a PendingAction (ADR 0023): approving one
+  // later needs to point back at the conversation it came from.
+  handle(orgId: string, botId: string, input: Record<string, unknown>, conversationId?: string): Promise<string>;
   // Optional (ADR 0016): how this tool's call should read to a
   // non-technical reviewer in the conversation inbox. A tool that
   // doesn't implement this gets a generic fallback (lib/conversations.ts)
